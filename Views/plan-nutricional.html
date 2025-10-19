@@ -38,7 +38,6 @@
             border-color: #495057 !important;
             color: white !important;
             border-radius: 4px !important;
-            padding: 4px 8px !important;
         }
         
         .btn-primary:hover {
@@ -54,16 +53,26 @@
             box-shadow: none !important;
         }
         
+        .btn-primary {
+            box-shadow: none !important;
+        }
+        
         .btn-primary:active {
             background-color: #495057 !important;
             border-color: #495057 !important;
             color: white !important;
+            box-shadow: none !important;
         }
         
         .btn-primary:visited {
             background-color: #495057 !important;
             border-color: #495057 !important;
             color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .btn-primary:hover {
+            box-shadow: none !important;
         }
         
         /* Botón Cancelar con estilo de fondo sólido */
@@ -72,7 +81,6 @@
             border-color: #F34949 !important;
             color: white !important;
             border-radius: 4px !important;
-            padding: 4px 8px !important;
         }
         
         .btn-cancelar:hover {
@@ -152,7 +160,6 @@
             border-color: #495057 !important;
             color: white !important;
             border-radius: 4px !important;
-            padding: 4px 8px !important;
         }
         
         .btn-link[title="Editar"]:hover {
@@ -185,7 +192,6 @@
             border-color: #F34949 !important;
             color: white !important;
             border-radius: 4px !important;
-            padding: 4px 8px !important;
         }
         
         .btn-link[title="Eliminar"]:hover {
@@ -218,7 +224,6 @@
             border-color: #495057 !important;
             color: white !important;
             border-radius: 4px !important;
-            padding: 4px 8px !important;
         }
         
         .btn-primary[ng-click="ViewCreate()"]:hover {
@@ -249,6 +254,21 @@
         .btn-primary i.fa-save,
         .btn-cancelar i.fa-times {
             color: white !important;
+        }
+        
+        /* Asegurar que todos los botones tengan el mismo tamaño */
+        .btn-primary,
+        .btn-cancelar,
+        .btn-link[title="Editar"],
+        .btn-link[title="Eliminar"] {
+            min-height: 32px !important;
+            min-width: 32px !important;
+            padding: 6px 12px !important;
+            font-size: 14px !important;
+            line-height: 1.2 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
