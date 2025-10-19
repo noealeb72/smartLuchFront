@@ -67,9 +67,27 @@ app.controller('PlanNutricional', function ($scope, $http) {
 
     // -------- CRUD ----------
     $scope.ModelCreate = function (isValid, form) {
-        if (!isValid) { touchAll(form); Swal.fire({ title: 'Datos Requeridos', text: 'Los campos Nombre y Descripción son obligatorios y deben completarse correctamente.', icon: 'warning' }); return; }
+        if (!isValid) { 
+            touchAll(form); 
+            Swal.fire({ 
+                title: '¡Campos Obligatorios!', 
+                text: 'Debes completar los campos Nombre y Descripción para continuar.', 
+                icon: 'warning',
+                confirmButtonText: 'Entendido'
+            }); 
+            return; 
+        }
         var payload = { nombre: ($scope.view_nombre || '').trim(), descripcion: ($scope.view_descripcion || '').trim() };
-        if (!payload.nombre || !payload.descripcion) { touchAll(form); Swal.fire({ title: 'Validación', text: 'Nombre y Descripción son obligatorios.', icon: 'warning' }); return; }
+        if (!payload.nombre || !payload.descripcion) { 
+            touchAll(form); 
+            Swal.fire({ 
+                title: '¡Campos Vacíos!', 
+                text: 'Los campos Nombre y Descripción no pueden estar vacíos.', 
+                icon: 'error',
+                confirmButtonText: 'Entendido'
+            }); 
+            return; 
+        }
         $http.post($scope.base + 'Create', payload, { headers: { 'Content-Type': 'application/json; charset=utf-8' } })
             .then(function () { Swal.fire({ title: 'Operación Correcta', icon: 'success' }); $scope.ModelReadAll(); })
             .catch(function (err) { Swal.fire({ title: 'Operación Incorrecta', text: msgError(err), icon: 'error' }); });

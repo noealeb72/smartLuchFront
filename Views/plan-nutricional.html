@@ -17,12 +17,39 @@
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" />
     <link rel="stylesheet" href="css/style.min.css" />
     <link rel="stylesheet" href="css/smartstyle.css" />
+    <style>
+        /* Estilos para mantener el footer en la parte inferior */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .footer-sticky {
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        
+        /* Deshabilitar hover en botón Guardar */
+        .btn-primary:hover {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+        }
+        
+        .btn-primary:focus {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+            box-shadow: none !important;
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
 </head>
 
-<body data-spy="scroll" data-target="#navbar" class="static-layout" ng-controller="PlanNutricional">
-    <div class="container-fluid">
-        <div class="solid-background">
+<body data-spy="scroll" data-target="#navbar" class="static-layout" ng-controller="PlanNutricional" style="min-height: 100vh; display: flex; flex-direction: column;">
+    <div class="container-fluid" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="solid-background" style="flex: 1;">
             <!-- Navbar (envuelto con su propio controller para leer localStorage) -->
             <div ng-controller="NavbarCtrl" ng-include="'navbar.html'"></div>
 
@@ -232,9 +259,9 @@
                 </div><!-- /min-height -->
             </div><!-- /container-fluid -->
         </div><!-- /solid-background -->
-        <!-- Footer -->
-        <div ng-include="'footer.html'"></div>
     </div>
+    <!-- Footer -->
+    <div ng-include="'footer.html'" class="footer-sticky" style="margin-top: auto;"></div>
 
     <!-- JS -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
