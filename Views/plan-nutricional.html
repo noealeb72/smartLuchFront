@@ -280,9 +280,35 @@
             <!-- Navbar (envuelto con su propio controller para leer localStorage) -->
             <div ng-controller="NavbarCtrl" ng-include="'navbar.html'"></div>
 
-            <!-- Título -->
+            <!-- Título y Breadcrumbs -->
             <div class="heading-section bg-dark text-white pt-2 pl-3">
-                <h3 class="mb-0">Plan Nutricional</h3>
+                <div class="row">
+                    <div class="col-md-8">
+                        <h3 class="mb-0" ng-if="ViewAction === 'Lista de Items'">Plan Nutricional</h3>
+                        <h3 class="mb-0" ng-if="ViewAction === 'Nuevo Plan'">Nuevo Plan Nutricional</h3>
+                        <h3 class="mb-0" ng-if="ViewAction === 'Editar Plan'">Editar Plan Nutricional</h3>
+                    </div>
+                    <div class="col-md-4">
+                        <!-- Breadcrumbs -->
+                        <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Lista de Items'">
+                            <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
+                                <li class="breadcrumb-item">
+                                    <a href="#" ng-click="ViewAction = 'Lista de Items'; ModelReadAll()" class="text-white-50" style="text-decoration: none;">
+                                        <i class="fa fa-home mr-1"></i>Plan Nutricional
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item active text-white" aria-current="page">
+                                    <span ng-if="ViewAction === 'Nuevo Plan'">
+                                        <i class="fa fa-plus mr-1"></i>Nuevo
+                                    </span>
+                                    <span ng-if="ViewAction === 'Editar Plan'">
+                                        <i class="fa fa-edit mr-1"></i>Editar
+                                    </span>
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
             </div>
 
             <div class="container-fluid" style="margin-top:0!important;">
@@ -380,11 +406,16 @@
                     <!-- Nuevo Plan -->
                     <div ng-if="ViewAction === 'Nuevo Plan'">
                         <div class="container-fluid">
+                            <!-- Indicador de sección -->
+                            <div class="alert alert-info mb-3" role="alert">
+                                <i class="fa fa-info-circle mr-2"></i>
+                                <strong>Creando nuevo plan nutricional</strong> - Complete los campos obligatorios para guardar.
+                            </div>
                             <div class="dishes-text col-12">
                                 <form name="planForm" class="form-group"
                                       ng-submit="ModelCreate(planForm.$valid, planForm)" novalidate>
                                     <div class="pb-3 form-group">
-                                        <label for="view_nombre_nuevo">Nombre</label>
+                                        <label for="view_nombre_nuevo"><span class="text-danger">*</span> Nombre</label>
                                         <input id="view_nombre_nuevo" name="view_nombre"
                                                class="col-8 form-control" type="text"
                                                ng-model="$parent.view_nombre"
@@ -406,7 +437,7 @@
                                     </div>
 
                                     <div class="pb-3 form-group">
-                                        <label for="view_descripcion_nuevo">Descripción</label>
+                                        <label for="view_descripcion_nuevo"><span class="text-danger">*</span> Descripción</label>
                                         <input id="view_descripcion_nuevo" name="view_descripcion"
                                                class="col-8 form-control" type="text"
                                                ng-model="$parent.view_descripcion"
@@ -439,11 +470,16 @@
                     <!-- Editar Plan -->
                     <div ng-if="ViewAction === 'Editar Plan'">
                         <div class="container-fluid">
+                            <!-- Indicador de sección -->
+                            <div class="alert alert-warning mb-3" role="alert">
+                                <i class="fa fa-edit mr-2"></i>
+                                <strong>Editando plan nutricional</strong> - Modifique los campos necesarios y guarde los cambios.
+                            </div>
                             <div class="dishes-text col-12">
                                 <form name="planForm" class="form-group"
                                       ng-submit="ModelUpdate(planForm.$valid, view_id, planForm)" novalidate>
                                     <div class="pb-3 form-group">
-                                        <label for="view_nombre_editar">Nombre</label>
+                                        <label for="view_nombre_editar"><span class="text-danger">*</span> Nombre</label>
                                         <input id="view_nombre_editar" name="view_nombre"
                                                class="col-8 form-control" type="text"
                                                ng-model="$parent.view_nombre"
@@ -461,7 +497,7 @@
                                     </div>
 
                                     <div class="pb-3 form-group">
-                                        <label for="view_descripcion_editar">Descripción</label>
+                                        <label for="view_descripcion_editar"><span class="text-danger">*</span> Descripción</label>
                                         <input id="view_descripcion_editar" name="view_descripcion"
                                                class="col-8 form-control" type="text"
                                                ng-model="$parent.view_descripcion"
