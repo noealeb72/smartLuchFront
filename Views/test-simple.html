@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html ng-app="AngujarJS">
+<head>
+    <title>Test Simple</title>
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css">
+    <style>
+        body { padding: 20px; }
+        .form-group { margin: 10px 0; }
+        .btn { margin: 5px; }
+    </style>
+</head>
+<body ng-controller="TestCtrl">
+    <h1>Test Simple</h1>
+    
+    <div class="form-group">
+        <h3>Formulario de Prueba</h3>
+        <form name="testForm" ng-submit="testSubmit()" novalidate>
+            <div class="form-group">
+                <label>Nombre:</label>
+                <input type="text" ng-model="test_nombre" class="form-control" placeholder="Nombre">
+            </div>
+            <div class="form-group">
+                <label>Descripción:</label>
+                <input type="text" ng-model="test_descripcion" class="form-control" placeholder="Descripción">
+            </div>
+            <div class="form-group">
+                <label>Bonificación:</label>
+                <input type="text" ng-model="test_bonificacion" class="form-control" placeholder="Bonificación">
+            </div>
+            <button type="submit" class="btn btn-primary">Probar</button>
+        </form>
+    </div>
+    
+    <div id="debug-output" style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+        <h4>Debug Output:</h4>
+        <div id="debug-content"></div>
+    </div>
+    
+    <script src="vendor/angular/angular.min.js"></script>
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/bootstrap.min.js"></script>
+    
+    <script>
+        angular.module('AngujarJS', [])
+        .controller('TestCtrl', function($scope) {
+            $scope.test_nombre = '';
+            $scope.test_descripcion = '';
+            $scope.test_bonificacion = '';
+            
+            function log(message) {
+                console.log(message);
+                document.getElementById('debug-content').innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+            }
+            
+            $scope.testSubmit = function() {
+                log('Formulario enviado');
+                log('Nombre: ' + $scope.test_nombre);
+                log('Descripción: ' + $scope.test_descripcion);
+                log('Bonificación: ' + $scope.test_bonificacion);
+            };
+            
+            // Inicializar cuando la página cargue
+            document.addEventListener('DOMContentLoaded', function() {
+                log('Página de test cargada correctamente');
+            });
+        });
+    </script>
+</body>
+</html>
+

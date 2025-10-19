@@ -1,0 +1,113 @@
+﻿<nav class="navbar navbar-expand-lg navbar-dark smart-bg">
+    <h4 class="navbar-brand smart-title">
+        <i class="fa fa-utensils mr-2"></i>SmartLunch 
+        <!-- Fecha, hora e información del usuario -->
+        <span id="datetime-navbar" class="ml-5" style="font-size: 0.6em; font-weight: normal; opacity: 0.8; margin-left: 30rem !important;">
+            <i class="fa fa-clock mr-1"></i>
+            <span id="current-datetime"></span>
+            <!-- Información del usuario al lado de la fecha y hora -->
+            <span id="user-info-navbar" class="ml-3" style="display: none;">
+                <i class="fa fa-user mr-1"></i>
+                <span id="user-role-navbar" class="badge badge-light text-dark" style="font-size: 0.7em; padding: 0.2em 0.4em;"></span>
+            </span>
+        </span>
+    </h4>
+
+    <!-- Debug info (solo para desarrollo) -->
+
+    <button class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+            aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav ml-auto text-right">
+            <li class="nav-item active">
+                <a class="nav-link" href="index.html" ng-if="user_Rol !== 'Comensal'">
+                    <i class="fa fa-home mr-1"></i> Inicio
+                </a>
+            </li>
+
+            <!-- Cocina -->
+            <li class="nav-item active" ng-if="user_Rol === 'Cocina'">
+                <a class="nav-link" href="despacho.html">
+                    <i class="fa fa-edit mr-1"></i> Despacho de plato
+                </a>
+            </li>
+
+            <li class="nav-item dropdown" ng-if="user_Rol === 'Cocina'">
+                <a class="nav-link dropdown-toggle active" href="#" id="ddCocina" role="button"
+                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-boxes mr-1"></i> Cocina
+                </a>
+                <div class="dropdown-menu" aria-labelledby="ddCocina">
+                    <a class="dropdown-item" href="plato.html">Platos</a>
+                    <a class="dropdown-item" href="menudeldia.html">Menu del Día</a>
+                </div>
+            </li>
+
+            <!-- Gerencia -->
+            <li class="nav-item dropdown" ng-if="user_Rol === 'Gerencia'">
+                <a class="nav-link dropdown-toggle active" href="#" id="ddReportes" role="button"
+                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-chart-bar mr-1"></i> Reportes de Gestión
+                </a>
+                <div class="dropdown-menu" aria-labelledby="ddReportes">
+                    <a class="dropdown-item" href="reportegcomensales.html">Reporte por Comensal</a>
+                    <a class="dropdown-item" href="reporteggestion.html">Reporte de Gestión</a>
+                </div>
+            </li>
+
+            
+
+            <!-- Configuración (Admin o Gerencia) -->
+            <li class="nav-item dropdown" ng-if="user_Rol === 'Admin' || user_Rol === 'Gerencia'">
+                <a class="nav-link dropdown-toggle active" href="#" id="ddConfig" role="button"
+                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-cog mr-1"></i> Configuración
+                </a>
+                <div class="dropdown-menu" aria-labelledby="ddConfig">
+                    <a class="dropdown-item" href="usuarios.html">Usuarios</a>
+                    <a class="dropdown-item" href="planta.html">Planta</a>
+                    <a class="dropdown-item" href="centrodecosto.html">Centro de Costo</a>
+                    <a class="dropdown-item" href="proyecto.html">Proyecto</a>
+                    <a class="dropdown-item" href="plan-nutricional.html">Perfil Nutricional</a>
+                    <a class="dropdown-item" href="jerarquia.html">Jerarquia</a>
+                    <a class="dropdown-item" href="turno.html">Turnos</a>
+                </div>
+            </li>
+
+            <li class="nav-item active">
+                <a class="nav-link" href="login.html"><i class="fa fa-sign-out-alt ml-1"></i></a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<script>
+// Función para actualizar fecha y hora
+function updateDateTime() {
+    var now = new Date();
+    var options = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    };
+    
+    var datetimeElement = document.getElementById('current-datetime');
+    if (datetimeElement) {
+        datetimeElement.textContent = now.toLocaleString('es-ES', options);
+    }
+}
+
+// Actualizar cada segundo
+setInterval(updateDateTime, 1000);
+
+// Actualizar inmediatamente cuando se carga la página
+document.addEventListener('DOMContentLoaded', updateDateTime);
+</script>

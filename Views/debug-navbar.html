@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Navbar</title>
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css">
+    <style>
+        body { padding: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+        .btn { margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Debug del Navbar</h1>
+    
+    <!-- Navbar simplificado -->
+    <nav class="navbar navbar-expand-lg navbar-dark smart-bg">
+        <h4 class="navbar-brand smart-title">
+            <i class="fa fa-utensils mr-2"></i>SmartLunch
+            <!-- Información del usuario -->
+            <span id="user-info-navbar" class="ml-3" style="display: none;">
+                <i class="fa fa-user mr-1"></i>
+                <span id="user-role-navbar" class="badge badge-light text-dark" style="font-size: 0.7em; padding: 0.2em 0.4em;"></span>
+            </span>
+        </h4>
+    </nav>
+    
+    <!-- Debug Section -->
+    <div class="debug-section">
+        <h3>Debug del Navbar</h3>
+        <button class="btn btn-primary" onclick="test1()">Test 1: Simular Login</button>
+        <button class="btn btn-warning" onclick="test2()">Test 2: Mostrar Elementos</button>
+        <button class="btn btn-info" onclick="test3()">Test 3: Forzar Mostrar</button>
+        <button class="btn btn-success" onclick="test4()">Test 4: Verificar localStorage</button>
+    </div>
+    
+    <div id="debug-output" style="margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 5px;">
+        <h4>Debug Output:</h4>
+        <div id="debug-content"></div>
+    </div>
+    
+    <script>
+        function log(message) {
+            console.log(message);
+            document.getElementById('debug-content').innerHTML += '<div>' + message + '</div>';
+        }
+        
+        function test1() {
+            log('=== TEST 1: Simulando Login ===');
+            localStorage.setItem('role', 'Gerencia');
+            localStorage.setItem('nombre', 'Juan');
+            localStorage.setItem('apellido', 'Pérez');
+            log('Datos guardados en localStorage');
+        }
+        
+        function test2() {
+            log('=== TEST 2: Verificando Elementos ===');
+            var userInfoNavbar = document.getElementById('user-info-navbar');
+            var userRoleNavbar = document.getElementById('user-role-navbar');
+            
+            log('user-info-navbar encontrado: ' + (userInfoNavbar ? 'SÍ' : 'NO'));
+            log('user-role-navbar encontrado: ' + (userRoleNavbar ? 'SÍ' : 'NO'));
+            
+            if (userInfoNavbar) {
+                log('user-info-navbar display: ' + userInfoNavbar.style.display);
+                log('user-info-navbar innerHTML: ' + userInfoNavbar.innerHTML);
+            }
+        }
+        
+        function test3() {
+            log('=== TEST 3: Forzando Mostrar ===');
+            var userInfoNavbar = document.getElementById('user-info-navbar');
+            var userRoleNavbar = document.getElementById('user-role-navbar');
+            
+            if (userInfoNavbar && userRoleNavbar) {
+                userRoleNavbar.textContent = 'TEST ROL';
+                userInfoNavbar.style.display = 'inline-block';
+                log('Elementos forzados a mostrar');
+            } else {
+                log('ERROR: No se encontraron los elementos');
+            }
+        }
+        
+        function test4() {
+            log('=== TEST 4: Verificando localStorage ===');
+            log('role: ' + localStorage.getItem('role'));
+            log('nombre: ' + localStorage.getItem('nombre'));
+            log('apellido: ' + localStorage.getItem('apellido'));
+        }
+        
+        // Inicializar cuando la página cargue
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Página cargada');
+            test2();
+        });
+    </script>
+</body>
+</html>
+

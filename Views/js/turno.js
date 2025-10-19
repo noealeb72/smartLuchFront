@@ -1,0 +1,231 @@
+﻿var app = angular.module('AngujarJS', []);
+
+app.filter('startFrom', function () {
+	return function (input, start) {
+		start = +start; //parse to int
+		return input.slice(start);
+	}
+});
+
+app.controller('Turno', function ($scope, $sce, $http, $window) {
+
+	$scope.base = 'http://localhost:8000/api/turno/';
+	////////////////////////////////////////////////USER////////////////////////////////////////////////
+	$scope.user_Rol = localStorage.getItem('role');
+	$scope.user_Nombre = localStorage.getItem('nombre');
+	$scope.user_Apellido = localStorage.getItem('apellido');
+	$scope.user_Planta = localStorage.getItem('planta');
+	$scope.user_Centrodecosto = localStorage.getItem('centrodecosto');
+	$scope.user_Proyecto = localStorage.getItem('proyecto');
+	$scope.user_Jerarquia = localStorage.getItem('role');
+	$scope.user_Perfilnutricional = localStorage.getItem('plannutricional');
+	$scope.user_Bonificacion = localStorage.getItem('bonificacion');
+	$scope.user_DNI = localStorage.getItem('dni');
+
+	$scope.ModelCreate = function (isValid) {
+		if (isValid) {
+			// debería ser automatico //
+			$scope.view_codigo = $window.document.getElementById('view_codigo').value;
+			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
+			$scope.view_horadesde = $window.document.getElementById('view_horadesde').value;
+			$scope.view_horahasta = $window.document.getElementById('view_horahasta').value;
+			//
+
+			var jsonForm = { codigo: $scope.view_codigo, descripcion: $scope.view_descripcion, horadesde: $scope.view_horadesde, horahasta: $scope.view_horahasta };
+
+			$http({
+				method: 'post',
+				headers: {
+					"Content-Type": "application/json; charset=utf-8",
+					"Authorization": ""
+				},
+				url: $scope.base + 'Create',
+				data: jsonForm
+			}).then(function (success) {
+				if (success) {
+					swal(
+						'Operación Correcta',
+						'',
+						'success'
+					);
+					$scope.ModelReadAll();
+				}
+			}, function (error) {
+				swal(
+					'Operación Incorrecta',
+					error,
+					'error'
+				);
+			});
+		} else {
+			alert('Atributo Invalido en los datos');
+		}
+	};
+
+	$scope.ModelRead = function (view_id) {
+		$http.get($scope.base + 'get/' + view_id)
+			.success(function (data) {
+				$scope.view_codigo = data[0].codigo;
+				$scope.view_descripcion = data[0].descripcion;
+
+				// Convertir strings tipo "23:00" a Date
+				if (data[0].horadesde) {
+					let parts = data[0].horadesde.split(':');
+					$scope.view_horadesde = new Date(1970, 0, 1, parts[0], parts[1]);
+				}
+
+				if (data[0].horahasta) {
+					let parts = data[0].horahasta.split(':');
+					$scope.view_horahasta = new Date(1970, 0, 1, parts[0], parts[1]);
+				}
+			})
+			.error(function (data, status) {
+				swal('Ha ocurrido un error', 'Api no presente', 'error');
+			});
+	};
+
+
+
+
+
+	$scope.ModelReadAll = function () {
+		$scope.dataset = [];
+		$scope.searchKeyword;
+		$scope.ViewAction = 'Lista de Items';
+		$scope.view_id = -1;
+		$scope.view_codigo = '';
+		$scope.view_descripcion = '';
+		$scope.view_horadesde = '';
+		$scope.view_horahasta = '';
+
+		$http.get($scope.base + 'getAll')
+			.success(function (data) {
+				$scope.dataset = data;
+			})
+			.error(function (data, status) {
+				swal(
+					'Ha ocurrido un error',
+					'Api no presente',
+					'error'
+				);
+			});
+	};
+
+	$scope.ModelUpdate = function (isValid,view_id) {
+		if (isValid) {
+			// debería ser automatico 
+			$scope.view_codigo = $window.document.getElementById('view_codigo').value;
+			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
+			$scope.view_horadesde = $window.document.getElementById('view_horadesde').value;
+			$scope.view_horahasta = $window.document.getElementById('view_horahasta').value;
+			//
+
+			var jsonForm = { id: view_id, codigo: $scope.view_codigo, descripcion: $scope.view_descripcion, horadesde: $scope.view_horadesde, horahasta: $scope.view_horahasta };
+
+			$http({
+				method: 'post',
+				headers: {
+					"Content-Type": "application/json; charset=utf-8",
+					"Authorization": ""
+				},
+				url: $scope.base + 'Update',
+				data: jsonForm
+			}).then(function (success) {
+				if (success) {
+					swal(
+						'Operación Correcta',
+						'',
+						'success'
+					);
+					$scope.ModelReadAll();
+				}
+			}, function (error) {
+				swal(
+					'Operación Incorrecta',
+					error,
+					'error'
+				);
+			});
+		} else {
+			alert('Atributo Invalido en los datos');
+		}
+	};
+
+	$scope.ModelDelete = function (view_id) {
+		var jsonForm = { id: view_id };
+
+		$http({
+			method: 'post',
+			headers: {
+				"Content-Type": "application/json; charset=utf-8",
+				"Authorization": ""
+			},
+			url: $scope.base + 'Delete',
+			data: jsonForm
+		}).then(function (success) {
+			if (success) {
+				swal(
+					'Operación Correcta',
+					'',
+					'success'
+				);
+				$scope.ModelReadAll();
+			}
+		}, function (error) {
+			swal(
+				'Operación Incorrecta',
+				error,
+				'error'
+			);
+		});
+	}
+
+	$scope.ViewCreate = function () {
+		$scope.ViewAction = 'Nuevo Turno';
+		$scope.view_id = -1;
+		$scope.view_codigo = '';
+		$scope.view_descripcion = '';
+		$scope.view_horadesde = '';
+		$scope.view_horahasta = '';
+	};
+
+	$scope.ViewUpdate = function (view_id) {
+		$scope.ViewAction = 'Editar Turno';
+		$scope.view_id = view_id;
+		$scope.ModelRead(view_id);
+	};
+
+	$scope.ViewDelete = function (view_id) {
+		swal({
+			title: 'Eliminar registro',
+			text: 'Desea eliminar el turno?',
+			type: 'warning',
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'OK'
+		})
+			.then(function (ConfirmClick) {
+				if (ConfirmClick.value === true) {
+					$scope.ModelDelete(view_id);
+				}
+			});
+	};
+
+	$scope.ViewCancel = function () {
+		$scope.ViewAction = 'Lista de Items';
+	};
+
+	$scope.ModelReadAll();
+	$scope.data = [];
+	for (var i = 0; i < 45; i++) {
+		$scope.data.push("Item " + i);
+	}
+
+	$scope.currentPage = 0;
+	$scope.pageSize = 20;
+
+	$scope.numberOfPages = function () {
+		return Math.ceil($scope.dataset.length / $scope.pageSize);
+	}
+});

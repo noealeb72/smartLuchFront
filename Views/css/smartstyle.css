@@ -1,0 +1,183 @@
+﻿html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.container-fluid {
+    flex: 1 0 auto;
+}
+
+.planitem {
+    font-size: 14px !important;
+}
+
+.smart-imagen {
+    -webkit-box-shadow: 10px 10px 2px 0px rgba(232,232,232,1);
+    -moz-box-shadow: 10px 10px 2px 0px rgba(232,232,232,1);
+    box-shadow: 10px 10px 2px 0px rgba(232,232,232,1);
+    max-width: 95%;
+    height: auto;
+    border-radius: 5px;
+}
+
+.se-pre-con {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    background: url('../img/loading.gif') center no-repeat #ffffffa8;
+    background-size: 150px;
+}
+
+.round-img{
+    border-radius:50%;
+}
+
+.smart-bg{
+    background-color: #F34949;
+}
+
+.smart-title {
+    margin: 0px 0px 0px 0px;
+    padding: 0px 0px 0px 0px;
+    font-size: 26px;
+}
+
+.imaged-background {
+    background-image: url('../img/comida-2.jpg');
+    background-repeat: no-repeat;
+    background-position: top,center;
+    background-size: cover;
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+.solid-background {
+    background-color: #ffffffd6;
+    padding-bottom: 20px;
+}
+
+.sticky-image {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    width: 200px;
+}
+
+.star-checked {
+    color: orange;
+}
+
+.header-attribute {
+    font-weight: 600;
+}
+
+.rised-image {
+    box-shadow: 1px 1px 5px 0px rgba(50, 50, 50, 0.75) !important;
+    border-radius: 8px !important;
+}
+/* Estilo para el botón en pantallas pequeñas */
+
+.btn-responsive {
+    width: 80%; /* El botón ocupa el 80% del ancho del contenedor en pantallas pequeñas */
+
+}
+
+/* Estilo para pantallas grandes */
+@media (min-width: 768px) {
+    .btn-responsive {
+        width: auto; /* El tamaño del botón es automático en pantallas medianas y grandes */
+    }
+}
+
+.btn-guardar {
+    background-color: #007bff !important; /* Azul */
+    color: #ffffff !important;
+    border: none;
+    border-radius: 30px;
+    padding: 10px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    display: inline-block; /* Para alinear horizontalmente */
+}
+
+    .btn-guardar:hover,
+    .btn-guardar:focus {
+        background-color: #007bff !important; /* Mantener el mismo color en hover */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-guardar:disabled {
+        background-color: #7abaff !important; /* Azul claro si está deshabilitado */
+        color: rgba(255, 255, 255, 0.7);
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+/* Asegurar que los botones estén uno al lado del otro */
+.button-group {
+    display: flex;
+    gap: 10px; /* Espacio entre botones */
+}
+.btn-cancelar {
+    background-color: #dc3545 !important; /* Color rojo original */
+    color: #ffffff !important;
+    border: none;
+    border-radius: 30px;
+    padding: 10px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    display: inline-block;
+}
+
+.btn-cancelar:hover,
+.btn-cancelar:focus {
+        background-color: #c82333 !important; /* Rojo más oscuro al hacer hover */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-cancelar:disabled {
+        background-color: #e4606d !important; /* Rojo claro si está deshabilitado */
+        color: rgba(255, 255, 255, 0.7);
+        cursor: not-allowed;
+        opacity: 0.7;
+}
+
+
+footer, .smart-bg {
+    margin-top: auto;
+}
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+    .form-row .form-group {
+        margin-bottom: 0;
+    }
+
+.btn-ir {
+    height: 40px;
+    align-self: flex-end;
+    padding: 0 25px;
+}
+.button.form-control {
+    cursor: pointer;
+}
+
+
+
+

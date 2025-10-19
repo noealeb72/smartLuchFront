@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Plan Nutricional</title>
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css">
+    <style>
+        body { padding: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+        .btn { margin: 5px; }
+        .debug-output { background: #e9ecef; padding: 10px; border-radius: 5px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Debug Plan Nutricional</h1>
+    
+    <!-- Debug Section -->
+    <div class="debug-section">
+        <h3>Debug de Búsqueda</h3>
+        <button class="btn btn-primary" onclick="testSearch()">Test Búsqueda</button>
+        <button class="btn btn-warning" onclick="showScope()">Mostrar Scope</button>
+        <button class="btn btn-info" onclick="clearDebug()">Limpiar Debug</button>
+    </div>
+    
+    <div id="debug-output" class="debug-output">
+        <h4>Debug Output:</h4>
+        <div id="debug-content"></div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="vendor/angular/angular.min.js"></script>
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/bootstrap.min.js"></script>
+    <script src="vendor/sweetalert2/sweetalert2.min.js"></script>
+    <script src="js/plan-nutricional.js"></script>
+    
+    <script>
+        function log(message) {
+            console.log(message);
+            document.getElementById('debug-content').innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+        
+        function testSearch() {
+            log('=== TEST DE BÚSQUEDA ===');
+            var scope = angular.element(document.body).scope();
+            if (scope) {
+                log('Scope encontrado');
+                log('searchText: ' + scope.searchText);
+                log('dataset length: ' + (scope.dataset || []).length);
+                log('filteredData length: ' + (scope.filteredData || []).length);
+            } else {
+                log('ERROR: No se encontró el scope de Angular');
+            }
+        }
+        
+        function showScope() {
+            log('=== SCOPE COMPLETO ===');
+            var scope = angular.element(document.body).scope();
+            if (scope) {
+                log('searchText: ' + scope.searchText);
+                log('dataset: ' + JSON.stringify(scope.dataset));
+                log('ViewAction: ' + scope.ViewAction);
+            }
+        }
+        
+        function clearDebug() {
+            document.getElementById('debug-content').innerHTML = '';
+        }
+        
+        // Interceptar console.log
+        var originalLog = console.log;
+        console.log = function(message) {
+            originalLog.apply(console, arguments);
+            if (typeof message === 'string' && message.includes('searchText')) {
+                document.getElementById('debug-content').innerHTML += '<div style="color: blue;">' + message + '</div>';
+            }
+        };
+        
+        // Inicializar cuando la página cargue
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Página cargada');
+            setTimeout(function() {
+                testSearch();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
+

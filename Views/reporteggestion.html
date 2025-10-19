@@ -1,0 +1,336 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>SmartLunch</title>
+    <meta name="description" content="SmartLunch">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- External CSS -->
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/select2/select2.min.css">
+    <link rel="stylesheet" href="vendor/owlcarousel/owl.carousel.min.css">
+    <link rel="stylesheet" href="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/css/tempusdominus-bootstrap-4.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/brands.css">
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700|Josefin+Sans:300,400,700">
+    <link rel="stylesheet" href="https://cdn.linearicons.com/free/1.0.0/icon-font.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.min.css">
+    <link rel="stylesheet" href="css/smartstyle.css">
+    <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+    <style>
+        @media (max-width: 768px) {
+            .container, .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .row {
+                flex-direction: column;
+            }
+
+            .form-group {
+                margin-bottom: 1rem;
+                width: 100% !important;
+            }
+
+            .col-1, .col-2, .col-3, .col-4, .col-5, .col-6,
+            .col-7, .col-8, .col-9, .col-10, .col-11, .col-12 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+
+            table thead {
+                display: none;
+            }
+
+            table tbody tr {
+                display: block;
+                margin-bottom: 10px;
+                border: 1px solid #ddd;
+                padding: 10px;
+            }
+
+            table tbody td {
+                display: block;
+                width: 100%;
+                text-align: right;
+                position: relative;
+                padding-left: 50%;
+            }
+
+                table tbody td::before {
+                    content: attr(data-label);
+                    position: absolute;
+                    left: 10px;
+                    width: 45%;
+                    padding-right: 10px;
+                    font-weight: bold;
+                    text-align: left;
+                }
+
+            .modal-dialog {
+                max-width: 95% !important;
+            }
+
+            container,
+            .container-fluid,
+            .row,
+            .form-group,
+            .form-control,
+            button,
+            input,
+            select {
+                max-width: 100% !important;
+                box-sizing: border-box;
+            }
+
+            .form-group {
+                padding-left: 30px !important;
+                padding-right: 10px !important;
+            }
+
+            button,
+            input,
+            select {
+                width: 100% !important;
+            }
+            .navbar-toggler {
+                padding: 0.25rem 0.5rem !important;
+                height: auto !important;
+                min-height: auto !important;
+                box-shadow: none;
+                max-width: 25% !important;
+            }
+
+            .navbar-toggler-icon {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+
+<body data-spy="scroll" data-target="#navbar" class="static-layout">
+    <div class="container-fluid" ng-app="AngujarJS" ng-controller="ReportegGestion">
+        <div class="solid-background">
+            <div id="side-nav" class="sidenav">
+                <a href="javascript:void(0)" id="side-nav-close">×</a>
+            </div>
+            <div id="canvas-overlay"></div>
+            <div>
+                <!-- Menu -->
+                <div ng-include="'navbar.html'"></div>
+                <!-- Titulo -->
+                <div class="heading-section bg-dark text-white pt-2 pl-3">
+                    <h3>
+                        Reporte de Gestión
+                    </h3>
+                </div>
+                <div ng-if="ViewAction == 'inicio'" class="container-fluid mr-3 dishes-text" style="min-height: 370px">
+                    <form name="form" novalidate>
+                        <div class="row">
+                            <div class="form-group pl-3" ng-class="{'has-error': form.fechaDesde.$touched && form.fechaDesde.$invalid}">
+                                <label for="filtro_fechadesde_inicio">Fecha desde</label>
+                                <input name="fechaDesde" class="form-control" type="date" id="filtro_fechadesde_inicio"
+                                       ng-model="filtro_fechadesde_inicio" required>
+                                <p class="text-danger" ng-show="form.fechaDesde.$touched && form.fechaDesde.$error.required">
+                                    Una fecha de inicio es requerida
+                                </p>
+                            </div>
+
+                            <div class="form-group pl-3">
+                                <label for="filtro_fechaactualidad">Fecha hasta</label>
+                                <input class="form-control" type="date" id="filtro_fechaactualidad" ng-model="filtro_fechaactualidad">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="form-control col-1 w-100" ng-click="getReporte()" style="cursor: pointer;">
+                            Ir
+                        </button>
+                    </form>
+                </div>
+
+
+                <div ng-if="ViewAction == 'reporte'">
+                    <!--REPORTE-->
+                    <div class="container-fluid row">
+                        <div class="md-form mt-0 pl-2 col-1">
+                        </div>
+                        <div class="mt-0 col-5 row">
+                            <div><span class="header-attribute col">Cantidad de platos:</span><span>{{totales.platos}}</span></div>
+                            <div><span class="header-attribute col">Promedio de calificación:</span><span>{{totales.promedio}}</span></div>
+                        </div>
+                        <div class="mt-0 col-5 row">
+                            <div><span class="header-attribute col">Cantidad devueltos:</span><span>{{totales.devueltos}}</span></div>
+                            <div><span class="header-attribute col">Costo total:</span><span>${{totales.costo}}</span></div>
+                        </div>
+                        <button ng-click="loadFiltro()" href="#" data-target="#filtrosModal" data-toggle="modal" type="button" class="btn btn-default col-1 mt-4" aria-label="searchbutton">
+                            <span aria-hidden="true">Elegir filtros</span>
+                        </button>
+                    </div> <!--TOTALES ROW-->
+                    <div class="dishes-text row mb-2">
+                        <div class="col-sm-8 ml-0 pl-4 mt-2">
+                            <h5 style="margin-bottom: 0px; padding-top:5px"><span>Detalle</span></h5>
+                        </div>
+                    </div> <!--DETALLE ROW-->
+                    <div class="container-fluid mr-3" style="min-height: 428px">
+                        <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;">
+                        <div class="container-fluid dishes-text col-12">
+                            <table class="table table-hover table-sm">
+                                <thead style="font-size: 14px;">
+                                    <tr class="bg-dark text-white row">
+                                        <th class="col-1">Fecha</th>
+                                        <th class="col-1">Hora</th>
+                                        <th class="col-1">Planta</th>
+                                        <th class="col-2">CC</th>
+                                        <th class="col-2">Proyecto</th>
+                                        <th class="col-1">Legajo</th>
+                                        <th class="col-1">Plato</th>
+                                        <th class="col-1">Calificación</th>
+                                        <th class="col-1">Costo</th>
+                                        <th class="col-1">Comentario</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="planitem row" ng-repeat="item in dataset | startFrom:currentPage*pageSize | limitTo:pageSize">
+                                        <td class="col-1">{{item.createdate | formatDate}}</td>
+                                        <td class="col-1">{{item.createdate | formatHour}}</td>
+                                        <td class="col-1">{{item.planta}}</td>
+                                        <td class="col-2">{{item.centrodecosto}}</td>
+                                        <td class="col-2">{{item.proyecto}}</td>
+                                        <td class="col-1">{{item.user_fileNumber}}</td>
+                                        <td class="col-1">{{item.cod_plato}}</td>
+                                        <td class="col-1">{{item.calificacion}}</td>
+                                        <td class="col-1">${{item.monto}}</td>
+                                        <td class="col-1">{{item.comentario}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div>
+                                <button class="btn btn-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="currentPage=currentPage-1">
+                                    Anterior
+                                </button>
+                                {{currentPage+1}}/{{numberOfPages()}}
+                                <button class="btn btn-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="currentPage=currentPage+1">
+                                    Siguiente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!--MODALES-->
+                    <div class="modal fade container-fluid" id="filtrosModal" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div style="max-width: 100% !important;" class="modal-dialog container-fluid" role="document">
+                            <div class="modal-content container-fluid">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="pedidoModalLabel">Opciones de filtrado</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body container-fluid">
+                                    <div class="row">
+                                        <div class="form-group col-4">
+                                            <label for="filtro_fechadesde">Fecha desde</label>
+                                            <input readonly class="form-control" type="date" id="filtro_fechadesde" ng-model="filtro_fechadesde">
+                                        </div>
+                                        <div class="form-group col-4">
+                                            <label for="filtro_fechahasta">Hasta</label>
+                                            <input class="form-control" type="date" id="filtro_fechahasta" ng-model="filtro_fechahasta">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group col-4">
+                                            <label for="filtro_planta">Planta</label>
+                                            <select class="form-control" id="filtro_planta" ng-model="filtro_planta">
+                                                <option style="display:none" value="">Seleccione planta</option>
+                                                <option ng-repeat="x in plantas" value="{{x.nombre}}">{{x.nombre}}</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-4">
+                                            <label for="filtro_centrodecosto">Centro de costo</label>
+                                            <select class="form-control" id="filtro_centrodecosto" ng-model="filtro_centrodecosto">
+                                                <option style="display:none" value="">Seleccione CC</option>
+                                                <option ng-repeat="x in centrosdecosto" value="{{x.nombre}}">{{x.nombre}}</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-4">
+                                            <label for="filtro_proyecto">Proyecto</label>
+                                            <select class="form-control" id="filtro_proyecto" ng-model="filtro_proyecto">
+                                                <option style="display:none" value="">Selecciona proyecto</option>
+                                                <option ng-repeat="x in proyectos" value="{{x.nombre}}">{{x.nombre}}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group col-4">
+                                            <label for="filtro_legajodesde">Legajo desde</label>
+                                            <input class="form-control" type="number" id="filtro_legajodesde" ng-model="filtro_legajodesde">
+                                        </div>
+                                        <div class="form-group col-4">
+                                            <label for="filtro_legajohasta">Hasta</label>
+                                            <input class="form-control" type="number" id="filtro_legajohasta" ng-model="filtro_legajohasta">
+                                        </div>
+                                        <div class="form-group col-4">
+                                            <label for="filtro_invitado">Invitado</label>
+                                            <select class="form-control" id="filtro_invitado" ng-model="filtro_invitado">
+                                                <option style="display:none" value="">Selecciona una opción</option>
+                                                <option value="1">Si</option>
+                                                <option value="0">No</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group col-4">
+                                            <label for="filtro_plato">Plato</label>
+                                            <input class="form-control" type="text" id="filtro_plato" ng-model="filtro_plato">
+                                        </div>
+                                        <div class="form-group col-4">
+                                            <label for="filtro_calificacion">Calificación</label>
+                                            <input class="form-control" type="number" id="filtro_calificacion" ng-model="filtro_calificacion">
+                                        </div>
+                                        <div class="form-group col-4">
+                                            <label for="filtro_turno">Turno</label>
+                                            <select class="form-control" id="filtro_turno" ng-model="filtro_turno">
+                                                <option style="display:none" value="">Selecciona turno</option>
+                                                <option ng-repeat="x in turnos" value="{{x.codigo}}">{{x.descripcion}}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button class="btn btn-primary" ng-click="ClearFiltros()">Limpiar Filtros</button>
+                                        <button type="button" class="btn  btn-primary bg-secondary" data-dismiss="modal">Volver</button>
+                                        <button type="button" class="btn btn-primary" ng-click="SelectFiltros()">Guardar cambios</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer -->
+        <div ng-include="'footer.html'"></div>
+    </div>
+    <!-- External JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+    <script src="vendor/bootstrap/popper.min.js"></script>
+    <script src="vendor/bootstrap/bootstrap.min.js"></script>
+    <script src="vendor/select2/select2.min.js "></script>
+    <script src="vendor/owlcarousel/owl.carousel.min.js"></script>
+    <script src="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.js"></script>
+    <script src="vendor/stellar/jquery.stellar.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <!-- Main JS -->
+    <!-- Main JS -->
+    <script src="js/angular.min.js"></script>
+    <script src="js/sweetalert2.all.js"></script>
+    <script src="js/reporteggestion.js"></script>
+</body>
+</html>

@@ -1,0 +1,502 @@
+﻿<!DOCTYPE html>
+<html ng-app="AngujarJS" ng-controller="Index">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>SmartLunch</title>
+    <meta name="description" content="SmartLunch">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+   
+
+    <!-- Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/select2/select2.min.css">
+    <link rel="stylesheet" href="vendor/owlcarousel/owl.carousel.min.css">
+    <link rel="stylesheet" href="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/css/tempusdominus-bootstrap-4.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/brands.css">
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700|Josefin+Sans:300,400,700">
+    <link rel="stylesheet" href="https://cdn.linearicons.com/free/1.0.0/icon-font.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.min.css">
+    <link rel="stylesheet" href="css/smartstyle.css" />
+    <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+    <style>
+
+        /* Ajustar el ancho del contenido en pantallas grandes */
+        @media (min-width: 992px) {
+            .footer-widget {
+                text-align: left;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .imagen-escondida {
+                display: none;
+            }
+
+            .ocultar-en-movil {
+                display: none !important;
+            }
+
+            .bienvenida {
+                text-align: left; /* Centra el contenido en móviles */
+                padding: 10px; /* Agrega espacio alrededor del contenedor */
+            }
+
+                .bienvenida h3 {
+                    font-size: 1.5rem; /* Ajusta el tamaño del texto */
+                    line-height: 1.4; /* Mejora el espaciado entre líneas */
+                    margin-bottom: 10px; /* Espaciado entre el título y el siguiente texto */
+                }
+
+                .bienvenida h5 {
+                    font-size: 1.2rem; /* Ajusta el tamaño del subtítulo */
+                    line-height: 1.4; /* Uniforma el espaciado */
+                }
+
+            .ocultar-en-computadora {
+                display: none !important;
+            }
+        }
+
+
+        @media screen and (max-width: 767px) {
+            .mostrar-en-celular {
+                display: block !important;
+            }
+        }
+
+        .d-flex.align-items-start {
+            justify-content: flex-start; /* Asegura que los elementos se alineen al inicio horizontalmente */
+        }
+
+        label {
+            text-align: left !important; /* Alinea el texto del label a la izquierda */
+            margin-bottom: 1px; /* Espaciado entre el label y el select */
+            margin-left: 1px !important;
+        }
+    </style>
+
+
+
+</head>
+
+<body data-spy="scroll" data-target="#navbar" class="static-layout">
+    <div class="container-fluid" style="padding: 0;">
+        <div class="solid-background">
+
+            <!-- Navbar -->
+            <div ng-include="'navbar.html'"></div>
+
+            <!-- Main Content -->
+            <div ng-show="isLoading" class="se-pre-con"></div>
+            <!-- Welcome Section -->
+            <section id="gtco-welcome" class="bg-white section-padding">
+                <div class="container">
+                    <div class="section-content">
+                        <div class="row">
+                            <!-- se oculta modo celular -->
+                            <div class="container-fluid mt-4 pr-0 mr-0 row ocultar-en-movil">
+                                <div class="col-sm-6 col-12 bienvenida">
+                                    <h3>
+                                        Bienvenido {{user_Nombre}} {{user_Apellido}}
+                                        
+                                    </h3>
+                                    <h5 class="text-primary">Te quedan {{pedidosRestantes}} platos bonificados este mes</h5>
+                                    <h5 class="text-primary" ng-if="pedidosInvitadosRestantes > 0">
+                                        Te quedan {{pedidosInvitadosRestantes}} platos para invitar este mes
+                                    </h5>
+                                </div>
+
+                                <div class="col-sm-6 pr-0 d-flex align-items-end">
+                                    <label class="col-6 text-right mb-0" for="turno">Ver opciones para turno:</label>
+
+                                    <!-- Select SOLO si hay turnos -->
+                                    <select id="turno"
+                                            class="form-control"
+                                            ng-if="turnoDataset.length > 0"
+                                            ng-model="selectedTurno"
+                                            ng-options="t as t.descripcion for t in turnoDataset track by t.id"
+                                            ng-change="onTurnoChanged()">
+                                    </select>
+
+                                    <!-- Mensaje cuando NO hay turnos -->
+                                    <span class="text-muted ml-2" ng-if="turnoDataset.length === 0">
+                                        Sin turnos disponibles para hoy.
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- se oculta modo computadora -->
+                            <div class="container-fluid mt-4 pr-0 mr-0 row d-block d-md-none">
+                                <div class="col-sm-12 bienvenida">
+                                    <h3>
+                                        <i class="lnr lnr-user"></i> Bienvenido {{user_Nombre}} {{user_Apellido}}
+                                        <span class="ml-2" ng-if="user_Rol" style="font-size: 0.75em; padding: 0.3em 0.6em; background-color: #e8f4fd; color: #007bff; border: 1px solid #b3d7ff; border-radius: 15px; font-weight: 500; display: inline-block;">{{user_Rol}}</span>
+                                    </h3>
+                                    <h5 class="text-primary"><i class="lnr lnr-dinner"></i>&nbsp;&nbsp;Te quedan {{pedidosRestantes}} platos bonificados este mes</h5>
+                                    <h5 class="text-primary" ng-if="pedidosInvitadosRestantes > 0">
+                                        <i class="lnr lnr-gift"></i>&nbsp;&nbsp;Te quedan {{pedidosInvitadosRestantes}} platos para invitar este mes
+                                    </h5>
+                                </div>
+
+                                <div class="col-sm-12 pr-0 d-flex flex-column align-items-start">
+                                    <label class="w-100 text-left mb-1" for="selectedTurno" style="margin:0; padding:0;">
+                                        Ver opciones para turno:
+                                    </label>
+
+                                    <!-- Select SOLO si hay turnos -->
+                                    <select class="form-control"
+                                            id="selectedTurno"
+                                            ng-if="turnoDataset.length > 0"
+                                            ng-model="selectedTurno"
+                                            ng-options="t as t.descripcion for t in turnoDataset track by t.id"
+                                            ng-change="onTurnoChanged()">
+                                    </select>
+
+                                    <!-- Mensaje cuando NO hay turnos -->
+                                    <span class="text-muted mt-1" ng-if="turnoDataset.length === 0">
+                                        Sin turnos disponibles para hoy.
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- se oculta modo computadora -->
+                            <div class="container-fluid mt-4 pr-0 mr-0 row d-block d-md-none">
+                                <div class="col-sm-12 bienvenida">
+                                    <h3>
+                                        <i class="lnr lnr-user"></i> Bienvenido {{user_Nombre}} {{user_Apellido}}
+                                        <span class="ml-2" ng-if="user_Rol" style="font-size: 0.75em; padding: 0.3em 0.6em; background-color: #e8f4fd; color: #007bff; border: 1px solid #b3d7ff; border-radius: 15px; font-weight: 500; display: inline-block;">{{user_Rol}}</span>
+                                    </h3>
+                                    <h5 class="text-primary"><i class="lnr lnr-dinner"></i>&nbsp;&nbsp;Te quedan {{pedidosRestantes}} platos bonificados este mes</h5>
+                                    <h5 class="text-primary" ng-if="pedidosInvitadosRestantes > 0">
+                                        <i class="lnr lnr-gift"></i>&nbsp;&nbsp;Te quedan {{pedidosInvitadosRestantes}} platos para invitar este mes
+                                    </h5>
+                                </div>
+
+                                <div class="col-sm-12 pr-0 d-flex flex-column align-items-start">
+                                    <label class="w-100 text-left mb-1" for="selectedTurno" style="margin:0; padding:0;">
+                                        Ver opciones para turno:
+                                    </label>
+
+                                    <!-- Select SOLO si hay turnos -->
+                                    <select class="form-control"
+                                            id="selectedTurno"
+                                            ng-if="turnoDataset.length > 0"
+                                            ng-model="selectedTurno"
+                                            ng-options="t as t.descripcion for t in turnoDataset track by t.id"
+                                            ng-change="onTurnoChanged()">
+                                    </select>
+
+                                    <!-- Mensaje cuando NO hay turnos -->
+                                    <span class="text-muted mt-1" ng-if="turnoDataset.length === 0">
+                                        Sin turnos disponibles para hoy.
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-4 pt-5 imagen-escondida">
+                                <img class="sticky-image rised-image w-100" src="img/hero-2.jpg" />
+                            </div>
+                            <!--MODALES HEADER-->
+                            <!--MODAL CANCELAR-->
+                            <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="cancelModalLabel">Cancelar pedido</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            ¿Esta seguro de que quieres cancelar el pedido?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-primary bg-secondary" data-dismiss="modal">Volver</button>
+                                            <button ng-click="actualizaPedido('C')" type="button" class="btn btn-primary">Cancelar pedido</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--MODAL RECIBIR-->
+                            <div class="modal fade" id="receiveModal" tabindex="-1" role="dialog" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="receiveModalLabel">Recepción de pedido</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <select class="form-control" id="pedidoCalificacion" ng-model="pedidoCalificacion">
+                                                <option value="" selected disabled>Calificá tu pedido!</option>
+                                                <option value="1">1</option>
+                                                <option value="2">2</option>
+                                                <option value="3">3</option>
+                                                <option value="4">4</option>
+                                                <option value="5">5</option>
+                                            </select>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-primary bg-secondary" data-dismiss="modal">Volver</button>
+                                            <button ng-click="actualizaPedido('D')" type="button" class="btn btn-warning">Devolver pedido</button>
+                                            <button ng-click="actualizaPedido('R')" type="button" class="btn btn-primary">Recibí mi plato</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--MODAL PEDIR-->
+                            <!--<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-hidden="true">-->
+                            <div id="confirmModal" class="modal fade" tabindex="-1" role="dialog">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="confirmModalLabel">Confirmar pedido</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body row">
+                                            <div class="col-8 pl-4">
+                                                <div class="container row">
+                                                    <span class="text-info pr-2">Plato</span><span>{{pedidoPlato}}</span>
+                                                </div>
+                                                <div class="container row">
+                                                    <span class="text-info pr-2">Costo</span><span>${{pedidoCosto}}</span>
+                                                </div>
+                                                <div class="container row">
+                                                    <span class="text-info pr-2">Planta</span><span>{{user_Planta}}</span>
+                                                </div>
+                                                <div class="container row">
+                                                    <span class="text-info pr-2">Centro de costo</span><span>{{user_Centrodecosto}}</span>
+                                                </div>
+                                                <div class="container row">
+                                                    <span class="text-info pr-2">Proyecto</span><span>{{user_Proyecto}}</span>
+                                                </div>
+                                                <div class="container row">
+                                                    <span class="text-info pr-2">Jerarquia</span><span>{{user_Jerarquia}}</span>
+                                                </div>
+                                                <div class="container row">
+                                                    <span class="text-info pr-2">Perfil Nutricional</span><span>{{user_Perfilnutricional}}</span>
+                                                </div>
+                                                <div class="container row">
+                                                    <span class="text-info pr-2">Platos Bonif. restantes</span><span>{{pedidosRestantes}}</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-4 pl-0 mx-auto">
+                                                <img class="round-img mr-4" style="width:100%" ng-src="{{pedidoPresentacion || defaultImage}}" />
+                                            </div>
+                                            <div class="col-12 row mt-2">
+                                                <input class="custom-checkbox ml-4 mr-2 mt-1" type="checkbox" ng-model="pedidoInvitado" /><h5>Plato reservado para invitado</h5>
+                                            </div>
+                                            <div class="col-12 mt-2 pl-4">
+                                                <div class="form-group">
+                                                    <label for="pedidoComentario">Comentario</label>
+                                                    <textarea class="form-control w-100" ng-model="pedidoComentario" rows="2" maxlength="200"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 modal-footer">
+                                                <!--<button type="button" class="btn btn-primary bg-secondary" data-dismiss="modal">Cerrar ventana</button>-->
+                                                <button type="button" class="btn btn-primary" ng-click="confirmaPedido()">Enviar pedido</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--MODALES PEDIDO-->
+                            <div class="col-12 col-md-8 pt-3 mx-auto">
+                                <h4 class="mt-4 text-primary">Tu próximo pedido reservado</h4>
+                                <div class="card mt-2 pl-2">
+                                    <div class="row no-gutters" ng-show="pedido.paraRetirar || pedido.paraCancelar" ng-repeat="pedido in pedidoVigente track by $index">
+                                        <div class="col-md-4 mt-2 mb-2">
+                                            <img ng-src="{{pedido.presentacion || defaultImage}}" class="card-img" alt="...">
+                                            <div class="row mt-2 pl-3">
+                                                <button ng-show="pedido.paraCancelar" type="button" ng-click="seleccionaPedido(pedido)" class="btn btn-outline-warning btn-sm mr-1" data-target="#cancelModal" data-toggle="modal">Cancelar pedido</button>
+                                                <button ng-show="pedido.paraRetirar" type="button" ng-click="seleccionaPedido(pedido)" class="btn btn-outline-success btn-sm" data-target="#receiveModal" data-toggle="modal">Recibir pedido</button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="card-body row">
+                                                <div class="col-sm-6">
+                                                    <h5 class="card-title">Numero de pedido:{{pedido.user_npedido}}<br />{{pedido.descripcion}}</h5>
+                                                    <p class="card-text">{{pedido.ingredientes}}</p>
+                                                    <p>
+                                                        <span class="badge badge-secondary">{{pedido.plannutricional}}</span>
+                                                        <span ng-show="pedido.invitado == true" class="badge badge-secondary">Invitado</span>
+                                                    </p>
+                                                </div>
+
+                                                <div class="col-sm-6">
+                                                    <qr ng-if="tipoVisualizacionCodigo === 'QR' && pedido.datoQR" correction-level="'M'" size="200" text="pedido.datoQR" class="ng-isolate-scope"></qr>
+
+                                                    <svg ng-if="tipoVisualizacionCodigo === 'Barra' && pedido.datoQR" id="barcode-{{pedido.user_npedido}}"></svg>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row no-gutters" ng-show="pedidosGastados == 0">
+                                        <span class="px-3 py-3">No hay pedidos vigentes</span>
+                                    </div>
+                                </div>
+                                <hr />
+                                <div ng-if="turnoDisponible">
+                                    <h4 class="mt-4 text-primary">Menú del día</h4>
+                                    <!--<h5 class="mt-4">Turno {{selectedTurno}}</h5> -->
+                                    <div ng-if="!isLoading && dataset.length === 0" class="alert alert-warning mt-3">
+                                        No hay platos disponibles para este turno.
+                                    </div>
+                                    <div class="card mt-2 pl-2" ng-repeat="item in dataset track by $index">
+                                        <div class="row no-gutters">
+                                            <div class="col-md-4 mt-2 mb-2">
+                                                <img ng-src="{{item.presentacion || defaultImage}}" alt="{{item.descripcion}}" class="card-img rised-image">
+
+                                                <button type="button"
+                                                        class="btn btn-outline-danger btn-sm mt-2"
+                                                        ng-click="hacerPedido(item, $index)"
+                                                        ng-disabled="!turnoDisponible"
+                                                        title="{{ turnoDisponible ? '' : 'Ya no hay turnos disponibles hoy' }}">
+                                                    ¡Ordenar ahora!
+                                                </button>
+
+
+
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{item.descripcion}}</h5>
+                                                    <p class="card-text">{{item.ingredientes}}</p>
+                                                    <p>
+                                                        <span class="badge badge-secondary">{{item.plannutricional}}</span>
+                                                    </p>
+                                                    <p>
+                                                        <strong>Importe:</strong>
+                                                        <span ng-if="item.costo == 0">Sin costo</span>
+                                                        <span ng-if="item.costo > 0">${{ item.costo | number:2 }}</span>
+                                                    </p>
+                                                    <!-- Muestra la cantidad disponibles
+                                                    <p>
+                                                        <strong>Cantidad disponible:</strong>
+                                                        <span ng-if="item.cantidadDisponible > 0">{{item.cantidadDisponible}}</span>
+                                                        <span class="text-danger" ng-if="item.cantidadDisponible === 0">Sin stock</span>
+                                                    </p>
+                                                -->
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <!-- Si NO hay turnos disponibles -->
+                                <div ng-if="!turnoDisponible">
+                                    <h4 class="text-primary">Menú del día</h4>
+                                    <p class="text-muted">Sin turnos no hay menú.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </section>
+            <br />
+            <div class="smart-bg text-white">
+                <div class="container">
+                    <div class="row pt-4 mt-4">
+                        <!-- Sección izquierda del footer -->
+                        <div class="col-6">
+                            <div class="footer-widget pr-lg-5 pr-0">
+                                <h4 class="text-white">SmartLunch</h4>
+                                <p>Sistema de Gestión de concesiones y servicios de comedores in door de compañias.</p>
+                                <nav class="nav nav-mastfoot justify-content-start">
+                                    <a class="nav-link text-white" href="#">
+                                        <i class="fab fa-facebook-f"></i>
+                                    </a>
+                                    <a class="nav-link text-white" href="#">
+                                        <i class="fab fa-twitter"></i>
+                                    </a>
+                                    <a class="nav-link text-white" href="#">
+                                        <i class="fab fa-instagram"></i>
+                                    </a>
+                                </nav>
+                            </div>
+                        </div>
+
+                        <!-- Sección derecha del footer -->
+                        <!-- Sección derecha del footer -->
+                        <div class="col-6">
+                            <div class="footer-widget px-lg-5 px-0">
+                                <h4 class="text-white">Turnos de Atención</h4>
+
+                                <!-- Si hay turnos disponibles -->
+                                <ul class="list-unstyled open-hours" ng-if="turnoDataset.length > 0">
+                                    <li class="d-flex justify-content-between text-white" ng-repeat="item in turnoDataset">
+                                        <span>{{item.descripcion}} {{item.horadesde}} a {{item.horahasta}}</span>
+                                    </li>
+                                </ul>
+
+                                <!-- Si NO hay turnos -->
+                                <p class="text-white" ng-if="turnoDataset.length === 0">
+                                    No hay turnos disponibles para hoy.
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Línea inferior del footer -->
+                    <div class="row pt-3">
+                        <div class="col-md-12 d-flex align-items-center">
+                            <p class="mx-auto text-center mb-0 text-white">
+                                Copyright 2020. All Right Reserved. Grupo Datco SRL
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+        </div>
+        <!-- External JS -->
+        <!-- jQuery primero -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <!-- Luego Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+        <script src="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.js"></script>
+        <script src="vendor/stellar/jquery.stellar.js" type="text/javascript" charset="utf-8"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/js/tempusdominus-bootstrap-4.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <!-- QR Code -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+        <!-- JsBarcode -->
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+        <script>
+            $(document).ready(function () {
+                $('.dropdown-toggle').dropdown();
+            });
+        </script>
+        <!-- Main JS -->
+        <script src="js/angular.min.js"></script>
+        <script src="js/sweetalert2.all.js"></script>
+        <script src="js/qrcode.min.js"></script>
+        <script src="js/angular-qr.min.js"></script>
+        <script src="js/index.js"></script>
+
+    </div>
+</body>
+</html>
+

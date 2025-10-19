@@ -1,0 +1,261 @@
+﻿<!DOCTYPE html>
+<html lang="es" ng-app="AngujarJS">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>SmartLunch</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="vendor/select2/select2.min.css" />
+    <link rel="stylesheet" href="vendor/owlcarousel/owl.carousel.min.css" />
+    <link rel="stylesheet" href="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/css/tempusdominus-bootstrap-4.min.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700|Josefin+Sans:300,400,700" />
+    <link rel="stylesheet" href="https://cdn.linearicons.com/free/1.0.0/icon-font.min.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" />
+    <link rel="stylesheet" href="css/style.min.css" />
+    <link rel="stylesheet" href="css/smartstyle.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+</head>
+
+<body data-spy="scroll" data-target="#navbar" class="static-layout" ng-controller="PlanNutricional">
+    <div class="container-fluid">
+        <div class="solid-background">
+            <!-- Navbar (envuelto con su propio controller para leer localStorage) -->
+            <div ng-controller="NavbarCtrl" ng-include="'navbar.html'"></div>
+
+            <!-- Título -->
+            <div class="heading-section bg-dark text-white pt-2 pl-3">
+                <h3 class="mb-0">Plan Nutricional</h3>
+            </div>
+
+            <div class="container-fluid" style="margin-top:0!important;">
+
+                <!-- Botón Agregar (solo en lista) -->
+                <div class="dishes-text row mb-2" ng-if="ViewAction === 'Lista de Items'">
+                    <div class="col text-right">
+                        <button type="button" class="btn btn-primary mb-2 mr-3"
+                                ng-click="ViewCreate()" style="padding:0.25rem 0.75rem; cursor: pointer;">
+                            <i class="fa fa-plus text-white" style="font-size:16px;font-weight:800;"></i> Agregar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Buscar -->
+                <div class="row my-3">
+                    <div class="col-md-12">
+                        <label for="buscarPlan" ng-show="ViewAction === 'Lista de Items'">Buscar</label>
+                        <div class="input-group" ng-show="ViewAction === 'Lista de Items'">
+                            <input type="text" class="form-control" ng-model="searchText"
+                                   title="Buscar Plan"
+                                   id="buscarPlan"
+                                   placeholder="Buscar por nombre o descripción...">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" 
+                                        ng-click="searchText = ''; currentPage = 0;" 
+                                        ng-disabled="!searchText"
+                                        title="Limpiar búsqueda"
+                                        style="cursor: pointer;">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="container-fluid mr-3" style="min-height:370px">
+                    <hr style="border-top:2px solid rgba(0,0,0,.1);margin-top:0!important;">
+
+                    <!-- Lista -->
+                    <div ng-if="ViewAction === 'Lista de Items'">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm">
+                                <thead style="font-size:14px;">
+                                    <tr class="bg-dark text-white">
+                                        <th class="col-2">Nombre</th>
+                                        <th class="col-6">Descripción</th>
+                                        <th class="text-center col-2">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="item in (filteredData = (dataset | filter:searchText)) | startFrom:currentPage*pageSize | limitTo:pageSize">
+                                        <td class="col-2">{{item.nombre}}</td>
+                                        <td class="col-8">{{item.descripcion}}</td>
+                                        <td class="text-center col-2">
+                                            <button type="button" class="btn btn-link p-0 align-middle"
+                                                    ng-click="ViewUpdate(item.id)" title="Editar" style="cursor: pointer;">
+                                                <i class="fa fa-edit" style="color:rebeccapurple"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-link p-0 align-middle ml-2"
+                                                    ng-click="ViewDelete(item.id)" title="Eliminar" aria-label="Eliminar" style="cursor: pointer;">
+                                                <i class="fa fa-trash" style="color:red"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Sin resultados -->
+                                    <tr ng-if="filteredData.length === 0 && searchText">
+                                        <td colspan="3" class="text-center text-muted py-3">
+                                            No se encontraron resultados para "{{searchText}}".
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- Paginación basada en 'filtered' -->
+                            <div class="mt-2">
+                                <button class="btn btn-secondary btn-sm"
+                                        ng-disabled="currentPage == 0"
+                                        ng-click="currentPage = currentPage - 1"
+                                        style="cursor: pointer;">
+                                    Anterior
+                                </button>
+                                {{currentPage + 1}}/{{numberOfPages()}}
+                                <button class="btn btn-secondary btn-sm"
+                                        ng-disabled="currentPage + 1 == numberOfPages()"
+                                        ng-click="currentPage = currentPage + 1"
+                                        style="cursor: pointer;">
+                                    Siguiente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nuevo Plan -->
+                    <div ng-if="ViewAction === 'Nuevo Plan'">
+                        <div class="container-fluid">
+                            <div class="dishes-text col-12">
+                                <form name="planForm" class="form-group"
+                                      ng-submit="ModelCreate(planForm.$valid, planForm)" novalidate>
+                                    <div class="pb-3 form-group">
+                                        <label for="view_nombre_nuevo">Nombre</label>
+                                        <input id="view_nombre_nuevo" name="view_nombre"
+                                               class="col-8 form-control" type="text"
+                                               ng-model="$parent.view_nombre"
+                                               placeholder="Ingrese nombre"
+                                               ng-pattern="/^[a-zA-Z0-9ñÑáéíóúÁÉÍÓÚüÜ ._'\-]*$/"
+                                               ng-minlength="2" ng-maxlength="20" required />
+                                        <small class="text-danger"
+                                               ng-show="planForm.$submitted && planForm.view_nombre.$error.required">
+                                            Nombre requerido.
+                                        </small>
+                                        <small class="text-danger"
+                                               ng-show="planForm.view_nombre.$touched && planForm.view_nombre.$error.pattern">
+                                            Caracteres inválidos.
+                                        </small>
+                                        <small class="text-danger"
+                                               ng-show="planForm.view_nombre.$touched && (planForm.view_nombre.$error.minlength || planForm.view_nombre.$error.maxlength)">
+                                            Largo inválido.
+                                        </small>
+                                    </div>
+
+                                    <div class="pb-3 form-group">
+                                        <label for="view_descripcion_nuevo">Descripción</label>
+                                        <input id="view_descripcion_nuevo" name="view_descripcion"
+                                               class="col-8 form-control" type="text"
+                                               ng-model="$parent.view_descripcion"
+                                               placeholder="Ingrese descripción"
+                                               ng-pattern="/^[a-zA-Z0-9ñÑáéíóúÁÉÍÓÚüÜ .,_%+\-]*$/"
+                                               ng-minlength="4" ng-maxlength="140" required />
+                                        <small class="text-danger"
+                                               ng-show="planForm.$submitted && planForm.view_descripcion.$error.required">
+                                            Descripción requerida.
+                                        </small>
+                                        <small class="text-danger"
+                                               ng-show="planForm.view_descripcion.$touched && planForm.view_descripcion.$error.pattern">
+                                            Caracteres inválidos.
+                                        </small>
+                                    </div>
+
+                                    <div class="mt-2">
+                                        <button type="submit" class="btn-primary mt-3" ng-disabled="planForm.$invalid" style="cursor: pointer;">Guardar</button>
+                                        <button type="button" class="btn-primary mt-3" ng-click="ViewCancel()" style="cursor: pointer;">Cancelar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Editar Plan -->
+                    <div ng-if="ViewAction === 'Editar Plan'">
+                        <div class="container-fluid">
+                            <div class="dishes-text col-12">
+                                <form name="planForm" class="form-group"
+                                      ng-submit="ModelUpdate(planForm.$valid, view_id, planForm)" novalidate>
+                                    <div class="pb-3 form-group">
+                                        <label for="view_nombre_editar">Nombre</label>
+                                        <input id="view_nombre_editar" name="view_nombre"
+                                               class="col-8 form-control" type="text"
+                                               ng-model="$parent.view_nombre"
+                                               placeholder="Ingrese nombre"
+                                               ng-pattern="/^[a-zA-Z0-9ñÑáéíóúÁÉÍÓÚüÜ ._'\-]*$/"
+                                               ng-minlength="2" ng-maxlength="20" required />
+                                        <small class="text-danger"
+                                               ng-show="planForm.$submitted && planForm.view_nombre.$error.required">
+                                            Nombre requerido.
+                                        </small>
+                                        <small class="text-danger"
+                                               ng-show="planForm.view_nombre.$touched && planForm.view_nombre.$error.pattern">
+                                            Caracteres inválidos.
+                                        </small>
+                                    </div>
+
+                                    <div class="pb-3 form-group">
+                                        <label for="view_descripcion_editar">Descripción</label>
+                                        <input id="view_descripcion_editar" name="view_descripcion"
+                                               class="col-8 form-control" type="text"
+                                               ng-model="$parent.view_descripcion"
+                                               placeholder="Ingrese descripción"
+                                               ng-pattern="/^[a-zA-Z0-9ñÑáéíóúÁÉÍÓÚüÜ .,_%+\-]*$/"
+                                               ng-minlength="4" ng-maxlength="140" required />
+                                        <small class="text-danger"
+                                               ng-show="planForm.$submitted && planForm.view_descripcion.$error.required">
+                                            Descripción requerida.
+                                        </small>
+                                        <small class="text-danger"
+                                               ng-show="planForm.view_descripcion.$touched && planForm.view_descripcion.$error.pattern">
+                                            Caracteres inválidos.
+                                        </small>
+                                    </div>
+
+                                    <div class="mt-2">
+                                        <button type="submit" class="btn-primary mt-3" ng-disabled="planForm.$invalid" style="cursor: pointer;">Guardar</button>
+                                        <button type="button" class="btn-primary mt-3" ng-click="ViewCancel()" style="cursor: pointer;">Cancelar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /min-height -->
+            </div><!-- /container-fluid -->
+        </div><!-- /solid-background -->
+        <!-- Footer -->
+        <div ng-include="'footer.html'"></div>
+    </div>
+
+    <!-- JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+    <script src="vendor/bootstrap/popper.min.js"></script>
+    <script src="vendor/bootstrap/bootstrap.min.js"></script>
+    <script src="vendor/select2/select2.min.js"></script>
+    <script src="vendor/owlcarousel/owl.carousel.min.js"></script>
+    <script src="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.js"></script>
+    <script src="vendor/stellar/jquery.stellar.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <!-- Angular -->
+    <script src="js/angular.min.js"></script>
+
+    <!-- SweetAlert2 v11 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+    <!-- App JS -->
+    <script src="js/plan-nutricional.js"></script>
+    <!-- Panel de debug global -->
+    <script src="js/auto-debug-panel.js"></script>
+</body>
+</html>

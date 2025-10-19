@@ -1,0 +1,168 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>SmartLunch</title>
+    <meta name="description" content="SmartLunch">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- External CSS -->
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/select2/select2.min.css">
+    <link rel="stylesheet" href="vendor/owlcarousel/owl.carousel.min.css">
+    <link rel="stylesheet" href="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/css/tempusdominus-bootstrap-4.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/brands.css">
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700|Josefin+Sans:300,400,700">
+    <link rel="stylesheet" href="https://cdn.linearicons.com/free/1.0.0/icon-font.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.min.css">
+    <link rel="stylesheet" href="css/smartstyle.css">
+    <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+</head>
+
+<body data-spy="scroll" data-target="#navbar" class="static-layout">
+    <div class="container-fluid" ng-app="AngujarJS" ng-controller="Planta">
+        <div class="solid-background">
+            <!-- Menu -->
+            <div ng-include="'navbar.html'"> </div>
+            <!-- Titulo -->
+            <div class="heading-section bg-dark text-white pt-2 pl-3">
+                <h3 class="mb-0">Planta</h3> <!-- Quitamos margen inferior -->
+            </div>
+            <!-- Migas de Pan
+                     <nav aria-label="breadcrumb" ng-show="ViewAction == 'Nueva Planta' || ViewAction == 'Editar Usuario'" class="mt-0" style="margin-top: 0 !important; padding-top: 0 !important;">
+                         <ol class="breadcrumb">
+                             <li class="breadcrumb-item"> Configuración</li>
+                             <li class="breadcrumb-item"> <a href="#" ng-click="ViewCancel()"> Usuarios</a> </li>
+                             <li class="breadcrumb-item"> {{ ViewAction }}</li>
+                         </ol>
+                     </nav>
+        -->
+            <div class="container-fluid" style="margin-top: 0 !important;">
+
+                <!-- Agregar -->
+                <div class="dishes-text row mb-2">
+                    <div class="col text-right" ng-show="ViewAction !== 'Nueva Planta' && ViewAction !== 'Editar Planta'">
+                        <button type="button" class="btn btn-primary mb-2 mr-3"
+                                ng-click="ViewCreate()"
+                                style="padding: 0.25rem 0.75rem;">
+                            <i class="fa fa-plus text-white" style="font-size:16px; font-weight:800;"></i> Agregar
+                        </button>
+                    </div>
+                </div>
+                <!-- Buscar -->
+                <div class="row my-3">
+                    <div class="col-md-12">
+                        <label for="buscarPlanta" ng-show="ViewAction !== 'Nueva Planta' && ViewAction !== 'Editar Planta'">Buscar</label>
+                        <input type="text" class="form-control" ng-model="searchText"
+                               title="Buscar Planta"
+                               ng-show="ViewAction !== 'Nueva Planta' && ViewAction !== 'Editar Planta'"
+                               id="buscarPlanta">
+                    </div>
+
+                </div>
+                <div class="container-fluid mr-3" style="min-height: 370px">
+                    <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;">
+                    <div ng-if="ViewAction==='Lista de Items'">
+                 
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm">
+                                <thead style="font-size: 14px;">
+                                    <tr class="bg-dark text-white">
+                                        <th class="col-2">Nombre</th>
+                                        <th class="col-8">Descripción</th>
+                                        <th class="text-center col-2">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="item in (filteredData = (dataset | filter:searchText)) | startFrom:currentPage*pageSize | limitTo:pageSize">
+                                        <td class="col-2">{{item.nombre}}</td>
+                                        <td class="col-8">{{item.descripcion}}</td>
+                                        <td class="text-center col-2">
+                                            <a href="#" ng-click="ViewUpdate(item.id)"><i class="fa fa-edit" style="color:rebeccapurple"></i></a>
+                                            <a class="ml-2" href="#" ng-click="ViewDelete(item.id)"><i class="fa fa-trash" style="color:red"></i></a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div>
+                                <button class="btn btn-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="currentPage=currentPage-1">
+                                    Anterior
+                                </button>
+                                {{currentPage+1}}/{{numberOfPages()}}
+                                <button class="btn btn-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="currentPage=currentPage+1">
+                                    Siguiente
+                                </button>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div ng-if="ViewAction==='Nueva Planta'">
+                        <div class="container-fluid">
+                            <div class="dishes-text col-12">
+                                <form class="form-group" name="plantaForm" ng-submit="ModelCreate(plantaForm.$valid)" novalidate>
+                                    <div class="pb-3 form-group">
+                                        <label for="view_nombre">Nombre</label>
+                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                        <span ng-show="plantaForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="plantaForm.view_nombre.$error.required && plantaForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
+                                    </div>
+                                    <div class="pb-3 form-group">
+                                        <label for="view_descripcion">Descripción</label>
+                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripción" required>
+                                        <span ng-show="plantaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="plantaForm.view_descripcion.$error.required && plantaForm.view_descripcion.$dirty" class="text-danger">Descripción requerida.</span>
+                                    </div>
+                                    <button type="submit" class="btn-primary mt-3" ng-disabled="plantaForm.$invalid">Guardar</button>
+                                    <button type="button" class="btn-primary mt-3" ng-click="ViewCancel()">Cancelar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div ng-if="ViewAction==='Editar Planta'">
+                        <div class="container-fluid">
+                            <div class="dishes-text col-12">
+                                <form class="form-group" name="plantaForm" ng-submit="ModelUpdate(plantaForm.$valid,view_id)" novalidate>
+                                    <div class="pb-3 form-group">
+                                        <label for="view_nombre">Nombre</label>
+                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                        <span ng-show="plantaForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="plantaForm.view_nombre.$error.required && plantaForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
+                                    </div>
+                                    <div class="pb-3 form-group">
+                                        <label for="view_descripcion">Descripción</label>
+                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripcion" required>
+                                        <span ng-show="plantaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="plantaForm.view_descripcion.$error.required && plantaForm.view_descripcion.$dirty" class="text-danger">Descripcion requerida.</span>
+                                    </div>
+                                    <button type="submit" class="btn-primary mt-3" ng-disabled="plantaForm.$invalid">Guardar</button>
+                                    <button type="button" class="btn-primary mt-3" ng-click="ViewCancel()">Cancelar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer -->
+        <div ng-include="'footer.html'"></div>
+    </div>
+    <!-- External JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+    <script src="vendor/bootstrap/popper.min.js"></script>
+    <script src="vendor/bootstrap/bootstrap.min.js"></script>
+    <script src="vendor/select2/select2.min.js "></script>
+    <script src="vendor/owlcarousel/owl.carousel.min.js"></script>
+    <script src="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.js"></script>
+    <script src="vendor/stellar/jquery.stellar.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <!-- Main JS -->
+    <!-- Main JS -->
+    <script src="js/angular.min.js"></script>
+    <script src="js/sweetalert2.all.js"></script>
+    <script src="js/planta.js"></script>
+</body>
+</html>
