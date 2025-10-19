@@ -67,25 +67,40 @@ app.controller('PlanNutricional', function ($scope, $http) {
 
     // -------- CRUD ----------
     $scope.ModelCreate = function (isValid, form) {
+        console.log('ModelCreate ejecutándose - isValid:', isValid, 'form:', form);
         if (!isValid) { 
+            console.log('Formulario no válido, mostrando popup');
+            console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
             touchAll(form); 
-            Swal.fire({ 
-                title: '¡Campos Obligatorios!', 
-                text: 'Debes completar los campos Nombre y Descripción para continuar.', 
-                icon: 'warning',
-                confirmButtonText: 'Entendido'
-            }); 
+            
+            // Verificar si SweetAlert2 está disponible
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ 
+                    title: '¡Campos Obligatorios!', 
+                    text: 'Debes completar los campos Nombre y Descripción para continuar.', 
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido'
+                }); 
+            } else {
+                alert('¡Campos Obligatorios!\nDebes completar los campos Nombre y Descripción para continuar.');
+            }
             return; 
         }
         var payload = { nombre: ($scope.view_nombre || '').trim(), descripcion: ($scope.view_descripcion || '').trim() };
         if (!payload.nombre || !payload.descripcion) { 
+            console.log('Campos vacíos después del trim');
             touchAll(form); 
-            Swal.fire({ 
-                title: '¡Campos Vacíos!', 
-                text: 'Los campos Nombre y Descripción no pueden estar vacíos.', 
-                icon: 'error',
-                confirmButtonText: 'Entendido'
-            }); 
+            
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ 
+                    title: '¡Campos Vacíos!', 
+                    text: 'Los campos Nombre y Descripción no pueden estar vacíos.', 
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                }); 
+            } else {
+                alert('¡Campos Vacíos!\nLos campos Nombre y Descripción no pueden estar vacíos.');
+            }
             return; 
         }
         $http.post($scope.base + 'Create', payload, { headers: { 'Content-Type': 'application/json; charset=utf-8' } })
