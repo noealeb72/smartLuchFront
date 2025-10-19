@@ -39,8 +39,38 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	$scope.centros = '';
 	$scope.baseProyectos = 'http://localhost:8000/api/proyecto/';
 	$scope.proyectos = '';
+	
+	// Función helper para mostrar popup
+	$scope.showPopup = function(title, text, icon) {
+		if (typeof Swal !== 'undefined' && Swal.fire) {
+			Swal.fire({ 
+				title: title, 
+				text: text, 
+				icon: icon,
+				confirmButtonText: 'Entendido'
+			}); 
+		} else {
+			alert(title + '\n' + text);
+		}
+	};
 
 	$scope.ModelCreate = function (isValid) {
+		console.log('ModelCreate ejecutándose - isValid:', isValid);
+		if (!isValid) { 
+			console.log('Formulario no válido, mostrando popup');
+			$scope.showPopup('¡Campos Obligatorios!', 'Debes completar los campos obligatorios: Usuario, Contraseña, Nombre, Legajo y DNI.', 'warning');
+			return; 
+		}
+		
+		// Validar que las bonificaciones no sean negativas
+		var bonificacion = parseFloat($scope.view_bonificacion) || 0;
+		var bonificacionInvitado = parseFloat($scope.view_bonificacion_invitado) || 0;
+		
+		if (bonificacion < 0 || bonificacionInvitado < 0) {
+			$scope.showPopup('¡Valores Inválidos!', 'Las bonificaciones no pueden ser números negativos.', 'error');
+			return;
+		}
+		
 		if (isValid) {
 			// debería ser automatico 
 			//$scope.view_user = $window.document.getElementById('view_user').value;
@@ -188,8 +218,8 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 		$scope.view_contrato = '';
 		$scope.view_proyecto = '';
 		$scope.view_centrodecosto = '';
-		$scope.view_bonificacion = '';
-		$scope.view_bonificacion_invitado = '';
+		$scope.view_bonificacion = 0;
+		$scope.view_bonificacion_invitado = 0;
 		$scope.view_previewImage = '';
 
 		$http.get($scope.base + 'getAll')
@@ -206,6 +236,34 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ModelUpdate = function (isValid, view_id) {
+		console.log('ModelUpdate ejecutándose - isValid:', isValid);
+		if (!isValid) { 
+			console.log('Formulario no válido, mostrando popup');
+			console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
+			
+			// Verificar si SweetAlert2 está disponible
+			if (typeof Swal !== 'undefined' && Swal.fire) {
+				Swal.fire({ 
+					title: '¡Campos Obligatorios!', 
+					text: 'Debes completar los campos obligatorios: Usuario, Contraseña, Nombre, Legajo y DNI.', 
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				}); 
+			} else {
+				alert('¡Campos Obligatorios!\nDebes completar los campos obligatorios: Usuario, Contraseña, Nombre, Legajo y DNI.');
+			}
+			return; 
+		}
+		
+		// Validar que las bonificaciones no sean negativas
+		var bonificacion = parseFloat($scope.view_bonificacion) || 0;
+		var bonificacionInvitado = parseFloat($scope.view_bonificacion_invitado) || 0;
+		
+		if (bonificacion < 0 || bonificacionInvitado < 0) {
+			$scope.showPopup('¡Valores Inválidos!', 'Las bonificaciones no pueden ser números negativos.', 'error');
+			return;
+		}
+		
 		if (isValid) {
 			// debería ser automatico 
 

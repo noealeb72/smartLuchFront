@@ -23,59 +23,319 @@
      <link rel="stylesheet" href="css/smartstyle.css">
      <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
      <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
-     <style>
-         /* Estilos para mejorar la visualización del formulario en celulares */
-         @media (max-width: 768px) {
-             .form-group {
-                 max-width: 500px;
-                 margin: auto;
-             }
+    <style>
+        /* Estilos para mantener el footer en la parte inferior */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .footer-sticky {
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        
+        /* Botón Guardar con estilo de fondo sólido */
+        .btn-primary {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            border-radius: 4px !important;
+            box-shadow: none !important;
+        }
+        
+        .btn-primary:hover {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .btn-primary:focus {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .btn-primary:active {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .btn-primary:visited {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        /* Botón Cancelar con estilo de fondo sólido */
+        .btn-cancelar {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            border-radius: 4px !important;
+        }
+        
+        .btn-cancelar:hover {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        .btn-cancelar:focus {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .btn-cancelar:active {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        /* Botón Agregar con el mismo estilo que los otros botones */
+        .btn-primary[ng-click="ViewCreate()"] {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            border-radius: 4px !important;
+        }
+        
+        .btn-primary[ng-click="ViewCreate()"]:hover {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        .btn-primary[ng-click="ViewCreate()"]:focus {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .btn-primary[ng-click="ViewCreate()"]:active {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        /* Botón de editar con ícono del lápiz */
+        .btn-link[title="Editar"] {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            border-radius: 4px !important;
+        }
+        
+        .btn-link[title="Editar"]:hover {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        .btn-link[title="Editar"]:focus {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .btn-link[title="Editar"]:active {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        /* Ícono del lápiz en color blanco */
+        .btn-link[title="Editar"] i.fa-edit {
+            color: white !important;
+        }
+        
+        /* Botón de eliminar con el mismo estilo que editar pero rojo */
+        .btn-link[title="Eliminar"] {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            border-radius: 4px !important;
+        }
+        
+        .btn-link[title="Eliminar"]:hover {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        .btn-link[title="Eliminar"]:focus {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .btn-link[title="Eliminar"]:active {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        /* Ícono de la basura en color blanco */
+        .btn-link[title="Eliminar"] i.fa-trash {
+            color: white !important;
+        }
+        
+        /* Asegurar que todos los botones tengan el mismo tamaño */
+        .btn-primary,
+        .btn-cancelar,
+        .btn-link[title="Editar"],
+        .btn-link[title="Eliminar"] {
+            min-height: 32px !important;
+            min-width: 32px !important;
+            padding: 6px 12px !important;
+            font-size: 14px !important;
+            line-height: 1.2 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        /* Íconos de los botones en color blanco */
+        .btn-primary i.fa-save,
+        .btn-cancelar i.fa-times,
+        .btn-primary[ng-click="ViewCreate()"] i.fa-plus {
+            color: white !important;
+        }
+        
+        /* Estilos para SweetAlert2 - Botón Entendido */
+        .swal2-confirm {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        .swal2-confirm:hover {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        .swal2-confirm:focus {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .swal2-confirm:active {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        /* Estilos para SweetAlert2 - Botón Cancelar */
+        .swal2-cancel {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        .swal2-cancel:hover {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        .swal2-cancel:focus {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .swal2-cancel:active {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        /* Estilos para mejorar la visualización del formulario en celulares */
+        @media (max-width: 768px) {
+            .form-group {
+                max-width: 500px;
+                margin: auto;
+            }
 
-             .form-control {
-                 width: 100% !important;
-             }
+            .form-control {
+                width: 100% !important;
+            }
 
-             form.form-group {
-                 max-width: 100%;
-                 margin: auto;
-             }
+            form.form-group {
+                max-width: 100%;
+                margin: auto;
+            }
 
-             .btn {
-                 width: 100%; /* Botones más grandes y fáciles de tocar */
-                 font-size: 1rem;
-             }
+            .btn {
+                width: 100%; /* Botones más grandes y fáciles de tocar */
+                font-size: 1rem;
+            }
 
-             .d-flex.gap-2 {
-                 flex-direction: column; /* Botones uno debajo del otro */
-             }
+            .d-flex.gap-2 {
+                flex-direction: column; /* Botones uno debajo del otro */
+            }
 
-             .btn-guardar,
-             .btn-cancelar {
-                 width: 100%;
-                 margin-bottom: 10px;
-             }
-         }
-     </style>
+            .btn-guardar,
+            .btn-cancelar {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
  </head>
 
- <body data-spy="scroll" data-target="#navbar" class="static-layout">
-     <div class="container-fluid" ng-app="AngujarJS" ng-controller="Usuario">
-         <div class="solid-background">
+<body data-spy="scroll" data-target="#navbar" class="static-layout" ng-controller="Usuario" style="min-height: 100vh; display: flex; flex-direction: column;">
+    <div class="container-fluid" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="solid-background" style="flex: 1;">
              <!-- Menu -->
              <div ng-include="'navbar.html'"> </div>
-             <!-- Titulo -->
+             <!-- Título y Breadcrumbs -->
              <div class="heading-section bg-dark text-white pt-2 pl-3">
-                 <h3 class="mb-0">Usuarios</h3> <!-- Quitamos margen inferior -->
+                 <div class="row">
+                     <div class="col-md-8">
+                         <h3 class="mb-0" ng-if="ViewAction === 'Lista de Items'">Usuarios</h3>
+                         <h3 class="mb-0" ng-if="ViewAction === 'Nuevo Usuario'">Nuevo Usuario</h3>
+                         <h3 class="mb-0" ng-if="ViewAction === 'Editar Usuario'">Editar Usuario</h3>
+                     </div>
+                     <div class="col-md-4">
+                         <!-- Breadcrumbs -->
+                         <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Lista de Items'">
+                             <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
+                                 <li class="breadcrumb-item">
+                                     <a href="#" ng-click="ViewAction = 'Lista de Items'; ModelReadAll()" class="text-white-50" style="text-decoration: none;">
+                                         <i class="fa fa-home mr-1"></i>Usuarios
+                                     </a>
+                                 </li>
+                                 <li class="breadcrumb-item active text-white" aria-current="page">
+                                     <span ng-if="ViewAction === 'Nuevo Usuario'">
+                                         <i class="fa fa-plus mr-1"></i>Nuevo
+                                     </span>
+                                     <span ng-if="ViewAction === 'Editar Usuario'">
+                                         <i class="fa fa-edit mr-1"></i>Editar
+                                     </span>
+                                 </li>
+                             </ol>
+                         </nav>
+                     </div>
+                 </div>
              </div>
-             <!-- Migas de Pan
-                 <nav aria-label="breadcrumb" ng-show="ViewAction == 'Nuevo Usuario' || ViewAction == 'Editar Usuario'" class="mt-0" style="margin-top: 0 !important; padding-top: 0 !important;">
-                     <ol class="breadcrumb">
-                         <li class="breadcrumb-item"> Configuración</li>
-                         <li class="breadcrumb-item"> <a href="#" ng-click="ViewCancel()"> Usuarios</a> </li>
-                         <li class="breadcrumb-item"> {{ ViewAction }}</li>
-                     </ol>
-                 </nav>
-    -->
              <div class="container-fluid" style="margin-top: 0 !important;">
 
                  <!-- Agregar -->
@@ -83,7 +343,7 @@
                      <div class="col text-right" ng-show="ViewAction !== 'Nuevo Usuario' && ViewAction !== 'Editar Usuario'">
                          <button type="button" class="btn btn-primary mb-2 mr-3"
                                  ng-click="ViewCreate()"
-                                 style="padding: 0.25rem 0.75rem;">
+                                 style="cursor: pointer;">
                              <i class="fa fa-plus text-white" style="font-size:16px; font-weight:800;"></i> Agregar
                          </button>
                      </div>
@@ -136,8 +396,14 @@
                                 <td class="d-none d-md-table-cell">{{item.fechaingreso | formatDateArg}}</td>
                                 <td class="d-none d-md-table-cell">{{item.contrato}}</td>-->
                                          <td class="text-center col-1">
-                                             <a href="#" ng-click="ViewUpdate(item.id)"><i class="fa fa-edit" style="color:rebeccapurple"></i></a>
-                                             <a class="ml-2" href="#" ng-click="ViewDelete(item.id)"><i class="fa fa-trash" style="color:red"></i></a>
+                                             <button type="button" class="btn btn-link p-0 align-middle"
+                                                     ng-click="ViewUpdate(item.id)" title="Editar" style="cursor: pointer;">
+                                                 <i class="fa fa-edit" style="color:white"></i>
+                                             </button>
+                                             <button type="button" class="btn btn-link p-0 align-middle ml-2"
+                                                     ng-click="ViewDelete(item.id)" title="Eliminar" aria-label="Eliminar" style="cursor: pointer;">
+                                                 <i class="fa fa-trash" style="color:white"></i>
+                                             </button>
                                          </td>
                                      </tr>
                                  </tbody>
@@ -168,21 +434,26 @@
 
                      <div ng-if="ViewAction==='Nuevo Usuario'">
                          <div class="container-fluid">
+                             <!-- Indicador de sección -->
+                             <div class="alert alert-info mb-3" role="alert">
+                                 <i class="fa fa-info-circle mr-2"></i>
+                                 <strong>Creando nuevo usuario</strong> - Complete los campos obligatorios para guardar.
+                             </div>
                              <div class="dishes-text col-12">
                                  <form class="form-group row" name="userForm" ng-submit="ModelCreate(userForm.$valid)" novalidate>
                                      <div class="col-6">
                                          <div class="pb-3 form-group">
-                                             <label for="view_user">Usuario</label>
+                                             <label for="view_user"><span class="text-danger">*</span> Usuario</label>
                                              <input ng-pattern="/^[a-zA-Z0-9ñ]*$/" ng-minlength="4" ng-maxlength="20" class="col-8 form-control" type="text" id="view_user" name="view_user" ng-model="view_user" placeholder="Ingrese usuario" required>
                                              <span ng-show="userForm.view_user.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_user.$error.required && userForm.view_user.$dirty" class="text-danger">Usuario requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_pass">Contraseña</label>
+                                             <label for="view_pass"><span class="text-danger">*</span> Contraseña</label>
                                              <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="8" ng-maxlength="20" class="col-8 form-control" type="password" id="view_pass" name="view_pass" ng-model="view_pass" placeholder="Ingrese contraseña" required>
                                              <span ng-show="userForm.view_pass.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_pass.$error.required && userForm.view_pass.$dirty" class="text-danger">Contraseña requerida.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_nombre">Nombre</label>
+                                             <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
                                              <input ng-pattern="/^[a-zA-Zñ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                              <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_nombre.$error.required && userForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
                                          </div>
@@ -192,7 +463,7 @@
                                              <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_apellido.$error.required && userForm.view_apellido.$dirty" class="text-danger">Apellido requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_legajo">Legajo</label>
+                                             <label for="view_legajo"><span class="text-danger">*</span> Legajo</label>
                                              <input ng-minlength="1" ng-maxlength="20" class="col-8 form-control" type="number" id="view_legajo" name="view_legajo" ng-model="view_legajo" placeholder="Ingrese legajo" required>
                                              <span ng-show="userForm.view_legajo.$error.required && userForm.view_legajo.$dirty" class="text-danger">Legajo requerido.</span>
                                          </div>
@@ -223,7 +494,7 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_bonificacion">Bonificacion</label>
-                                             <input class="col-8 form-control" type="number" id="view_bonificacion" name="view_bonificacion" ng-model="view_bonificacion" placeholder="Ingrese bonificacion" required>
+                                             <input class="col-8 form-control" type="number" id="view_bonificacion" name="view_bonificacion" ng-model="view_bonificacion" placeholder="Ingrese bonificacion" min="0" value="0">
                                              <span ng-show="userForm.view_bonificacion.$error.required && userForm.view_bonificacion.$dirty" class="text-danger">Bonificacion requerida, aclarar 0 si no tiene</span>
                                          </div>
                                      </div>
@@ -247,7 +518,7 @@
                                              </select>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_dni">DNI</label>
+                                             <label for="view_dni"><span class="text-danger">*</span> DNI</label>
                                              <input class="col-8 form-control" type="number" id="view_dni" name="view_dni" ng-model="view_dni" placeholder="Ingrese dni" required>
                                              <span ng-show="userForm.view_dni.$error.required && userForm.view_dni.$dirty" class="text-danger">DNI requerido.</span>
                                          </div>
@@ -268,13 +539,17 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_bonificacion_invitado">Bonificación invitado</label>
-                                             <input class="col-8 form-control" type="number" id="view_bonificacion" name="view_bonificacion_invitado" ng-model="view_bonificacion" placeholder="Ingrese bonificación" required>
+                                             <input class="col-8 form-control" type="number" id="view_bonificacion_invitado" name="view_bonificacion_invitado" ng-model="view_bonificacion_invitado" placeholder="Ingrese bonificación" min="0" value="0">
                                              <span ng-show="userForm.view_bonificacion_invitado.$error.required && userForm.view_bonificacion_invitado.$dirty" class="text-danger">bonificación requerida, aclarar 0 si no tiene</span>
                                          </div>
                                      </div>
                                      <div class="d-flex gap-2 mt-3">
-                                         <button type="submit" class="btn btn-primary" ng-disabled="centroForm.$invalid">Guardar</button>
-                                         <button type="button" class="btn btn-primary" ng-click="ViewCancel()">Cancelar</button>
+                                         <button type="submit" class="btn-primary mr-3" ng-disabled="centroForm.$invalid" style="cursor: pointer;">
+                                             <i class="fa fa-save mr-1"></i>Guardar
+                                         </button>
+                                         <button type="button" class="btn-cancelar" ng-click="ViewCancel()" style="cursor: pointer;">
+                                             <i class="fa fa-times mr-1"></i>Cancelar
+                                         </button>
                                      </div>
                                  </form>
                              </div>
@@ -283,21 +558,26 @@
 
                      <div ng-if="ViewAction==='Editar Usuario'">
                          <div class="container-fluid">
+                             <!-- Indicador de sección -->
+                             <div class="alert alert-warning mb-3" role="alert">
+                                 <i class="fa fa-edit mr-2"></i>
+                                 <strong>Editando usuario</strong> - Modifique los campos necesarios y guarde los cambios.
+                             </div>
                              <div class="dishes-text col-12">
                                  <form class="form-group row" name="userForm" ng-submit="ModelUpdate(userForm.$valid,view_id)" novalidate>
                                      <div class="col-6">
                                          <div class="pb-3 form-group">
-                                             <label for="view_user">Usuario</label>
+                                             <label for="view_user"><span class="text-danger">*</span> Usuario</label>
                                              <input ng-pattern="/^[a-zA-Z0-9ñ]*$/" ng-minlength="4" ng-maxlength="20" class="col-8 form-control" type="text" id="view_user" name="view_user" ng-model="view_user" placeholder="Ingrese usuario" required>
                                              <span ng-show="userForm.view_user.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_user.$error.required && userForm.view_user.$dirty" class="text-danger">Usuario requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_pass">Contraseña</label>
+                                             <label for="view_pass"><span class="text-danger">*</span> Contraseña</label>
                                              <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="8" ng-maxlength="20" class="col-8 form-control" type="password" id="view_pass" name="view_pass" ng-model="view_pass" placeholder="Ingrese contraseña" required>
                                              <span ng-show="userForm.view_pass.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_pass.$error.required && userForm.view_pass.$dirty" class="text-danger">Contraseña requerida.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_nombre">Nombre</label>
+                                             <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
                                              <input ng-pattern="/^[a-zA-Zñ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                              <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_nombre.$error.required && userForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
                                          </div>
@@ -307,7 +587,7 @@
                                              <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_apellido.$error.required && userForm.view_apellido.$dirty" class="text-danger">Apellido requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_legajo">Legajo</label>
+                                             <label for="view_legajo"><span class="text-danger">*</span> Legajo</label>
                                              <input ng-minlength="1" ng-maxlength="20" class="col-8 form-control" type="number" id="view_legajo" name="view_legajo" ng-model="view_legajo" placeholder="Ingrese legajo" required>
                                              <span ng-show="userForm.view_legajo.$error.required && userForm.view_legajo.$dirty" class="text-danger">Legajo requerido.</span>
                                          </div>
@@ -362,7 +642,7 @@
                                              </select>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_dni">DNI</label>
+                                             <label for="view_dni"><span class="text-danger">*</span> DNI</label>
                                              <input class="col-8 form-control" type="number" id="view_dni" name="view_dni" ng-model="view_dni" placeholder="Ingrese dni" required>
                                              <span ng-show="userForm.view_dni.$error.required && userForm.view_dni.$dirty" class="text-danger">DNI requerido.</span>
                                          </div>
@@ -388,8 +668,12 @@
                                          </div>
                                      </div>
                                      <div class="d-flex gap-2 mt-3">
-                                         <button type="submit" class="btn btn-primary" ng-disabled="centroForm.$invalid">Guardar</button>
-                                         <button type="button" class="btn btn-primary" ng-click="ViewCancel()">Cancelar</button>
+                                         <button type="submit" class="btn-primary mr-3" ng-disabled="centroForm.$invalid" style="cursor: pointer;">
+                                             <i class="fa fa-save mr-1"></i>Guardar
+                                         </button>
+                                         <button type="button" class="btn-cancelar" ng-click="ViewCancel()" style="cursor: pointer;">
+                                             <i class="fa fa-times mr-1"></i>Cancelar
+                                         </button>
                                      </div>
                                  </form>
                              </div>
@@ -398,10 +682,10 @@
                  </div>
 
              </div>
-         </div>
-         <!-- Footer -->
-         <div ng-include="'footer.html'"></div>
-     </div>
+        </div>
+    </div>
+    <!-- Footer -->
+    <div ng-include="'footer.html'" class="footer-sticky" style="margin-top: auto;"></div>
      <!-- External JS -->
      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
      <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
@@ -416,7 +700,8 @@
      <!-- Main JS -->
      <!-- Main JS -->
      <script src="js/angular.min.js"></script>
-     <script src="js/sweetalert2.all.js"></script>
+     <!-- SweetAlert2 v11 -->
+     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
      <script src="js/usuario.js"></script>
  </body>
  </html>
