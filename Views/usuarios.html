@@ -248,6 +248,16 @@
             color: white !important;
         }
         
+        /* Estilos para la imagen de perfil */
+        .profile-image {
+            width: 120px !important;
+            height: 120px !important;
+            object-fit: cover !important;
+            border-radius: 8px !important;
+            border: 2px solid #dee2e6 !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        
         .swal2-cancel:hover {
             background-color: #F34949 !important;
             border-color: #F34949 !important;
@@ -507,7 +517,7 @@
                                      </div>
                                      <div class="col-6">
                                          <div class="card" style="width:50%;">
-                                             <img style="height:200px;" ng-src="{{view_previewImage}}" />
+                                             <img class="profile-image" ng-src="{{view_previewImage}}" />
                                              <div class="card-body">
                                                  <input class="form-control" accept="image/jpeg,image/png,image/jpg" type="file" onchange="angular.element(this).scope().loadImage()" id="view_file" ng-model="view_file" />
                                              </div>
@@ -634,7 +644,7 @@
                                      </div>
                                      <div class="col-6">
                                          <div class="card" style="width:50%;">
-                                             <img style="height:200px;" ng-src="{{view_previewImage}}" />
+                                             <img class="profile-image" ng-src="{{view_previewImage}}" />
                                              <div class="card-body">
                                                  <input class="form-control" accept="image/jpeg,image/png,image/jpg" type="file" onchange="angular.element(this).scope().loadImage()" id="view_file" ng-model="view_file" />
                                              </div>
@@ -712,6 +722,6 @@
      <script src="js/angular.min.js"></script>
      <!-- SweetAlert2 v11 -->
      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-     <script src="js/usuario.js?v=3.4"></script>
+     <script src="js/usuario.js?v=3.5"></script>
  </body>
  </html>
