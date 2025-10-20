@@ -1,4 +1,7 @@
-﻿var app = angular.module('AngujarJS', []);
+﻿// VERSION 3.1 - SweetAlert2 v11 unificado - FORZAR RECARGA
+console.log('=== USUARIO.JS V3.1 CARGANDO ===');
+var app = angular.module('AngujarJS', []);
+console.log('=== MODULO ANGUJARJS V3.1 CREADO ===');
 
 app.filter('startFrom', function () {
 	return function (input, start) {
@@ -200,8 +203,28 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ModelRead = function (view_id) {
+		console.log('=== MODELREAD EJECUTADO ===');
+		console.log('ID del usuario:', view_id);
+		console.log('URL:', $scope.base + 'get/' + view_id);
 		$http.get($scope.base + 'get/' + view_id)
 			.success(function (data) {
+				console.log('Datos recibidos del servidor:', data);
+
+				// Validar que data existe (puede ser objeto o array)
+				if (!data) {
+					console.error('Error: No se recibieron datos del servidor');
+					$scope.showError('Error', 'No se pudieron cargar los datos del usuario');
+					return;
+				}
+
+				// Si es array, tomar el primer elemento; si es objeto, usarlo directamente
+				var userData = Array.isArray(data) ? data[0] : data;
+				
+				if (!userData) {
+					console.error('Error: Datos de usuario no válidos');
+					$scope.showError('Error', 'No se pudieron cargar los datos del usuario');
+					return;
+				}
 
 				$scope.view_user = '';
 				$scope.view_pass = '';
@@ -222,28 +245,34 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				$scope.view_previewImage = '';
 				$scope.view_bonificacion_invitado = '';
 
-				aux = data[0].fechaingreso.split('-');
-				fecha = new Date(aux[0], aux[1] - 1, aux[2]);
+				// Validar que fechaingreso existe antes de procesarlo
+				if (userData.fechaingreso) {
+					aux = userData.fechaingreso.split('-');
+					fecha = new Date(aux[0], aux[1] - 1, aux[2]);
+				} else {
+					console.warn('fechaingreso no encontrada en los datos');
+					fecha = new Date();
+				}
 
-
-				$scope.view_user = data[0].username;
-				$scope.view_pass = data[0].password;
-				$scope.view_nombre = data[0].nombre;
-				$scope.view_apellido = data[0].apellido;
-				$scope.view_legajo = data[0].legajo;
-				$scope.view_perfil = data[0].perfil;
-				$scope.view_cuil = data[0].cuil;
-				$scope.view_plannutricional = data[0].plannutricional;
-				$scope.view_planta = data[0].planta;
-				$scope.view_dni = data[0].dni;
-				$scope.view_domicilio = data[0].domicilio;
+				// Mapear los campos del servidor a los campos del formulario
+				$scope.view_user = userData.username || userData.user || '';
+				$scope.view_pass = userData.password || userData.pass || '';
+				$scope.view_nombre = userData.nombre || '';
+				$scope.view_apellido = userData.apellido || '';
+				$scope.view_legajo = userData.Legajo || userData.legajo || '';
+				$scope.view_perfil = userData.perfil || '';
+				$scope.view_cuil = userData.cuil || '';
+				$scope.view_plannutricional = userData.plannutricional || '';
+				$scope.view_planta = userData.planta || '';
+				$scope.view_dni = userData.dni || '';
+				$scope.view_domicilio = userData.domicilio || '';
 				$scope.view_fechaingreso = fecha;
-				$scope.view_contrato = data[0].contrato;
-				$scope.view_proyecto = data[0].proyecto;
-				$scope.view_centrodecosto = data[0].centrodecosto;
-				$scope.view_bonificacion = data[0].bonificaciones;
-				$scope.view_previewImage = data[0].foto;
-				$scope.view_bonificacion_invitado = data[0].bonificaciones_invitado;
+				$scope.view_contrato = userData.contrato || '';
+				$scope.view_proyecto = userData.proyecto || '';
+				$scope.view_centrodecosto = userData.centrodecosto || '';
+				$scope.view_bonificacion = userData.bonificaciones || 0;
+				$scope.view_previewImage = userData.foto || '';
+				$scope.view_bonificacion_invitado = userData.bonificaciones_invitado || 0;
 			})
 			.error(function (data, status) {
 				$scope.showError('Ha ocurrido un error', 'Api no presente');
@@ -490,6 +519,8 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ViewUpdate = function (view_id) {
+		console.log('=== EDITAR USUARIO ===');
+		console.log('ID del usuario:', view_id);
 		$scope.ViewAction = 'Editar Usuario';
 		$scope.view_id = view_id;
 		$scope.ModelRead(view_id);
@@ -500,11 +531,11 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ViewDelete = function (view_id) {
-		console.log('=== ELIMINAR USUARIO ===');
-		console.log('ID del usuario:', view_id);
-		console.log('SweetAlert disponible:', typeof Swal !== 'undefined');
-		
-		Swal.fire({
+		// defensa por si otra lib ensucia Swal
+		const hasSwal = typeof window !== 'undefined' && window.Swal && typeof window.Swal.fire === 'function';
+	  
+		if (hasSwal) {
+		  window.Swal.fire({
 			title: 'Eliminar registro',
 			text: 'Desea eliminar al usuario?',
 			icon: 'warning',
@@ -513,17 +544,17 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 			cancelButtonColor: '#d33',
 			confirmButtonText: 'Sí, eliminar',
 			cancelButtonText: 'Cancelar'
-		})
-			.then(function (result) {
-				console.log('Confirmación:', result);
-				if (result.isConfirmed) {
-					console.log('Usuario confirmó eliminación, llamando ModelDelete...');
+		  }).then(function (result) {
+			if (result.isConfirmed) $scope.ModelDelete(view_id);
+		  });
+		} else {
+		  // Fallback nativo si SweetAlert2 no está sano
+		  if (window.confirm('Desea eliminar al usuario?')) {
 					$scope.ModelDelete(view_id);
-				} else {
-					console.log('Usuario canceló eliminación');
 				}
-			});
+		}
 	};
+	  
 
 	$scope.ViewCancel = function () {
 		$scope.ViewAction = 'Lista de Items';

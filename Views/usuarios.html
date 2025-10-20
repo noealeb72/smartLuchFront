@@ -1,5 +1,5 @@
 ﻿ <!DOCTYPE html>
- <html lang="es" ng-app="AngujarJS" ng-controller="Usuario">
+ <html lang="es" ng-app="AngujarJS">
 
  <head>
      <meta charset="utf-8">
@@ -23,7 +23,7 @@
      <link rel="stylesheet" href="css/smartstyle.css">
      <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
      <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
-    <style>
+     <style>
         /* Estilos para mantener el footer en la parte inferior */
         html, body {
             height: 100%;
@@ -267,40 +267,40 @@
             color: white !important;
         }
         
-        /* Estilos para mejorar la visualización del formulario en celulares */
-        @media (max-width: 768px) {
-            .form-group {
-                max-width: 500px;
-                margin: auto;
-            }
+         /* Estilos para mejorar la visualización del formulario en celulares */
+         @media (max-width: 768px) {
+             .form-group {
+                 max-width: 500px;
+                 margin: auto;
+             }
 
-            .form-control {
-                width: 100% !important;
-            }
+             .form-control {
+                 width: 100% !important;
+             }
 
-            form.form-group {
-                max-width: 100%;
-                margin: auto;
-            }
+             form.form-group {
+                 max-width: 100%;
+                 margin: auto;
+             }
 
-            .btn {
-                width: 100%; /* Botones más grandes y fáciles de tocar */
-                font-size: 1rem;
-            }
+             .btn {
+                 width: 100%; /* Botones más grandes y fáciles de tocar */
+                 font-size: 1rem;
+             }
 
-            .d-flex.gap-2 {
-                flex-direction: column; /* Botones uno debajo del otro */
-            }
+             .d-flex.gap-2 {
+                 flex-direction: column; /* Botones uno debajo del otro */
+             }
 
-            .btn-guardar,
-            .btn-cancelar {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-        }
+             .btn-guardar,
+             .btn-cancelar {
+                 width: 100%;
+                 margin-bottom: 10px;
+             }
+         }
         /* Mostrar mensajes de error en envío o al tocar el campo */
         .text-danger { display: inline; }
-    </style>
+     </style>
  </head>
 
 <body data-spy="scroll" data-target="#navbar" class="static-layout" ng-controller="Usuario" style="min-height: 100vh; display: flex; flex-direction: column;">
@@ -692,9 +692,9 @@
                  </div>
 
              </div>
-        </div>
-    </div>
-    <!-- Footer -->
+             </div>
+         </div>
+         <!-- Footer -->
     <div ng-include="'footer.html'" class="footer-sticky" style="margin-top: auto;"></div>
      <!-- External JS -->
      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
@@ -712,6 +712,6 @@
      <script src="js/angular.min.js"></script>
      <!-- SweetAlert2 v11 -->
      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-     <script src="js/usuario.js"></script>
+     <script src="js/usuario.js?v=3.4"></script>
  </body>
  </html>
