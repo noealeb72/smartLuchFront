@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Scripts</title>
+</head>
+<body>
+    <h1>Test de Carga de Scripts</h1>
+    <div id="results"></div>
+    
+    <script>
+        console.log('=== TEST INICIADO ===');
+        document.getElementById('results').innerHTML += '<p>1. HTML cargado</p>';
+    </script>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+        console.log('jQuery cargado:', typeof $ !== 'undefined');
+        document.getElementById('results').innerHTML += '<p>2. jQuery: ' + (typeof $ !== 'undefined' ? 'OK' : 'ERROR') + '</p>';
+    </script>
+    
+    <script src="js/angular.min.js"></script>
+    <script>
+        console.log('AngularJS cargado:', typeof angular !== 'undefined');
+        document.getElementById('results').innerHTML += '<p>3. AngularJS: ' + (typeof angular !== 'undefined' ? 'OK' : 'ERROR') + '</p>';
+    </script>
+    
+    <script src="js/custom-toast.js"></script>
+    <script>
+        console.log('CustomToast cargado:', typeof CustomToast !== 'undefined');
+        document.getElementById('results').innerHTML += '<p>4. CustomToast: ' + (typeof CustomToast !== 'undefined' ? 'OK' : 'ERROR') + '</p>';
+    </script>
+    
+    <script src="js/login.js"></script>
+    <script>
+        console.log('Login.js cargado');
+        document.getElementById('results').innerHTML += '<p>5. Login.js: OK</p>';
+        
+        // Test del módulo Angular
+        try {
+            var app = angular.module('AngujarJS');
+            console.log('Módulo AngularJS encontrado:', app);
+            document.getElementById('results').innerHTML += '<p>6. Módulo AngularJS: OK</p>';
+        } catch(e) {
+            console.log('Error con módulo AngularJS:', e);
+            document.getElementById('results').innerHTML += '<p>6. Módulo AngularJS: ERROR - ' + e.message + '</p>';
+        }
+    </script>
+</body>
+</html>

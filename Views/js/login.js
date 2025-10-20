@@ -1,41 +1,60 @@
-﻿var app = angular.module('AngujarJS', []);
+﻿console.log('=== ARCHIVO LOGIN.JS CARGADO ===');
+
+var app = angular.module('AngujarJS', []);
 
 app.controller('Login', function ($scope, $location, $sce, $http, $window) {
+    console.log('=== CONTROLADOR LOGIN INICIALIZADO ===');
+    console.log('AngularJS disponible:', typeof angular !== 'undefined');
+    console.log('jQuery disponible:', typeof $ !== 'undefined');
 
     $scope.base = 'http://localhost:8000/api/login/';
 
     $scope.logIn = function () {
-        var user = $scope.view_username;//$window.document.getElementById('view_username').value;
-        var pass = $scope.view_password; //$window.document.getElementById('view_password').value;
+        console.log('=== BOTÓN INGRESAR PRESIONADO ===');
+        console.log('Usuario:', $scope.view_username);
+        console.log('Contraseña:', $scope.view_password ? '***' : 'vacía');
         
-        // Validar que los campos no estén vacíos
-        if (!user || !pass || user === undefined || pass === undefined || user === null || pass === null) {
-            CustomToast.show('Por favor, ingrese usuario y contraseña');
-            return;
+        var user = $scope.view_username;
+        var pass = $scope.view_password;
+        
+        // Fallback: si ng-model no tomó el valor, leer desde el DOM visible
+        var getVisibleElById = function(id){
+            var nodes = document.querySelectorAll('[id="'+id+'"]');
+            if (!nodes || nodes.length === 0) return null;
+            for (var i=0;i<nodes.length;i++){ if (nodes[i].offsetParent !== null) return nodes[i]; }
+            return nodes[0];
+        };
+        if (!user) { var uEl = getVisibleElById('view_username'); if (uEl) user = uEl.value; }
+        if (!pass) { var pEl = getVisibleElById('view_password'); if (pEl) pass = pEl.value; }
+        
+        user = (user||'').trim();
+        pass = (pass||'').trim();
+        
+        console.log('Usuario normalizado:', user ? '[ok]' : '[vacío]');
+        console.log('Contraseña normalizada:', pass ? '[ok]' : '[vacía]');
+        
+        // Validación: ambos requeridos ANTES de llamar al backend
+        if (!user || !pass) {
+            if (typeof Swal !== 'undefined' && Swal.fire) {
+                Swal.fire({ title: 'Campos requeridos', text: 'Usuario y contraseña son requeridos', icon: 'warning', confirmButtonText: 'Entendido' });
+            } else if (typeof CustomToast !== 'undefined') {
+                CustomToast.show('Usuario y contraseña son requeridos');
+            } else { alert('Usuario y contraseña son requeridos'); }
+            return; // cortar flujo
         }
         
-        // Validar que no sean solo espacios en blanco
-        if (user.trim() === '' || pass.trim() === '') {
-            CustomToast.show('Por favor, ingrese usuario y contraseña válidos');
-            return;
-        }
+        console.log('Validación pasada, procediendo con login...');
         
-        // Validar longitud mínima (opcional)
-        if (user.trim().length < 2 || pass.trim().length < 2) {
-            CustomToast.show('Usuario y contraseña deben tener al menos 2 caracteres');
-            return;
-        }
-        
+        console.log('Haciendo llamada HTTP a:', $scope.base + 'Authorize');
         $http({
             url: $scope.base + 'Authorize',
             method: "GET",
             params: { user: user, pass: pass }
         }).then(function (response) {
-           
+            console.log('Respuesta del servidor recibida:', response);
             var usuario = response.data.Usuario[0];
             var smarTime = response.data.smarTime;
             var usuarioSmatTime = response.data.usuarioSmatTime;
-
             localStorage.setItem("id", usuario.id);
             localStorage.setItem("nombre", usuario.nombre);
             localStorage.setItem("apellido", usuario.apellido);
@@ -57,23 +76,16 @@ app.controller('Login', function ($scope, $location, $sce, $http, $window) {
             localStorage.setItem("bonificacion_invitado", usuario.bonificaciones_invitado);
             localStorage.setItem("smarTime", smarTime);
             localStorage.setItem("usuarioSmatTime", usuarioSmatTime);
-
-            // Redirigir según el rol del usuario
             if (usuario.perfil === "Cocina") {
                 $window.location.href = 'http://localhost:4200/Views/despacho.html';
             } else {
                 $window.location.href = 'http://localhost:4200/Views/index.html';
             }
         }).catch(function (error) {
-            console.error("Error en login:", error);
-            if (error.status === 400) {
-                $scope.errorMsg = error.data.Message; // Mensaje del error
-            } else {
-                $scope.errorMsg = "Error en la solicitud. Por favor, valide la conexión con el servicio.";
-            }
-            $scope.showError = true; // Muestra el mensaje de error en el HTML
+            console.error('Error en login:', error);
+            $scope.errorMsg = (error && error.data && error.data.Message) ? error.data.Message : (error.statusText || 'Error en la solicitud');
+            $scope.showError = true;
         });
-
     }
 
     // Limpiar almacenamiento local
