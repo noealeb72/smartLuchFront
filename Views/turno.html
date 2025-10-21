@@ -62,6 +62,101 @@
             background-color: white !important;
         }
         
+        /* Botones de acciones - Editar */
+        .btn-link[title="Editar"] {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            border-radius: 4px !important;
+            font-weight: 500 !important;
+            padding: 6px 12px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important;
+        }
+        
+        .btn-link[title="Editar"]:hover {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        }
+        
+        .btn-link[title="Editar"]:focus {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25) !important;
+        }
+        
+        .btn-link[title="Editar"]:active {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        /* Ícono del lápiz en color blanco */
+        .btn-link[title="Editar"] i.fa-edit {
+            color: white !important;
+        }
+        
+        /* Botones de acciones - Eliminar */
+        .btn-link[title="Eliminar"] {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            border-radius: 4px !important;
+            font-weight: 500 !important;
+            padding: 6px 12px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important;
+        }
+        
+        .btn-link[title="Eliminar"]:hover {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        }
+        
+        .btn-link[title="Eliminar"]:focus {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.25) !important;
+        }
+        
+        .btn-link[title="Eliminar"]:active {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        /* Ícono de la basura en color blanco */
+        .btn-link[title="Eliminar"] i.fa-trash {
+            color: white !important;
+        }
+        
+        /* Asegurar que todos los botones tengan el mismo tamaño */
+        .btn-primary,
+        .btn-cancelar,
+        .btn-link[title="Editar"],
+        .btn-link[title="Eliminar"] {
+            min-height: 32px !important;
+            min-width: 32px !important;
+            padding: 6px 12px !important;
+            font-size: 14px !important;
+            line-height: 1.2 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
         /* Botón Guardar con estilo gris sin borde negro */
         .btn-primary {
             background-color: #6c757d !important;
@@ -247,8 +342,14 @@
                                         <td class="col-2">{{item.horadesde}}</td>
                                         <td class="col-2">{{item.horahasta}}</td>
                                         <td class="text-center col-2">
-                                            <a href="#" ng-click="ViewUpdate(item.id)"><i class="fa fa-edit" style="color:rebeccapurple"></i></a>
-                                            <a class="ml-2" href="#" ng-click="ViewDelete(item.id)"><i class="fa fa-trash" style="color:red"></i></a>
+                                            <button type="button" class="btn btn-link p-0 align-middle"
+                                                    ng-click="ViewUpdate(item.id)" title="Editar" style="cursor: pointer;">
+                                                <i class="fa fa-edit" style="color:white"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-link p-0 align-middle ml-2"
+                                                    ng-click="ViewDelete(item.id)" title="Eliminar" aria-label="Eliminar" style="cursor: pointer;">
+                                                <i class="fa fa-trash" style="color:white"></i>
+                                            </button>
                                         </td>
                                     </tr>
                                 </tbody>
