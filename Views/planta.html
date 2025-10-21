@@ -281,6 +281,7 @@
     <div class="container-fluid" ng-app="AngujarJS" ng-controller="Planta">
         <div class="solid-background">
             <!-- Menu -->
+            <!-- Menu -->
             <div ng-include="'navbar.html'"> </div>
             <!-- Titulo y Migas de Pan -->
             <div class="heading-section bg-dark text-white pt-2 pl-3">
@@ -326,8 +327,8 @@
                     <div class="col-md-12" ng-show="ViewAction !== 'Nueva Planta' && ViewAction !== 'Editar Planta'">
                         <label for="buscarPlanta">Buscar</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" ng-model="searchText" 
-                                   id="buscarPlanta" title="Buscar Planta" 
+                            <input type="text" class="form-control" ng-model="searchText"
+                                   id="buscarPlanta" title="Buscar Planta"
                                    placeholder="Filtrar por nombre, descripción...">
                             <div class="input-group-append">
                                 <button type="button" class="btn btn-outline-secondary" title="Limpiar" ng-click="searchText=''">
@@ -340,7 +341,7 @@
                 <div class="container-fluid mr-3" style="min-height: 370px">
                     <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;">
                     <div ng-if="ViewAction==='Lista de Items'">
-                 
+
                         <div class="table-responsive">
                             <table class="table table-hover table-sm">
                                 <thead style="font-size: 14px;">
@@ -377,16 +378,16 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                     </div>
-            <div ng-if="ViewAction==='Nueva Planta'">
-                <div class="container-fluid">
-                    <div class="alert alert-info mb-3" role="alert">
-                        <i class="fa fa-info-circle mr-2"></i>
-                        <strong>Creando nueva planta</strong> - Complete los campos obligatorios para guardar.
-                    </div>
-                    <div class="dishes-text col-12">
-                        <form class="form-group" name="plantaForm" ng-submit="ModelCreate(plantaForm.$valid)" novalidate>
+                    <div ng-if="ViewAction==='Nueva Planta'">
+                        <div class="container-fluid">
+                            <div class="alert alert-info mb-3" role="alert">
+                                <i class="fa fa-info-circle mr-2"></i>
+                                <strong>Creando nueva planta</strong> - Complete los campos obligatorios para guardar.
+                            </div>
+                            <div class="dishes-text col-12">
+                                <form class="form-group" name="plantaForm" ng-submit="ModelCreate(plantaForm.$valid)" novalidate>
                                     <div class="pb-3 form-group">
                                         <label for="view_nombre">Nombre</label>
                                         <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
@@ -473,6 +474,7 @@
     <!-- Main JS -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="js/navbar-direct.js"></script>
     <script src="js/planta.js?v=7.0"></script>
 </body>
 </html>

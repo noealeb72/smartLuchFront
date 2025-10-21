@@ -1,4 +1,7 @@
-﻿var app = angular.module('AngujarJS', []);
+﻿// VERSION 3.1 - SweetAlert2 v11 unificado - FORZAR RECARGA
+console.log('=== Planta.JS V3.1 CARGANDO ===');
+var app = angular.module('AngujarJS', []);
+console.log('=== MODULO ANGUJARJS V3.1 CREADO ===');
 
 app.filter('startFrom', function () {
 	return function (input, start) {

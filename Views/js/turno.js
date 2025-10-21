@@ -22,6 +22,40 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 	$scope.user_Bonificacion = localStorage.getItem('bonificacion');
 	$scope.user_DNI = localStorage.getItem('dni');
 
+	// Función helper para mostrar popup
+	$scope.showPopup = function(title, text, icon) {
+		if (typeof Swal !== 'undefined' && Swal.fire) {
+			Swal.fire({ 
+				title: title, 
+				text: text, 
+				icon: icon,
+				confirmButtonText: 'Entendido'
+			}); 
+		} else {
+			alert(title + '\n' + text);
+		}
+	};
+
+	// Función helper para mostrar alertas de éxito
+	$scope.showSuccess = function(title, text) {
+		Swal.fire({
+			title: title,
+			text: text || '',
+			icon: 'success',
+			confirmButtonText: 'Entendido'
+		});
+	};
+
+	// Función helper para mostrar alertas de error
+	$scope.showError = function(title, text) {
+		Swal.fire({
+			title: title,
+			text: text || '',
+			icon: 'error',
+			confirmButtonText: 'Entendido'
+		});
+	};
+
 	$scope.ModelCreate = function (isValid) {
 		if (isValid) {
 			// debería ser automatico //
@@ -205,21 +239,11 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				Swal.fire({
-					title: 'Operación Correcta',
-					text: 'Turno eliminado exitosamente',
-					icon: 'success',
-					confirmButtonText: 'Entendido'
-				});
-				$scope.ModelReadAll();
+				$scope.showSuccess('Operación Correcta', 'Turno eliminado exitosamente');
+				$scope.ModelReadAll(); // Recargar la lista después de eliminar
 			}
 		}, function (error) {
-			Swal.fire({
-				title: 'Operación Incorrecta',
-				text: 'Error al eliminar el turno',
-				icon: 'error',
-				confirmButtonText: 'Entendido'
-			});
+			$scope.showError('Operación Incorrecta', 'Error al eliminar el turno');
 		});
 	}
 
@@ -239,7 +263,11 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ViewDelete = function (view_id) {
-		Swal.fire({
+		// defensa por si otra lib ensucia Swal
+		const hasSwal = typeof window !== 'undefined' && window.Swal && typeof window.Swal.fire === 'function';
+	  
+		if (hasSwal) {
+		  window.Swal.fire({
 			title: 'Eliminar registro',
 			text: 'Desea eliminar el turno?',
 			icon: 'warning',
@@ -248,11 +276,15 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			cancelButtonColor: '#d33',
 			confirmButtonText: 'Sí, eliminar',
 			cancelButtonText: 'Cancelar'
-		}).then(function (result) {
-			if (result.isConfirmed) {
-				$scope.ModelDelete(view_id);
-			}
-		});
+		  }).then(function (result) {
+			if (result.isConfirmed) $scope.ModelDelete(view_id);
+		  });
+		} else {
+		  // Fallback nativo si SweetAlert2 no está sano
+		  if (window.confirm('Desea eliminar el turno?')) {
+			$scope.ModelDelete(view_id);
+		  }
+		}
 	};
 
 	$scope.ViewCancel = function () {

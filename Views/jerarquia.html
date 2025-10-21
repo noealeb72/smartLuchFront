@@ -325,7 +325,7 @@
             background-color: white !important;
         }
         
-        /* Eliminar scroll vertical en toda la página */
+        /* Eliminar scroll horizontal y vertical */
         html, body {
             overflow-x: hidden !important;
             overflow-y: hidden !important;
@@ -343,7 +343,7 @@
             max-height: calc(100vh - 200px) !important;
         }
         
-        /* Asegurar que la tabla use solo paginado */
+        /* Asegurar que la tabla use solo paginado, sin scroll */
         .table-responsive {
             overflow: hidden !important;
             max-height: 60vh !important;
@@ -421,10 +421,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="container-fluid mr-3" style="min-height: 370px; overflow: hidden;">
+                <div class="container-fluid mr-3" style="min-height: 370px;">
                     <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;">
                     <div ng-if="ViewAction==='Lista de Items'">
-                        <div class="table-responsive" style="max-height: 60vh; overflow: hidden;">
+                        <div class="table-responsive">
 
                             <table class="table table-hover table-sm">
                                 <thead style="font-size: 14px;">
@@ -473,21 +473,21 @@
                                 <strong>Creando nueva jerarquía</strong> - Complete los campos obligatorios para guardar.
                             </div>
                             <div class="dishes-text col-12">
-                                <form class="form-group" name="jerarquiaForm" ng-submit="ModelCreate(jerarquiaForm.$valid)" novalidate>
+                                <form class="form-group" name="jerarquiaForm" ng-submit="ModelCreate(jerarquiaForm.$valid, jerarquiaForm)" novalidate>
                                     <!-- Recuadro para los campos del formulario -->
                                     <div class="form-container">
                                         <div class="pb-3 form-group">
-                                            <label for="view_nombre">Nombre</label>
+                                            <label for="view_nombre">* Nombre</label>
                                             <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                             <span ng-show="jerarquiaForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_nombre.$error.required && jerarquiaForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
                                         </div>
                                         <div class="pb-3 form-group">
-                                            <label for="view_descripcion">Descripción</label>
+                                            <label for="view_descripcion">* Descripción</label>
                                             <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese Descripción" required>
                                             <span ng-show="jerarquiaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_descripcion.$error.required && jerarquiaForm.view_descripcion.$dirty" class="text-danger">Descripción requerida.</span>
                                         </div>
                                         <div class="pb-3 form-group">
-                                            <label for="view_bonificacion">Porcentaje de bonificación (%)</label>
+                                            <label for="view_bonificacion">* Porcentaje de bonificación (%)</label>
                                             <input class="form-control"
                                                    type="number"
                                                    id="view_bonificacion_nueva"
@@ -545,22 +545,22 @@
                                 <strong>Editando jerarquía</strong> - Modifique los campos necesarios y guarde los cambios.
                             </div>
                             <div class="dishes-text col-12">
-                                <form class="form-group" name="jerarquiaForm" ng-submit="ModelUpdate(jerarquiaForm.$valid,view_id)" novalidate>
+                                <form class="form-group" name="jerarquiaForm" ng-submit="ModelUpdate(jerarquiaForm.$valid, view_id, jerarquiaForm)" novalidate>
                                     <!-- Recuadro para los campos del formulario -->
                                     <div class="form-container">
                                         <div class="pb-3 form-group">
-                                            <label for="view_nombre">Nombre</label>
+                                            <label for="view_nombre">* Nombre</label>
                                             <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                             <span ng-show="jerarquiaForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_nombre.$error.required && jerarquiaForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
                                         </div>
                                         <div class="pb-3 form-group">
-                                            <label for="view_descripcion">Descripción</label>
+                                            <label for="view_descripcion">* Descripción</label>
                                             <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese Descripción" required>
                                             <span ng-show="jerarquiaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_descripcion.$error.required && jerarquiaForm.view_descripcion.$dirty" class="text-danger">Descripcion requerida.</span>
                                         </div>
                                         <!-- EDITAR JERARQUÍA -->
                                         <div class="pb-3 form-group">
-                                            <label for="view_bonificacion_editar">Porcentaje de bonificación (%)</label>
+                                            <label for="view_bonificacion_editar">* Porcentaje de bonificación (%)</label>
                                             <input class="form-control"
                                                    type="number"
                                                    id="view_bonificacion_editar"
@@ -649,7 +649,6 @@
     
     <!-- Script para simular login (solo desarrollo) -->
     <!-- Panel de debug global -->
-    <script src="js/auto-debug-panel.js"></script>
     
 </body>
 </html>

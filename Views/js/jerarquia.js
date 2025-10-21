@@ -10,6 +10,17 @@ app.filter('startFrom', function () {
 app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 
 	$scope.base = 'http://localhost:8000/api/jerarquia/';
+	
+	// Función touchAll copiada de plan-nutricional
+	function touchAll(form) {
+		if (!form) return;
+		form.$setSubmitted && form.$setSubmitted();
+		angular.forEach(form.$error, function (fields) {
+			angular.forEach(fields, function (field) {
+				field.$setTouched && field.$setTouched();
+			});
+		});
+	}
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
 	$scope.user_Nombre = localStorage.getItem('nombre');
@@ -36,90 +47,90 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 		}
 	};
 
-	$scope.ModelCreate = function (isVisible) {
-		if (isVisible) {
-			// debería ser automatico //
-			$scope.view_nombre = $window.document.getElementById('view_nombre').value;
-			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
-			$scope.view_bonificacion = $window.document.getElementById('view_bonificacion_nueva').value;
-			//
-
-			// Validar campos vacíos
-			if (!$scope.view_nombre || $scope.view_nombre.trim() === '') {
-				Swal.fire({
-					title: 'Campos requeridos',
-					text: 'El nombre es obligatorio',
+	$scope.ModelCreate = function (isValid, form) {
+		console.log('ModelCreate ejecutándose - isValid:', isValid, 'form:', form);
+		if (!isValid) { 
+			console.log('Formulario no válido, mostrando popup');
+			console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
+			touchAll(form); 
+			
+			// Verificar si SweetAlert2 está disponible
+			if (typeof Swal !== 'undefined') {
+				Swal.fire({ 
+					title: '¡Campos Obligatorios!', 
+					text: 'Debes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.', 
 					icon: 'warning',
 					confirmButtonText: 'Entendido'
-				});
-				return;
+				}); 
+			} else {
+				alert('¡Campos Obligatorios!\nDebes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.');
 			}
-
-			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
-				Swal.fire({
-					title: 'Campos requeridos',
-					text: 'La descripción es obligatoria',
-					icon: 'warning',
-					confirmButtonText: 'Entendido'
-				});
-				return;
-			}
-
-			if (!$scope.view_bonificacion || $scope.view_bonificacion.trim() === '') {
-				Swal.fire({
-					title: 'Campos requeridos',
-					text: 'El porcentaje de bonificación es obligatorio',
-					icon: 'warning',
-					confirmButtonText: 'Entendido'
-				});
-				return;
-			}
-
-			// Validar que la bonificación sea un número válido
-			var bonificacionNum = parseInt($scope.view_bonificacion);
-			if (isNaN(bonificacionNum) || bonificacionNum < 0 || bonificacionNum > 100) {
-				Swal.fire({
-					title: 'Valor inválido',
-					text: 'El porcentaje de bonificación debe ser un número entre 0 y 100. Valor ingresado: ' + $scope.view_bonificacion,
-					icon: 'error',
-					confirmButtonText: 'Entendido'
-				});
-				return;
-			}
-
-			var jsonForm = {
-				nombre: $scope.view_nombre,
-				descripcion: $scope.view_descripcion,
-				bonificacion: bonificacionNum
-			};
-
-			$http({
-				method: 'post',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				url: $scope.base + 'create',
-				data: jsonForm
-			}).then(function (response) {
-				Swal.fire({
-					title: 'Éxito',
-					text: 'Jerarquía creada correctamente',
-					icon: 'success',
-					confirmButtonText: 'Entendido'
-				}).then(function () {
-					$scope.ModelReadAll();
-				});
-			}, function (error) {
-				Swal.fire({
-					title: 'Error',
-					text: 'Error al crear la jerarquía: ' + error.data,
-					icon: 'error',
-					confirmButtonText: 'Entendido'
-				});
-			});
-		} else {
-			alert('Atributos invalidos en los campos');
+			return; 
 		}
+		var payload = { 
+			nombre: (($scope.view_nombre || '') + '').trim(), 
+			descripcion: (($scope.view_descripcion || '') + '').trim(),
+			bonificacion: (($scope.view_bonificacion || '') + '').trim()
+		};
+		if (!payload.nombre || !payload.descripcion || !payload.bonificacion) { 
+			console.log('Campos vacíos después del trim');
+			touchAll(form); 
+			
+			if (typeof Swal !== 'undefined') {
+				Swal.fire({ 
+					title: '¡Campos Vacíos!', 
+					text: 'Los campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.', 
+					icon: 'error',
+					confirmButtonText: 'Entendido'
+				}); 
+			} else {
+				alert('¡Campos Vacíos!\nLos campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.');
+			}
+			return; 
+		}
+
+		// Validar que la bonificación sea un número válido
+		var bonificacionNum = parseInt(payload.bonificacion);
+		if (isNaN(bonificacionNum) || bonificacionNum < 0 || bonificacionNum > 100) {
+			Swal.fire({
+				title: 'Valor inválido',
+				text: 'El porcentaje de bonificación debe ser un número entre 0 y 100. Valor ingresado: ' + payload.bonificacion,
+				icon: 'error',
+				confirmButtonText: 'Entendido'
+			});
+			return;
+		}
+
+		var jsonForm = {
+			nombre: payload.nombre,
+			descripcion: payload.descripcion,
+			bonificacion: bonificacionNum
+		};
+
+		$http({
+			method: 'post',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			url: $scope.base + 'create',
+			data: jsonForm
+		}).then(function (response) {
+			Swal.fire({
+				title: 'Éxito',
+				text: 'Jerarquía creada correctamente',
+				icon: 'success',
+				confirmButtonText: 'Entendido'
+			}).then(function () {
+				$scope.ModelReadAll();
+			});
+		}, function (error) {
+			Swal.fire({
+				title: 'Error',
+				text: 'Error al crear la jerarquía: ' + error.data,
+				icon: 'error',
+				confirmButtonText: 'Entendido'
+			});
+		});
 	};
 
 	$scope.ModelRead = function (view_id) {
@@ -223,89 +234,93 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			});
 	};
 
-	$scope.ModelUpdate = function (isVisible) {
-		if (isVisible) {
-			$scope.view_nombre = $window.document.getElementById('view_nombre').value;
-			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
-			$scope.view_bonificacion = $window.document.getElementById('view_bonificacion_editar').value;
-
-			// Validar campos vacíos
-			if (!$scope.view_nombre || $scope.view_nombre.trim() === '') {
-				Swal.fire({
-					title: 'Campos requeridos',
-					text: 'El nombre es obligatorio',
+	$scope.ModelUpdate = function (isValid, view_id, form) {
+		console.log('ModelUpdate ejecutándose - isValid:', isValid, 'view_id:', view_id, 'form:', form);
+		if (!isValid) { 
+			console.log('Formulario no válido, mostrando popup');
+			console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
+			touchAll(form); 
+			
+			// Verificar si SweetAlert2 está disponible
+			if (typeof Swal !== 'undefined') {
+				Swal.fire({ 
+					title: '¡Campos Obligatorios!', 
+					text: 'Debes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.', 
 					icon: 'warning',
 					confirmButtonText: 'Entendido'
-				});
-				return;
+				}); 
+			} else {
+				alert('¡Campos Obligatorios!\nDebes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.');
 			}
-
-			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
-				Swal.fire({
-					title: 'Campos requeridos',
-					text: 'La descripción es obligatoria',
-					icon: 'warning',
-					confirmButtonText: 'Entendido'
-				});
-				return;
-			}
-
-			if (!$scope.view_bonificacion || $scope.view_bonificacion.trim() === '') {
-				Swal.fire({
-					title: 'Campos requeridos',
-					text: 'El porcentaje de bonificación es obligatorio',
-					icon: 'warning',
-					confirmButtonText: 'Entendido'
-				});
-				return;
-			}
-
-			// Validar que la bonificación sea un número válido
-			var bonificacionNum = parseInt($scope.view_bonificacion);
-			if (isNaN(bonificacionNum) || bonificacionNum < 0 || bonificacionNum > 100) {
-				Swal.fire({
-					title: 'Valor inválido',
-					text: 'El porcentaje de bonificación debe ser un número entre 0 y 100. Valor ingresado: ' + $scope.view_bonificacion,
-					icon: 'error',
-					confirmButtonText: 'Entendido'
-				});
-				return;
-			}
-
-			var jsonForm = {
-				id: $scope.view_id,
-				nombre: $scope.view_nombre,
-				descripcion: $scope.view_descripcion,
-				bonificacion: bonificacionNum
-			};
-
-			$http({
-				method: 'post',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				url: $scope.base + 'update',
-				data: jsonForm
-			}).then(function (response) {
-				Swal.fire({
-					title: 'Éxito',
-					text: 'Jerarquía actualizada correctamente',
-					icon: 'success',
-					confirmButtonText: 'Entendido'
-				}).then(function () {
-					$scope.ModelReadAll();
-				});
-			}, function (error) {
-				Swal.fire({
-					title: 'Error',
-					text: 'Error al actualizar la jerarquía: ' + error.data,
-					icon: 'error',
-					confirmButtonText: 'Entendido'
-				});
-			});
-		} else {
-			alert('Atributos invalidos en los campos');
+			return; 
 		}
+		
+		var payload = { 
+			nombre: (($scope.view_nombre || '') + '').trim(), 
+			descripcion: (($scope.view_descripcion || '') + '').trim(),
+			bonificacion: (($scope.view_bonificacion || '') + '').trim()
+		};
+		
+		if (!payload.nombre || !payload.descripcion || !payload.bonificacion) { 
+			console.log('Campos vacíos después del trim');
+			touchAll(form); 
+			
+			if (typeof Swal !== 'undefined') {
+				Swal.fire({ 
+					title: '¡Campos Vacíos!', 
+					text: 'Los campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.', 
+					icon: 'error',
+					confirmButtonText: 'Entendido'
+				}); 
+			} else {
+				alert('¡Campos Vacíos!\nLos campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.');
+			}
+			return; 
+		}
+
+		// Validar que la bonificación sea un número válido
+		var bonificacionNum = parseInt(payload.bonificacion);
+		if (isNaN(bonificacionNum) || bonificacionNum < 0 || bonificacionNum > 100) {
+			Swal.fire({
+				title: 'Valor inválido',
+				text: 'El porcentaje de bonificación debe ser un número entre 0 y 100. Valor ingresado: ' + payload.bonificacion,
+				icon: 'error',
+				confirmButtonText: 'Entendido'
+			});
+			return;
+		}
+
+		var jsonForm = {
+			id: view_id,
+			nombre: payload.nombre,
+			descripcion: payload.descripcion,
+			bonificacion: bonificacionNum
+		};
+
+		$http({
+			method: 'post',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			url: $scope.base + 'update',
+			data: jsonForm
+		}).then(function (response) {
+			Swal.fire({
+				title: 'Éxito',
+				text: 'Jerarquía actualizada correctamente',
+				icon: 'success',
+				confirmButtonText: 'Entendido'
+			}).then(function () {
+				$scope.ModelReadAll();
+			});
+		}, function (error) {
+			Swal.fire({
+				title: 'Error',
+				text: 'Error al actualizar la jerarquía: ' + error.data,
+				icon: 'error',
+				confirmButtonText: 'Entendido'
+			});
+		});
 
 	};
 
