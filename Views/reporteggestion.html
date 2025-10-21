@@ -76,6 +76,98 @@
             box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25);
         }
         
+        /* Estilos para paginación tipo DataTable */
+        .datatable-pagination {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 0.75rem;
+        }
+        
+        .page-number-btn {
+            min-width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .page-number-btn.btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+        
+        .page-number-btn.btn-outline-secondary {
+            background-color: transparent;
+            border-color: #6c757d;
+            color: #6c757d;
+        }
+        
+        .page-number-btn.btn-outline-secondary:hover {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+        
+        .page-number-btn.btn-primary {
+            background-color: #495057;
+            border-color: #495057;
+            color: white;
+        }
+        
+        .page-size-select {
+            width: 70px;
+            font-size: 0.875rem;
+        }
+        
+        .pagination-info {
+            font-size: 0.8rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Estilos para scrollbar personalizado */
+        .table-scroll::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .table-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .table-scroll::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        .table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Footer al final */
+        body {
+            padding-bottom: 80px;
+        }
+        
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        
         .alert-info {
             background-color: #d1ecf1;
             border-color: #bee5eb;
@@ -180,227 +272,308 @@
                 <a href="javascript:void(0)" id="side-nav-close">×</a>
             </div>
             <div id="canvas-overlay"></div>
-            <div>
+            <div class="main-content">
                 <!-- Menu -->
                 <div ng-include="'navbar.html'"></div>
-                <!-- Titulo y Breadcrumbs -->
+                <!-- Titulo -->
                 <div class="heading-section bg-dark text-white pt-2 pl-3">
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-12">
                             <h3 class="mb-0">Reporte de Gestión</h3>
                         </div>
-                        <div class="col-md-4">
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
-                                    <li class="breadcrumb-item">
-                                        <a href="index.html" class="text-white-50" style="text-decoration: none;">
-                                            <i class="fa fa-home mr-1"></i>Inicio
-                                        </a>
-                                    </li>
-                                    <li class="breadcrumb-item active text-white" aria-current="page">
-                                        <i class="fa fa-chart-bar mr-1"></i>Reporte de Gestión
-                                    </li>
-                                </ol>
-                            </nav>
-                        </div>
                     </div>
                 </div>
-                <div ng-if="ViewAction == 'inicio'" class="container-fluid mr-3 dishes-text" style="min-height: 370px">
-                    <!-- Alert Box Informativo -->
-                    <div class="alert alert-info mb-3" role="alert">
-                        <i class="fa fa-info-circle mr-2"></i>
-                        <strong>Filtros de búsqueda</strong> - Seleccione el rango de fechas y opcionalmente filtre por texto para generar el reporte de gestión.
-                    </div>
-                    
+                <!-- Acordeón de Filtros -->
+                <div class="container-fluid mr-3 dishes-text">
+                    <div class="card">
+                        <div class="card-header" style="background-color: #6c757d; color: white; cursor: pointer;" 
+                             ng-click="toggleFiltros = !toggleFiltros">
+                            <h6 class="mb-0 d-flex justify-content-between align-items-center">
+                                <span><i class="fa fa-filter mr-2"></i>Filtros de búsqueda</span>
+                                <i class="fa" ng-class="{'fa-chevron-down': !toggleFiltros, 'fa-chevron-up': toggleFiltros}"></i>
+                            </h6>
+                </div>
+                        <div class="card-body" ng-show="toggleFiltros" style="display: block !important;">
                     <form name="form" novalidate>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group" ng-class="{'has-error': form.fechaDesde.$touched && form.fechaDesde.$invalid}">
-                                    <label for="filtro_fechadesde_inicio" class="form-label">Fecha desde <span class="text-danger">*</span></label>
-                                    <input name="fechaDesde" class="form-control" type="date" id="filtro_fechadesde_inicio"
-                                           ng-model="filtro_fechadesde_inicio" required>
-                                    <p class="text-danger" ng-show="form.fechaDesde.$touched && form.fechaDesde.$error.required">
-                                        Una fecha de inicio es requerida
-                                    </p>
-                                </div>
+                                <!-- Fila 1: Fechas y texto -->
+                                <div class="row mb-2">
+                                    <div class="col-md-3">
+                                        <div class="form-group" ng-class="{'has-error': form.fechaDesde.$touched && form.fechaDesde.$invalid}">
+                                            <label for="filtro_fechadesde_inicio" class="form-label">Fecha desde <span class="text-danger">*</span></label>
+                                <input name="fechaDesde" class="form-control" type="date" id="filtro_fechadesde_inicio"
+                                       ng-model="filtro_fechadesde_inicio" required>
+                                            <p class="text-danger" ng-show="form.fechaDesde.$touched && form.fechaDesde.$error.required" style="font-size: 0.8rem;">
+                                                Fecha requerida
+                                </p>
                             </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="filtro_fechaactualidad" class="form-label">Fecha hasta</label>
-                                    <input class="form-control" type="date" id="filtro_fechaactualidad" ng-model="filtro_fechaactualidad">
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="filtro_busqueda" class="form-label">Filtrar por texto</label>
-                                    <input class="form-control" type="text" id="filtro_busqueda" ng-model="filtro_busqueda" placeholder="Buscar en el reporte...">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100" ng-click="getReporte()" style="height: 38px;">
-                                    <i class="fa fa-chart-bar mr-1"></i>Generar Reporte
-                                </button>
-                            </div>
-                        </div>
-                        </div>
-                    </form>
-                </div>
-
-
-                <div ng-if="ViewAction == 'reporte'">
-                    <!--REPORTE-->
-                    <div class="container-fluid row">
-                        <div class="md-form mt-0 pl-2 col-1">
-                        </div>
-                        <div class="mt-0 col-5 row">
-                            <div><span class="header-attribute col">Cantidad de platos:</span><span>{{totales.platos}}</span></div>
-                            <div><span class="header-attribute col">Promedio de calificación:</span><span>{{totales.promedio}}</span></div>
-                        </div>
-                        <div class="mt-0 col-5 row">
-                            <div><span class="header-attribute col">Cantidad devueltos:</span><span>{{totales.devueltos}}</span></div>
-                            <div><span class="header-attribute col">Costo total:</span><span>${{totales.costo}}</span></div>
-                        </div>
-                        <button ng-click="loadFiltro()" href="#" data-target="#filtrosModal" data-toggle="modal" type="button" class="btn btn-default col-1 mt-4" aria-label="searchbutton">
-                            <span aria-hidden="true">Elegir filtros</span>
-                        </button>
-                    </div> <!--TOTALES ROW-->
-                    <div class="dishes-text row mb-2">
-                        <div class="col-sm-8 ml-0 pl-4 mt-2">
-                            <h5 style="margin-bottom: 0px; padding-top:5px"><span>Detalle</span></h5>
-                        </div>
-                    </div> <!--DETALLE ROW-->
-                    <div class="container-fluid mr-3" style="min-height: 428px">
-                        <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;">
-                        <div class="container-fluid dishes-text col-12">
-                            <table class="table table-hover table-sm">
-                                <thead style="font-size: 14px;">
-                                    <tr class="bg-dark text-white row">
-                                        <th class="col-1">Fecha</th>
-                                        <th class="col-1">Hora</th>
-                                        <th class="col-1">Planta</th>
-                                        <th class="col-2">CC</th>
-                                        <th class="col-2">Proyecto</th>
-                                        <th class="col-1">Legajo</th>
-                                        <th class="col-1">Plato</th>
-                                        <th class="col-1">Calificación</th>
-                                        <th class="col-1">Costo</th>
-                                        <th class="col-1">Comentario</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="planitem row" ng-repeat="item in dataset | startFrom:currentPage*pageSize | limitTo:pageSize">
-                                        <td class="col-1">{{item.createdate | formatDate}}</td>
-                                        <td class="col-1">{{item.createdate | formatHour}}</td>
-                                        <td class="col-1">{{item.planta}}</td>
-                                        <td class="col-2">{{item.centrodecosto}}</td>
-                                        <td class="col-2">{{item.proyecto}}</td>
-                                        <td class="col-1">{{item.user_fileNumber}}</td>
-                                        <td class="col-1">{{item.cod_plato}}</td>
-                                        <td class="col-1">{{item.calificacion}}</td>
-                                        <td class="col-1">${{item.monto}}</td>
-                                        <td class="col-1">{{item.comentario}}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div>
-                                <button class="btn btn-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="currentPage=currentPage-1">
-                                    Anterior
-                                </button>
-                                {{currentPage+1}}/{{numberOfPages()}}
-                                <button class="btn btn-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="currentPage=currentPage+1">
-                                    Siguiente
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <!--MODALES-->
-                    <div class="modal fade container-fluid" id="filtrosModal" tabindex="-1" role="dialog" aria-hidden="true">
-                        <div style="max-width: 100% !important;" class="modal-dialog container-fluid" role="document">
-                            <div class="modal-content container-fluid">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="pedidoModalLabel">Opciones de filtrado</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body container-fluid">
-                                    <div class="row">
-                                        <div class="form-group col-4">
-                                            <label for="filtro_fechadesde">Fecha desde</label>
-                                            <input readonly class="form-control" type="date" id="filtro_fechadesde" ng-model="filtro_fechadesde">
-                                        </div>
-                                        <div class="form-group col-4">
-                                            <label for="filtro_fechahasta">Hasta</label>
-                                            <input class="form-control" type="date" id="filtro_fechahasta" ng-model="filtro_fechahasta">
-                                        </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="form-group col-4">
-                                            <label for="filtro_planta">Planta</label>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_fechaactualidad" class="form-label">Fecha hasta</label>
+                                <input class="form-control" type="date" id="filtro_fechaactualidad" ng-model="filtro_fechaactualidad">
+                            </div>
+                        </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_busqueda" class="form-label">Filtrar por texto</label>
+                                            <input class="form-control" type="text" id="filtro_busqueda" ng-model="filtro_busqueda" placeholder="Buscar...">
+                            </div>
+                        </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_planta" class="form-label">Planta</label>
                                             <select class="form-control" id="filtro_planta" ng-model="filtro_planta">
-                                                <option style="display:none" value="">Seleccione planta</option>
+                                                <option value="">Seleccione planta</option>
                                                 <option ng-repeat="x in plantas" value="{{x.nombre}}">{{x.nombre}}</option>
                                             </select>
                                         </div>
-                                        <div class="form-group col-4">
-                                            <label for="filtro_centrodecosto">Centro de costo</label>
+                                    </div>
+                                </div>
+
+                                <!-- Fila 2: Centro de Costo, Proyecto, Legajo desde, Hasta -->
+                                <div class="row mb-2">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_centrodecosto" class="form-label">Centro de costo</label>
                                             <select class="form-control" id="filtro_centrodecosto" ng-model="filtro_centrodecosto">
-                                                <option style="display:none" value="">Seleccione CC</option>
+                                                <option value="">Seleccione CC</option>
                                                 <option ng-repeat="x in centrosdecosto" value="{{x.nombre}}">{{x.nombre}}</option>
                                             </select>
                                         </div>
-                                        <div class="form-group col-4">
-                                            <label for="filtro_proyecto">Proyecto</label>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_proyecto" class="form-label">Proyecto</label>
                                             <select class="form-control" id="filtro_proyecto" ng-model="filtro_proyecto">
-                                                <option style="display:none" value="">Selecciona proyecto</option>
+                                                <option value="">Selecciona proyecto</option>
                                                 <option ng-repeat="x in proyectos" value="{{x.nombre}}">{{x.nombre}}</option>
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="form-group col-4">
-                                            <label for="filtro_legajodesde">Legajo desde</label>
-                                            <input class="form-control" type="number" id="filtro_legajodesde" ng-model="filtro_legajodesde">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_legajodesde" class="form-label">Legajo desde</label>
+                                            <div class="input-group">
+                                                <input class="form-control" type="number" id="filtro_legajodesde" ng-model="filtro_legajodesde" 
+                                                       onkeypress="return event.charCode >= 48 && event.charCode <= 57" min="0">
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-outline-secondary" type="button" ng-click="buscarLegajo()" title="Buscar legajo">
+                                                        <i class="fa fa-search"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="form-group col-4">
-                                            <label for="filtro_legajohasta">Hasta</label>
-                                            <input class="form-control" type="number" id="filtro_legajohasta" ng-model="filtro_legajohasta">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_legajohasta" class="form-label">Hasta</label>
+                                            <div class="input-group">
+                                                <input class="form-control" type="number" id="filtro_legajohasta" ng-model="filtro_legajohasta" 
+                                                       onkeypress="return event.charCode >= 48 && event.charCode <= 57" min="0">
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-outline-secondary" type="button" ng-click="buscarLegajoHasta()" title="Buscar legajo">
+                                                        <i class="fa fa-search"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="form-group col-4">
-                                            <label for="filtro_invitado">Invitado</label>
+                                        </div>
+                                        </div>
+
+                                <!-- Fila 3: Invitado, Plato, Calificación, Turno -->
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_invitado" class="form-label">Invitado</label>
                                             <select class="form-control" id="filtro_invitado" ng-model="filtro_invitado">
-                                                <option style="display:none" value="">Selecciona una opción</option>
+                                                <option value="">Selecciona opción</option>
                                                 <option value="1">Si</option>
                                                 <option value="0">No</option>
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="form-group col-4">
-                                            <label for="filtro_plato">Plato</label>
-                                            <input class="form-control" type="text" id="filtro_plato" ng-model="filtro_plato">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_plato" class="form-label">Plato</label>
+                                            <div class="input-group">
+                                                <input class="form-control" type="text" id="filtro_plato" ng-model="filtro_plato" placeholder="Buscar plato...">
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-outline-secondary" type="button" ng-click="buscarPlato()" title="Buscar plato">
+                                                        <i class="fa fa-search"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="form-group col-4">
-                                            <label for="filtro_calificacion">Calificación</label>
-                                            <input class="form-control" type="number" id="filtro_calificacion" ng-model="filtro_calificacion">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_calificacion" class="form-label">Calificación</label>
+                                            <input class="form-control" type="number" id="filtro_calificacion" ng-model="filtro_calificacion" 
+                                                   onkeypress="return event.charCode >= 48 && event.charCode <= 57" min="0">
                                         </div>
-                                        <div class="form-group col-4">
-                                            <label for="filtro_turno">Turno</label>
+                                        </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_turno" class="form-label">Turno</label>
                                             <select class="form-control" id="filtro_turno" ng-model="filtro_turno">
-                                                <option style="display:none" value="">Selecciona turno</option>
+                                                <option value="">Selecciona turno</option>
                                                 <option ng-repeat="x in turnos" value="{{x.codigo}}">{{x.descripcion}}</option>
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="modal-footer">
-                                        <button class="btn btn-primary" ng-click="ClearFiltros()">Limpiar Filtros</button>
-                                        <button type="button" class="btn  btn-primary bg-secondary" data-dismiss="modal">Volver</button>
-                                        <button type="button" class="btn btn-primary" ng-click="SelectFiltros()">Guardar cambios</button>
+                                </div>
+
+                                <!-- Botón de búsqueda -->
+                                <div class="row">
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary w-100" ng-click="getReporte()" style="height: 38px;">
+                                            <i class="fa fa-search mr-1"></i>Generar Reporte
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div ng-if="ViewAction == 'reporte'" class="container-fluid mr-3 dishes-text">
+                    <!-- Resumen de Totales -->
+                    <div class="card mb-2">
+                        <div class="card-header" style="background-color: #6c757d; color: white;">
+                            <h6 class="mb-0"><i class="fa fa-chart-bar mr-2"></i>Resumen del Reporte</h6>
+                        </div>
+                        <div class="card-body py-1">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h6 class="text-primary mb-0">{{totales.platos}}</h6>
+                                        <small class="text-muted">Cantidad de platos</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h6 class="text-success mb-0">{{totales.promedio}}</h6>
+                                        <small class="text-muted">Promedio de calificación</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h6 class="text-warning mb-0">{{totales.devueltos}}</h6>
+                                        <small class="text-muted">Cantidad devueltos</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h6 class="text-info mb-0">${{totales.costo}}</h6>
+                                        <small class="text-muted">Costo total</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Resultados -->
+                    <div class="card">
+                        <div class="card-header" style="background-color: #6c757d; color: white;">
+                            <h6 class="mb-0"><i class="fa fa-table mr-2"></i>Detalle del Reporte ({{filtro_fechadesde_inicio}} - {{filtro_fechaactualidad}})</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive table-scroll" style="max-height: 400px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;">
+                                <table class="table table-hover table-sm mb-0">
+                                    <thead style="font-size: 14px; position: sticky; top: 0; z-index: 10;" class="bg-dark">
+                                        <tr class="text-white">
+                                            <th style="width: 12%; min-width: 100px; text-align: left;">Fecha</th>
+                                            <th style="width: 10%; text-align: left;">Hora</th>
+                                            <th style="width: 10%; text-align: left;">Planta</th>
+                                            <th style="width: 15%; text-align: left;">CC</th>
+                                            <th style="width: 15%; text-align: left;">Proyecto</th>
+                                            <th style="width: 8%; text-align: center;">Legajo</th>
+                                            <th style="width: 10%; text-align: left;">Plato</th>
+                                            <th style="width: 8%; text-align: center;">Calificación</th>
+                                            <th style="width: 8%; text-align: right;">Costo</th>
+                                            <th style="width: 4%; text-align: center;">Invitado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="item in dataset | startFrom:currentPage*pageSize | limitTo:pageSize">
+                                            <td style="white-space: nowrap;">{{item.createdate | formatDate}}</td>
+                                            <td>{{item.createdate | formatHour}}</td>
+                                            <td>{{item.planta}}</td>
+                                            <td>{{item.centrodecosto}}</td>
+                                            <td>{{item.proyecto}}</td>
+                                            <td style="text-align: center;">{{item.user_fileNumber}}</td>
+                                            <td>{{item.cod_plato}}</td>
+                                            <td style="text-align: center;">{{item.calificacion}}</td>
+                                            <td style="text-align: right;">${{item.monto}}</td>
+                                            <td style="text-align: center;">
+                                                <span ng-class="{'badge badge-success': item.invitado, 'badge badge-secondary': !item.invitado}">
+                                                    {{item.invitado | formatBool}}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Paginación tipo DataTable -->
+                            <div class="datatable-pagination mt-3">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="pagination-info">
+                                            Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, dataset.length)}} de {{dataset.length}} registros
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="pagination-controls d-flex justify-content-end align-items-center">
+                                            <span class="mr-2">Filas por página:</span>
+                                            <select ng-model="pageSize" ng-change="changePageSize(pageSize)" class="page-size-select mr-3">
+                                                <option value="10">10</option>
+                                                <option value="20">20</option>
+                                                <option value="50">50</option>
+                                                <option value="100">100</option>
+                                            </select>
+                                            
+                                            <button class="btn btn-sm btn-outline-secondary page-number-btn" 
+                                                    ng-disabled="currentPage == 0" 
+                                                    ng-click="goToPage(0)" 
+                                                    title="Primera página">
+                                                <i class="fa fa-angle-double-left"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary page-number-btn" 
+                                                    ng-disabled="currentPage == 0" 
+                                                    ng-click="goToPage(currentPage - 1)" 
+                                                    title="Página anterior">
+                                                <i class="fa fa-angle-left"></i>
+                                            </button>
+                                            
+                                            <span class="mx-2" ng-repeat="page in getPageNumbers() track by $index">
+                                                <button ng-if="page !== '...'" 
+                                                        class="btn btn-sm page-number-btn" 
+                                                        ng-class="{'btn-primary': page === currentPage + 1, 'btn-outline-secondary': page !== currentPage + 1}"
+                                                        ng-click="goToPage(page - 1)">
+                                                    {{page}}
+                                                </button>
+                                                <span ng-if="page === '...'" class="mx-1">...</span>
+                                            </span>
+                                            
+                                            <button class="btn btn-sm btn-outline-secondary page-number-btn" 
+                                                    ng-disabled="currentPage >= numberOfPages() - 1" 
+                                                    ng-click="goToPage(currentPage + 1)" 
+                                                    title="Página siguiente">
+                                                <i class="fa fa-angle-right"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary page-number-btn" 
+                                                    ng-disabled="currentPage >= numberOfPages() - 1" 
+                                                    ng-click="goToPage(numberOfPages() - 1)" 
+                                                    title="Última página">
+                                                <i class="fa fa-angle-double-right"></i>
+                                            </button>
+                                            
+                                            <span class="ml-3 pagination-info">
+                                                Página {{currentPage + 1}} de {{numberOfPages()}}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -409,8 +582,119 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Modal Buscar Legajo -->
+        <div class="modal fade" id="modalBuscarLegajo" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header" style="background-color: #F34949; color: white;">
+                        <h5 class="modal-title"><i class="fa fa-search mr-2"></i>Buscar Persona</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Buscar por nombre:</label>
+                            <input type="text" class="form-control" ng-model="busquedaLegajo" 
+                                   ng-keyup="buscarUsuarios()" placeholder="Ingrese nombre de la persona...">
+                        </div>
+                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                            <table class="table table-hover table-sm">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Legajo</th>
+                                        <th>Nombre</th>
+                                        <th>Apellido</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="usuario in usuarios track by usuario.legajo">
+                                        <td>{{usuario.legajo}}</td>
+                                        <td>{{usuario.nombre}}</td>
+                                        <td>{{usuario.apellido}}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary" ng-click="seleccionarLegajo(usuario)">
+                                                <i class="fa fa-check"></i> Seleccionar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr ng-if="usuarios.length === 0 && busquedaLegajo.length >= 2">
+                                        <td colspan="4" class="text-center text-muted">
+                                            No se encontraron usuarios
+                                        </td>
+                                    </tr>
+                                    <tr ng-if="busquedaLegajo.length < 2">
+                                        <td colspan="4" class="text-center text-muted">
+                                            Ingrese al menos 2 caracteres para buscar
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Buscar Plato -->
+        <div class="modal fade" id="modalBuscarPlato" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header" style="background-color: #F34949; color: white;">
+                        <h5 class="modal-title"><i class="fa fa-search mr-2"></i>Buscar Plato</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Buscar plato:</label>
+                            <input type="text" class="form-control" ng-model="busquedaPlato" 
+                                   ng-keyup="buscarPlatos()" placeholder="Ingrese nombre del plato...">
+                        </div>
+                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                            <table class="table table-hover table-sm">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Descripción</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="plato in platosFiltrados track by plato.codigo">
+                                        <td>{{plato.codigo}}</td>
+                                        <td>{{plato.nombre}}</td>
+                                        <td>{{plato.descripcion}}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary" ng-click="seleccionarPlato(plato)">
+                                                <i class="fa fa-check"></i> Seleccionar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr ng-if="platosFiltrados.length === 0 && busquedaPlato.length >= 2">
+                                        <td colspan="4" class="text-center text-muted">
+                                            No se encontraron platos
+                                        </td>
+                                    </tr>
+                                    <tr ng-if="busquedaPlato.length < 2">
+                                        <td colspan="4" class="text-center text-muted">
+                                            Ingrese al menos 2 caracteres para buscar
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Footer -->
-        <div ng-include="'footer.html'"></div>
+        <div class="footer" ng-include="'footer.html'"></div>
     </div>
     <!-- External JS -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
@@ -431,3 +715,4 @@
     <script src="js/reporteggestion.js"></script>
 </body>
 </html>
+

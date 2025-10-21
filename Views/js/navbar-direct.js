@@ -4,7 +4,14 @@
     
     // Función para obtener el rol del usuario
     function getUserRole() {
-        return localStorage.getItem('role') || '';
+        var role = localStorage.getItem('role') || '';
+        // Limpiar espacios en blanco al inicio y final
+        role = role.trim();
+        console.log('Obteniendo rol del localStorage:', role);
+        console.log('Tipo de dato del rol:', typeof role);
+        console.log('Longitud del rol:', role.length);
+        console.log('Rol con trim:', role.trim());
+        return role;
     }
     
     // Función para obtener el nombre del usuario
@@ -53,13 +60,14 @@
             var role = getUserRole();
             console.log('Mostrando información en navbar:', {role: role, userInfoNavbar: userInfoNavbar, userRoleNavbar: userRoleNavbar});
             
-            if (role) {
+            if (role && role.trim() !== '') {
                 userRoleNavbar.textContent = role;
                 userInfoNavbar.style.display = 'inline-block';
                 console.log('Rol mostrado en navbar:', role);
+                console.log('Contenido del elemento userRoleNavbar:', userRoleNavbar.textContent);
             } else {
                 userInfoNavbar.style.display = 'none';
-                console.log('Sin rol, ocultando navbar');
+                console.log('Sin rol o rol vacío, ocultando navbar. Rol:', role);
             }
         } else {
             console.log('Elementos del navbar no encontrados:', {userInfoNavbar: userInfoNavbar, userRoleNavbar: userRoleNavbar});
@@ -130,6 +138,8 @@
         
         var role = getUserRole();
         console.log('Cargando menú para rol:', role);
+        console.log('Comparación exacta con "Comensal":', role === 'Comensal');
+        console.log('Comparación con trim:', role.trim() === 'Comensal');
         
         // Menú común para todos los roles
         if (role !== 'Comensal') {
@@ -148,6 +158,18 @@
                 addDropdownItem(cocinaDropdown, 'Platos', 'plato.html');
                 addDropdownItem(cocinaDropdown, 'Menu del Día', 'menudeldia.html');
                 menuContainer.appendChild(cocina);
+                break;
+                
+            case 'Comensal':
+                console.log('=== EJECUTANDO CASO COMENSAL ===');
+                // Menú para Comensal
+                var pedidos = createMenuItem('Mis Pedidos', 'pedidos.html', 'fa-shopping-cart', false);
+                menuContainer.appendChild(pedidos);
+                console.log('Agregado: Mis Pedidos');
+                
+                var menu = createMenuItem('Menú', 'menu.html', 'fa-utensils', false);
+                menuContainer.appendChild(menu);
+                console.log('Agregado: Menú');
                 break;
                 
             case 'Gerencia':
@@ -184,6 +206,16 @@
                 addDropdownItem(configDropdown, 'Turnos', 'turno.html');
                 menuContainer.appendChild(config);
                 break;
+                
+            default:
+                // Para roles no definidos, mostrar menú básico
+                console.log('=== EJECUTANDO CASO DEFAULT ===');
+                console.log('Rol no definido:', role);
+                console.log('Tipo de rol:', typeof role);
+                console.log('Rol con JSON.stringify:', JSON.stringify(role));
+                var inicio = createMenuItem('Inicio', 'index.html', 'fa-home', false);
+                menuContainer.appendChild(inicio);
+                break;
         }
         
         // Botón de logout
@@ -194,6 +226,10 @@
     // Función para inicializar el navbar
     function initNavbar() {
         console.log('Inicializando navbar directo...');
+        
+        // Limpiar datos del localStorage antes de procesar
+        cleanLocalStorage();
+        
         console.log('Rol actual:', getUserRole());
         showUserInfo();
         
@@ -215,10 +251,120 @@
         initNavbar();
     }
     
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', startInit);
-    } else {
+    // Función para recargar el navbar manualmente
+    function reloadNavbar() {
+        console.log('=== RECARGANDO NAVBAR MANUALMENTE ===');
+        console.log('Rol actual en localStorage:', localStorage.getItem('role'));
+        showUserInfo();
+        loadNavbarMenu();
+    }
+    
+    // Función para limpiar datos del localStorage
+    function cleanLocalStorage() {
+        console.log('Limpiando datos del localStorage...');
+        var keys = ['role', 'nombre', 'apellido', 'planta', 'centrodecosto', 'proyecto', 'plannutricional', 'bonificacion', 'dni'];
+        keys.forEach(function(key) {
+            var value = localStorage.getItem(key);
+            if (value) {
+                localStorage.setItem(key, value.trim());
+                console.log('Limpiado ' + key + ':', value.trim());
+            }
+        });
+    }
+    
+    // Función para forzar limpieza y recarga completa
+    function forceCleanAndReload() {
+        console.log('=== FORZANDO LIMPIEZA Y RECARGA COMPLETA ===');
+        
+        // Limpiar todos los datos
+        cleanLocalStorage();
+        
+        // Esperar un poco y recargar navbar
+        setTimeout(function() {
+            reloadNavbar();
+        }, 100);
+    }
+    
+    // Función para forzar la corrección del navbar
+    function forceFixNavbar() {
+        console.log('=== FORZANDO CORRECCIÓN DEL NAVBAR ===');
+        
+        // Limpiar datos primero
+        cleanLocalStorage();
+        
+        // Obtener rol limpio
+        var role = getUserRole();
+        console.log('Rol limpio obtenido:', role);
+        
+        // Mostrar información del usuario
+        showUserInfo();
+        
+        // Cargar menú
+        loadNavbarMenu();
+        
+        // Verificar y corregir después de un tiempo
+        setTimeout(checkAndFixNavbar, 500);
+    }
+    
+    // Exponer funciones globalmente para debugging
+    window.reloadNavbar = reloadNavbar;
+    window.cleanLocalStorage = cleanLocalStorage;
+    window.forceCleanAndReload = forceCleanAndReload;
+    window.forceFixNavbar = forceFixNavbar;
+    window.checkAndFixNavbar = checkAndFixNavbar;
+    
+    // Función para verificar y corregir el navbar
+    function checkAndFixNavbar() {
+        console.log('=== VERIFICANDO Y CORRIGIENDO NAVBAR ===');
+        
+        // Verificar si el rol se está mostrando
+        var userRoleNavbar = document.getElementById('user-role-navbar');
+        var userInfoNavbar = document.getElementById('user-info-navbar');
+        
+        if (userRoleNavbar && userInfoNavbar) {
+            var currentRole = localStorage.getItem('role');
+            var cleanRole = currentRole ? currentRole.trim() : '';
+            
+            console.log('Rol actual en localStorage:', JSON.stringify(currentRole));
+            console.log('Rol limpio:', JSON.stringify(cleanRole));
+            console.log('Contenido actual del elemento:', JSON.stringify(userRoleNavbar.textContent));
+            
+            if (cleanRole && cleanRole !== userRoleNavbar.textContent) {
+                console.log('Corrigiendo rol en navbar...');
+                userRoleNavbar.textContent = cleanRole;
+                userInfoNavbar.style.display = 'inline-block';
+                console.log('Rol corregido a:', cleanRole);
+            }
+        } else {
+            console.log('Elementos del navbar no encontrados');
+        }
+        
+        // Recargar menú si es necesario
+        var role = getUserRole();
+        if (role) {
+            console.log('Recargando menú para rol:', role);
+            loadNavbarMenu();
+        }
+    }
+    
+    // Ejecutar verificación múltiples veces
+    function startMultipleChecks() {
         startInit();
+        
+        // Verificar después de 1 segundo
+        setTimeout(checkAndFixNavbar, 1000);
+        
+        // Verificar después de 2 segundos
+        setTimeout(checkAndFixNavbar, 2000);
+        
+        // Verificar después de 3 segundos
+        setTimeout(checkAndFixNavbar, 3000);
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startMultipleChecks);
+    } else {
+        startMultipleChecks();
     }
     
     // También intentar inicializar después de un tiempo adicional

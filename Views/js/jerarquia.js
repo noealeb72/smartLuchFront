@@ -22,19 +22,33 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 	$scope.user_Bonificacion = localStorage.getItem('bonificacion');
 	$scope.user_DNI = localStorage.getItem('dni');
 
+	// Función para validar porcentaje en tiempo real
+	$scope.validatePercentage = function(value) {
+		if (value && value !== '') {
+			var num = parseInt(value);
+			if (num > 100) {
+				$scope.view_bonificacion = 100;
+				$scope.view_bonificacion_editar = 100;
+			} else if (num < 0) {
+				$scope.view_bonificacion = 0;
+				$scope.view_bonificacion_editar = 0;
+			}
+		}
+	};
+
 	$scope.ModelCreate = function (isVisible) {
 		if (isVisible) {
 			// debería ser automatico //
 			$scope.view_nombre = $window.document.getElementById('view_nombre').value;
 			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
-			$scope.view_bonificacion = $window.document.getElementById('view_bonificacion').value;
+			$scope.view_bonificacion = $window.document.getElementById('view_bonificacion_nueva').value;
 			//
 
 			// Validar campos vacíos
 			if (!$scope.view_nombre || $scope.view_nombre.trim() === '') {
 				Swal.fire({
 					title: 'Campos requeridos',
-					text: 'El campo Nombre es obligatorio',
+					text: 'El nombre es obligatorio',
 					icon: 'warning',
 					confirmButtonText: 'Entendido'
 				});
@@ -44,7 +58,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
 				Swal.fire({
 					title: 'Campos requeridos',
-					text: 'El campo Descripción es obligatorio',
+					text: 'La descripción es obligatoria',
 					icon: 'warning',
 					confirmButtonText: 'Entendido'
 				});
@@ -54,38 +68,54 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			if (!$scope.view_bonificacion || $scope.view_bonificacion.trim() === '') {
 				Swal.fire({
 					title: 'Campos requeridos',
-					text: 'El campo Bonificación es obligatorio',
+					text: 'El porcentaje de bonificación es obligatorio',
 					icon: 'warning',
 					confirmButtonText: 'Entendido'
 				});
 				return;
 			}
 
-			var jsonForm = { nombre: $scope.view_nombre, descripcion: $scope.view_descripcion, bonificacion: $scope.view_bonificacion };
+			// Validar que la bonificación sea un número válido
+			var bonificacionNum = parseInt($scope.view_bonificacion);
+			if (isNaN(bonificacionNum) || bonificacionNum < 0 || bonificacionNum > 100) {
+				Swal.fire({
+					title: 'Valor inválido',
+					text: 'El porcentaje de bonificación debe ser un número entre 0 y 100. Valor ingresado: ' + $scope.view_bonificacion,
+					icon: 'error',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
+			var jsonForm = {
+				nombre: $scope.view_nombre,
+				descripcion: $scope.view_descripcion,
+				bonificacion: bonificacionNum
+			};
 
 			$http({
 				method: 'post',
 				headers: {
-					"Content-Type": "application/json; charset=utf-8",
-					"Authorization": ""
+					'Content-Type': 'application/json'
 				},
-				url: $scope.base + 'Create',
+				url: $scope.base + 'create',
 				data: jsonForm
-			}).then(function (success) {
-				if (success) {
-					swal(
-						'Operación Correcta',
-						'',
-						'success'
-					);
+			}).then(function (response) {
+				Swal.fire({
+					title: 'Éxito',
+					text: 'Jerarquía creada correctamente',
+					icon: 'success',
+					confirmButtonText: 'Entendido'
+				}).then(function () {
 					$scope.ModelReadAll();
-				}
+				});
 			}, function (error) {
-				swal(
-					'Operación Incorrecta',
-					error,
-					'error'
-				);
+				Swal.fire({
+					title: 'Error',
+					text: 'Error al crear la jerarquía: ' + error.data,
+					icon: 'error',
+					confirmButtonText: 'Entendido'
+				});
 			});
 		} else {
 			alert('Atributos invalidos en los campos');
@@ -93,13 +123,76 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ModelRead = function (view_id) {
+		console.log('=== INICIANDO ModelRead ===');
+		console.log('ID recibido:', view_id);
+		console.log('URL de la petición:', $scope.base + 'get/' + view_id);
+		
 		$http.get($scope.base + 'get/' + view_id)
 			.success(function (data) {
-				$scope.view_nombre = data[0].nombre;
-				$scope.view_descripcion = data[0].descripcion;
-				$scope.view_bonificacion = data[0].bonificacion;
+				console.log('=== RESPUESTA DEL SERVIDOR ===');
+				console.log('Datos completos recibidos:', data);
+				console.log('Tipo de datos:', typeof data);
+				console.log('Es array:', Array.isArray(data));
+				console.log('Longitud del array:', data ? data.length : 'No es array');
+				
+				if (data && data.length > 0) {
+					console.log('=== PRIMER ELEMENTO DEL ARRAY ===');
+					console.log('data[0]:', data[0]);
+					console.log('data[0].nombre:', data[0].nombre);
+					console.log('data[0].descripcion:', data[0].descripcion);
+					console.log('data[0].bonificacion:', data[0].bonificacion);
+					console.log('Tipo de bonificación:', typeof data[0].bonificacion);
+					
+					console.log('=== ANTES DE ASIGNAR ===');
+					console.log('view_nombre antes:', $scope.view_nombre);
+					console.log('view_descripcion antes:', $scope.view_descripcion);
+					console.log('view_bonificacion antes:', $scope.view_bonificacion);
+					console.log('view_bonificacion_editar antes:', $scope.view_bonificacion_editar);
+					
+					// Asignar valores
+					$scope.view_nombre = data[0].nombre;
+					$scope.view_descripcion = data[0].descripcion;
+					
+					// Convertir bonificación a número explícitamente
+					console.log('=== CONVERSIÓN DE BONIFICACIÓN ===');
+					console.log('Valor original del servidor:', data[0].bonificacion);
+					console.log('Tipo original:', typeof data[0].bonificacion);
+					
+					var bonificacionNum = parseFloat(data[0].bonificacion);
+					console.log('Después de parseFloat:', bonificacionNum);
+					console.log('Tipo después de parseFloat:', typeof bonificacionNum);
+					
+					if (isNaN(bonificacionNum)) {
+						console.log('Es NaN, asignando 0');
+						bonificacionNum = 0;
+					}
+					
+					console.log('Valor final a asignar:', bonificacionNum);
+					console.log('Tipo final:', typeof bonificacionNum);
+					
+					$scope.view_bonificacion = bonificacionNum;
+					$scope.view_bonificacion_editar = bonificacionNum;
+					
+					console.log('=== DESPUÉS DE ASIGNAR ===');
+					console.log('view_nombre después:', $scope.view_nombre);
+					console.log('view_descripcion después:', $scope.view_descripcion);
+					console.log('view_bonificacion después:', $scope.view_bonificacion);
+					console.log('view_bonificacion_editar después:', $scope.view_bonificacion_editar);
+					
+					// Verificar si los valores se asignaron correctamente
+					console.log('=== VERIFICACIÓN DE ASIGNACIÓN ===');
+					console.log('¿Nombre asignado correctamente?:', $scope.view_nombre === data[0].nombre);
+					console.log('¿Descripción asignada correctamente?:', $scope.view_descripcion === data[0].descripcion);
+					console.log('¿Bonificación asignada correctamente?:', $scope.view_bonificacion === data[0].bonificacion);
+					console.log('¿Bonificación editar asignada correctamente?:', $scope.view_bonificacion_editar === data[0].bonificacion);
+				} else {
+					console.log('ERROR: No hay datos en la respuesta o el array está vacío');
+				}
 			})
 			.error(function (data, status) {
+				console.log('=== ERROR EN LA PETICIÓN ===');
+				console.log('Status:', status);
+				console.log('Data del error:', data);
 				swal(
 					'Ha ocurrido un error',
 					'Api no presente',
@@ -130,39 +223,85 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			});
 	};
 
-	$scope.ModelUpdate = function (isVisible, view_id) {
+	$scope.ModelUpdate = function (isVisible) {
 		if (isVisible) {
-			// debería ser automatico 
 			$scope.view_nombre = $window.document.getElementById('view_nombre').value;
 			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
-			$scope.view_bonificacion = $window.document.getElementById('view_bonificacion').value;
-			//
+			$scope.view_bonificacion = $window.document.getElementById('view_bonificacion_editar').value;
 
-			var jsonForm = { id: view_id, nombre: $scope.view_nombre, descripcion: $scope.view_descripcion, bonificacion: $scope.view_bonificacion };
+			// Validar campos vacíos
+			if (!$scope.view_nombre || $scope.view_nombre.trim() === '') {
+				Swal.fire({
+					title: 'Campos requeridos',
+					text: 'El nombre es obligatorio',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
+			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
+				Swal.fire({
+					title: 'Campos requeridos',
+					text: 'La descripción es obligatoria',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
+			if (!$scope.view_bonificacion || $scope.view_bonificacion.trim() === '') {
+				Swal.fire({
+					title: 'Campos requeridos',
+					text: 'El porcentaje de bonificación es obligatorio',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
+			// Validar que la bonificación sea un número válido
+			var bonificacionNum = parseInt($scope.view_bonificacion);
+			if (isNaN(bonificacionNum) || bonificacionNum < 0 || bonificacionNum > 100) {
+				Swal.fire({
+					title: 'Valor inválido',
+					text: 'El porcentaje de bonificación debe ser un número entre 0 y 100. Valor ingresado: ' + $scope.view_bonificacion,
+					icon: 'error',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
+			var jsonForm = {
+				id: $scope.view_id,
+				nombre: $scope.view_nombre,
+				descripcion: $scope.view_descripcion,
+				bonificacion: bonificacionNum
+			};
 
 			$http({
 				method: 'post',
 				headers: {
-					"Content-Type": "application/json; charset=utf-8",
-					"Authorization": ""
+					'Content-Type': 'application/json'
 				},
-				url: $scope.base + 'Update',
+				url: $scope.base + 'update',
 				data: jsonForm
-			}).then(function (success) {
-				if (success) {
-					swal(
-						'Operación Correcta',
-						'',
-						'success'
-					);
+			}).then(function (response) {
+				Swal.fire({
+					title: 'Éxito',
+					text: 'Jerarquía actualizada correctamente',
+					icon: 'success',
+					confirmButtonText: 'Entendido'
+				}).then(function () {
 					$scope.ModelReadAll();
-				}
+				});
 			}, function (error) {
-				swal(
-					'Operación Incorrecta',
-					error,
-					'error'
-				);
+				Swal.fire({
+					title: 'Error',
+					text: 'Error al actualizar la jerarquía: ' + error.data,
+					icon: 'error',
+					confirmButtonText: 'Entendido'
+				});
 			});
 		} else {
 			alert('Atributos invalidos en los campos');
@@ -176,21 +315,19 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 		$http({
 			method: 'post',
 			headers: {
-				"Content-Type": "application/json; charset=utf-8",
-				"Authorization": ""
+				'Content-Type': 'application/json'
 			},
-			url: $scope.base + 'Delete',
+			url: $scope.base + 'delete',
 			data: jsonForm
-		}).then(function (success) {
-			if (success) {
-				Swal.fire({
-					title: 'Operación Correcta',
-					text: 'Jerarquía eliminada exitosamente',
-					icon: 'success',
-					confirmButtonText: 'Entendido'
-				});
+		}).then(function (response) {
+			Swal.fire({
+				title: 'Éxito',
+				text: 'Jerarquía eliminada correctamente',
+				icon: 'success',
+				confirmButtonText: 'Entendido'
+			}).then(function () {
 				$scope.ModelReadAll();
-			}
+			});
 		}, function (error) {
 			Swal.fire({
 				title: 'Operación Incorrecta',
@@ -210,8 +347,24 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ViewUpdate = function (view_id) {
+		console.log('=== INICIANDO ViewUpdate ===');
+		console.log('ID del registro a editar:', view_id);
+		console.log('Estado actual del scope:');
+		console.log('- ViewAction:', $scope.ViewAction);
+		console.log('- view_id:', $scope.view_id);
+		console.log('- view_nombre:', $scope.view_nombre);
+		console.log('- view_descripcion:', $scope.view_descripcion);
+		console.log('- view_bonificacion:', $scope.view_bonificacion);
+		console.log('- view_bonificacion_editar:', $scope.view_bonificacion_editar);
+		
 		$scope.ViewAction = 'Editar Jerarquia';
 		$scope.view_id = view_id;
+		
+		console.log('Después de asignar ViewAction y view_id:');
+		console.log('- ViewAction:', $scope.ViewAction);
+		console.log('- view_id:', $scope.view_id);
+		
+		console.log('Llamando a ModelRead...');
 		$scope.ModelRead(view_id);
 	};
 
@@ -233,10 +386,8 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ViewCancel = function () {
-		$scope.ViewAction = 'Lista de Items';
+		$scope.ModelReadAll();
 	};
-
-
 
 	$scope.ModelReadAll();
 

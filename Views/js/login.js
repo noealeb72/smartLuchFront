@@ -55,27 +55,52 @@ app.controller('Login', function ($scope, $location, $sce, $http, $window) {
             var usuario = response.data.Usuario[0];
             var smarTime = response.data.smarTime;
             var usuarioSmatTime = response.data.usuarioSmatTime;
-            localStorage.setItem("id", usuario.id);
-            localStorage.setItem("nombre", usuario.nombre);
-            localStorage.setItem("apellido", usuario.apellido);
-            localStorage.setItem("legajo", usuario.legajo);
-            localStorage.setItem("role", usuario.perfil);
-            localStorage.setItem("cuil", usuario.cuil);
-            localStorage.setItem("plannutricional", usuario.plannutricional);
-            localStorage.setItem("planta", usuario.planta);
-            localStorage.setItem("dni", usuario.dni);
-            localStorage.setItem("domicilio", usuario.domicilio);
-            localStorage.setItem("fechaingreso", usuario.fechaingreso);
-            localStorage.setItem("contrato", usuario.contrato);
-            localStorage.setItem("foto", usuario.foto);
-            localStorage.setItem("user", usuario.user);
-            localStorage.setItem("password", usuario.password);
-            localStorage.setItem("proyecto", usuario.proyecto);
-            localStorage.setItem("centrodecosto", usuario.centrodecosto);
-            localStorage.setItem("bonificacion", usuario.bonificaciones);
-            localStorage.setItem("bonificacion_invitado", usuario.bonificaciones_invitado);
+            
+            // Debug: verificar valores que llegan del servidor
+            console.log('=== DATOS DEL SERVIDOR ===');
+            console.log('usuario.perfil (rol):', JSON.stringify(usuario.perfil));
+            console.log('usuario.nombre:', JSON.stringify(usuario.nombre));
+            console.log('usuario.apellido:', JSON.stringify(usuario.apellido));
+            console.log('usuario.planta:', JSON.stringify(usuario.planta));
+            console.log('usuario.centrodecosto:', JSON.stringify(usuario.centrodecosto));
+            console.log('usuario.proyecto:', JSON.stringify(usuario.proyecto));
+            // Función para limpiar y guardar datos
+            function cleanAndSetItem(key, value) {
+                if (value !== null && value !== undefined) {
+                    localStorage.setItem(key, String(value).trim());
+                }
+            }
+            
+            cleanAndSetItem("id", usuario.id);
+            cleanAndSetItem("nombre", usuario.nombre);
+            cleanAndSetItem("apellido", usuario.apellido);
+            cleanAndSetItem("legajo", usuario.legajo);
+            cleanAndSetItem("role", usuario.perfil);
+            cleanAndSetItem("cuil", usuario.cuil);
+            cleanAndSetItem("plannutricional", usuario.plannutricional);
+            cleanAndSetItem("planta", usuario.planta);
+            cleanAndSetItem("dni", usuario.dni);
+            cleanAndSetItem("domicilio", usuario.domicilio);
+            cleanAndSetItem("fechaingreso", usuario.fechaingreso);
+            cleanAndSetItem("contrato", usuario.contrato);
+            cleanAndSetItem("foto", usuario.foto);
+            cleanAndSetItem("user", usuario.user);
+            cleanAndSetItem("password", usuario.password);
+            cleanAndSetItem("proyecto", usuario.proyecto);
+            cleanAndSetItem("centrodecosto", usuario.centrodecosto);
+            cleanAndSetItem("bonificacion", usuario.bonificaciones);
+            cleanAndSetItem("bonificacion_invitado", usuario.bonificaciones_invitado);
             localStorage.setItem("smarTime", smarTime);
             localStorage.setItem("usuarioSmatTime", usuarioSmatTime);
+            
+            // Debug: verificar datos guardados en localStorage
+            console.log('=== DATOS GUARDADOS EN LOCALSTORAGE ===');
+            console.log('role guardado:', JSON.stringify(localStorage.getItem('role')));
+            console.log('nombre guardado:', JSON.stringify(localStorage.getItem('nombre')));
+            console.log('apellido guardado:', JSON.stringify(localStorage.getItem('apellido')));
+            console.log('planta guardada:', JSON.stringify(localStorage.getItem('planta')));
+            console.log('centrodecosto guardado:', JSON.stringify(localStorage.getItem('centrodecosto')));
+            console.log('proyecto guardado:', JSON.stringify(localStorage.getItem('proyecto')));
             if (usuario.perfil === "Cocina") {
                 $window.location.href = 'http://localhost:4200/Views/despacho.html';
             } else {
