@@ -21,6 +21,129 @@
     <!-- CSS -->
     <link rel="stylesheet" href="css/style.min.css">
     <link rel="stylesheet" href="css/smartstyle.css">
+    
+    <style>
+        /* Estilos para mantener el footer en la parte inferior */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .footer-sticky {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        
+        /* Asegurar que el footer tenga el fondo rojo correcto */
+        .footer-sticky .smart-bg {
+            background-color: #F34949 !important;
+        }
+        
+        /* Agregar padding al contenido para que no se oculte detrás del footer */
+        body {
+            padding-bottom: 80px;
+        }
+        
+        /* Botón Guardar con estilo de fondo sólido */
+        .btn-primary {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            border-radius: 4px !important;
+            font-weight: 500 !important;
+            padding: 8px 16px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important;
+        }
+        
+        .btn-primary:hover {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        }
+        
+        .btn-primary:focus {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25) !important;
+        }
+        
+        .btn-primary:active {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        .btn-primary:visited {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        /* Botón Cancelar con estilo de fondo sólido */
+        .btn-cancelar {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            border-radius: 4px !important;
+            font-weight: 500 !important;
+            padding: 8px 16px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important;
+        }
+        
+        .btn-cancelar:hover {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        }
+        
+        .btn-cancelar:focus {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.25) !important;
+        }
+        
+        .btn-cancelar:active {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        .btn-cancelar:visited {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        /* Asegurar que todos los botones tengan el mismo tamaño */
+        .btn-primary,
+        .btn-cancelar {
+            min-height: 32px !important;
+            min-width: 32px !important;
+            padding: 6px 12px !important;
+            font-size: 14px !important;
+            line-height: 1.2 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+    </style>
+    
     <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
 </head>
@@ -30,9 +153,32 @@
         <div class="solid-background">
             <!-- Menu -->
             <div ng-include="'navbar.html'"> </div>
-            <!-- Titulo -->
+            <!-- Titulo y Migas de Pan -->
             <div class="heading-section bg-dark text-white pt-2 pl-3">
-                <h3 class="mb-0">Turno</h3> <!-- Quitamos margen inferior -->
+                <div class="row">
+                    <div class="col-md-8">
+                        <h3 class="mb-0">Turno</h3>
+                    </div>
+                    <div class="col-md-4">
+                        <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Lista de Items'">
+                            <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
+                                <li class="breadcrumb-item">
+                                    <a href="#" ng-click="ViewAction = 'Lista de Items'; ModelReadAll()" class="text-white-50" style="text-decoration: none;">
+                                        <i class="fa fa-home mr-1"></i>Turno
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item active text-white" aria-current="page">
+                                    <span ng-if="ViewAction === 'Nuevo Turno'">
+                                        <i class="fa fa-plus mr-1"></i>Nuevo
+                                    </span>
+                                    <span ng-if="ViewAction === 'Editar Turno'">
+                                        <i class="fa fa-edit mr-1"></i>Editar
+                                    </span>
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
             </div>
 
             <div class="container-fluid" style="margin-top: 0 !important;">
@@ -49,14 +195,19 @@
                 </div>
                 <!-- Buscar -->
                 <div class="row my-3">
-                    <div class="col-md-12">
-                        <label for="buscarTurno" ng-show="ViewAction !== 'Nuevo Turno' && ViewAction !== 'Editar Turno'">Buscar</label>
-                        <input type="text" class="form-control" ng-model="searchText"
-                               title="Buscar Turno"
-                               ng-show="ViewAction !== 'Nuevo Turno' && ViewAction !== 'Editar Turno'"
-                               id="buscarTurno">
+                    <div class="col-md-12" ng-show="ViewAction !== 'Nuevo Turno' && ViewAction !== 'Editar Turno'">
+                        <label for="buscarTurno">Buscar</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" ng-model="searchText" 
+                                   id="buscarTurno" title="Buscar Turno" 
+                                   placeholder="Filtrar por código, descripción...">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary" title="Limpiar" ng-click="searchText=''">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-
                 </div>
                 <div class="container-fluid mr-3" style="min-height: 370px">
                     <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;">
@@ -101,6 +252,10 @@
                     </div>
                     <div ng-if="ViewAction==='Nuevo Turno'">
                         <div class="container-fluid">
+                            <div class="alert alert-info mb-3" role="alert">
+                                <i class="fa fa-info-circle mr-2"></i>
+                                <strong>Creando nuevo turno</strong> - Complete los campos obligatorios para guardar.
+                            </div>
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="turnoForm" ng-submit="ModelCreate(turnoForm.$valid)" novalidate>
                                     <div class="pb-3 form-group">
@@ -121,14 +276,22 @@
                                         <label for="view_horahasta">Hora hasta</label>
                                         <input class="col-8 form-control" type="time" id="view_horahasta" ng-model="view_horahasta" placeholder="Ingrese hora de finalización" required>
                                     </div>
-                                    <button type="submit" class="btn-primary mt-3" ng-disabled="turnoForm.$invalid">Guardar</button>
-                                    <button type="button" class="btn-primary mt-3" ng-click="ViewCancel()">Cancelar</button>
+                                    <button type="submit" class="btn-primary mt-3" ng-disabled="turnoForm.$invalid">
+                                        <i class="fa fa-save mr-1"></i>Guardar
+                                    </button>
+                                    <button type="button" class="btn-cancelar mt-3" ng-click="ViewCancel()">
+                                        <i class="fa fa-times mr-1"></i>Cancelar
+                                    </button>
                                 </form>
                             </div>
                         </div>
                     </div>
                     <div ng-if="ViewAction==='Editar Turno'">
                         <div class="container-fluid">
+                            <div class="alert alert-warning mb-3" role="alert">
+                                <i class="fa fa-edit mr-2"></i>
+                                <strong>Editando turno</strong> - Modifique los campos necesarios y guarde los cambios.
+                            </div>
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="turnoForm" ng-submit="ModelUpdate(turnoForm.$valid,view_id)" novalidate>
                                     <div class="pb-3 form-group">
@@ -149,8 +312,12 @@
                                         <label for="view_horahasta">Hora hasta</label>
                                         <input class="col-8 form-control" type="time" id="view_horahasta" ng-model="view_horahasta" placeholder="Ingrese hora de finalización" required>
                                     </div>
-                                    <button type="submit" class="btn-primary mt-3" ng-disabled="turnoForm.$invalid">Guardar</button>
-                                    <button type="button" class="btn-primary mt-3" ng-click="ViewCancel()">Cancelar</button>
+                                    <button type="submit" class="btn-primary mt-3" ng-disabled="turnoForm.$invalid">
+                                        <i class="fa fa-save mr-1"></i>Guardar
+                                    </button>
+                                    <button type="button" class="btn-cancelar mt-3" ng-click="ViewCancel()">
+                                        <i class="fa fa-times mr-1"></i>Cancelar
+                                    </button>
                                 </form>
                             </div>
                         </div>
@@ -159,7 +326,20 @@
             </div>
         </div>
         <!-- Footer -->
-        <div ng-include="'footer.html'"></div>
+        <div class="footer-sticky">
+            <div class="smart-bg text-white">
+                <div class="container">  
+                    <div class="row pt-3">
+                        <div class="col-md-12 d-flex align-items-center">
+                            <p class="mx-auto text-center mb-0 text-white">
+                                Copyright 2020. All Right Reserved. Grupo Datco SRL
+                            </p>
+                        </div>
+                    </div>
+                    <br />
+                </div>
+            </div>
+        </div>
     </div>
     <!-- External JS -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>

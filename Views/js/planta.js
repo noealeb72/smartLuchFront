@@ -22,12 +22,57 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 	$scope.user_Bonificacion = localStorage.getItem('bonificacion');
 	$scope.user_DNI = localStorage.getItem('dni');
 
+	// Función helper para mostrar popup
+	$scope.showPopup = function(title, text, icon) {
+		if (typeof Swal !== 'undefined' && Swal.fire) {
+			Swal.fire({ 
+				title: title, 
+				text: text, 
+				icon: icon,
+				confirmButtonText: 'Entendido'
+			}); 
+		} else {
+			alert(title + '\n' + text);
+		}
+	};
+
+	// Función helper para mostrar alertas de éxito
+	$scope.showSuccess = function(title, text) {
+		Swal.fire({
+			title: title,
+			text: text || '',
+			icon: 'success',
+			confirmButtonText: 'Entendido'
+		});
+	};
+
+	// Función helper para mostrar alertas de error
+	$scope.showError = function(title, text) {
+		Swal.fire({
+			title: title,
+			text: text || '',
+			icon: 'error',
+			confirmButtonText: 'Entendido'
+		});
+	};
+
 	$scope.ModelCreate = function (isValid) {
 		if (isValid) {
 			// debería ser automatico //
 			$scope.view_nombre = $window.document.getElementById('view_nombre').value;
 			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
 			//
+
+			// Validar campos vacíos
+			if (!$scope.view_nombre || $scope.view_nombre.trim() === '') {
+				$scope.showError('Campos requeridos', 'El campo Nombre es obligatorio');
+				return;
+			}
+
+			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
+				$scope.showError('Campos requeridos', 'El campo Descripción es obligatorio');
+				return;
+			}
 
 			var jsonForm = { nombre: $scope.view_nombre, descripcion: $scope.view_descripcion };
 
@@ -41,22 +86,14 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 				data: jsonForm
 			}).then(function (success) {
 				if (success) {
-					swal(
-						'Operación Correcta',
-						'',
-						'success'
-					);
+					$scope.showSuccess('Operación Correcta', '');
 					$scope.ModelReadAll();
 				}
 			}, function (error) {
-				swal(
-					'Operación Incorrecta',
-					error,
-					'error'
-				);
+				$scope.showError('Operación Incorrecta', error);
 			});
 		} else {
-			alert('Atributos invalidos en los campos');
+			$scope.showPopup('Campos inválidos', 'Atributos inválidos en los campos', 'warning');
 		}
 	};
 
@@ -67,11 +104,7 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 				$scope.view_descripcion = data[0].descripcion;
 			})
 			.error(function (data, status) {
-				swal(
-					'Ha ocurrido un error',
-					'Api no presente',
-					'error'
-				);
+				$scope.showError('Ha ocurrido un error', 'Api no presente');
 			});
 	};
 
@@ -88,11 +121,7 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 				$scope.dataset = data;
 			})
 			.error(function (data, status) {
-				swal(
-					'Ha ocurrido un error',
-					'Api no presente',
-					'error'
-				);
+				$scope.showError('Ha ocurrido un error', 'Api no presente');
 			});
 	};
 
@@ -102,6 +131,17 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 			$scope.view_nombre = $window.document.getElementById('view_nombre').value;
 			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
 			//
+
+			// Validar campos vacíos
+			if (!$scope.view_nombre || $scope.view_nombre.trim() === '') {
+				$scope.showError('Campos requeridos', 'El campo Nombre es obligatorio');
+				return;
+			}
+
+			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
+				$scope.showError('Campos requeridos', 'El campo Descripción es obligatorio');
+				return;
+			}
 
 			var jsonForm = { id: view_id, nombre: $scope.view_nombre, descripcion: $scope.view_descripcion };
 
@@ -115,22 +155,14 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 				data: jsonForm
 			}).then(function (success) {
 				if (success) {
-					swal(
-						'Operación Correcta',
-						'',
-						'success'
-					);
+					$scope.showSuccess('Operación Correcta', '');
 					$scope.ModelReadAll();
 				}
 			}, function (error) {
-				swal(
-					'Operación Incorrecta',
-					error,
-					'error'
-				);
+				$scope.showError('Operación Incorrecta', error);
 			});
 		} else {
-			alert('Atributos invalidos en los campos');
+			$scope.showPopup('Campos inválidos', 'Atributos inválidos en los campos', 'warning');
 		}
 	};
 
@@ -147,19 +179,11 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				swal(
-					'Operación Correcta',
-					'',
-					'success'
-				);
-				$scope.ModelReadAll();
+				$scope.showSuccess('Operación Correcta', 'Planta eliminada exitosamente');
+				$scope.ModelReadAll(); // Recargar la lista después de eliminar
 			}
 		}, function (error) {
-			swal(
-				'Operación Incorrecta',
-				error,
-				'error'
-			);
+			$scope.showError('Operación Incorrecta', 'Error al eliminar la planta');
 		});
 	}
 
@@ -177,20 +201,28 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ViewDelete = function (view_id) {
-		swal({
+		// defensa por si otra lib ensucia Swal
+		const hasSwal = typeof window !== 'undefined' && window.Swal && typeof window.Swal.fire === 'function';
+	  
+		if (hasSwal) {
+		  window.Swal.fire({
 			title: 'Eliminar registro',
 			text: 'Desea eliminar la planta?',
-			type: 'warning',
+			icon: 'warning',
 			showCancelButton: true,
 			confirmButtonColor: '#3085d6',
 			cancelButtonColor: '#d33',
-			confirmButtonText: 'OK'
-		})
-			.then(function (ConfirmClick) {
-				if (ConfirmClick.value === true) {
-					$scope.ModelDelete(view_id);
-				}
-			});
+			confirmButtonText: 'Sí, eliminar',
+			cancelButtonText: 'Cancelar'
+		  }).then(function (result) {
+			if (result.isConfirmed) $scope.ModelDelete(view_id);
+		  });
+		} else {
+		  // Fallback nativo si SweetAlert2 no está sano
+		  if (window.confirm('Desea eliminar la planta?')) {
+			$scope.ModelDelete(view_id);
+		  }
+		}
 	};
 
 	$scope.ViewCancel = function () {

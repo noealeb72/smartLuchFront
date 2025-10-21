@@ -75,6 +75,46 @@
             box-shadow: none !important;
         }
         
+        /* Estilos para botones de acción */
+        .btn-link[title="Editar"], .btn-link[title="Eliminar"] {
+            min-height: 40px !important;
+            min-width: 40px !important;
+            padding: 8px !important;
+            font-size: 14px !important;
+            line-height: 1.2 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 8px !important;
+            border: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        /* Botón Editar - Gris oscuro */
+        .btn-link[title="Editar"] {
+            background-color: #343a40 !important;
+            color: white !important;
+        }
+        
+        .btn-link[title="Editar"]:hover {
+            background-color: #495057 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+        }
+        
+        /* Botón Eliminar - Rojo */
+        .btn-link[title="Eliminar"] {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+        
+        .btn-link[title="Eliminar"]:hover {
+            background-color: #c82333 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+        }
+        
         /* Botón Cancelar con estilo de fondo sólido */
         .btn-cancelar {
             background-color: #F34949 !important;
@@ -511,7 +551,7 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_bonificacion">Bonificacion</label>
-                                             <input class="col-8 form-control" type="number" id="view_bonificacion" name="view_bonificacion" ng-model="view_bonificacion" placeholder="Ingrese bonificacion" min="0" value="0">
+                                             <input class="col-8 form-control" type="number" id="view_bonificacion" name="view_bonificacion" ng-model="view_bonificacion" placeholder="Ingrese bonificacion" min="0" value="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
                                              <span ng-show="userForm.$submitted && userForm.view_bonificacion.$error.required || userForm.view_bonificacion.$dirty && userForm.view_bonificacion.$error.required" class="text-danger">Bonificacion requerida, aclarar 0 si no tiene</span>
                                          </div>
                                      </div>
@@ -559,7 +599,7 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_bonificacion_invitado">Bonificación invitado</label>
-                                             <input class="col-8 form-control" type="number" id="view_bonificacion_invitado" name="view_bonificacion_invitado" ng-model="view_bonificacion_invitado" placeholder="Ingrese bonificación" min="0" value="0">
+                                             <input class="col-8 form-control" type="number" id="view_bonificacion_invitado" name="view_bonificacion_invitado" ng-model="view_bonificacion_invitado" placeholder="Ingrese bonificación" min="0" value="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
                                              <span ng-show="userForm.$submitted && userForm.view_bonificacion_invitado.$error.required || userForm.view_bonificacion_invitado.$dirty && userForm.view_bonificacion_invitado.$error.required" class="text-danger">bonificación requerida, aclarar 0 si no tiene</span>
                                          </div>
                                      </div>
@@ -638,7 +678,7 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_bonificacion">Bonificados consumo propio</label>
-                                             <input class="col-8 form-control" type="number" id="view_bonificacion" name="view_bonificacion" ng-model="view_bonificacion" placeholder="Ingrese bonificacion" required>
+                                             <input class="col-8 form-control" type="number" id="view_bonificacion" name="view_bonificacion" ng-model="view_bonificacion" placeholder="Ingrese bonificacion" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57" required>
                                              <span ng-show="userForm.$submitted && userForm.view_bonificacion.$error.required || userForm.view_bonificacion.$dirty && userForm.view_bonificacion.$error.required" class="text-danger">Bonificacion requerida, aclarar 0 si no tiene</span>
                                          </div>
                                      </div>
@@ -683,7 +723,7 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_bonificacion_invitado">Bonificados para invitados</label>
-                                             <input class="col-8 form-control" type="number" id="view_bonificacion_invitado" name="view_bonificacion_invitado" ng-model="view_bonificacion_invitado" placeholder="Ingrese bonificacion para invitados" required>
+                                             <input class="col-8 form-control" type="number" id="view_bonificacion_invitado" name="view_bonificacion_invitado" ng-model="view_bonificacion_invitado" placeholder="Ingrese bonificacion para invitados" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57" required>
                                              <span ng-show="userForm.$submitted && userForm.view_bonificacion_invitado.$error.required || userForm.view_bonificacion_invitado.$dirty && userForm.view_bonificacion_invitado.$error.required" class="text-danger">Bonificacion requerida, aclarar 0 si no tiene</span>
                                          </div>
                                      </div>
@@ -722,6 +762,7 @@
      <script src="js/angular.min.js"></script>
      <!-- SweetAlert2 v11 -->
      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+     <script src="js/navbar-direct.js"></script>
      <script src="js/usuario.js?v=3.5"></script>
  </body>
  </html>

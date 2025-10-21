@@ -296,57 +296,111 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window) {
 	}
 
 	$scope.buscarUsuario = function () {
+		alert('Función buscarUsuario ejecutada');
+		
+		// Leer valores de los campos
 		$scope.dia_desde = $window.document.getElementById('dia_desde').value;
 		$scope.dia_hasta = $window.document.getElementById('dia_hasta').value;
 		$scope.filtro_user = $window.document.getElementById('filtro_user').value;
 
-		if ($scope.dia_desde == null || $scope.dia_desde == '') {
+		console.log('Valores leídos:', {
+			dia_desde: $scope.dia_desde,
+			dia_hasta: $scope.dia_hasta,
+			filtro_user: $scope.filtro_user
+		});
+
+		// Marcar campos como tocados para mostrar validación visual
+		var diaDesdeElement = $window.document.getElementById('dia_desde');
+		var diaHastaElement = $window.document.getElementById('dia_hasta');
+		var filtroUserElement = $window.document.getElementById('filtro_user');
+		
+		if (diaDesdeElement) {
+			diaDesdeElement.classList.add('ng-touched');
+		}
+		if (diaHastaElement) {
+			diaHastaElement.classList.add('ng-touched');
+		}
+		if (filtroUserElement) {
+			filtroUserElement.classList.add('ng-touched');
+		}
+
+		// Validar todos los campos y mostrar todos los mensajes de error
+		var hasErrors = false;
+		
+		// Validar fecha desde
+		if (!$scope.dia_desde || $scope.dia_desde.trim() === '') {
 			$scope.desdewarning = true;
+			hasErrors = true;
+			console.log('Error: Fecha desde vacía');
 		} else {
 			$scope.desdewarning = false;
-			if ($scope.dia_hasta == null || $scope.dia_hasta == '') {
-				$scope.hastawarning = true;
-			} else {
-				$scope.hastawarning = false;
-				if ($scope.filtro_user == '') {
-					$scope.legajowarning = true;
-				} else { //Todos los campos necesarios existen
+		}
+		
+		// Validar fecha hasta
+		if (!$scope.dia_hasta || $scope.dia_hasta.trim() === '') {
+			$scope.hastawarning = true;
+			hasErrors = true;
+			console.log('Error: Fecha hasta vacía');
+		} else {
+			$scope.hastawarning = false;
+		}
+		
+		// Validar filtro de usuario
+		if (!$scope.filtro_user || $scope.filtro_user.trim() === '') {
+			$scope.legajowarning = true;
+			hasErrors = true;
+			console.log('Error: Filtro usuario vacío');
+		} else {
+			$scope.legajowarning = false;
+		}
+		
+		console.log('Errores encontrados:', hasErrors);
+		console.log('Mensajes de error:', {
+			desdewarning: $scope.desdewarning,
+			hastawarning: $scope.hastawarning,
+			legajowarning: $scope.legajowarning
+		});
+		
+		// Si hay errores, no continuar
+		if (hasErrors) {
+			$scope.$apply();
+			return;
+		}
+		
+		// Si todos los campos están completos, proceder con la búsqueda
+		if (!$scope.desdewarning && !$scope.hastawarning && !$scope.legajowarning) {
+			var desde = $scope.dia_desde.split('-');
+			var hasta = $scope.dia_hasta.split('-');
 
-					$scope.legajowarning = false;
-					var desde = $scope.dia_desde.split('-');
-					var hasta = $scope.dia_hasta.split('-');
+			$scope.filtro_user = $window.document.getElementById('filtro_user').value;
 
-					$scope.filtro_user = $window.document.getElementById('filtro_user').value;
+			var auxdesde = desde[2] + '/' + desde[1] + '/' + desde[0];
+			var auxhasta = hasta[2] + '/' + hasta[1] + '/' + hasta[0];
 
-					var auxdesde = desde[2] + '/' + desde[1] + '/' + desde[0];
-					var auxhasta = hasta[2] + '/' + hasta[1] + '/' + hasta[0];
-
-					$scope.view_rango1 = auxdesde;
-					$scope.view_rango2 = auxhasta;
-					var user = $scope.filtro_user;
-					//$scope.getReporte(user, auxdesde, auxhasta, $scope.user_Planta);
-					$http({
-						url: $scope.baseReporte + 'getUserReport',
-						method: "GET",
-						params: { user: user, desde: auxdesde, hasta: auxhasta, planta: $scope.user_Planta }
-					})
-						.success(function (data) {
-							data.consumidos = $scope.Ordena(data.consumidos);
-							$scope.reportes = data;
-							$scope.dataset = data;
-							$scope.cantcons = data.consumidos.length;
-							$scope.apagar = -$scope.cantcons + data.bonificados;
-						})
-						.error(function (data, status) {
-							swal(
-								'Ha ocurrido un error',
-								'Error al obtener registros para legajo ' + user,
-								'error'
-							);
-						});
-					$scope.ViewAction = 'pedidos';
-				}
-			}
+			$scope.view_rango1 = auxdesde;
+			$scope.view_rango2 = auxhasta;
+			var user = $scope.filtro_user;
+			//$scope.getReporte(user, auxdesde, auxhasta, $scope.user_Planta);
+			$http({
+				url: $scope.baseReporte + 'getUserReport',
+				method: "GET",
+				params: { user: user, desde: auxdesde, hasta: auxhasta, planta: $scope.user_Planta }
+			})
+				.success(function (data) {
+					data.consumidos = $scope.Ordena(data.consumidos);
+					$scope.reportes = data;
+					$scope.dataset = data;
+					$scope.cantcons = data.consumidos.length;
+					$scope.apagar = -$scope.cantcons + data.bonificados;
+				})
+				.error(function (data, status) {
+					swal(
+						'Ha ocurrido un error',
+						'Error al obtener registros para legajo ' + user,
+						'error'
+					);
+				});
+			$scope.ViewAction = 'pedidos';
 		}
 	}
 

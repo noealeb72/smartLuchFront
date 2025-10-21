@@ -1,4 +1,14 @@
-﻿var app = angular.module('AngujarJS', []);
+﻿console.log('centrodecosto.js loaded');
+
+// Verificar si el módulo ya existe
+var app;
+try {
+    app = angular.module('AngujarJS');
+    console.log('Módulo AngujarJS ya existe');
+} catch (e) {
+    app = angular.module('AngujarJS', []);
+    console.log('Creando nuevo módulo AngujarJS');
+}
 
 app.filter('startFrom', function () {
 	return function (input, start) {
@@ -17,9 +27,10 @@ app.filter('formatDateArg', function () {
 
 
 app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
+	console.log('CentroDeCosto controller initialized');
 	$scope.titulo = 'Centro de costo';  // Título inicial
-	$scope.base = 'http://localhost:8000/api/centrodecosto/';
-	$scope.basePlanta = 'http://localhost:8000/api/planta/';
+	$scope.base = 'http://localhost:8002/api/centrodecosto/';
+	$scope.basePlanta = 'http://localhost:8002/api/planta/';
 	
 	$scope.searchText = ''; // Modelo de búsqueda vacío al inicio
 	
@@ -35,59 +46,93 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
 	$scope.user_Bonificacion = localStorage.getItem('bonificacion');
 	$scope.user_DNI = localStorage.getItem('dni');
 
-	$scope.ModelCreate = function (isValid) {
-		if (isValid) {
-			// debería ser automatico //
-			$scope.view_nombre = $window.document.getElementById('view_nombre').value;
-			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
-			$scope.view_planta = $window.document.getElementById('view_planta').value;
-			//
-
-			var jsonForm = { nombre: $scope.view_nombre, descripcion: $scope.view_descripcion, planta: $scope.view_planta };
-
-			$http({
-				method: 'post',
-				headers: {
-					"Content-Type": "application/json; charset=utf-8",
-					"Authorization": ""
-				},
-				url: $scope.base + 'Create',
-				data: jsonForm
-			}).then(function (success) {
-				if (success) {
-					swal(
-						'Operación Correcta',
-						'',
-						'success'
-					);
-					$scope.ModelReadAll();
-				}
-			}, function (error) {
-				swal(
-					'Operación Incorrecta',
-					error,
-					'error'
-				);
+	// Funciones helper para SweetAlert2
+	$scope.showPopup = function (title, text, icon) {
+		if (typeof Swal !== 'undefined' && Swal.fire) {
+			Swal.fire({
+				title: title,
+				text: text,
+				icon: icon,
+				confirmButtonText: 'Aceptar'
 			});
 		} else {
-			alert('Atributos invalidos en los campos');
+			alert(title + ': ' + text);
 		}
 	};
 
+	$scope.showSuccess = function (title, text) {
+		$scope.showPopup(title, text, 'success');
+	};
+
+	$scope.showError = function (title, text) {
+		$scope.showPopup(title, text, 'error');
+	};
+
+
+
+	$scope.ModelCreate = function (form) {
+		// Validar si el formulario es válido
+		if (!form.$valid) {
+			alert('Campos requeridos: Por favor complete todos los campos obligatorios');
+			return;
+		}
+		
+		// Leer valores del modelo
+		var nombre = $scope.view_nombre;
+		var descripcion = $scope.view_descripcion;
+		var planta = $scope.view_planta;
+
+		// Validación de campos vacíos
+		if (!nombre || nombre.trim() === '') {
+			alert('El campo Nombre es obligatorio');
+			return;
+		}
+
+		if (!descripcion || descripcion.trim() === '') {
+			alert('El campo Descripción es obligatorio');
+			return;
+		}
+
+		if (!planta || planta.trim() === '') {
+			alert('El campo Planta es obligatorio');
+			return;
+		}
+		
+		var jsonForm = { nombre: nombre, descripcion: descripcion, planta: planta };
+		
+		$http({
+			method: 'post',
+			headers: {
+				"Content-Type": "application/json; charset=utf-8",
+				"Authorization": ""
+			},
+			url: $scope.base + 'Create',
+			data: jsonForm
+		}).then(function (success) {
+			alert('Centro de costo creado correctamente');
+			// Limpiar el formulario
+			$scope.view_nombre = '';
+			$scope.view_descripcion = '';
+			$scope.view_planta = '';
+			// Volver al listado
+			$scope.ViewAction = 'Lista de Items';
+			// Actualizar la lista
+			$scope.ModelReadAll();
+		}, function (error) {
+			alert('Error: ' + (error.data || error.statusText || 'Error desconocido'));
+		});
+	};
+	
+
 	$scope.ModelRead = function (view_id) {
 		$http.get($scope.base + 'get/' + view_id)
-			.success(function (data) {
+			.then(function (response) {
 				$scope.ModelReadPlantas();
-				$scope.view_nombre = data[0].nombre;
-				$scope.view_descripcion = data[0].descripcion;
-				$scope.view_planta = data[0].planta;
-			})
-			.error(function (data, status) {
-				swal(
-					'Ha ocurrido un error',
-					'Api no presente',
-					'error'
-				);
+				$scope.view_nombre = response.data[0].nombre;
+				$scope.view_descripcion = response.data[0].descripcion;
+				$scope.view_planta = response.data[0].planta;
+			}, function (error) {
+				alert('Error: No se pudo cargar el centro de costo');
 			});
 	};
 
@@ -101,56 +146,64 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
 		$scope.view_planta = '';
 
 		$http.get($scope.base + 'getAll')
-			.success(function (data) {
-				$scope.dataset = data;
-			})
-			.error(function (data, status) {
-				swal(
-					'Ha ocurrido un error',
-					'Api no presente',
-					'error'
-				);
+			.then(function (response) {
+				$scope.dataset = response.data;
+			}, function (error) {
+				alert('Error: No se pudo cargar la lista de centros de costo');
 			});
 	};
 
-	$scope.ModelUpdate = function (isValid, view_id) {
-		if (isValid) {
-			// debería ser automatico 
-			$scope.view_nombre = $window.document.getElementById('view_nombre').value;
-			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
-			$scope.view_planta = $window.document.getElementById('view_planta').value;
-			//
-
-			var jsonForm = { id: view_id, nombre: $scope.view_nombre, descripcion: $scope.view_descripcion, planta: $scope.view_planta };
-
-			$http({
-				method: 'post',
-				headers: {
-					"Content-Type": "application/json; charset=utf-8",
-					"Authorization": ""
-				},
-				url: $scope.base + 'Update',
-				data: jsonForm
-			}).then(function (success) {
-				if (success) {
-					swal(
-						'Operación Correcta',
-						'',
-						'success'
-					);
-					$scope.ModelReadAll();
-				}
-			}, function (error) {
-				swal(
-					'Operación Incorrecta',
-					error,
-					'error'
-				);
-			});
-		} else {
-			alert('Atributos invalidos en los campos');
+	$scope.ModelUpdate = function (form, view_id) {
+		// Validar si el formulario es válido
+		if (!form.$valid) {
+			alert('Campos requeridos: Por favor complete todos los campos obligatorios');
+			return;
 		}
 		
+		// Leer valores del modelo
+		var nombre = $scope.view_nombre;
+		var descripcion = $scope.view_descripcion;
+		var planta = $scope.view_planta;
+
+		// Validación de campos vacíos
+		if (!nombre || nombre.trim() === '') {
+			alert('El campo Nombre es obligatorio');
+			return;
+		}
+
+		if (!descripcion || descripcion.trim() === '') {
+			alert('El campo Descripción es obligatorio');
+			return;
+		}
+
+		if (!planta || planta.trim() === '') {
+			alert('El campo Planta es obligatorio');
+			return;
+		}
+		
+		var jsonForm = { id: view_id, nombre: nombre, descripcion: descripcion, planta: planta };
+		
+		$http({
+			method: 'post',
+			headers: {
+				"Content-Type": "application/json; charset=utf-8",
+				"Authorization": ""
+			},
+			url: $scope.base + 'Update',
+			data: jsonForm
+		}).then(function (success) {
+			alert('Centro de costo actualizado correctamente');
+			// Limpiar el formulario
+			$scope.view_nombre = '';
+			$scope.view_descripcion = '';
+			$scope.view_planta = '';
+			// Volver al listado
+			$scope.ViewAction = 'Lista de Items';
+			// Actualizar la lista
+			$scope.ModelReadAll();
+		}, function (error) {
+			alert('Error: ' + (error.data || error.statusText || 'Error desconocido'));
+		});
 	};
 
 	$scope.ModelDelete = function (view_id) {
@@ -165,34 +218,19 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
 			url: $scope.base + 'Delete',
 			data: jsonForm
 		}).then(function (success) {
-			if (success) {
-				swal(
-					'Operación Correcta',
-					'',
-					'success'
-				);
-				$scope.ModelReadAll();
-			}
+			alert('Centro de costo eliminado correctamente');
+			$scope.ModelReadAll();
 		}, function (error) {
-			swal(
-				'Operación Incorrecta',
-				error,
-				'error'
-			);
+			alert('Error: No se pudo eliminar el centro de costo');
 		});
 	}
 
 	$scope.ModelReadPlantas = function () {
 		$http.get($scope.basePlanta + 'getAll')
-			.success(function (data) {
-				$scope.plantas = data;
-			})
-			.error(function (data, status) {
-				swal(
-					'Ha ocurrido un error',
-					'Error al obtener plantas',
-					'error'
-				);
+			.then(function (response) {
+				$scope.plantas = response.data;
+			}, function (error) {
+				alert('Error: No se pudo cargar la lista de plantas');
 			});
 	};
 
@@ -201,6 +239,7 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
 		$scope.view_id = -1;
 		$scope.view_nombre = '';
 		$scope.view_descripcion = '';
+		$scope.view_planta = '';
 		$scope.ModelReadPlantas();
 	};
 
@@ -208,30 +247,32 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
 		$scope.ViewAction = 'Editar';
 		$scope.view_id = view_id;
 		$scope.ModelRead(view_id);
-		$scope.ModelReadPlantas();
 	};
 
 	$scope.ViewDelete = function (view_id) {
-		swal({
-			title: 'Eliminar registro',
-			text: 'Desea eliminar el Centro de costo?',
-			type: 'warning',
-			showCancelButton: true,
-			confirmButtonColor: '#3085d6',
-			cancelButtonColor: '#d33',
-			confirmButtonText: 'OK'
-		})
-			.then(function (ConfirmClick) {
-				if (ConfirmClick.value === true) {
-					$scope.ModelDelete(view_id);
-				}
-			});
+		if (confirm('¿Desea eliminar el Centro de costo?')) {
+			$scope.ModelDelete(view_id);
+		}
 	};
 
 	$scope.ViewCancel = function () {
 		$scope.ViewAction = 'Lista de Items';
+		$scope.view_nombre = '';
+		$scope.view_descripcion = '';
+		$scope.view_planta = '';
 	};
 
+
+	// Función de prueba para verificar conectividad
+	$scope.testConnection = function() {
+		$http.get($scope.base + 'getAll')
+			.then(function(response) {
+				alert('Server connection successful! Data received: ' + JSON.stringify(response.data));
+			}, function(error) {
+				alert('Server connection failed: ' + error.status + ' - ' + error.statusText);
+			});
+	};
+	
 	$scope.ModelReadAll();
 	$scope.data = [];
 

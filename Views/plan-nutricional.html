@@ -17,6 +17,122 @@
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" />
     <link rel="stylesheet" href="css/style.min.css" />
     <link rel="stylesheet" href="css/smartstyle.css" />
+    
+    <style>
+        /* Estilos para mantener el footer en la parte inferior */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .footer-sticky {
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        
+        /* Estilos para botones de acción */
+        .btn-link[title="Editar"], .btn-link[title="Eliminar"] {
+            min-height: 40px !important;
+            min-width: 40px !important;
+            padding: 8px !important;
+            font-size: 14px !important;
+            line-height: 1.2 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 8px !important;
+            border: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        /* Botón Editar - Gris oscuro */
+        .btn-link[title="Editar"] {
+            background-color: #343a40 !important;
+            color: white !important;
+        }
+        
+        .btn-link[title="Editar"]:hover {
+            background-color: #495057 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+        }
+        
+        /* Botón Eliminar - Rojo */
+        .btn-link[title="Eliminar"] {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+        
+        .btn-link[title="Eliminar"]:hover {
+            background-color: #c82333 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+        }
+        
+        /* Íconos de los botones en color blanco */
+        .btn-primary i.fa-save,
+        .btn-cancelar i.fa-times,
+        .btn-primary[ng-click="ViewCreate()"] i.fa-plus {
+            color: white !important;
+        }
+        
+        /* Estilos para SweetAlert2 - Botón Entendido */
+        .swal2-confirm {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        .swal2-confirm:hover {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        .swal2-confirm:focus {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .swal2-confirm:active {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        /* Estilos para SweetAlert2 - Botón Cancelar */
+        .swal2-cancel {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        .swal2-cancel:hover {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+        
+        .swal2-cancel:focus {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .swal2-cancel:active {
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
+            color: white !important;
+        }
+    </style>
+    
     <style>
         /* Estilos para mantener el footer en la parte inferior */
         html, body {
@@ -366,11 +482,11 @@
                                         <td class="text-center col-2">
                                             <button type="button" class="btn btn-link p-0 align-middle"
                                                     ng-click="ViewUpdate(item.id)" title="Editar" style="cursor: pointer;">
-                                                <i class="fa fa-edit" style="color:rebeccapurple"></i>
+                                                <i class="fa fa-edit" style="color:white"></i>
                                             </button>
                                             <button type="button" class="btn btn-link p-0 align-middle ml-2"
                                                     ng-click="ViewDelete(item.id)" title="Eliminar" aria-label="Eliminar" style="cursor: pointer;">
-                                                <i class="fa fa-trash" style="color:red"></i>
+                                                <i class="fa fa-trash" style="color:white"></i>
                                             </button>
                                         </td>
                                     </tr>

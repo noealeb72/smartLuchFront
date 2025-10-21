@@ -30,6 +30,37 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			$scope.view_bonificacion = $window.document.getElementById('view_bonificacion').value;
 			//
 
+			// Validar campos vacíos
+			if (!$scope.view_nombre || $scope.view_nombre.trim() === '') {
+				Swal.fire({
+					title: 'Campos requeridos',
+					text: 'El campo Nombre es obligatorio',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
+			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
+				Swal.fire({
+					title: 'Campos requeridos',
+					text: 'El campo Descripción es obligatorio',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
+			if (!$scope.view_bonificacion || $scope.view_bonificacion.trim() === '') {
+				Swal.fire({
+					title: 'Campos requeridos',
+					text: 'El campo Bonificación es obligatorio',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
 			var jsonForm = { nombre: $scope.view_nombre, descripcion: $scope.view_descripcion, bonificacion: $scope.view_bonificacion };
 
 			$http({
@@ -152,19 +183,21 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				swal(
-					'Operación Correcta',
-					'',
-					'success'
-				);
+				Swal.fire({
+					title: 'Operación Correcta',
+					text: 'Jerarquía eliminada exitosamente',
+					icon: 'success',
+					confirmButtonText: 'Entendido'
+				});
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
-			swal(
-				'Operación Incorrecta',
-				error,
-				'error'
-			);
+			Swal.fire({
+				title: 'Operación Incorrecta',
+				text: 'Error al eliminar la jerarquía',
+				icon: 'error',
+				confirmButtonText: 'Entendido'
+			});
 		});
 	}
 
@@ -183,20 +216,20 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ViewDelete = function (view_id) {
-		swal({
+		Swal.fire({
 			title: 'Eliminar registro',
-			text: 'Desea eliminar la jerarquia?',
-			type: 'warning',
+			text: 'Desea eliminar la jerarquía?',
+			icon: 'warning',
 			showCancelButton: true,
 			confirmButtonColor: '#3085d6',
 			cancelButtonColor: '#d33',
-			confirmButtonText: 'OK'
-		})
-			.then(function (ConfirmClick) {
-				if (ConfirmClick.value === true) {
-					$scope.ModelDelete(view_id);
-				}
-			});
+			confirmButtonText: 'Sí, eliminar',
+			cancelButtonText: 'Cancelar'
+		}).then(function (result) {
+			if (result.isConfirmed) {
+				$scope.ModelDelete(view_id);
+			}
+		});
 	};
 
 	$scope.ViewCancel = function () {

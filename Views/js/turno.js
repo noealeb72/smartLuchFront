@@ -31,6 +31,47 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			$scope.view_horahasta = $window.document.getElementById('view_horahasta').value;
 			//
 
+			// Validar campos vacíos
+			if (!$scope.view_codigo || $scope.view_codigo.trim() === '') {
+				Swal.fire({
+					title: 'Campos requeridos',
+					text: 'El campo Código es obligatorio',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
+			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
+				Swal.fire({
+					title: 'Campos requeridos',
+					text: 'El campo Descripción es obligatorio',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
+			if (!$scope.view_horadesde || $scope.view_horadesde.trim() === '') {
+				Swal.fire({
+					title: 'Campos requeridos',
+					text: 'El campo Hora Desde es obligatorio',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
+			if (!$scope.view_horahasta || $scope.view_horahasta.trim() === '') {
+				Swal.fire({
+					title: 'Campos requeridos',
+					text: 'El campo Hora Hasta es obligatorio',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+				return;
+			}
+
 			var jsonForm = { codigo: $scope.view_codigo, descripcion: $scope.view_descripcion, horadesde: $scope.view_horadesde, horahasta: $scope.view_horahasta };
 
 			$http({
@@ -164,19 +205,21 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				swal(
-					'Operación Correcta',
-					'',
-					'success'
-				);
+				Swal.fire({
+					title: 'Operación Correcta',
+					text: 'Turno eliminado exitosamente',
+					icon: 'success',
+					confirmButtonText: 'Entendido'
+				});
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
-			swal(
-				'Operación Incorrecta',
-				error,
-				'error'
-			);
+			Swal.fire({
+				title: 'Operación Incorrecta',
+				text: 'Error al eliminar el turno',
+				icon: 'error',
+				confirmButtonText: 'Entendido'
+			});
 		});
 	}
 
@@ -196,20 +239,20 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ViewDelete = function (view_id) {
-		swal({
+		Swal.fire({
 			title: 'Eliminar registro',
 			text: 'Desea eliminar el turno?',
-			type: 'warning',
+			icon: 'warning',
 			showCancelButton: true,
 			confirmButtonColor: '#3085d6',
 			cancelButtonColor: '#d33',
-			confirmButtonText: 'OK'
-		})
-			.then(function (ConfirmClick) {
-				if (ConfirmClick.value === true) {
-					$scope.ModelDelete(view_id);
-				}
-			});
+			confirmButtonText: 'Sí, eliminar',
+			cancelButtonText: 'Cancelar'
+		}).then(function (result) {
+			if (result.isConfirmed) {
+				$scope.ModelDelete(view_id);
+			}
+		});
 	};
 
 	$scope.ViewCancel = function () {

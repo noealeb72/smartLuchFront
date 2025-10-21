@@ -24,6 +24,64 @@
     <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
     <style>
+        /* Estilos consistentes para reportes */
+        .btn-primary {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            border-radius: 4px !important;
+            font-weight: 500 !important;
+            padding: 8px 16px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        
+        .btn-primary:hover {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+        }
+        
+        .btn-primary:focus {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25) !important;
+        }
+        
+        .btn-primary:active {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #495057;
+        }
+        
+        .form-control {
+            border-radius: 4px;
+            border: 1px solid #ced4da;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .form-control:focus {
+            border-color: #495057;
+            box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25);
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        
         @media (max-width: 768px) {
             .container, .container-fluid {
                 padding-left: 10px;
@@ -125,33 +183,71 @@
             <div>
                 <!-- Menu -->
                 <div ng-include="'navbar.html'"></div>
-                <!-- Titulo -->
+                <!-- Titulo y Breadcrumbs -->
                 <div class="heading-section bg-dark text-white pt-2 pl-3">
-                    <h3>
-                        Reporte de Gestión
-                    </h3>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h3 class="mb-0">Reporte de Gestión</h3>
+                        </div>
+                        <div class="col-md-4">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
+                                    <li class="breadcrumb-item">
+                                        <a href="index.html" class="text-white-50" style="text-decoration: none;">
+                                            <i class="fa fa-home mr-1"></i>Inicio
+                                        </a>
+                                    </li>
+                                    <li class="breadcrumb-item active text-white" aria-current="page">
+                                        <i class="fa fa-chart-bar mr-1"></i>Reporte de Gestión
+                                    </li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
                 </div>
                 <div ng-if="ViewAction == 'inicio'" class="container-fluid mr-3 dishes-text" style="min-height: 370px">
+                    <!-- Alert Box Informativo -->
+                    <div class="alert alert-info mb-3" role="alert">
+                        <i class="fa fa-info-circle mr-2"></i>
+                        <strong>Filtros de búsqueda</strong> - Seleccione el rango de fechas y opcionalmente filtre por texto para generar el reporte de gestión.
+                    </div>
+                    
                     <form name="form" novalidate>
                         <div class="row">
-                            <div class="form-group pl-3" ng-class="{'has-error': form.fechaDesde.$touched && form.fechaDesde.$invalid}">
-                                <label for="filtro_fechadesde_inicio">Fecha desde</label>
-                                <input name="fechaDesde" class="form-control" type="date" id="filtro_fechadesde_inicio"
-                                       ng-model="filtro_fechadesde_inicio" required>
-                                <p class="text-danger" ng-show="form.fechaDesde.$touched && form.fechaDesde.$error.required">
-                                    Una fecha de inicio es requerida
-                                </p>
+                            <div class="col-md-4">
+                                <div class="form-group" ng-class="{'has-error': form.fechaDesde.$touched && form.fechaDesde.$invalid}">
+                                    <label for="filtro_fechadesde_inicio" class="form-label">Fecha desde <span class="text-danger">*</span></label>
+                                    <input name="fechaDesde" class="form-control" type="date" id="filtro_fechadesde_inicio"
+                                           ng-model="filtro_fechadesde_inicio" required>
+                                    <p class="text-danger" ng-show="form.fechaDesde.$touched && form.fechaDesde.$error.required">
+                                        Una fecha de inicio es requerida
+                                    </p>
+                                </div>
                             </div>
 
-                            <div class="form-group pl-3">
-                                <label for="filtro_fechaactualidad">Fecha hasta</label>
-                                <input class="form-control" type="date" id="filtro_fechaactualidad" ng-model="filtro_fechaactualidad">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="filtro_fechaactualidad" class="form-label">Fecha hasta</label>
+                                    <input class="form-control" type="date" id="filtro_fechaactualidad" ng-model="filtro_fechaactualidad">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="filtro_busqueda" class="form-label">Filtrar por texto</label>
+                                    <input class="form-control" type="text" id="filtro_busqueda" ng-model="filtro_busqueda" placeholder="Buscar en el reporte...">
+                                </div>
                             </div>
                         </div>
 
-                        <button type="submit" class="form-control col-1 w-100" ng-click="getReporte()" style="cursor: pointer;">
-                            Ir
-                        </button>
+                        <div class="row">
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100" ng-click="getReporte()" style="height: 38px;">
+                                    <i class="fa fa-chart-bar mr-1"></i>Generar Reporte
+                                </button>
+                            </div>
+                        </div>
+                        </div>
                     </form>
                 </div>
 
@@ -331,6 +427,7 @@
     <!-- Main JS -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="js/navbar-direct.js"></script>
     <script src="js/reporteggestion.js"></script>
 </body>
 </html>

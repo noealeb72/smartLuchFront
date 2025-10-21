@@ -24,26 +24,111 @@
     <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
     <style>
+        /* Estilos para mantener el footer en la parte inferior */
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
         }
-
+        
+        .footer-sticky {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        
         body {
-            min-height: 100vh;
+            padding-bottom: 80px;
         }
-
-        .container-fluid {
-            flex: 1 0 auto;
+        
+        /* Estilos para la interfaz principal */
+        .card {
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: none;
         }
-
-        footer, .footer-container, [ng-include="'footer.html'"] {
-            flex-shrink: 0;
+        
+        .card-header {
+            border-radius: 8px 8px 0 0 !important;
+            border: none;
         }
+        
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+        
+        .btn-outline-primary {
+            color: #007bff;
+            border-color: #007bff;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #495057;
+        }
+        
+        .form-control {
+            border-radius: 4px;
+            border: 1px solid #ced4da;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        /* Campos obligatorios vacíos en rojo */
+        .form-control.ng-invalid.ng-touched,
+        .form-control.ng-invalid.ng-dirty {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+        
+        .form-control.ng-invalid.ng-touched:focus,
+        .form-control.ng-invalid.ng-dirty:focus {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+            border-radius: 6px;
+        }
+        
+        .table th {
+            background-color: #343a40;
+            color: white;
+            border: none;
+            font-weight: 500;
+        }
+        
+        .table td {
+            vertical-align: middle;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
         @media (max-width: 768px) {
             .container, .container-fluid {
                 padding-left: 10px;
@@ -150,111 +235,157 @@
                 </h3>
             </div>
 
-            <div ng-if="ViewAction == 'inicio'" class="container-fluid mr-3 dishes-text" style="min-height: 370px">
-                <div class="container">
+            <!-- Pantalla Principal de Búsqueda -->
+            <div class="container-fluid mr-3 dishes-text" style="min-height: 370px">
+                <!-- Filtros de Búsqueda en la parte superior -->
+                <div class="container-fluid">
                     <div class="row">
-                        <div class="form-group pl-3">
-                            <span>Desde</span><input class="form-control" type="date" id="dia_desde" ng-model="dia_desde" />
-                            <span ng-if="desdewarning" class="text-danger">Una fecha de inicio es requerida</span>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="dia_desde" class="form-label">Fecha desde <span class="text-danger">*</span></label>
+                                <input class="form-control" type="date" id="dia_desde" ng-model="dia_desde" required />
+                                <span ng-if="desdewarning" class="text-danger">Una fecha de inicio es requerida</span>
+                            </div>
                         </div>
-                        <div class="form-group pl-3">
-                            <span>Hasta</span><input class="form-control" type="date" id="dia_hasta" ng-model="dia_hasta" />
-                            <span ng-if="hastawarning" class="text-danger">Una fecha de fin es requerida</span>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="dia_hasta" class="form-label">Fecha hasta <span class="text-danger">*</span></label>
+                                <input class="form-control" type="date" id="dia_hasta" ng-model="dia_hasta" required />
+                                <span ng-if="hastawarning" class="text-danger">Una fecha de fin es requerida</span>
+                            </div>
                         </div>
-                        <div class="form-group pl-3">
-                            <span>Legajo</span>
-                            <input id="filtro_user" ng-model="filtro_user" class="form-control" type="number" />
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="filtro_user" class="form-label">Buscar comensal <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input id="filtro_user" ng-model="filtro_user" class="form-control" type="number" placeholder="Ingrese el legajo del comensal" required onkeypress="return event.charCode >= 48 && event.charCode <= 57" min="0" />
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-secondary" data-target="#userSearch" data-toggle="modal" type="button" title="Buscar por nombre">
+                                            <i class="fa fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span ng-if="legajowarning" class="text-danger">Se necesita un legajo para consultar comensal</span>
+                            </div>
                         </div>
-                        <div class="form-group pl-3">
-                            <span>Buscar comensal</span>
-                            <button class="form-control" style="width: 100px; cursor: pointer;" data-target="#userSearch" data-toggle="modal" type="button"><i class="fa fa-search"></i></button>
-                        </div>
-                    </div>
-                    <br />
-                    <span ng-if="legajowarning" class="text-danger">Se necesita un legajo para consultar comensal</span>
-                    <button type="button" class="form-control col-1 w-100" ng-click="buscarUsuario()" style="cursor: pointer;">Ir</button>
-                    <div class="modal fade container-fluid" id="userSearch" tabindex="-2" role="dialog" aria-hidden="true">
-                        <div style="max-width: 50% !important;" class="modal-dialog container-fluid" role="document">
-                            <div class="modal-content container-fluid">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="userModalLabel">Busqueda de usuario</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="cursor: pointer;">
-                                        <span aria-hidden="true">&times;</span>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label class="form-label">&nbsp;</label>
+                                <div style="height: 38px; display: flex; align-items: center;">
+                                    <button type="button" class="btn btn-primary" ng-click="buscarUsuario()" style="cursor: pointer; background-color: #495057; border-color: #495057; border-radius: 4px;">
+                                        <i class="fa fa-search text-white" style="font-size:16px; font-weight:800;"></i> Buscar
                                     </button>
                                 </div>
-                                <div class="modal-body container-fluid">
-                                    <span>Buscar por nombre, apellido o legajo</span>
-                                    <input ng-model="filtro_comensal" ng-keyup="filtraUsuarios()" name="filtro_comensal" id="filtro_comensal" type="text" class="form-control col-4" />
-                                    <br />
-                                    <div class="col-12">
-                                        <span>Comensales</span>
-                                        <table class="table table-hover table-sm">
-                                            <thead style="font-size: 14px;">
-                                                <tr class="bg-dark text-white row">
-                                                    <th class="col-4">Nombre</th>
-                                                    <th class="col-4">Apellido</th>
-                                                    <th class="col-4">Legajo</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr class="planitem row" style="cursor:pointer;" ng-repeat="item in filterUser | startFrom:currentPageusers*pageSizeusers | limitTo:pageSizeusers" ng-click="AgregaUser(item.legajo)">
-                                                    <td class="col-4">{{item.nombre}}</td>
-                                                    <td class="col-4">{{item.apellido}}</td>
-                                                    <td class="col-4">{{item.legajo}}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                        <div>
-                                            <button class="btn btn-secondary btn-sm" ng-disabled="currentPageusers == 0" ng-click="currentPageusers=currentPageusers-1" style="cursor: pointer;">
-                                                Anterior
-                                            </button>
-                                            {{currentPageusers+1}}/{{numberOfPagesusers()}}
-                                            <button class="btn btn-secondary btn-sm" ng-disabled="currentPageusers+1 == numberOfPagesusers()" ng-click="currentPageusers=currentPageusers+1" style="cursor: pointer;">
-                                                Siguiente
-                                            </button>
-                                        </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Modal de Búsqueda de Usuarios -->
+                <div class="modal fade" id="userSearch" tabindex="-1" role="dialog" aria-labelledby="userModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header text-white" style="background-color: #F34949;">
+                                <h5 class="modal-title" id="userModalLabel">
+                                    <i class="fa fa-users mr-2"></i>Buscar Comensal
+                                </h5>
+                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label for="filtro_comensal" class="form-label">Buscar por nombre, apellido o legajo</label>
+                                    <input ng-model="filtro_comensal" ng-keyup="filtraUsuarios()" name="filtro_comensal" id="filtro_comensal" type="text" class="form-control" placeholder="Escriba para buscar..." />
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="thead-dark">
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Apellido</th>
+                                                <th>Legajo</th>
+                                                <th>DNI</th>
+                                                <th>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="item in filterUser | startFrom:currentPageusers*pageSizeusers | limitTo:pageSizeusers" style="cursor:pointer;">
+                                                <td>{{item.nombre}}</td>
+                                                <td>{{item.apellido}}</td>
+                                                <td>{{item.legajo}}</td>
+                                                <td>{{item.dni}}</td>
+                                                <td>
+                                                    <button class="btn btn-sm" ng-click="AgregaUser(item.legajo)" data-dismiss="modal" style="background-color: #F34949; border-color: #F34949; color: white;">
+                                                        <i class="fa fa-check mr-1"></i>Seleccionar
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="d-flex justify-content-center align-items-center">
+                                    <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPageusers == 0" ng-click="currentPageusers=currentPageusers-1">
+                                        <i class="fa fa-chevron-left mr-1"></i>Anterior
+                                    </button>
+                                    <span class="mx-2">{{currentPageusers+1}}/{{numberOfPagesusers()}}</span>
+                                    <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPageusers+1 == numberOfPagesusers()" ng-click="currentPageusers=currentPageusers+1">
+                                        Siguiente<i class="fa fa-chevron-right ml-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Resultados del Historial en la misma pantalla -->
+                <div ng-if="ViewAction == 'pedidos'" class="mt-4">
+                <!-- Información del Comensal -->
+                <div class="card mb-3">
+                    <div class="card-header" style="background-color: #6c757d; color: white;">
+                        <h5 class="mb-0"><i class="fa fa-user mr-2"></i>Información del Comensal</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <strong>Nombre:</strong> {{reportes.nombre}} {{reportes.apellido}}
                                     </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn  btn-primary bg-secondary" data-dismiss="modal" style="cursor: pointer;">Volver</button>
-                                        <button type="button" class="btn btn-primary" ng-click="SelectFiltros()" style="cursor: pointer;">Guardar cambios</button>
+                                    <div class="col-6">
+                                        <strong>DNI:</strong> {{reportes.dni}}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <strong>Platos consumidos:</strong> {{cantcons}}
+                                    </div>
+                                    <div class="col-6">
+                                        <strong>Bonificados del mes:</strong> {{reportes.bonificados}}
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-6">
+                                        <strong>Costo total:</strong> ${{reportes.monto}}
+                                    </div>
+                                    <div class="col-6">
+                                        <strong>Platos invitados:</strong> {{reportes.bonificadosInvitados}}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div ng-if="ViewAction == 'pedidos'">
-                <div class="container-fluid row">
-                    <div class="md-form mt-0 pl-2 col-1">
+                <!-- Historial de Pedidos -->
+                <div class="card">
+                    <div class="card-header" style="background-color: #6c757d; color: white;">
+                        <h6 class="mb-0"><i class="fa fa-utensils mr-2"></i>Historial de Pedidos ({{view_rango1}} - {{view_rango2}})</h6>
                     </div>
-                    <div class="mt-0 col-5 row">
-                        <div><span class="header-attribute col">Nombre:</span><span>{{reportes.nombre}} {{reportes.apellido}}</span></div>
-                        <div><span class="header-attribute col">DNI:</span><span>{{reportes.dni}}</span></div>
-                    </div>
-                    <div class="mt-0 col-5 row">
-                        <div class="col">
-                            <div><span class="header-attribute">C/ platos consumidos:</span><span> {{cantcons}}</span></div>
-                            <div><span class="header-attribute">Bonificados del mes:</span><span> {{reportes.bonificados}}</span></div>
-                        </div>
-                        <div class="col">
-                            <div><span class="header-attribute">Costo total: $</span><span>{{reportes.monto}}</span></div>
-                            <div><span class="header-attribute">Platos invitados:</span><span> {{reportes.bonificadosInvitados}}</span></div>
-                        </div>
-                    </div>
-                    <button href="#" data-target="#filtrosModal" ng-click="cargafiltro()" data-toggle="modal" type="button" class="btn btn-default col-1 mt-4" aria-label="searchbutton" style="cursor: pointer;">
-                        <span aria-hidden="true">Elegir filtros</span>
-                    </button>
-                </div> <!--TOTALES ROW-->
-                <div class="dishes-text row mb-2">
-                    <div class="col-sm-8 ml-0 pl-4 mt-2">
-                        <h5 style="margin-bottom: 0px; padding-top:5px"><span>Pedidos {{view_rango1}} - {{view_rango2}}</span></h5>
-                    </div>
-                </div> <!--PEDIDOS ROW-->
-                <div class="container-fluid mr-3" style="min-height: 428px">
-                    <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;">
-                    <div class="container-fluid">
-                        <div class="dishes-text col-12">
+                    <div class="card-body">
+                        <div class="table-responsive">
                             <table class="table table-hover table-sm">
                                 <thead style="font-size: 14px;">
                                     <tr class="bg-dark text-white row">
@@ -350,12 +481,14 @@
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
 
         </div>
-        <!-- Footer -->
-        <div class="mt-auto" ng-include="'footer.html'"></div>
     </div>
+    
+    <!-- Footer -->
+    <div ng-include="'footer.html'" class="footer-sticky" style="margin-top: auto;"></div>
     <!-- External JS -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
@@ -371,6 +504,7 @@
     <!-- Main JS -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="js/navbar-direct.js"></script>
     <script src="js/reportegcomensales.js"></script>
 </body>
 </html>
