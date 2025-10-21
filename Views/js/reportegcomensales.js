@@ -61,7 +61,7 @@ app.filter('formatEstados', function () {
 	}
 });
 
-app.controller('ReportegComensales', function ($scope, $sce, $http, $window) {
+app.controller('ReportegComensales', function ($scope, $sce, $http, $window, $timeout) {
 
 	$scope.basePlantas = 'http://localhost:8000/api/planta/';
 	$scope.plantas = '';
@@ -296,18 +296,23 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window) {
 	}
 
 	$scope.buscarUsuario = function () {
-		alert('Función buscarUsuario ejecutada');
+		console.log('=== INICIO buscarUsuario ===');
 		
-		// Leer valores de los campos
-		$scope.dia_desde = $window.document.getElementById('dia_desde').value;
-		$scope.dia_hasta = $window.document.getElementById('dia_hasta').value;
-		$scope.filtro_user = $window.document.getElementById('filtro_user').value;
+		// Leer valores de los campos directamente del DOM
+		var diaDesdeValue = $window.document.getElementById('dia_desde').value;
+		var diaHastaValue = $window.document.getElementById('dia_hasta').value;
+		var filtroUserValue = $window.document.getElementById('filtro_user').value;
 
 		console.log('Valores leídos:', {
-			dia_desde: $scope.dia_desde,
-			dia_hasta: $scope.dia_hasta,
-			filtro_user: $scope.filtro_user
+			dia_desde: diaDesdeValue,
+			dia_hasta: diaHastaValue,
+			filtro_user: filtroUserValue
 		});
+
+		// Actualizar el scope con los valores
+		$scope.dia_desde = diaDesdeValue;
+		$scope.dia_hasta = diaHastaValue;
+		$scope.filtro_user = filtroUserValue;
 
 		// Marcar campos como tocados para mostrar validación visual
 		var diaDesdeElement = $window.document.getElementById('dia_desde');
@@ -324,84 +329,100 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window) {
 			filtroUserElement.classList.add('ng-touched');
 		}
 
-		// Validar todos los campos y mostrar todos los mensajes de error
+		// Inicializar todas las variables de warning en false
+		$scope.desdewarning = false;
+		$scope.hastawarning = false;
+		$scope.legajowarning = false;
+
+		// Validar todos los campos y establecer warnings
 		var hasErrors = false;
 		
 		// Validar fecha desde
-		if (!$scope.dia_desde || $scope.dia_desde.trim() === '') {
+		if (!diaDesdeValue || diaDesdeValue.trim() === '') {
 			$scope.desdewarning = true;
 			hasErrors = true;
 			console.log('Error: Fecha desde vacía');
-		} else {
-			$scope.desdewarning = false;
 		}
 		
 		// Validar fecha hasta
-		if (!$scope.dia_hasta || $scope.dia_hasta.trim() === '') {
+		if (!diaHastaValue || diaHastaValue.trim() === '') {
 			$scope.hastawarning = true;
 			hasErrors = true;
 			console.log('Error: Fecha hasta vacía');
-		} else {
-			$scope.hastawarning = false;
 		}
 		
 		// Validar filtro de usuario
-		if (!$scope.filtro_user || $scope.filtro_user.trim() === '') {
+		if (!filtroUserValue || filtroUserValue.trim() === '') {
 			$scope.legajowarning = true;
 			hasErrors = true;
 			console.log('Error: Filtro usuario vacío');
-		} else {
-			$scope.legajowarning = false;
 		}
 		
-		console.log('Errores encontrados:', hasErrors);
-		console.log('Mensajes de error:', {
+		console.log('Estado de warnings:', {
 			desdewarning: $scope.desdewarning,
 			hastawarning: $scope.hastawarning,
-			legajowarning: $scope.legajowarning
+			legajowarning: $scope.legajowarning,
+			hasErrors: hasErrors
 		});
+		
+		// Usar $timeout para asegurar que la vista se actualice
+		$timeout(function() {
+			console.log('Aplicando cambios a la vista...');
+		}, 0);
 		
 		// Si hay errores, no continuar
 		if (hasErrors) {
-			$scope.$apply();
+			console.log('Hay errores, deteniendo ejecución');
 			return;
 		}
 		
+		console.log('Todos los campos están completos, procediendo con la búsqueda...');
+		
 		// Si todos los campos están completos, proceder con la búsqueda
-		if (!$scope.desdewarning && !$scope.hastawarning && !$scope.legajowarning) {
-			var desde = $scope.dia_desde.split('-');
-			var hasta = $scope.dia_hasta.split('-');
+		var desde = diaDesdeValue.split('-');
+		var hasta = diaHastaValue.split('-');
 
-			$scope.filtro_user = $window.document.getElementById('filtro_user').value;
+		var auxdesde = desde[2] + '/' + desde[1] + '/' + desde[0];
+		var auxhasta = hasta[2] + '/' + hasta[1] + '/' + hasta[0];
 
-			var auxdesde = desde[2] + '/' + desde[1] + '/' + desde[0];
-			var auxhasta = hasta[2] + '/' + hasta[1] + '/' + hasta[0];
-
-			$scope.view_rango1 = auxdesde;
-			$scope.view_rango2 = auxhasta;
-			var user = $scope.filtro_user;
-			//$scope.getReporte(user, auxdesde, auxhasta, $scope.user_Planta);
-			$http({
-				url: $scope.baseReporte + 'getUserReport',
-				method: "GET",
-				params: { user: user, desde: auxdesde, hasta: auxhasta, planta: $scope.user_Planta }
+		$scope.view_rango1 = auxdesde;
+		$scope.view_rango2 = auxhasta;
+		var user = filtroUserValue;
+		
+		$http({
+			url: $scope.baseReporte + 'getUserReport',
+			method: "GET",
+			params: { user: user, desde: auxdesde, hasta: auxhasta, planta: $scope.user_Planta }
+		})
+			.success(function (data) {
+				console.log('Datos recibidos de la API:', data);
+				
+				data.consumidos = $scope.Ordena(data.consumidos);
+				$scope.reportes = data;
+				$scope.dataset = data;
+				$scope.cantcons = data.consumidos.length;
+				$scope.apagar = -$scope.cantcons + data.bonificados;
+				
+				// Si no vienen centrodecosto y proyecto en la respuesta, obtenerlos del primer pedido
+				if (!data.centrodecosto && data.consumidos && data.consumidos.length > 0) {
+					$scope.reportes.centrodecosto = data.consumidos[0].centrodecosto;
+					console.log('Centro de costo obtenido del primer pedido:', $scope.reportes.centrodecosto);
+				}
+				
+				if (!data.proyecto && data.consumidos && data.consumidos.length > 0) {
+					$scope.reportes.proyecto = data.consumidos[0].proyecto;
+					console.log('Proyecto obtenido del primer pedido:', $scope.reportes.proyecto);
+				}
+				
+				$scope.ViewAction = 'pedidos';
 			})
-				.success(function (data) {
-					data.consumidos = $scope.Ordena(data.consumidos);
-					$scope.reportes = data;
-					$scope.dataset = data;
-					$scope.cantcons = data.consumidos.length;
-					$scope.apagar = -$scope.cantcons + data.bonificados;
-				})
-				.error(function (data, status) {
-					swal(
-						'Ha ocurrido un error',
-						'Error al obtener registros para legajo ' + user,
-						'error'
-					);
-				});
-			$scope.ViewAction = 'pedidos';
-		}
+			.error(function (data, status) {
+				swal(
+					'Ha ocurrido un error',
+					'Error al obtener registros para legajo ' + user,
+					'error'
+				);
+			});
 	}
 
 	$scope.AgregaUser = function (legajo) {
@@ -445,5 +466,60 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window) {
 
 	$scope.numberOfPagesusers = function () {
 		return Math.ceil($scope.filterUser.length / $scope.pageSizeusers);
+	}
+
+	// Funciones para paginación tipo DataTable
+	$scope.getPageNumbers = function() {
+		var pages = [];
+		var totalPages = $scope.numberOfPages();
+		var current = $scope.currentPage;
+		
+		if (totalPages <= 7) {
+			// Si hay 7 páginas o menos, mostrar todas
+			for (var i = 0; i < totalPages; i++) {
+				pages.push(i);
+			}
+		} else {
+			// Lógica para mostrar páginas con puntos suspensivos
+			if (current <= 3) {
+				// Estamos cerca del inicio
+				for (var i = 0; i < 5; i++) {
+					pages.push(i);
+				}
+				pages.push('...');
+				pages.push(totalPages - 1);
+			} else if (current >= totalPages - 4) {
+				// Estamos cerca del final
+				pages.push(0);
+				pages.push('...');
+				for (var i = totalPages - 5; i < totalPages; i++) {
+					pages.push(i);
+				}
+			} else {
+				// Estamos en el medio
+				pages.push(0);
+				pages.push('...');
+				for (var i = current - 1; i <= current + 1; i++) {
+					pages.push(i);
+				}
+				pages.push('...');
+				pages.push(totalPages - 1);
+			}
+		}
+		
+		return pages;
+	}
+
+	// Función para ir a una página específica
+	$scope.goToPage = function(page) {
+		if (page >= 0 && page < $scope.numberOfPages()) {
+			$scope.currentPage = page;
+		}
+	}
+
+	// Función para cambiar el tamaño de página
+	$scope.changePageSize = function(newSize) {
+		$scope.pageSize = parseInt(newSize);
+		$scope.currentPage = 0; // Volver a la primera página
 	}
 });
