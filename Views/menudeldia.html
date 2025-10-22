@@ -74,6 +74,29 @@
 
         /* (Opcional) por si otros modales tapan Swal */
         /* .swal2-container { z-index: 20000 !important; } */
+        
+        /* Estilos para popup de validación */
+        .swal2-confirm {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        .swal2-confirm:hover {
+            background-color: #343a40 !important;
+            border-color: #343a40 !important;
+        }
+        
+        .swal2-cancel {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            color: white !important;
+        }
+        
+        .swal2-cancel:hover {
+            background-color: #c82333 !important;
+            border-color: #c82333 !important;
+        }
     </style>
 </head>
 
@@ -203,7 +226,7 @@
                              <strong>Creando nuevo menú</strong> - Complete los campos obligatorios para guardar.
                          </div>
                          <div class="dishes-text col-12" style="margin-top: -20px !important;">
-                            <form class="form-group row" name="menuddForm" ng-submit="ModelCreate(menuddForm.$valid)" novalidate>
+                            <form class="form-group row" name="menuddForm" ng-submit="ModelCreate(menuddForm.$valid, menuddForm)" novalidate>
                                 <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
                                     <div class="pb-3 form-group" style="margin-top: 20px !important;">
                                         <label for="view_turno"><span class="text-danger">*</span> Turno</label>
@@ -250,8 +273,9 @@
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_cantidad"><span class="text-danger">*</span> Cantidad</label>
-                                        <input class="col-8 form-control" type="number" id="view_cantidad" name="view_cantidad" ng-model="view_cantidad" placeholder="Ingrese cantidad" min="1" value="1" required>
+                                        <input class="col-8 form-control" type="number" id="view_cantidad" name="view_cantidad" ng-model="view_cantidad" placeholder="Ingrese cantidad" min="1" value="1" ng-pattern="/^[1-9][0-9]*$/" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) && (event.target.value.length > 0 || event.charCode >= 49)" required>
                                         <span ng-show="(view_cantidad === '' || view_cantidad === null || view_cantidad < 1) && showValidationErrors" class="text-danger">Campo Cantidad requerido</span>
+                                        <span ng-show="menuddForm.view_cantidad.$error.pattern && showValidationErrors" class="text-danger">Solo se permiten números positivos (no puede empezar con 0)</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del día</label>
@@ -287,7 +311,7 @@
                              <strong>Editando menú</strong> - Modifique los campos necesarios y guarde los cambios.
                          </div>
                          <div class="dishes-text col-12" style="margin-top: -20px !important;">
-                            <form class="form-group row" name="menuddForm" ng-submit="ModelUpdate(menuddForm.$valid,view_id)" novalidate>
+                            <form class="form-group row" name="menuddForm" ng-submit="ModelUpdate(menuddForm.$valid,view_id, menuddForm)" novalidate>
                                 <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
                                     <div class="pb-3 form-group" style="margin-top: 20px !important;">
                                         <label for="view_turno"><span class="text-danger">*</span> Turno</label>
@@ -334,8 +358,9 @@
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_cantidad"><span class="text-danger">*</span> Cantidad</label>
-                                        <input class="col-8 form-control" type="number" id="view_cantidad" name="view_cantidad" ng-model="view_cantidad" placeholder="Ingrese cantidad" min="1" value="1" required>
+                                        <input class="col-8 form-control" type="number" id="view_cantidad" name="view_cantidad" ng-model="view_cantidad" placeholder="Ingrese cantidad" min="1" value="1" ng-pattern="/^[1-9][0-9]*$/" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) && (event.target.value.length > 0 || event.charCode >= 49)" required>
                                         <span ng-show="(view_cantidad === '' || view_cantidad === null || view_cantidad < 1) && showValidationErrors" class="text-danger">Campo Cantidad requerido</span>
+                                        <span ng-show="menuddForm.view_cantidad.$error.pattern && showValidationErrors" class="text-danger">Solo se permiten números positivos (no puede empezar con 0)</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del día</label>

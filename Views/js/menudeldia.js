@@ -73,6 +73,17 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     // Detecta si la pantalla es móvil
     $scope.isMobile = $window.innerWidth < 768;
 
+    // Función touchAll para validación
+    function touchAll(form) {
+        if (!form) return;
+        form.$setSubmitted && form.$setSubmitted();
+        angular.forEach(form.$error, function (fields) {
+            angular.forEach(fields, function (field) {
+                field.$setTouched && field.$setTouched();
+            });
+        });
+    }
+
     // Actualiza la propiedad isMobile cuando se cambia el tamaño de la ventana
     angular.element($window).bind('resize', function () {
         $scope.$apply(function () {
@@ -136,11 +147,34 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
 
     // ------------------- CRUD -------------------
 
-    $scope.ModelCreate = function (isValid) {
+    $scope.ModelCreate = function (isValid, form) {
         $scope.showValidationErrors = true;
         
         if (!isValid) {
-            $window.Swal && $window.Swal.fire({ title: 'Campos inválidos', text: 'Atributos inválidos en los campos', icon: 'warning' });
+            touchAll(form);
+            
+            // Recopilar campos faltantes
+            var camposFaltantes = [];
+            if (!$scope.view_turno || $scope.view_turno === '') camposFaltantes.push('Turno');
+            if (!$scope.view_planta || $scope.view_planta === '') camposFaltantes.push('Planta');
+            if (!$scope.view_centrodecosto || $scope.view_centrodecosto === '') camposFaltantes.push('Centro de costo');
+            if (!$scope.view_jerarquia || $scope.view_jerarquia === '') camposFaltantes.push('Jerarquía');
+            if (!$scope.view_proyecto || $scope.view_proyecto === '') camposFaltantes.push('Proyecto');
+            if (!$scope.view_cantidad || $scope.view_cantidad === '' || $scope.view_cantidad < 1 || !/^[1-9][0-9]*$/.test($scope.view_cantidad)) camposFaltantes.push('Cantidad');
+            if (!$scope.view_fechadeldia || $scope.view_fechadeldia === '') camposFaltantes.push('Fecha del día');
+            if (!$scope.view_plato || $scope.view_plato === '') camposFaltantes.push('Plato');
+            
+            if ($window.Swal && typeof $window.Swal.fire === 'function') {
+                $window.Swal.fire({
+                    title: 'Faltan campos',
+                    text: 'Completar: ' + camposFaltantes.join(', '),
+                    icon: 'warning',
+                    showCancelButton: false,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#495057',
+                    buttonsStyling: true
+                });
+            }
             return;
         }
 
@@ -234,11 +268,34 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
             });
     };
 
-    $scope.ModelUpdate = function (isValid, view_id) {
+    $scope.ModelUpdate = function (isValid, view_id, form) {
         $scope.showValidationErrors = true;
         
         if (!isValid) {
-            $window.Swal && $window.Swal.fire({ title: 'Campos inválidos', text: 'Atributos inválidos en los campos', icon: 'warning' });
+            touchAll(form);
+            
+            // Recopilar campos faltantes
+            var camposFaltantes = [];
+            if (!$scope.view_turno || $scope.view_turno === '') camposFaltantes.push('Turno');
+            if (!$scope.view_planta || $scope.view_planta === '') camposFaltantes.push('Planta');
+            if (!$scope.view_centrodecosto || $scope.view_centrodecosto === '') camposFaltantes.push('Centro de costo');
+            if (!$scope.view_jerarquia || $scope.view_jerarquia === '') camposFaltantes.push('Jerarquía');
+            if (!$scope.view_proyecto || $scope.view_proyecto === '') camposFaltantes.push('Proyecto');
+            if (!$scope.view_cantidad || $scope.view_cantidad === '' || $scope.view_cantidad < 1 || !/^[1-9][0-9]*$/.test($scope.view_cantidad)) camposFaltantes.push('Cantidad');
+            if (!$scope.view_fechadeldia || $scope.view_fechadeldia === '') camposFaltantes.push('Fecha del día');
+            if (!$scope.view_plato || $scope.view_plato === '') camposFaltantes.push('Plato');
+            
+            if ($window.Swal && typeof $window.Swal.fire === 'function') {
+                $window.Swal.fire({
+                    title: 'Faltan campos',
+                    text: 'Completar: ' + camposFaltantes.join(', '),
+                    icon: 'warning',
+                    showCancelButton: false,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#495057',
+                    buttonsStyling: true
+                });
+            }
             return;
         }
 
