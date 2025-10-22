@@ -88,8 +88,8 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 					missing.push(map[ctrl.$name] || ctrl.$name);
 				}
 			});
-			console.warn('Faltan campos requeridos:', missing);
-			$scope.showPopup('Faltan campos', 'Completar: ' + missing.join(', '), 'warning');
+			console.warn('Completar campos requeridos:', missing);
+			$scope.showPopup('Completar campos requeridos', 'Completar: ' + missing.join(', '), 'warning');
 			return;
 		}
 
