@@ -137,6 +137,8 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     // ------------------- CRUD -------------------
 
     $scope.ModelCreate = function (isValid) {
+        $scope.showValidationErrors = true;
+        
         if (!isValid) {
             $window.Swal && $window.Swal.fire({ title: 'Campos inválidos', text: 'Atributos inválidos en los campos', icon: 'warning' });
             return;
@@ -149,7 +151,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $scope.view_centrodecosto = $window.document.getElementById('view_centrodecosto').value;
         $scope.view_proyecto = $window.document.getElementById('view_proyecto').value;
         $scope.view_plato = $window.document.getElementById('view_plato').value;
-        $scope.view_cantidad = $window.document.getElementById('view_cantidad').value;
+        $scope.view_cantidad = Math.max(1, parseInt($window.document.getElementById('view_cantidad').value) || 1);
         $scope.view_fechadeldia = $window.document.getElementById('view_fechadeldia').value;
         //
 
@@ -215,10 +217,10 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $scope.view_proyecto = '';
         $scope.view_plato = '';
         $scope.view_estado = '';
-        $scope.view_cantidad = '';
+        $scope.view_cantidad = 1;
         $scope.view_comandas = '';
         $scope.view_despachado = '';
-        $scope.view_fechadeldia = '';
+        $scope.view_fechadeldia = (new Date()).toISOString().split('T')[0];
 
         $http.get($scope.base + 'getAll')
             // $http.get($scope.base + 'GetToday') // solo trae el menu del día
@@ -233,6 +235,8 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     };
 
     $scope.ModelUpdate = function (isValid, view_id) {
+        $scope.showValidationErrors = true;
+        
         if (!isValid) {
             $window.Swal && $window.Swal.fire({ title: 'Campos inválidos', text: 'Atributos inválidos en los campos', icon: 'warning' });
             return;
@@ -246,7 +250,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $scope.view_proyecto = $window.document.getElementById('view_proyecto').value;
         $scope.view_plato = $window.document.getElementById('view_plato').value;
         $scope.view_estado = '-';
-        $scope.view_cantidad = $window.document.getElementById('view_cantidad').value;
+        $scope.view_cantidad = Math.max(1, parseInt($window.document.getElementById('view_cantidad').value) || 1);
         $scope.view_fechadeldia = $window.document.getElementById('view_fechadeldia').value;
         //
 
@@ -305,6 +309,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     $scope.ViewCreate = function () {
         $scope.ViewAction = 'Nuevo Menú';
         $scope.view_id = -1;
+        $scope.showValidationErrors = false;
         $scope.view_turno = '';
         $scope.view_planta = '';
         $scope.view_centrodecosto = '';
@@ -312,8 +317,8 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $scope.view_proyecto = '';
         $scope.view_plato = '';
         $scope.view_estado = '';
-        $scope.view_cantidad = '';
-        $scope.view_fechadeldia = '';
+        $scope.view_cantidad = 1;
+        $scope.view_fechadeldia = new Date();
 
         $scope.ModelReadPlatos();
         $scope.ModelReadPlantas();
@@ -386,6 +391,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     $scope.ViewUpdate = function (view_id) {
         $scope.ViewAction = 'Editar Menú';
         $scope.view_id = view_id;
+        $scope.showValidationErrors = false;
         $scope.ModelRead(view_id);
         $scope.ModelReadPlatos();
         $scope.ModelReadPlantas();

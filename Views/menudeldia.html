@@ -83,10 +83,33 @@
             <!-- Menu -->
             <div ng-include="'navbar.html'"></div>
 
-            <!-- Titulo -->
-            <div class="heading-section bg-dark text-white pt-2 pl-3" style="margin-bottom: 0 !important; padding-bottom: 10px !important;">
-                <h3 ng-bind="titulo"></h3>
-            </div>
+             <!-- Titulo -->
+             <div class="heading-section bg-dark text-white pt-2 pl-3">
+                 <div class="row align-items-center">
+                     <div class="col-md-8">
+                         <h3 class="mb-0">Menú del día</h3>
+                     </div>
+                     <div class="col-md-4">
+                         <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Lista de Items'">
+                             <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
+                                 <li class="breadcrumb-item">
+                                     <a href="#" ng-click="ViewAction = 'Lista de Items'; ModelReadAll()" class="text-white-50" style="text-decoration: none;">
+                                         <i class="fa fa-home mr-1"></i>Menú del día
+                                     </a>
+                                 </li>
+                                 <li class="breadcrumb-item active text-white" aria-current="page">
+                                     <span ng-if="ViewAction === 'Nuevo Menú'">
+                                         <i class="fa fa-plus mr-1"></i>Nuevo
+                                     </span>
+                                     <span ng-if="ViewAction === 'Editar Menú'">
+                                         <i class="fa fa-edit mr-1"></i>Editar
+                                     </span>
+                                 </li>
+                             </ol>
+                         </nav>
+                     </div>
+                 </div>
+             </div>
 
             <!-- Contenido principal -->
             <div class="container-fluid" style="margin-top: 0 !important;">
@@ -106,7 +129,7 @@
                     </div>
                 </div>
 
-                <hr ng-show="ViewAction !== 'Nuevo Menú' && ViewAction !== 'Editar Menú'">
+                <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;" ng-show="ViewAction !== 'Nuevo Menú' && ViewAction !== 'Editar Menú'">
 
                 <div ng-if="ViewAction==='Lista de Items'">
                     <div class="table-responsive">
@@ -172,66 +195,83 @@
                     </div>
                 </div>
 
-                <!-- Formulario de Nuevo Menú -->
-                <div ng-if="ViewAction==='Nuevo Menú'">
-                    <div class="container-fluid">
-                        <div class="dishes-text col-12" style="padding-left: 10px !important;">
+                 <!-- Formulario de Nuevo Menú -->
+                 <div ng-if="ViewAction==='Nuevo Menú'">
+                     <div class="container-fluid">
+                         <div class="alert alert-info mb-3" role="alert">
+                             <i class="fa fa-info-circle mr-2"></i>
+                             <strong>Creando nuevo menú</strong> - Complete los campos obligatorios para guardar.
+                         </div>
+                         <div class="dishes-text col-12" style="margin-top: -20px !important;">
                             <form class="form-group row" name="menuddForm" ng-submit="ModelCreate(menuddForm.$valid)" novalidate>
                                 <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
-                                    <div class="pb-3 form-group">
-                                        <label for="view_turno">Turno</label>
-                                        <select class="col-12 form-control" id="view_turno" name="view_turno" ng-model="view_turno" required>
-                                            <option ng-repeat="x in turnos" value="{{x.descripcion}}">{{x.descripcion}}</option>
+                                    <div class="pb-3 form-group" style="margin-top: 20px !important;">
+                                        <label for="view_turno"><span class="text-danger">*</span> Turno</label>
+                                        <select class="col-8 form-control" id="view_turno" name="view_turno" ng-model="view_turno" required>
+                                            <option value="" ng-if="turnos.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in turnos" value="{{x.descripcion}}" ng-selected="turnos.length === 1">{{x.descripcion}}</option>
                                         </select>
+                                        <span ng-show="(view_turno === '' || view_turno === null) && showValidationErrors" class="text-danger">Campo Turno requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_planta">Planta</label>
-                                        <select class="col-12 form-control" id="view_planta" name="view_planta" ng-model="view_planta" required>
-                                            <option ng-repeat="x in plantas" value="{{x.nombre}}">{{x.nombre}}</option>
+                                        <label for="view_planta"><span class="text-danger">*</span> Planta</label>
+                                        <select class="col-8 form-control" id="view_planta" name="view_planta" ng-model="view_planta" required>
+                                            <option value="" ng-if="plantas.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in plantas" value="{{x.nombre}}" ng-selected="plantas.length === 1">{{x.nombre}}</option>
                                         </select>
+                                        <span ng-show="(view_planta === '' || view_planta === null) && showValidationErrors" class="text-danger">Campo Planta requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_centrodecosto">Centro de costo</label>
-                                        <select class="col-12 form-control" id="view_centrodecosto" name="view_centrodecosto" ng-model="view_centrodecosto" required>
-                                            <option ng-repeat="x in centros" value="{{x.nombre}}">{{x.nombre}}</option>
+                                        <label for="view_centrodecosto"><span class="text-danger">*</span> Centro de costo</label>
+                                        <select class="col-8 form-control" id="view_centrodecosto" name="view_centrodecosto" ng-model="view_centrodecosto" required>
+                                            <option value="" ng-if="centros.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in centros" value="{{x.nombre}}" ng-selected="centros.length === 1">{{x.nombre}}</option>
                                         </select>
+                                        <span ng-show="(view_centrodecosto === '' || view_centrodecosto === null) && showValidationErrors" class="text-danger">Campo Centro de costo requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_jerarquia">Jerarquia</label>
-                                        <select class="col-12 form-control" id="view_jerarquia" name="view_jerarquia" ng-model="view_jerarquia" required>
-                                            <option ng-repeat="x in jerarquias" value="{{x.nombre}}">{{x.nombre}}</option>
+                                        <label for="view_jerarquia"><span class="text-danger">*</span> Jerarquia</label>
+                                        <select class="col-8 form-control" id="view_jerarquia" name="view_jerarquia" ng-model="view_jerarquia" required>
+                                            <option value="" ng-if="jerarquias.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in jerarquias" value="{{x.nombre}}" ng-selected="jerarquias.length === 1">{{x.nombre}}</option>
                                         </select>
+                                        <span ng-show="(view_jerarquia === '' || view_jerarquia === null) && showValidationErrors" class="text-danger">Campo Jerarquía requerido</span>
                                     </div>
                                 </div>
 
                                 <div class="col-6" style="padding-left: 0px; padding-right:0px !important">
-                                    <div class="pb-3 form-group">
-                                        <label for="view_proyecto">Proyecto</label>
-                                        <select class="col-12 form-control" id="view_proyecto" name="view_proyecto" ng-model="view_proyecto" required>
-                                            <option ng-repeat="x in proyectos" value="{{x.nombre}}">{{x.nombre}}</option>
+                                    <div class="pb-3 form-group" style="margin-top: 20px !important;">
+                                        <label for="view_proyecto"><span class="text-danger">*</span> Proyecto</label>
+                                        <select class="col-8 form-control" id="view_proyecto" name="view_proyecto" ng-model="view_proyecto" required>
+                                            <option value="" ng-if="proyectos.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in proyectos" value="{{x.nombre}}" ng-selected="proyectos.length === 1">{{x.nombre}}</option>
                                         </select>
+                                        <span ng-show="(view_proyecto === '' || view_proyecto === null) && showValidationErrors" class="text-danger">Campo Proyecto requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_cantidad">Cantidad</label>
-                                        <input class="col-12 form-control" type="number" id="view_cantidad" name="view_cantidad" ng-model="view_cantidad" placeholder="Ingrese cantidad" required>
-                                        <span ng-show="menuddForm.view_cantidad.$error.required && menuddForm.view_cantidad.$dirty" class="text-danger">Cantidad requerida.</span>
+                                        <label for="view_cantidad"><span class="text-danger">*</span> Cantidad</label>
+                                        <input class="col-8 form-control" type="number" id="view_cantidad" name="view_cantidad" ng-model="view_cantidad" placeholder="Ingrese cantidad" min="1" value="1" required>
+                                        <span ng-show="(view_cantidad === '' || view_cantidad === null || view_cantidad < 1) && showValidationErrors" class="text-danger">Campo Cantidad requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_fechadeldia">Fecha del día</label>
-                                        <input class="col-12 form-control" type="date" id="view_fechadeldia" name="view_fechadeldia" ng-model="view_fechadeldia" placeholder="Fecha automatica" required>
+                                        <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del día</label>
+                                        <input class="col-8 form-control" type="date" id="view_fechadeldia" name="view_fechadeldia" ng-model="view_fechadeldia" placeholder="Fecha automatica" ng-init="view_fechadeldia = (new Date()).toISOString().split('T')[0]" required>
+                                        <span ng-show="(view_fechadeldia === '' || view_fechadeldia === null) && showValidationErrors" class="text-danger">Campo Fecha del día requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_plato">Plato</label>
-                                        <select class="col-12 form-control" id="view_plato" name="view_plato" ng-model="view_plato" required>
-                                            <option ng-repeat="x in platos" value="{{x.descripcion}}">{{x.descripcion}}</option>
+                                        <label for="view_plato"><span class="text-danger">*</span> Plato</label>
+                                        <select class="col-8 form-control" id="view_plato" name="view_plato" ng-model="view_plato" required>
+                                            <option value="" ng-if="platos.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in platos" value="{{x.descripcion}}" ng-selected="platos.length === 1">{{x.descripcion}}</option>
                                         </select>
+                                        <span ng-show="(view_plato === '' || view_plato === null) && showValidationErrors" class="text-danger">Campo Plato requerido</span>
                                     </div>
                                 </div>
 
-                                 <button type="submit" class="btn btn-primary mt-3" ng-disabled="menuddForm.$invalid" title="Guardar" style="background-color: #36393F; border-color: #36393F; color: white; cursor: pointer; margin-right:8px; border-radius: 6px; padding: 8px 16px; font-weight: 500;">
+                                 <button type="submit" class="btn btn-primary mt-3" title="Guardar" style="background-color: #36393F; border-color: #36393F; color: white; cursor: pointer; margin-right:8px; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                      <i class="fa fa-save" style="margin-right: 6px;"></i>Guardar
                                  </button>
-                                 <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()" style="background-color: #F04747; border-color: #F04747; color: white; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-weight: 500;">
+                                 <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()" style="background-color: #F04747; border-color: #F04747; color: white; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                      <i class="fa fa-times" style="margin-right: 6px;"></i>Cancelar
                                  </button>
                              </form>
@@ -240,65 +280,82 @@
                  </div>
  
                  <!-- Editar Menú -->
-                <div ng-if="ViewAction==='Editar Menú'">
-                    <div class="container-fluid">
-                        <div class="dishes-text col-12" style="padding-left: 8px !important;">
+                 <div ng-if="ViewAction==='Editar Menú'">
+                     <div class="container-fluid">
+                         <div class="alert alert-warning mb-3" role="alert">
+                             <i class="fa fa-edit mr-2"></i>
+                             <strong>Editando menú</strong> - Modifique los campos necesarios y guarde los cambios.
+                         </div>
+                         <div class="dishes-text col-12" style="margin-top: -20px !important;">
                             <form class="form-group row" name="menuddForm" ng-submit="ModelUpdate(menuddForm.$valid,view_id)" novalidate>
                                 <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
-                                    <div class="pb-3 form-group">
-                                        <label for="view_turno">Turno</label>
-                                        <select class="col-12 form-control" id="view_turno" name="view_turno" ng-model="view_turno" required>
-                                            <option ng-repeat="x in turnos" value="{{x.descripcion}}">{{x.descripcion}}</option>
+                                    <div class="pb-3 form-group" style="margin-top: 20px !important;">
+                                        <label for="view_turno"><span class="text-danger">*</span> Turno</label>
+                                        <select class="col-8 form-control" id="view_turno" name="view_turno" ng-model="view_turno" required>
+                                            <option value="" ng-if="turnos.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in turnos" value="{{x.descripcion}}" ng-selected="turnos.length === 1">{{x.descripcion}}</option>
                                         </select>
+                                        <span ng-show="(view_turno === '' || view_turno === null) && showValidationErrors" class="text-danger">Campo Turno requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_planta">Planta</label>
-                                        <select class="col-12 form-control" id="view_planta" name="view_planta" ng-model="view_planta" required>
-                                            <option ng-repeat="x in plantas" value="{{x.nombre}}">{{x.nombre}}</option>
+                                        <label for="view_planta"><span class="text-danger">*</span> Planta</label>
+                                        <select class="col-8 form-control" id="view_planta" name="view_planta" ng-model="view_planta" required>
+                                            <option value="" ng-if="plantas.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in plantas" value="{{x.nombre}}" ng-selected="plantas.length === 1">{{x.nombre}}</option>
                                         </select>
+                                        <span ng-show="(view_planta === '' || view_planta === null) && showValidationErrors" class="text-danger">Campo Planta requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_centrodecosto">Centro de costo</label>
-                                        <select class="col-12 form-control" id="view_centrodecosto" name="view_centrodecosto" ng-model="view_centrodecosto" required>
-                                            <option ng-repeat="x in centros" value="{{x.nombre}}">{{x.nombre}}</option>
+                                        <label for="view_centrodecosto"><span class="text-danger">*</span> Centro de costo</label>
+                                        <select class="col-8 form-control" id="view_centrodecosto" name="view_centrodecosto" ng-model="view_centrodecosto" required>
+                                            <option value="" ng-if="centros.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in centros" value="{{x.nombre}}" ng-selected="centros.length === 1">{{x.nombre}}</option>
                                         </select>
+                                        <span ng-show="(view_centrodecosto === '' || view_centrodecosto === null) && showValidationErrors" class="text-danger">Campo Centro de costo requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_jerarquia">Jerarquia</label>
-                                        <select class="col-12 form-control" id="view_jerarquia" name="view_jerarquia" ng-model="view_jerarquia" required>
-                                            <option ng-repeat="x in jerarquias" value="{{x.nombre}}">{{x.nombre}}</option>
+                                        <label for="view_jerarquia"><span class="text-danger">*</span> Jerarquia</label>
+                                        <select class="col-8 form-control" id="view_jerarquia" name="view_jerarquia" ng-model="view_jerarquia" required>
+                                            <option value="" ng-if="jerarquias.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in jerarquias" value="{{x.nombre}}" ng-selected="jerarquias.length === 1">{{x.nombre}}</option>
                                         </select>
+                                        <span ng-show="(view_jerarquia === '' || view_jerarquia === null) && showValidationErrors" class="text-danger">Campo Jerarquía requerido</span>
                                     </div>
                                 </div>
 
-                                <div class="col-6">
-                                    <div class="pb-3 form-group">
-                                        <label for="view_proyecto">Proyecto</label>
-                                        <select class="col-12 form-control" id="view_proyecto" name="view_proyecto" ng-model="view_proyecto" required>
-                                            <option ng-repeat="x in proyectos" value="{{x.nombre}}">{{x.nombre}}</option>
+                                <div class="col-6" style="padding-left: 0px; padding-right:0px !important">
+                                    <div class="pb-3 form-group" style="margin-top: 20px !important;">
+                                        <label for="view_proyecto"><span class="text-danger">*</span> Proyecto</label>
+                                        <select class="col-8 form-control" id="view_proyecto" name="view_proyecto" ng-model="view_proyecto" required>
+                                            <option value="" ng-if="proyectos.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in proyectos" value="{{x.nombre}}" ng-selected="proyectos.length === 1">{{x.nombre}}</option>
                                         </select>
+                                        <span ng-show="(view_proyecto === '' || view_proyecto === null) && showValidationErrors" class="text-danger">Campo Proyecto requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_cantidad">Cantidad</label>
-                                        <input class="col-12 form-control" type="number" id="view_cantidad" name="view_cantidad" ng-model="view_cantidad" placeholder="Ingrese cantidad" required>
-                                        <span ng-show="menuddForm.view_cantidad.$error.required && menuddForm.view_cantidad.$dirty" class="text-danger">Cantidad requerida.</span>
+                                        <label for="view_cantidad"><span class="text-danger">*</span> Cantidad</label>
+                                        <input class="col-8 form-control" type="number" id="view_cantidad" name="view_cantidad" ng-model="view_cantidad" placeholder="Ingrese cantidad" min="1" value="1" required>
+                                        <span ng-show="(view_cantidad === '' || view_cantidad === null || view_cantidad < 1) && showValidationErrors" class="text-danger">Campo Cantidad requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_fechadeldia">Fecha del día</label>
-                                        <input class="col-12 form-control" type="date" id="view_fechadeldia" name="view_fechadeldia" ng-model="view_fechadeldia" placeholder="Fecha automatica" required>
+                                        <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del día</label>
+                                        <input class="col-8 form-control" type="date" id="view_fechadeldia" name="view_fechadeldia" ng-model="view_fechadeldia" placeholder="Fecha automatica" ng-init="view_fechadeldia = (new Date()).toISOString().split('T')[0]" required>
+                                        <span ng-show="(view_fechadeldia === '' || view_fechadeldia === null) && showValidationErrors" class="text-danger">Campo Fecha del día requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_plato">Plato</label>
-                                        <select class="col-12 form-control" id="view_plato" name="view_plato" ng-model="view_plato" required>
-                                            <option ng-repeat="x in platos" value="{{x.descripcion}}">{{x.descripcion}}</option>
+                                        <label for="view_plato"><span class="text-danger">*</span> Plato</label>
+                                        <select class="col-8 form-control" id="view_plato" name="view_plato" ng-model="view_plato" required>
+                                            <option value="" ng-if="platos.length > 1">-- Seleccionar --</option>
+                                            <option ng-repeat="x in platos" value="{{x.descripcion}}" ng-selected="platos.length === 1">{{x.descripcion}}</option>
                                         </select>
+                                        <span ng-show="(view_plato === '' || view_plato === null) && showValidationErrors" class="text-danger">Campo Plato requerido</span>
                                     </div>
                                 </div>
 
-                                 <button type="submit" class="btn btn-primary mt-3" ng-disabled="menuddForm.$invalid" title="Guardar" style="background-color: #36393F; border-color: #36393F; color: white; cursor: pointer; margin-right:8px; border-radius: 6px; padding: 8px 16px; font-weight: 500;">
+                                 <button type="submit" class="btn btn-primary mt-3" title="Guardar" style="background-color: #36393F; border-color: #36393F; color: white; cursor: pointer; margin-right:8px; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                      <i class="fa fa-save" style="margin-right: 6px;"></i>Guardar
                                  </button>
-                                 <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()" style="background-color: #F04747; border-color: #F04747; color: white; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-weight: 500;">
+                                 <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()" style="background-color: #F04747; border-color: #F04747; color: white; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                      <i class="fa fa-times" style="margin-right: 6px;"></i>Cancelar
                                  </button>
                              </form>
