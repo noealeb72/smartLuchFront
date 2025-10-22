@@ -1,250 +1,334 @@
-﻿var app = angular.module('AngujarJS', ['base64', 'ngMessages']);
+﻿// =========================
+// SweetAlert2 alias seguro
+// (no reescribe Swal; solo crea "swal(...)" para compatibilidad)
+// =========================
+(function (w) {
+    if (!w.Swal || typeof w.Swal.fire !== 'function') return;
+    if (!w.swal || typeof w.swal !== 'function') {
+        w.swal = function () {
+            if (arguments.length === 1 && typeof arguments[0] === 'object') {
+                return w.Swal.fire(arguments[0]);
+            }
+            var args = Array.prototype.slice.call(arguments);
+            var opt = {};
+            if (args[0]) opt.title = args[0];
+            if (args[1]) opt.text = args[1];
+            if (args[2]) opt.icon = args[2];
+            return w.Swal.fire(opt);
+        };
+    }
+})(window);
+
+// =========================
+// App AngularJS
+// =========================
+var app = angular.module('AngujarJS', ['base64', 'ngMessages']);
 
 app.filter('startFrom', function () {
-	return function (input, start) {
-		start = +start;
-		return input.slice(start);
-	};
+    return function (input, start) {
+        if (!Array.isArray(input)) return input;
+        start = +start || 0;
+        return input.slice(start);
+    };
 });
 
-app.controller('Plato', function ($scope, $location, $sce, $http, $window, $base64) {
-	$scope.base = 'http://localhost:8000/api/plato/';
-	$scope.basePlan = 'http://localhost:8000/api/plannutricional/';
-	$scope.planes = '';
-	$scope.titulo = 'Gestión de Platos';
-	$scope.plato = {};
-	$scope.filteredData = null;
-	$scope.filtroCostoMin = null;
-	$scope.filtroCostoMax = null;
-	$scope.filtroPlan = '';
-	$scope.filtroEstado = '';
+app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
+    // --------- Estado base ---------
+    $scope.titulo = 'Gestión de Platos';
+    $scope.base = 'http://localhost:8000/api/plato/';
+    $scope.basePlan = 'http://localhost:8000/api/plannutricional/';
 
-	// Datos de usuario desde localStorage
-	$scope.user_Rol = localStorage.getItem('role');
-	$scope.user_Nombre = localStorage.getItem('nombre');
-	$scope.user_Apellido = localStorage.getItem('apellido');
-	$scope.user_Planta = localStorage.getItem('planta');
-	$scope.user_Centrodecosto = localStorage.getItem('centrodecosto');
-	$scope.user_Proyecto = localStorage.getItem('proyecto');
-	$scope.user_Jerarquia = localStorage.getItem('role');
-	$scope.user_Perfilnutricional = localStorage.getItem('plannutricional');
-	$scope.user_Bonificacion = localStorage.getItem('bonificacion');
-	$scope.user_DNI = localStorage.getItem('dni');
+    $scope.dataset = [];
+    $scope.filteredData = null;
+    $scope.planes = [];
 
-	$scope.ModelCreate = function (isValid) {
-		if (isValid) {
-			$scope.titulo = 'Agregar nuevo plato';
-			let jsonForm = {
-				codigo: $scope.plato.codigo,
-				ingredientes: $scope.plato.ingredientes,
-				plannutricional: $scope.plato.plannutricional,
-				descripcion: $scope.plato.descripcion,
-				costo: $scope.plato.costo || 0,
-				presentacion: $scope.view_previewImage
-			};
+    // filtros
+    $scope.filtroCostoMin = null;
+    $scope.filtroCostoMax = null;
+    $scope.filtroPlan = '';
+    $scope.filtroEstado = '';
 
-			$http.post($scope.base + 'Create', jsonForm)
-				.then(() => {
-					swal('Operación Correcta', 'El plato ha sido creado', 'success');
-					$scope.ModelReadAll();
-				})
-				.catch((error) => {
-					swal('Operación Incorrecta', 'Error al crear el plato', 'error');
-					console.error(error);
-				});
-		} else {
-			// 👉 Esto es lo que te faltaba: marcar los campos requeridos
-			angular.forEach($scope.platoForm.$error.required, function (field) {
-				field.$setTouched();
-			});
-			swal('Campos incompletos', 'Por favor completá todos los campos obligatorios.', 'warning');
-		}
-	};
+    // paginación
+    $scope.currentPage = 0;
+    $scope.pageSize = 20;
+    $scope.totalPages = 1;
 
+    // responsivo (para ocultar columnas en mobile)
+    $scope.isMobile = $window.innerWidth < 768;
+    angular.element($window).on('resize', function () {
+        $scope.$applyAsync(function () {
+            $scope.isMobile = $window.innerWidth < 768;
+        });
+    });
 
+    // Datos de usuario desde localStorage (si los necesitás en headers, etc.)
+    $scope.user_Rol = localStorage.getItem('role');
+    $scope.user_Nombre = localStorage.getItem('nombre');
+    $scope.user_Apellido = localStorage.getItem('apellido');
+    $scope.user_Planta = localStorage.getItem('planta');
+    $scope.user_Centrodecosto = localStorage.getItem('centrodecosto');
+    $scope.user_Proyecto = localStorage.getItem('proyecto');
+    $scope.user_Jerarquia = localStorage.getItem('role');
+    $scope.user_Perfilnutricional = localStorage.getItem('plannutricional');
+    $scope.user_Bonificacion = localStorage.getItem('bonificacion');
+    $scope.user_DNI = localStorage.getItem('dni');
 
-	$scope.ModelRead = function (view_id) {
-		$http.get($scope.base + 'get/' + view_id)
-			.then(response => {
-				const data = response.data[0];
-				$scope.plato = {
-					codigo: data.codigo,
-					ingredientes: data.ingredientes,
-					plannutricional: data.plannutricional,
-					descripcion: data.descripcion,
-					costo: data.costo,
-					presentacion: data.presentacion
-				};
-				$scope.view_previewImage = data.presentacion;
-			})
-			.catch(() => {
-				swal('Ha ocurrido un error', 'Api no presente', 'error');
-			});
-	};
+    // --------- Helpers ---------
+    function fireOk(title, text) {
+        if (window.Swal) Swal.fire({ title: title || 'Operación Correcta', text: text || '', icon: 'success' });
+    }
+    function fireErr(title, text) {
+        if (window.Swal) Swal.fire({ title: title || 'Operación Incorrecta', text: text || '', icon: 'error' });
+    }
+    function fireWarn(title, text) {
+        if (window.Swal) Swal.fire({ title: title || 'Atención', text: text || '', icon: 'warning' });
+    }
 
-	$scope.ModelReadAll = function () {
-		$scope.dataset = [];
-		$scope.ViewAction = 'Platos';
-		$scope.plato = {};
-		$scope.view_previewImage = '';
+    $scope.getNumber = function (n) {
+        return new Array(n);
+    };
 
-		$http.get($scope.base + 'getAll')
-			.then(response => $scope.dataset = response.data)
-			.catch(() => swal('Ha ocurrido un error', 'Api no presente', 'error'));
-	};
+    function recomputePages() {
+        var arr = ($scope.filteredData || $scope.dataset) || [];
+        var len = Array.isArray(arr) ? arr.length : 0;
+        $scope.totalPages = Math.max(1, Math.ceil(len / $scope.pageSize));
+        if ($scope.currentPage >= $scope.totalPages) {
+            $scope.currentPage = $scope.totalPages - 1;
+        }
+    }
 
-	$scope.ModelUpdate = function (isValid, view_id) {
-		if (isValid) {
-			$scope.titulo = 'Modificar plato';
-			let jsonForm = {
-				id: view_id,
-				codigo: $scope.plato.codigo,
-				ingredientes: $scope.plato.ingredientes,
-				plannutricional: $scope.plato.plannutricional,
-				descripcion: $scope.plato.descripcion,
-				costo: $scope.plato.costo || 0,
-				presentacion: $scope.view_previewImage
-			};
+    // Recalcular paginación al cambiar dataset/filteredData/pageSize
+    $scope.$watchGroup(['dataset.length', 'filteredData.length', 'pageSize'], function () {
+        recomputePages();
+    });
 
-			$http.post($scope.base + 'Update', jsonForm)
-				.then(() => {
-					swal('Plato actualizado correctamente', '', 'success');
-					$scope.ModelReadAll();
-					$scope.ViewAction = 'Platos';
-					$scope.titulo = 'Gestión de Platos';
-				})
-				.catch(() => swal('Error', 'Hubo un error al actualizar el plato', 'error'));
-		} else {
-			// 👉 Marca todos los campos requeridos como tocados
-			angular.forEach($scope.platoForm.$error.required, function (field) {
-				field.$setTouched();
-			});
-			swal('Campos incompletos', 'Por favor completá todos los campos obligatorios.', 'warning');
-		}
-	};
+    // --------- CRUD ---------
+    $scope.ModelCreate = function (isValid) {
+        if (!isValid) {
+            // marcar requeridos como tocados (si el form tiene name="platoForm")
+            if ($scope.platoForm && $scope.platoForm.$error && $scope.platoForm.$error.required) {
+                angular.forEach($scope.platoForm.$error.required, function (field) { field.$setTouched(); });
+            }
+            return fireWarn('Campos incompletos', 'Completá todos los campos obligatorios.');
+        }
 
+        var jsonForm = {
+            codigo: $scope.plato.codigo,
+            ingredientes: $scope.plato.ingredientes,
+            plannutricional: $scope.plato.plannutricional,
+            descripcion: $scope.plato.descripcion,
+            costo: $scope.plato.costo || 0,
+            presentacion: $scope.view_previewImage || ''
+        };
 
-	$scope.ModelDelete = function (view_id) {
-		$http.post($scope.base + 'Delete', { id: view_id })
-			.then(() => {
-				swal('Operación Correcta', '', 'success');
-				$scope.ModelReadAll();
-			})
-			.catch((error) => swal('Operación Incorrecta', error, 'error'));
-	};
+        $http.post($scope.base + 'Create', jsonForm)
+            .then(function () {
+                fireOk('Plato creado', 'El plato ha sido creado correctamente.');
+                $scope.ModelReadAll();
+            })
+            .catch(function (err) {
+                console.error(err);
+                fireErr('Error al crear', 'No se pudo crear el plato.');
+            });
+    };
 
-	$scope.ModelReadPlanes = function () {
-		$http.get($scope.basePlan + 'getAll')
-			.then(response => $scope.planes = response.data)
-			.catch(() => swal('Error', 'Error al obtener planes', 'error'));
-	};
+    $scope.ModelRead = function (view_id) {
+        $http.get($scope.base + 'get/' + view_id)
+            .then(function (resp) {
+                var d = (resp.data && resp.data[0]) || {};
+                $scope.plato = {
+                    codigo: d.codigo,
+                    ingredientes: d.ingredientes,
+                    plannutricional: d.plannutricional,
+                    descripcion: d.descripcion,
+                    costo: d.costo,
+                    presentacion: d.presentacion
+                };
+                $scope.view_previewImage = d.presentacion || '';
+            })
+            .catch(function () {
+                fireErr('Ha ocurrido un error', 'Api no presente');
+            });
+    };
 
-	$scope.ViewCreate = function () {
-		$scope.ViewAction = 'Nuevo Plato';
-		$scope.plato = {
-			codigo: '',
-			descripcion: '',
-			ingredientes: '',
-			plannutricional: '',
-			costo: 0,
-			presentacion: ''
-		};
-		$scope.view_id = -1;
-		$scope.view_previewImage = '';
-		$scope.ModelReadPlanes();
-	};
+    $scope.ModelReadAll = function () {
+        $scope.ViewAction = 'Platos';
+        $scope.plato = {};
+        $scope.view_previewImage = '';
+        $scope.filteredData = null;
+        $http.get($scope.base + 'getAll')
+            .then(function (resp) {
+                $scope.dataset = Array.isArray(resp.data) ? resp.data : [];
+                recomputePages();
+            })
+            .catch(function () {
+                fireErr('Ha ocurrido un error', 'Api no presente');
+            });
+    };
 
-	$scope.ViewUpdate = function (view_id) {
-		$scope.ViewAction = 'Editar Plato';
-		$scope.view_id = view_id;
-		$scope.ModelRead(view_id);
-		$scope.ModelReadPlanes();
-	};
+    $scope.ModelUpdate = function (isValid, view_id) {
+        if (!isValid) {
+            if ($scope.platoForm && $scope.platoForm.$error && $scope.platoForm.$error.required) {
+                angular.forEach($scope.platoForm.$error.required, function (field) { field.$setTouched(); });
+            }
+            return fireWarn('Campos incompletos', 'Completá todos los campos obligatorios.');
+        }
 
-	$scope.ViewDelete = function (view_id) {
-		swal({
-			title: 'Eliminar registro',
-			text: 'Desea eliminar plato?',
-			type: 'warning',
-			showCancelButton: true,
-			confirmButtonColor: '#3085d6',
-			cancelButtonColor: '#d33',
-			confirmButtonText: 'Aceptar'
-		}).then((ConfirmClick) => {
-			if (ConfirmClick.value === true) {
-				$scope.ModelDelete(view_id);
-			}
-		});
-	};
+        var jsonForm = {
+            id: view_id,
+            codigo: $scope.plato.codigo,
+            ingredientes: $scope.plato.ingredientes,
+            plannutricional: $scope.plato.plannutricional,
+            descripcion: $scope.plato.descripcion,
+            costo: $scope.plato.costo || 0,
+            presentacion: $scope.view_previewImage || ''
+        };
 
-	$scope.ViewCancel = function () {
-		$scope.ViewAction = 'Platos';
-	};
+        $http.post($scope.base + 'Update', jsonForm)
+            .then(function () {
+                fireOk('Plato actualizado', 'Los cambios fueron guardados.');
+                $scope.ModelReadAll();
+                $scope.ViewAction = 'Platos';
+                $scope.titulo = 'Gestión de Platos';
+            })
+            .catch(function () {
+                fireErr('Error al actualizar', 'No se pudo actualizar el plato.');
+            });
+    };
 
-	$scope.loadImage = function () {
-		var file = document.getElementById('view_file').files[0];
-		var reader = new FileReader();
-		reader.onloadend = function () {
-			$scope.view_previewImage = reader.result;
-			$scope.plato.presentacion = reader.result;
-			$scope.$apply();
-		};
-		if (file) {
-			reader.readAsDataURL(file);
-		}
-	};
+    $scope.ModelDelete = function (view_id) {
+        $http.post($scope.base + 'Delete', { id: view_id })
+            .then(function () {
+                fireOk('Registro eliminado', '');
+                $scope.ModelReadAll();
+            })
+            .catch(function (err) {
+                console.error(err);
+                fireErr('Operación Incorrecta', 'Error al eliminar el plato.');
+            });
+    };
 
-	$scope.ModelReadAll();
-	$scope.ModelReadPlanes();
-	$scope.currentPage = 0;
-	$scope.pageSize = 20;
+    $scope.ModelReadPlanes = function () {
+        $http.get($scope.basePlan + 'getAll')
+            .then(function (resp) {
+                $scope.planes = Array.isArray(resp.data) ? resp.data : [];
+            })
+            .catch(function () {
+                fireErr('Error', 'Error al obtener planes nutricionales.');
+            });
+    };
 
-	$scope.numberOfPages = function () {
-		return Math.ceil($scope.dataset.length / $scope.pageSize);
-	};
+    // --------- Vistas ---------
+    $scope.ViewCreate = function () {
+        $scope.ViewAction = 'Nuevo Plato';
+        $scope.titulo = 'Agregar nuevo plato';
+        $scope.plato = {
+            codigo: '', descripcion: '', ingredientes: '',
+            plannutricional: '', costo: 0, presentacion: ''
+        };
+        $scope.view_id = -1;
+        $scope.view_previewImage = '';
+        $scope.ModelReadPlanes();
+    };
 
-	$scope.filtrarPlatos = function () {
-		const params = [];
-		console.log('📦 filtroCostoMin:', $scope.filtroCostoMin);
-		console.log('📦 filtroCostoMax:', $scope.filtroCostoMax);
-		console.log('📦 filtroPlan:', $scope.filtroPlan);
-		console.log('📦 filtroEstado:', $scope.filtroEstado);
-		if ($scope.filtroCostoMin != null) {
-			params.push('costoMin=' + $scope.filtroCostoMin);
-		}
-		if ($scope.filtroCostoMax != null) {
-			params.push('costoMax=' + $scope.filtroCostoMax);
-		}
-		if ($scope.filtroPlan && $scope.filtroPlan !== '') {
-			params.push('plannutricional=' + encodeURIComponent($scope.filtroPlan));
-		}
-		if ($scope.filtroEstado && $scope.filtroEstado !== '') {
-			params.push('estado=' + encodeURIComponent($scope.filtroEstado));
-		}
+    $scope.ViewUpdate = function (view_id) {
+        $scope.ViewAction = 'Editar Plato';
+        $scope.titulo = 'Modificar plato';
+        $scope.view_id = view_id;
+        $scope.ModelRead(view_id);
+        $scope.ModelReadPlanes();
+    };
 
-		if (params.length === 0) {
-			swal('Filtros requeridos', 'Debes seleccionar al menos un filtro para buscar.', 'warning');
-			return;
-		}
+    $scope.ViewDelete = function (view_id, $event) {
+        if ($event && $event.preventDefault) $event.preventDefault();
+        if ($event && $event.stopPropagation) $event.stopPropagation();
 
-		const queryString = params.join('&');
+        Swal.fire({
+            title: 'Eliminar registro',
+            text: '¿Desea eliminar plato?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            allowOutsideClick: false
+        }).then(function (res) {
+            if (res.isConfirmed) {
+                $scope.$applyAsync(function () {
+                    $scope.ModelDelete(view_id);
+                });
+            }
+        });
+    };
 
-		$http.get($scope.base + 'filtrar?' + queryString)
-			.then(function (response) {
-				$scope.filteredData = response.data;
-			})
-			.catch(function () {
-				swal('Error', 'No se pudieron obtener los platos con los filtros seleccionados.', 'error');
-			});
-	};
+    $scope.ViewCancel = function () {
+        $scope.ViewAction = 'Platos';
+        $scope.titulo = 'Gestión de Platos';
+    };
 
+    // --------- Imagen (preview/base64) ---------
+    $scope.view_previewImage = '';
+    $scope.loadImage = function () {
+        var input = document.getElementById('view_file');
+        var file = input && input.files ? input.files[0] : null;
+        if (!file) return;
 
-	$scope.limpiarFiltros = function () {
-		$scope.filtroCostoMin = null;
-		$scope.filtroCostoMax = null;
-		$scope.filtroPlan = '';
-		$scope.filtroEstado = '';
-		$scope.filteredData = null;
-	};
+        var reader = new FileReader();
+        reader.onloadend = function () {
+            $scope.$applyAsync(function () {
+                $scope.view_previewImage = reader.result;
+                if (!$scope.plato) $scope.plato = {};
+                $scope.plato.presentacion = reader.result;
+            });
+        };
+        reader.readAsDataURL(file);
+    };
 
+    // --------- Filtros ---------
+    $scope.filtrarPlatos = function () {
+        var params = [];
+
+        if ($scope.filtroCostoMin != null && $scope.filtroCostoMin !== '') {
+            params.push('costoMin=' + encodeURIComponent($scope.filtroCostoMin));
+        }
+        if ($scope.filtroCostoMax != null && $scope.filtroCostoMax !== '') {
+            params.push('costoMax=' + encodeURIComponent($scope.filtroCostoMax));
+        }
+        if ($scope.filtroPlan) {
+            params.push('plannutricional=' + encodeURIComponent($scope.filtroPlan));
+        }
+        if ($scope.filtroEstado) {
+            params.push('estado=' + encodeURIComponent($scope.filtroEstado));
+        }
+
+        if (params.length === 0) {
+            return fireWarn('Filtros requeridos', 'Seleccioná al menos un filtro.');
+        }
+
+        var url = $scope.base + 'filtrar?' + params.join('&');
+        $http.get(url)
+            .then(function (resp) {
+                $scope.filteredData = Array.isArray(resp.data) ? resp.data : [];
+                $scope.currentPage = 0;
+                recomputePages();
+            })
+            .catch(function () {
+                fireErr('Error', 'No se pudieron obtener los platos filtrados.');
+            });
+    };
+
+    $scope.limpiarFiltros = function () {
+        $scope.filtroCostoMin = null;
+        $scope.filtroCostoMax = null;
+        $scope.filtroPlan = '';
+        $scope.filtroEstado = '';
+        $scope.filteredData = null;
+        $scope.currentPage = 0;
+        recomputePages();
+    };
+
+    // --------- Init ---------
+    $scope.ModelReadAll();
+    $scope.ModelReadPlanes();
 });
