@@ -294,107 +294,12 @@
                             </h6>
                 </div>
                         <div class="card-body" ng-show="toggleFiltros" style="display: block !important;">
-                    <form name="form" novalidate>
-                                <!-- Fila 1: Fechas y texto -->
-                                <div class="row mb-2">
-                                    <div class="col-md-3">
-                                        <div class="form-group" ng-class="{'has-error': form.fechaDesde.$touched && form.fechaDesde.$invalid}">
-                                            <label for="filtro_fechadesde_inicio" class="form-label">Fecha desde <span class="text-danger">*</span></label>
-                                <input name="fechaDesde" class="form-control" type="date" id="filtro_fechadesde_inicio"
-                                       ng-model="filtro_fechadesde_inicio" required>
-                                            <p class="text-danger" ng-show="form.fechaDesde.$touched && form.fechaDesde.$error.required" style="font-size: 0.8rem;">
-                                                Fecha requerida
-                                </p>
-                            </div>
-                                    </div>
-                                    <div class="col-md-3">
+                            <form name="form" novalidate>
+                                <!-- Solo filtro de búsqueda de platos -->
+                                <div class="row">
+                                    <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="filtro_fechaactualidad" class="form-label">Fecha hasta</label>
-                                <input class="form-control" type="date" id="filtro_fechaactualidad" ng-model="filtro_fechaactualidad">
-                            </div>
-                        </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_busqueda" class="form-label">Filtrar por texto</label>
-                                            <input class="form-control" type="text" id="filtro_busqueda" ng-model="filtro_busqueda" placeholder="Buscar...">
-                            </div>
-                        </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_planta" class="form-label">Planta</label>
-                                            <select class="form-control" id="filtro_planta" ng-model="filtro_planta">
-                                                <option value="">Seleccione planta</option>
-                                                <option ng-repeat="x in plantas" value="{{x.nombre}}">{{x.nombre}}</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Fila 2: Centro de Costo, Proyecto, Legajo desde, Hasta -->
-                                <div class="row mb-2">
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_centrodecosto" class="form-label">Centro de costo</label>
-                                            <select class="form-control" id="filtro_centrodecosto" ng-model="filtro_centrodecosto">
-                                                <option value="">Seleccione CC</option>
-                                                <option ng-repeat="x in centrosdecosto" value="{{x.nombre}}">{{x.nombre}}</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_proyecto" class="form-label">Proyecto</label>
-                                            <select class="form-control" id="filtro_proyecto" ng-model="filtro_proyecto">
-                                                <option value="">Selecciona proyecto</option>
-                                                <option ng-repeat="x in proyectos" value="{{x.nombre}}">{{x.nombre}}</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_legajodesde" class="form-label">Legajo desde</label>
-                                            <div class="input-group">
-                                                <input class="form-control" type="number" id="filtro_legajodesde" ng-model="filtro_legajodesde" 
-                                                       onkeypress="return event.charCode >= 48 && event.charCode <= 57" min="0">
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-outline-secondary" type="button" ng-click="buscarLegajo()" title="Buscar legajo">
-                                                        <i class="fa fa-search"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_legajohasta" class="form-label">Hasta</label>
-                                            <div class="input-group">
-                                                <input class="form-control" type="number" id="filtro_legajohasta" ng-model="filtro_legajohasta" 
-                                                       onkeypress="return event.charCode >= 48 && event.charCode <= 57" min="0">
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-outline-secondary" type="button" ng-click="buscarLegajoHasta()" title="Buscar legajo">
-                                                        <i class="fa fa-search"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        </div>
-                                        </div>
-
-                                <!-- Fila 3: Invitado, Plato, Calificación, Turno -->
-                                <div class="row mb-3">
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_invitado" class="form-label">Invitado</label>
-                                            <select class="form-control" id="filtro_invitado" ng-model="filtro_invitado">
-                                                <option value="">Selecciona opción</option>
-                                                <option value="1">Si</option>
-                                                <option value="0">No</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_plato" class="form-label">Plato</label>
+                                            <label for="filtro_plato" class="form-label">Buscar Plato</label>
                                             <div class="input-group">
                                                 <input class="form-control" type="text" id="filtro_plato" ng-model="filtro_plato" placeholder="Buscar plato...">
                                                 <div class="input-group-append">
@@ -405,27 +310,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_calificacion" class="form-label">Calificación</label>
-                                            <input class="form-control" type="number" id="filtro_calificacion" ng-model="filtro_calificacion" 
-                                                   onkeypress="return event.charCode >= 48 && event.charCode <= 57" min="0">
-                                        </div>
-                                        </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_turno" class="form-label">Turno</label>
-                                            <select class="form-control" id="filtro_turno" ng-model="filtro_turno">
-                                                <option value="">Selecciona turno</option>
-                                                <option ng-repeat="x in turnos" value="{{x.codigo}}">{{x.descripcion}}</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Botón de búsqueda -->
-                                <div class="row">
-                                    <div class="col-md-3 d-flex align-items-end">
+                                    <div class="col-md-6 d-flex align-items-end">
                                         <button type="submit" class="btn btn-primary w-100" ng-click="getReporte()" style="height: 38px;">
                                             <i class="fa fa-search mr-1"></i>Generar Reporte
                                         </button>
