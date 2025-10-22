@@ -166,8 +166,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
             
             if ($window.Swal && typeof $window.Swal.fire === 'function') {
                 $window.Swal.fire({
-                    title: 'Faltan campos',
-                    text: 'Completar: ' + camposFaltantes.join(', '),
+                    title: 'Completar campos requeridos',
                     icon: 'warning',
                     showCancelButton: false,
                     confirmButtonText: 'Entendido',
@@ -287,8 +286,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
             
             if ($window.Swal && typeof $window.Swal.fire === 'function') {
                 $window.Swal.fire({
-                    title: 'Faltan campos',
-                    text: 'Completar: ' + camposFaltantes.join(', '),
+                    title: 'Completar campos requeridos',
                     icon: 'warning',
                     showCancelButton: false,
                     confirmButtonText: 'Entendido',
@@ -367,6 +365,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $scope.ViewAction = 'Nuevo Menú';
         $scope.view_id = -1;
         $scope.showValidationErrors = false;
+        $scope.isEditMode = false;
         $scope.view_turno = '';
         $scope.view_planta = '';
         $scope.view_centrodecosto = '';
@@ -456,6 +455,9 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $scope.ModelReadProyectos();
         $scope.ModelReadJerarquias();
         $scope.ModelReadTurnos();
+        
+        // Marcar que estamos en modo edición para los select
+        $scope.isEditMode = true;
     };
 
     $scope.ViewDelete = function (view_id, $event) {
