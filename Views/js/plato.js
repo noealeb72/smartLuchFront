@@ -75,13 +75,16 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
 
     // --------- Helpers ---------
     function fireOk(title, text) {
-        if (window.Swal) Swal.fire({ title: title || 'Operación Correcta', text: text || '', icon: 'success' });
+        // Popup de alert eliminado
+        console.log('Éxito:', title || 'Operación Correcta', text || '');
     }
     function fireErr(title, text) {
-        if (window.Swal) Swal.fire({ title: title || 'Operación Incorrecta', text: text || '', icon: 'error' });
+        // Popup de alert eliminado
+        console.log('Error:', title || 'Operación Incorrecta', text || '');
     }
     function fireWarn(title, text) {
-        if (window.Swal) Swal.fire({ title: title || 'Atención', text: text || '', icon: 'warning' });
+        // Popup de alert eliminado
+        console.log('Advertencia:', title || 'Atención', text || '');
     }
 
     $scope.getNumber = function (n) {
@@ -104,12 +107,37 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
 
     // --------- CRUD ---------
     $scope.ModelCreate = function (isValid) {
+        $scope.showValidationErrors = true;
+        
         if (!isValid) {
-            // marcar requeridos como tocados (si el form tiene name="platoForm")
-            if ($scope.platoForm && $scope.platoForm.$error && $scope.platoForm.$error.required) {
-                angular.forEach($scope.platoForm.$error.required, function (field) { field.$setTouched(); });
+            // Marcar todos los campos como tocados
+            if ($scope.platoForm) {
+                angular.forEach($scope.platoForm, function (field) {
+                    if (field && field.$setTouched) {
+                        field.$setTouched();
+                    }
+                });
             }
-            return fireWarn('Campos incompletos', 'Completá todos los campos obligatorios.');
+            
+            // Recopilar campos faltantes
+            var camposFaltantes = [];
+            if (!$scope.plato.codigo || $scope.plato.codigo.trim() === '') camposFaltantes.push('Código');
+            if (!$scope.plato.descripcion || $scope.plato.descripcion.trim() === '') camposFaltantes.push('Descripción');
+            if (!$scope.plato.ingredientes || $scope.plato.ingredientes.trim() === '') camposFaltantes.push('Ingredientes');
+            if (!$scope.plato.plannutricional || $scope.plato.plannutricional.trim() === '') camposFaltantes.push('Plan Nutricional');
+            
+            var mensaje = 'Los siguientes campos son obligatorios:\n\n• ' + camposFaltantes.join('\n• ');
+            
+            Swal.fire({
+                title: 'Completar campos requeridos',
+                text: mensaje,
+                icon: 'warning',
+                showCancelButton: false,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#495057',
+                buttonsStyling: true
+            });
+            return;
         }
 
         var jsonForm = {
@@ -167,11 +195,37 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     };
 
     $scope.ModelUpdate = function (isValid, view_id) {
+        $scope.showValidationErrors = true;
+        
         if (!isValid) {
-            if ($scope.platoForm && $scope.platoForm.$error && $scope.platoForm.$error.required) {
-                angular.forEach($scope.platoForm.$error.required, function (field) { field.$setTouched(); });
+            // Marcar todos los campos como tocados
+            if ($scope.platoForm) {
+                angular.forEach($scope.platoForm, function (field) {
+                    if (field && field.$setTouched) {
+                        field.$setTouched();
+                    }
+                });
             }
-            return fireWarn('Campos incompletos', 'Completá todos los campos obligatorios.');
+            
+            // Recopilar campos faltantes
+            var camposFaltantes = [];
+            if (!$scope.plato.codigo || $scope.plato.codigo.trim() === '') camposFaltantes.push('Código');
+            if (!$scope.plato.descripcion || $scope.plato.descripcion.trim() === '') camposFaltantes.push('Descripción');
+            if (!$scope.plato.ingredientes || $scope.plato.ingredientes.trim() === '') camposFaltantes.push('Ingredientes');
+            if (!$scope.plato.plannutricional || $scope.plato.plannutricional.trim() === '') camposFaltantes.push('Plan Nutricional');
+            
+            var mensaje = 'Los siguientes campos son obligatorios:\n\n• ' + camposFaltantes.join('\n• ');
+            
+            Swal.fire({
+                title: 'Completar campos requeridos',
+                text: mensaje,
+                icon: 'warning',
+                showCancelButton: false,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#495057',
+                buttonsStyling: true
+            });
+            return;
         }
 
         var jsonForm = {
@@ -222,6 +276,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     $scope.ViewCreate = function () {
         $scope.ViewAction = 'Nuevo Plato';
         $scope.titulo = 'Agregar nuevo plato';
+        $scope.showValidationErrors = false;
         $scope.plato = {
             codigo: '', descripcion: '', ingredientes: '',
             plannutricional: '', costo: 0, presentacion: ''
@@ -234,6 +289,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     $scope.ViewUpdate = function (view_id) {
         $scope.ViewAction = 'Editar Plato';
         $scope.titulo = 'Modificar plato';
+        $scope.showValidationErrors = false;
         $scope.view_id = view_id;
         $scope.ModelRead(view_id);
         $scope.ModelReadPlanes();
@@ -245,19 +301,17 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
 
         Swal.fire({
             title: 'Eliminar registro',
-            text: '¿Desea eliminar plato?',
+            text: 'Desea eliminar plato?',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar',
-            allowOutsideClick: false
-        }).then(function (res) {
-            if (res.isConfirmed) {
-                $scope.$applyAsync(function () {
-                    $scope.ModelDelete(view_id);
-                });
+            confirmButtonText: 'Aceptar',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#495057',
+            cancelButtonColor: '#dc3545',
+            buttonsStyling: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $scope.ModelDelete(view_id);
             }
         });
     };
@@ -265,6 +319,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     $scope.ViewCancel = function () {
         $scope.ViewAction = 'Platos';
         $scope.titulo = 'Gestión de Platos';
+        $scope.showValidationErrors = false;
     };
 
     // --------- Imagen (preview/base64) ---------

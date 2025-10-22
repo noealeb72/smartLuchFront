@@ -61,6 +61,215 @@
                 border-color: #c82333 !important;
             }
         /* .swal2-container { z-index: 20000 !important; }  opcional si algo la tapa */
+
+        /* Estilos para botones de paginación personalizados */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .pagination-btn {
+            background-color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin: 0 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            color: #6c757d;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 36px;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background-color: #e9ecef;
+            color: #495057;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .pagination-btn:active:not(:disabled) {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .pagination-btn:disabled {
+            background-color: #f8f9fa;
+            color: #adb5bd;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .pagination-btn i {
+            font-size: 12px;
+        }
+
+        /* Estilos para el botón de limpiar búsqueda */
+        .input-group-append .btn {
+            border-left: 0;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+        }
+
+        .input-group-append .btn:hover:not(:disabled) {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+        }
+
+        .input-group-append .btn:focus {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+
+        .input-group-append .btn:disabled {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        /* Estilos para el botón Agregar */
+        .btn-primary[ng-click="ViewCreate()"] {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 6px !important;
+        }
+
+        .btn-primary[ng-click="ViewCreate()"]:hover {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+        }
+
+        .btn-primary[ng-click="ViewCreate()"]:focus {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+
+        /* Estilos para botones de acciones */
+        .action-btn {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 6px !important;
+            border: none !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            margin: 0 2px !important;
+        }
+
+        .edit-btn {
+            background-color: #343a40 !important;
+            color: white !important;
+        }
+
+        .edit-btn:hover {
+            background-color: #343a40 !important;
+            color: white !important;
+        }
+
+        .edit-btn:focus {
+            background-color: #343a40 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+
+        .delete-btn {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+
+        .delete-btn:hover {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+
+        .delete-btn:focus {
+            background-color: #dc3545 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+
+        /* Estilos para botones Guardar y Cancelar */
+        .save-btn {
+            background-color: #36393F !important;
+            border-color: #36393F !important;
+            color: white !important;
+            border-radius: 6px !important;
+            border: none !important;
+            padding: 8px 16px !important;
+            margin-right: 10px !important;
+        }
+
+        .save-btn:hover {
+            background-color: #36393F !important;
+            border-color: #36393F !important;
+            color: white !important;
+        }
+
+        .save-btn:focus {
+            background-color: #36393F !important;
+            border-color: #36393F !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+
+        .cancel-btn {
+            background-color: #F04747 !important;
+            border-color: #F04747 !important;
+            color: white !important;
+            border-radius: 6px !important;
+            border: none !important;
+            padding: 8px 16px !important;
+        }
+
+        .cancel-btn:hover {
+            background-color: #F04747 !important;
+            border-color: #F04747 !important;
+            color: white !important;
+        }
+
+        .cancel-btn:focus {
+            background-color: #F04747 !important;
+            border-color: #F04747 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+
+        /* Estilos para breadcrumb */
+        .breadcrumb {
+            border-radius: 0;
+        }
+
+        .breadcrumb-container {
+            margin-top: 0px;
+        }
     </style>
 </head>
 
@@ -71,85 +280,64 @@
             <div ng-include="'navbar.html'"></div>
 
             <!-- Titulo -->
-            <div class="heading-section bg-dark text-white pt-2 pl-3" style="margin-bottom: 0 !important; padding-bottom: 10px !important;">
-                <h3 ng-bind="titulo"></h3>
+            <div class="heading-section bg-dark text-white pt-2 pl-3">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 class="mb-0">Gestión de platos</h3>
+                    </div>
+                    <div class="col-md-4">
+                        <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Platos'">
+                            <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
+                                <li class="breadcrumb-item">
+                                    <a href="#" ng-click="ViewAction = 'Platos'; ModelReadAll()" class="text-white-50" style="text-decoration: none;">
+                                        <i class="fa fa-home mr-1"></i>Gestión de platos
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item active text-white" aria-current="page">
+                                    <span ng-if="ViewAction === 'Nuevo Plato'">
+                                        <i class="fa fa-plus mr-1"></i>Nuevo
+                                    </span>
+                                    <span ng-if="ViewAction === 'Editar Plato'">
+                                        <i class="fa fa-edit mr-1"></i>Editar
+                                    </span>
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
             </div>
 
             <!-- Contenido principal -->
             <div class="container-fluid" style="margin-top: 0 !important;">
 
-                <!-- Barra de búsqueda y botón de agregar -->
-                <div class="row my-3">
-                    <div class="col-md-12 text-right" ng-show="ViewAction !== 'Nuevo Plato' && ViewAction !== 'Editar Plato'">
-                        <button type="button" class="btn btn-primary" ng-click="ViewCreate()" title="Agregar Nuevo Plato">
-                            <i class="fa fa-plus text-white"></i> Nuevo Plato
+                <!-- Botón de agregar -->
+                <div class="dishes-text row mb-2" ng-show="ViewAction !== 'Nuevo Plato' && ViewAction !== 'Editar Plato'">
+                    <div class="col text-right">
+                        <button type="button" class="btn btn-primary mb-2 mr-3"
+                                ng-click="ViewCreate()"
+                                style="background-color: #5c636a; border-color: #5c636a; color: white; padding: 0.5rem 1rem; cursor: pointer; border-radius: 6px; border: none;">
+                            <i class="fa fa-plus text-white" style="font-size:14px; margin-right: 5px;"></i> Agregar
                         </button>
                     </div>
                 </div>
 
+                <!-- Buscar -->
                 <div class="row my-3">
-                    <div class="col-md-12">
-                        <label for="buscarPlato" ng-show="ViewAction !== 'Nuevo Plato' && ViewAction !== 'Editar Plato'">Buscar platos</label>
-                        <input type="text" class="form-control" ng-model="searchText" title="Buscar platos"
-                               ng-show="ViewAction !== 'Nuevo Plato' && ViewAction !== 'Editar Plato'" id="buscarPlato">
-                    </div>
-                </div>
-
-                <!-- Acordeón de filtros -->
-                <div class="accordion my-3" id="filtrosAcordeon" ng-if="ViewAction === 'Platos'">
-                    <div class="card">
-                        <div class="card-header p-2" id="headingFiltros">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseFiltros"
-                                        aria-expanded="true" aria-controls="collapseFiltros" style="color: #f34949;">
-                                    Ver filtros Avanzados
+                    <div class="col-md-12" ng-show="ViewAction !== 'Nuevo Plato' && ViewAction !== 'Editar Plato'">
+                        <label for="buscarPlato">Buscar</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" ng-model="searchText"
+                                   id="buscarPlato" title="Buscar platos"
+                                   placeholder="Código, descripción, ingredientes, plan nutricional, costo">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary" title="Limpiar" ng-click="searchText=''">
+                                    <i class="fas fa-times"></i>
                                 </button>
-                            </h5>
-                        </div>
-
-                        <div id="collapseFiltros" class="collapse" aria-labelledby="headingFiltros" data-parent="#filtrosAcordeon">
-                            <div class="card-body">
-                                <div class="row">
-                                    <!-- Filtro de costo -->
-                                    <div class="col-md-3">
-                                        <label for="filtroCostoMin">Costo mínimo</label>
-                                        <input type="number" class="form-control" id="filtroCostoMin" ng-model="filtroCostoMin">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="filtroCostoMax">Costo máximo</label>
-                                        <input type="number" class="form-control" id="filtroCostoMax" ng-model="filtroCostoMax">
-                                    </div>
-
-                                    <!-- Filtro de plan nutricional -->
-                                    <div class="col-md-3">
-                                        <label for="filtroPlan">Plan Nutricional</label>
-                                        <select class="form-control" id="filtroPlan" ng-model="filtroPlan">
-                                            <option value="">-- Todos --</option>
-                                            <option ng-repeat="plan in planes" value="{{plan.nombre}}">{{plan.nombre}}</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Filtro de estado -->
-                                    <div class="col-md-3">
-                                        <label for="filtroEstado">Estado</label>
-                                        <select class="form-control" id="filtroEstado" ng-model="filtroEstado">
-                                            <option value="">-- Todos --</option>
-                                            <option value="activo">Activo</option>
-                                            <option value="baja">Baja</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="row mt-3">
-                                    <div class="col-md-12 text-right">
-                                        <button class="btn btn-primary" ng-click="filtrarPlatos()">Buscar</button>
-                                        <button class="btn btn-secondary" ng-click="limpiarFiltros()">Limpiar Filtros</button>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
 
                 <hr ng-show="ViewAction !== 'Nuevo Plato' && ViewAction !== 'Editar Plato'">
 
@@ -175,13 +363,13 @@
                                     <td>{{item.plannutricional}}</td>
                                     <td>${{ item.costo | number:2 }}</td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-link p-0" title="Editar plato"
+                                        <button type="button" class="btn btn-link p-0 action-btn edit-btn" title="Editar plato"
                                                 ng-click="ViewUpdate(item.id)">
-                                            <i class="fa fa-edit" style="color:rebeccapurple"></i>
+                                            <i class="fa fa-edit"></i>
                                         </button>
-                                        <button type="button" class="btn btn-link p-0 ml-2" title="Eliminar plato"
+                                        <button type="button" class="btn btn-link p-0 ml-2 action-btn delete-btn" title="Eliminar plato"
                                                 ng-click="ViewDelete(item.id, $event)">
-                                            <i class="fa fa-trash" style="color:red"></i>
+                                            <i class="fa fa-trash"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -193,127 +381,122 @@
                     </div>
 
                     <!-- Paginación -->
-                    <nav aria-label="Page navigation" class="mt-3">
-                        <ul class="pagination justify-content-center">
-                            <li class="page-item" ng-class="{disabled: currentPage == 0}">
-                                <a class="page-link" href="#" ng-click="currentPage = currentPage - 1" aria-label="Anterior">
-                                    <span aria-hidden="true">&laquo;</span>
-                                </a>
-                            </li>
-                            <li class="page-item" ng-repeat="n in getNumber(totalPages) track by $index" ng-class="{active: $index == currentPage}">
-                                <a class="page-link" href="#" ng-click="currentPage = $index">{{$index + 1}}</a>
-                            </li>
-                            <li class="page-item" ng-class="{disabled: currentPage + 1 >= totalPages}">
-                                <a class="page-link" href="#" ng-click="currentPage = currentPage + 1" aria-label="Siguiente">
-                                    <span aria-hidden="true">&raquo;</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
+                    <div class="pagination-container mt-3">
+                        <div class="pagination-buttons">
+                            <button class="pagination-btn prev-btn" 
+                                    ng-disabled="currentPage == 0" 
+                                    ng-click="currentPage = currentPage - 1" 
+                                    title="Página anterior">
+                                <i class="fa fa-angle-double-left"></i>
+                            </button>
+                            <button class="pagination-btn next-btn" 
+                                    ng-disabled="currentPage + 1 >= totalPages" 
+                                    ng-click="currentPage = currentPage + 1" 
+                                    title="Página siguiente">
+                                <i class="fa fa-angle-double-right"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Form Nuevo/Editar -->
                 <div ng-if="ViewAction==='Nuevo Plato' || ViewAction==='Editar Plato'">
-                    <form class="form" name="platoForm"
+                    <div class="container-fluid">
+                        <div class="alert alert-info mb-3" role="alert" ng-if="ViewAction==='Nuevo Plato'">
+                            <i class="fa fa-info-circle mr-2"></i>
+                            <strong>Creando nuevo plato</strong> - Complete los campos obligatorios para guardar.
+                        </div>
+                        <div class="alert alert-info mb-3" role="alert" ng-if="ViewAction==='Editar Plato'">
+                            <i class="fa fa-info-circle mr-2"></i>
+                            <strong>Editando plato</strong> - Complete los campos obligatorios para guardar.
+                        </div>
+                        <div class="dishes-text col-12" style="margin-top: -20px !important;">
+                            <form class="form-group row" name="platoForm"
                           ng-submit="ViewAction==='Nuevo Plato' ? ModelCreate(platoForm.$valid) : ModelUpdate(platoForm.$valid, view_id)"
                           novalidate>
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="form-group">
-                                    <label for="codigo">Código</label>
-                                    <input ng-pattern="/^[a-zA-Z0-9._%+-]*$/"
-                                           ng-minlength="1" ng-maxlength="20"
-                                           class="form-control" type="text" id="codigo" name="codigo"
-                                           ng-model="plato.codigo" placeholder="Ingrese código" required>
-                                    <div ng-messages="platoForm.codigo.$error" class="text-danger">
-                                        <span ng-show="platoForm.codigo.$touched && platoForm.codigo.$error.required">Código requerido.</span>
-                                        <span ng-show="platoForm.codigo.$touched && platoForm.codigo.$error.pattern">Caracteres inválidos.</span>
+                                <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
+                                    <div class="pb-3 form-group" style="margin-top: 20px !important;">
+                                        <label for="codigo"><span class="text-danger">*</span> Código</label>
+                                        <input ng-pattern="/^[a-zA-Z0-9._%+-]*$/"
+                                               ng-minlength="1" ng-maxlength="20"
+                                               class="col-8 form-control" type="text" id="codigo" name="codigo"
+                                               ng-model="plato.codigo" placeholder="Ingrese código" required>
+                                        <span ng-show="(plato.codigo === '' || plato.codigo === null) && showValidationErrors" class="text-danger">Campo Código requerido</span>
+                                    </div>
+
+                                    <div class="pb-3 form-group">
+                                        <label for="descripcion"><span class="text-danger">*</span> Descripción</label>
+                                        <input ng-pattern="/^[a-zA-Z0-9ÁÉÍÓÚáéíóúñ.,_ %+-]*$/"
+                                               ng-minlength="2" ng-maxlength="140"
+                                               class="col-8 form-control" type="text" id="descripcion" name="descripcion"
+                                               ng-model="plato.descripcion" placeholder="Ingrese descripción" required>
+                                        <span ng-show="(plato.descripcion === '' || plato.descripcion === null) && showValidationErrors" class="text-danger">Campo Descripción requerido</span>
+                                    </div>
+
+                                    <div class="pb-3 form-group">
+                                        <label for="ingredientes"><span class="text-danger">*</span> Ingredientes</label>
+                                        <input ng-pattern="/^[a-zA-Z0-9ÁÉÍÓÚáéíóúñ.,_ %+-]*$/"
+                                               ng-minlength="2" ng-maxlength="140"
+                                               class="col-8 form-control" type="text" id="ingredientes" name="ingredientes"
+                                               ng-model="plato.ingredientes" placeholder="Ingrese ingredientes" required>
+                                        <span ng-show="(plato.ingredientes === '' || plato.ingredientes === null) && showValidationErrors" class="text-danger">Campo Ingredientes requerido</span>
                                     </div>
                                 </div>
 
-                                <div class="form-group">
-                                    <label for="descripcion">Descripción</label>
-                                    <input ng-pattern="/^[a-zA-Z0-9ÁÉÍÓÚáéíóúñ.,_ %+-]*$/"
-                                           ng-minlength="2" ng-maxlength="140"
-                                           class="form-control" type="text" id="descripcion" name="descripcion"
-                                           ng-model="plato.descripcion" placeholder="Ingrese descripción" required>
-                                    <div ng-messages="platoForm.descripcion.$error" class="text-danger">
-                                        <span ng-show="platoForm.descripcion.$touched && platoForm.descripcion.$error.required">Descripción requerida.</span>
-                                        <span ng-show="platoForm.descripcion.$touched && platoForm.descripcion.$error.pattern">Caracteres inválidos.</span>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="ingredientes">Ingredientes</label>
-                                    <input ng-pattern="/^[a-zA-Z0-9ÁÉÍÓÚáéíóúñ.,_ %+-]*$/"
-                                           ng-minlength="2" ng-maxlength="140"
-                                           class="form-control" type="text" id="ingredientes" name="ingredientes"
-                                           ng-model="plato.ingredientes" placeholder="Ingrese ingredientes" required>
-                                    <div ng-messages="platoForm.ingredientes.$error" class="text-danger">
-                                        <span ng-show="platoForm.ingredientes.$touched && platoForm.ingredientes.$error.required">Ingredientes requeridos.</span>
-                                        <span ng-show="platoForm.ingredientes.$touched && platoForm.ingredientes.$error.pattern">Caracteres inválidos.</span>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="plannutricional">Plan Nutricional</label>
-                                    <select class="form-control" id="plannutricional" name="plannutricional"
-                                            ng-model="plato.plannutricional" required>
-                                        <option value="" selected>-- Seleccionar --</option>
-                                        <option ng-repeat="x in planes" value="{{x.nombre}}">{{x.nombre}}</option>
-                                    </select>
-                                    <div ng-messages="platoForm.plannutricional.$error" class="text-danger">
-                                        <span ng-show="platoForm.plannutricional.$touched && platoForm.plannutricional.$error.required">Este campo es obligatorio.</span>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="costo">Costo ($)</label>
-                                    <input class="form-control" type="number" id="costo" name="costo"
-                                           ng-model="plato.costo" placeholder="Ingrese costo" min="0" required>
-                                    <div ng-messages="platoForm.costo.$error" class="text-danger">
-                                        <span ng-show="platoForm.costo.$touched && platoForm.costo.$error.required">Costo requerido.</span>
-                                        <span ng-show="platoForm.costo.$touched && platoForm.costo.$error.min">El costo no puede ser negativo.</span>
-                                    </div>
-                                </div>
-
-                                <!-- Mobile: carga/preview imagen -->
-                                <div class="form-group d-block d-md-none">
-                                    <div class="card">
-                                        <div class="card-body text-center">
-                                            <img class="img-fluid mb-3" ng-if="plato.presentacion" ng-src="{{plato.presentacion}}" alt="Imagen del plato" />
-                                            <input class="form-control-file"
-                                                   accept="image/jpeg,image/png,image/jpg"
-                                                   type="file"
-                                                   onchange="angular.element(this).scope().loadImage(this)"
-                                                   id="file_input" name="file_input" />
+                                <div class="col-6" style="padding-left: 0px; padding-right:0px !important">
+                                    <!-- Sección de imagen -->
+                                    <div class="pb-3 form-group" style="margin-top: 20px !important;">
+                                        <label for="imagen">Imagen del plato</label>
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <img class="img-fluid mb-3" ng-if="view_previewImage" ng-src="{{view_previewImage}}" alt="Imagen del plato" style="max-height: 120px; max-width: 120px;" />
+                                                <input class="form-control-file" accept="image/jpeg,image/png,image/jpg" type="file"
+                                                       onchange="angular.element(this).scope().loadImage()" id="view_file"
+                                                       ng-model="view_file" />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-
-                                <button type="submit" class="btn btn-primary mt-3"
-                                        ng-disabled="platoForm.$invalid"
-                                        title="Guardar"
-                                        style="background-color: #007bff; border-color: #007bff; cursor: pointer;">
-                                    Guardar
-                                </button>
-                                <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()">Cancelar</button>
-                            </div>
-
-                            <!-- Desktop: preview/carga imagen -->
-                            <div class="col-md-4 d-none d-md-block" style="margin-top: 30px;">
-                                <div class="card">
-                                    <div class="card-body text-center">
-                                        <img class="img-fluid mb-3" ng-if="view_previewImage" ng-src="{{view_previewImage}}" alt="Imagen del plato" />
-                                        <input class="form-control-file" accept="image/jpeg,image/png,image/jpg" type="file"
-                                               onchange="angular.element(this).scope().loadImage()" id="view_file"
-                                               ng-model="view_file" />
+                                    <div class="pb-3 form-group">
+                                        <label for="costo">Costo ($)</label>
+                                        <input class="col-8 form-control" type="number" id="costo" name="costo"
+                                               ng-model="plato.costo" placeholder="0.00" min="0" step="0.01"
+                                               onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46 || event.charCode === 8 || event.charCode === 9 || event.charCode === 13">
+                                        <span ng-show="plato.costo < 0" class="text-danger">El costo no puede ser negativo</span>
                                     </div>
                                 </div>
-                            </div>
+
+                                <!-- Fila para Plan Nutricional -->
+                                <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
+                                    <div class="pb-3 form-group">
+                                        <label for="plannutricional"><span class="text-danger">*</span> Plan Nutricional</label>
+                                        <select class="col-8 form-control" id="plannutricional" name="plannutricional"
+                                                ng-model="plato.plannutricional" required>
+                                            <option value="" selected>-- Seleccionar --</option>
+                                            <option ng-repeat="x in planes" value="{{x.nombre}}">{{x.nombre}}</option>
+                                        </select>
+                                        <span ng-show="(plato.plannutricional === '' || plato.plannutricional === null) && showValidationErrors" class="text-danger">Campo Plan Nutricional requerido</span>
+                                    </div>
+                                </div>
+                                <div class="col-6" style="padding-left: 0px; padding-right:0px !important">
+                                    <!-- Espacio vacío para mantener alineación -->
+                                </div>
+
+
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary mt-3" title="Guardar" 
+                                            style="background-color: #36393F; border-color: #36393F; color: white; cursor: pointer; margin-right:8px; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                        <i class="fa fa-save" style="margin-right: 6px;"></i>Guardar
+                                    </button>
+                                    <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()" 
+                                            style="background-color: #F04747; border-color: #F04747; color: white; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                        <i class="fa fa-times" style="margin-right: 6px;"></i>Cancelar
+                                    </button>
+                                </div>
 
                         </div>
-                    </form>
+                            </form>
+                        </div>
+                    </div>
                 </div>
 
             </div>

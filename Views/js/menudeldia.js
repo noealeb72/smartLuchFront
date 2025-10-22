@@ -133,10 +133,42 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
 
     // --- Utilidades de paginación usadas por la vista ---
     $scope.currentPage = 0;
-    $scope.pageSize = 20;
+    $scope.pageSize = 10;
+    $scope.totalPages = 1;
+    
     $scope.numberOfPages = function () {
         return Math.ceil(($scope.dataset || []).length / $scope.pageSize);
     };
+    
+    // Función para recalcular totalPages
+    function updateTotalPages() {
+        var filteredData = $scope.dataset || [];
+        if ($scope.searchText) {
+            filteredData = filteredData.filter(function(item) {
+                return JSON.stringify(item).toLowerCase().indexOf($scope.searchText.toLowerCase()) !== -1;
+            });
+        }
+        $scope.totalPages = Math.ceil(filteredData.length / $scope.pageSize);
+        if ($scope.currentPage >= $scope.totalPages) {
+            $scope.currentPage = Math.max(0, $scope.totalPages - 1);
+        }
+    }
+    
+    // Función para obtener datos filtrados
+    $scope.getFilteredData = function() {
+        var filteredData = $scope.dataset || [];
+        if ($scope.searchText) {
+            filteredData = filteredData.filter(function(item) {
+                return JSON.stringify(item).toLowerCase().indexOf($scope.searchText.toLowerCase()) !== -1;
+            });
+        }
+        return filteredData;
+    };
+    
+    // Watcher para actualizar paginación cuando cambie el texto de búsqueda
+    $scope.$watch('searchText', function() {
+        updateTotalPages();
+    });
     // La vista llama getNumber(totalPages): devolvemos un array con N elementos
     $scope.getNumber = function (n) {
         if (!n && n !== 0) {
@@ -261,6 +293,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                 $scope.dataset = data;
                 // opcional: reset de página si el dataset cambió
                 $scope.currentPage = 0;
+                updateTotalPages();
             })
             .error(function () {
                 $window.Swal && $window.Swal.fire({ title: 'Ha ocurrido un error', text: 'API no presente', icon: 'error' });
@@ -552,6 +585,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
             .then(response => {
                 $scope.dataset = response.data;
                 $scope.currentPage = 0;
+                updateTotalPages();
             })
             .catch(error => {
                 $window.Swal && $window.Swal.fire({ title: 'Error', text: 'No se pudo obtener el menú filtrado', icon: 'error' });

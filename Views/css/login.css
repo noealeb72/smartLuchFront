@@ -69,12 +69,12 @@
 			background-color: #c0392b !important;
 		}
 
-		.login-logo{
-			font-size: 50px;
-			margin-top: 40px;
-			color:white;
-
-		}
+	.login-logo{
+		font-size: 50px;
+		margin-top: 40px;
+		color: white !important;
+		text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+	}
 
 		.error-msg{
 			font-size: 10px;

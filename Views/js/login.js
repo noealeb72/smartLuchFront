@@ -1,126 +1,122 @@
-﻿console.log('=== ARCHIVO LOGIN.JS CARGADO ===');
+﻿// === login.js ===
 
 var app = angular.module('AngujarJS', []);
 
-app.controller('Login', function ($scope, $location, $sce, $http, $window) {
-    console.log('=== CONTROLADOR LOGIN INICIALIZADO ===');
-    console.log('AngularJS disponible:', typeof angular !== 'undefined');
-    console.log('jQuery disponible:', typeof $ !== 'undefined');
-
+app.controller('Login', function ($scope, $http, $window, $location) {
+    // --- Config ---
     $scope.base = 'http://localhost:8000/api/login/';
 
-    $scope.logIn = function () {
-        console.log('=== BOTÓN INGRESAR PRESIONADO ===');
-        console.log('Usuario:', $scope.view_username);
-        console.log('Contraseña:', $scope.view_password ? '***' : 'vacía');
-        
-        var user = $scope.view_username;
-        var pass = $scope.view_password;
-        
-        // Fallback: si ng-model no tomó el valor, leer desde el DOM visible
-        var getVisibleElById = function(id){
-            var nodes = document.querySelectorAll('[id="'+id+'"]');
-            if (!nodes || nodes.length === 0) return null;
-            for (var i=0;i<nodes.length;i++){ if (nodes[i].offsetParent !== null) return nodes[i]; }
-            return nodes[0];
-        };
-        if (!user) { var uEl = getVisibleElById('view_username'); if (uEl) user = uEl.value; }
-        if (!pass) { var pEl = getVisibleElById('view_password'); if (pEl) pass = pEl.value; }
-        
-        user = (user||'').trim();
-        pass = (pass||'').trim();
-        
-        console.log('Usuario normalizado:', user ? '[ok]' : '[vacío]');
-        console.log('Contraseña normalizada:', pass ? '[ok]' : '[vacía]');
-        
-        // Validación: ambos requeridos ANTES de llamar al backend
-        if (!user || !pass) {
-            if (typeof Swal !== 'undefined' && Swal.fire) {
-                Swal.fire({ title: 'Campos requeridos', text: 'Usuario y contraseña son requeridos', icon: 'warning', confirmButtonText: 'Entendido' });
-            } else if (typeof CustomToast !== 'undefined') {
-                CustomToast.show('Usuario y contraseña son requeridos');
-            } else { alert('Usuario y contraseña son requeridos'); }
-            return; // cortar flujo
+    // --- Estado UI ---
+    $scope.showError = false;
+    $scope.errorMsg = '';
+
+    // --- Helpers ---
+    function showError(msg) {
+        $scope.errorMsg = msg || 'Ocurrió un error';
+        $scope.showError = true;
+        // Solo mostrar el mensaje de error en el formulario, sin popup
+    }
+
+    function setItemSafe(k, v) {
+        if (v !== null && v !== undefined) {
+            try { localStorage.setItem(k, String(v).trim()); } catch (e) { }
         }
-        
-        console.log('Validación pasada, procediendo con login...');
-        
-        console.log('Haciendo llamada HTTP a:', $scope.base + 'Authorize');
-        $http({
-            url: $scope.base + 'Authorize',
-            method: "GET",
-            params: { user: user, pass: pass }
-        }).then(function (response) {
-            console.log('Respuesta del servidor recibida:', response);
-            var usuario = response.data.Usuario[0];
-            var smarTime = response.data.smarTime;
-            var usuarioSmatTime = response.data.usuarioSmatTime;
-            
-            // Debug: verificar valores que llegan del servidor
-            console.log('=== DATOS DEL SERVIDOR ===');
-            console.log('usuario.perfil (rol):', JSON.stringify(usuario.perfil));
-            console.log('usuario.nombre:', JSON.stringify(usuario.nombre));
-            console.log('usuario.apellido:', JSON.stringify(usuario.apellido));
-            console.log('usuario.planta:', JSON.stringify(usuario.planta));
-            console.log('usuario.centrodecosto:', JSON.stringify(usuario.centrodecosto));
-            console.log('usuario.proyecto:', JSON.stringify(usuario.proyecto));
-            // Función para limpiar y guardar datos
-            function cleanAndSetItem(key, value) {
-                if (value !== null && value !== undefined) {
-                    localStorage.setItem(key, String(value).trim());
-                }
-            }
-            
-            cleanAndSetItem("id", usuario.id);
-            cleanAndSetItem("nombre", usuario.nombre);
-            cleanAndSetItem("apellido", usuario.apellido);
-            cleanAndSetItem("legajo", usuario.legajo);
-            cleanAndSetItem("role", usuario.perfil);
-            cleanAndSetItem("cuil", usuario.cuil);
-            cleanAndSetItem("plannutricional", usuario.plannutricional);
-            cleanAndSetItem("planta", usuario.planta);
-            cleanAndSetItem("dni", usuario.dni);
-            cleanAndSetItem("domicilio", usuario.domicilio);
-            cleanAndSetItem("fechaingreso", usuario.fechaingreso);
-            cleanAndSetItem("contrato", usuario.contrato);
-            cleanAndSetItem("foto", usuario.foto);
-            cleanAndSetItem("user", usuario.user);
-            cleanAndSetItem("password", usuario.password);
-            cleanAndSetItem("proyecto", usuario.proyecto);
-            cleanAndSetItem("centrodecosto", usuario.centrodecosto);
-            cleanAndSetItem("bonificacion", usuario.bonificaciones);
-            cleanAndSetItem("bonificacion_invitado", usuario.bonificaciones_invitado);
-            localStorage.setItem("smarTime", smarTime);
-            localStorage.setItem("usuarioSmatTime", usuarioSmatTime);
-            
-            // Debug: verificar datos guardados en localStorage
-            console.log('=== DATOS GUARDADOS EN LOCALSTORAGE ===');
-            console.log('role guardado:', JSON.stringify(localStorage.getItem('role')));
-            console.log('nombre guardado:', JSON.stringify(localStorage.getItem('nombre')));
-            console.log('apellido guardado:', JSON.stringify(localStorage.getItem('apellido')));
-            console.log('planta guardada:', JSON.stringify(localStorage.getItem('planta')));
-            console.log('centrodecosto guardado:', JSON.stringify(localStorage.getItem('centrodecosto')));
-            console.log('proyecto guardado:', JSON.stringify(localStorage.getItem('proyecto')));
-            if (usuario.perfil === "Cocina") {
-                $window.location.href = 'http://localhost:4200/Views/despacho.html';
-            } else {
-                $window.location.href = 'http://localhost:4200/Views/index.html';
-            }
-        }).catch(function (error) {
-            console.error('Error en login:', error);
-            $scope.errorMsg = (error && error.data && error.data.Message) ? error.data.Message : (error.statusText || 'Error en la solicitud');
-            $scope.showError = true;
-        });
     }
 
-    // Limpiar almacenamiento local
+    // Ocultar error al tipear nuevamente
+    $scope.$watchGroup(['view_username', 'view_password'], function () {
+        if ($scope.showError) $scope.showError = false;
+    });
 
+    // Validación simple
+    $scope.isFormValid = function () {
+        var u = ($scope.view_username || '').trim();
+        var p = ($scope.view_password || '').trim();
+        return u.length > 0 && p.length > 0;
+    };
+
+    // Limpiar cualquier sesión previa
     $scope.clearLocal = function () {
-        $window.localStorage.clear();
-        $location.path('/');
-    }
-    // Limpiar el almacenamiento local al cargar el controlador
+        try { $window.localStorage.clear(); } catch (e) { }
+    };
     $scope.clearLocal();
 
-});
+    // Login (botón o Enter via ng-submit)
+    $scope.logIn = function (evt) {
+        if (evt && evt.preventDefault) evt.preventDefault();
 
+        var user = ($scope.view_username || '').trim();
+        var pass = ($scope.view_password || '').trim();
+
+        if (!user || !pass) {
+            showError('Usuario y contraseña son requeridos');
+            return;
+        }
+
+        $http({
+            url: $scope.base + 'Authorize',
+            method: 'GET',
+            params: { user: user, pass: pass }
+        })
+            .then(function (response) {
+                // Caso: HTTP 200, pero sin usuario válido ⇒ mostrar error
+                var ok = response && response.status === 200 &&
+                    response.data && Array.isArray(response.data.Usuario) &&
+                    response.data.Usuario.length > 0;
+
+                if (!ok) {
+                    showError('Usuario o contraseña incorrectos');
+                    return;
+                }
+
+                // Éxito
+                var usuario = response.data.Usuario[0];
+                var smarTime = response.data.smarTime;
+                var usuarioSmatTime = response.data.usuarioSmatTime;
+
+                setItemSafe('id', usuario.id);
+                setItemSafe('nombre', usuario.nombre);
+                setItemSafe('apellido', usuario.apellido);
+                setItemSafe('legajo', usuario.legajo);
+                setItemSafe('role', usuario.perfil);
+                setItemSafe('cuil', usuario.cuil);
+                setItemSafe('plannutricional', usuario.plannutricional);
+                setItemSafe('planta', usuario.planta);
+                setItemSafe('dni', usuario.dni);
+                setItemSafe('domicilio', usuario.domicilio);
+                setItemSafe('fechaingreso', usuario.fechaingreso);
+                setItemSafe('contrato', usuario.contrato);
+                setItemSafe('foto', usuario.foto);
+                setItemSafe('user', usuario.user);
+                setItemSafe('password', usuario.password);
+                setItemSafe('proyecto', usuario.proyecto);
+                setItemSafe('centrodecosto', usuario.centrodecosto);
+                setItemSafe('bonificacion', usuario.bonificaciones);
+                setItemSafe('bonificacion_invitado', usuario.bonificaciones_invitado);
+
+                try {
+                    localStorage.setItem('smarTime', smarTime);
+                    localStorage.setItem('usuarioSmatTime', usuarioSmatTime);
+                } catch (e) { }
+
+                // Redirección por rol
+                if (usuario.perfil === 'Cocina') {
+                    $window.location.href = 'http://localhost:4200/Views/despacho.html';
+                } else {
+                    $window.location.href = 'http://localhost:4200/Views/index.html';
+                }
+            })
+            .catch(function (error) {
+                // Mensaje por status
+                var message = 'Credenciales incorrectas';
+                if (error) {
+                    if (error.status === 400) message = 'Usuario o contraseña incorrectos';
+                    else if (error.status === 401) message = 'Acceso no autorizado';
+                    else if (error.status === 500) message = 'Error del servidor';
+                    else if (error.data && error.data.Message) message = error.data.Message;
+                    else if (error.statusText) message = error.statusText;
+                }
+                showError(message);
+            });
+    };
+});

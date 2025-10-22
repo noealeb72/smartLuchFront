@@ -46,6 +46,12 @@
     margin: 0px 0px 0px 0px;
     padding: 0px 0px 0px 0px;
     font-size: 26px;
+    color: white !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.smart-title i {
+    color: white !important;
 }
 
 .imaged-background {
@@ -58,8 +64,9 @@
 }
 
 .solid-background {
-    background-color: #ffffffd6;
+    background-color: #ffffff;
     padding-bottom: 20px;
+    min-height: calc(100vh - 60px);
 }
 
 .sticky-image {
