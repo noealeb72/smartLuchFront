@@ -1,87 +1,28 @@
 ﻿<!DOCTYPE html>
-<html>
-
+<html lang="es" ng-app="AngujarJS">
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>SmartLunch</title>
-    <meta name="description" content="SmartLunch">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <!-- External CSS -->
-    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
-    <link rel="stylesheet" href="vendor/select2/select2.min.css">
-    <link rel="stylesheet" href="vendor/owlcarousel/owl.carousel.min.css">
-    <link rel="stylesheet" href="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/css/tempusdominus-bootstrap-4.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/brands.css">
-    <!-- Fonts -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700|Josefin+Sans:300,400,700">
-    <link rel="stylesheet" href="https://cdn.linearicons.com/free/1.0.0/icon-font.min.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/style.min.css">
-    <link rel="stylesheet" href="css/smartstyle.css">
-    <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+    <meta charset="utf-8" />
+    <title>SmartLunch - Reporte de Gestión</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- CSS base -->
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="css/style.min.css" />
+    <link rel="stylesheet" href="css/smartstyle.css" />
+
     <style>
-        /* Estilos consistentes para reportes */
         .btn-primary {
             background-color: #495057 !important;
             border-color: #495057 !important;
-            color: white !important;
-            border-radius: 4px !important;
-            font-weight: 500 !important;
-            padding: 8px 16px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            gap: 8px !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            color: #fff !important;
         }
-        
-        .btn-primary:hover {
-            background-color: #495057 !important;
-            border-color: #495057 !important;
-            color: white !important;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
-        }
-        
-        .btn-primary:focus {
-            background-color: #495057 !important;
-            border-color: #495057 !important;
-            color: white !important;
-            box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25) !important;
-        }
-        
-        .btn-primary:active {
-            background-color: #495057 !important;
-            border-color: #495057 !important;
-            color: white !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
-        }
-        
-        .form-label {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: #495057;
-        }
-        
-        .form-control {
-            border-radius: 4px;
-            border: 1px solid #ced4da;
-            padding: 0.5rem 0.75rem;
-        }
-        
-        .form-control:focus {
-            border-color: #495057;
-            box-shadow: 0 0 0 0.2rem rgba(73, 80, 87, 0.25);
-        }
-        
-        /* Estilos para paginación tipo DataTable */
+
         .datatable-pagination {
-            background-color: #f8f9fa;
+            background: #f8f9fa;
             border: 1px solid #dee2e6;
             border-radius: 6px;
-            padding: 0.75rem;
+            padding: .75rem;
         }
         
         .page-number-btn {
@@ -90,477 +31,287 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8rem;
+            font-size: .8rem;
             font-weight: 500;
         }
         
-        .page-number-btn.btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
-            color: white;
-        }
-        
-        .page-number-btn.btn-outline-secondary {
-            background-color: transparent;
-            border-color: #6c757d;
-            color: #6c757d;
-        }
-        
-        .page-number-btn.btn-outline-secondary:hover {
-            background-color: #6c757d;
-            border-color: #6c757d;
-            color: white;
-        }
-        
-        .page-number-btn.btn-primary {
-            background-color: #495057;
-            border-color: #495057;
-            color: white;
-        }
-        
-        .page-size-select {
-            width: 70px;
-            font-size: 0.875rem;
-        }
-        
-        .pagination-info {
-            font-size: 0.8rem;
-            color: #6c757d;
-            font-weight: 500;
-        }
-        
-        .pagination-controls {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        /* Estilos para scrollbar personalizado */
-        .table-scroll::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        .table-scroll::-webkit-scrollbar-track {
-            background: #f1f1f1;
+        .table-scroll {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
             border-radius: 4px;
         }
         
-        .table-scroll::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
+        thead.sticky {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* Estilos para el acordeón de filtros */
+        .card-header:hover {
+            background-color: #5a6268 !important;
         }
         
-        .table-scroll::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
+        .card-body {
+            transition: all 0.3s ease;
+            overflow: hidden;
         }
         
-        /* Footer al final */
+        .fa-chevron-down, .fa-chevron-up {
+            transition: transform 0.3s ease;
+        }
+
+        /* Estilos para que el footer se vea al final */
+        html, body {
+            height: 100%;
+        }
+        
         body {
-            padding-bottom: 80px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
+        .container-fluid {
+            flex: 1;
         }
         
-        .alert-info {
-            background-color: #d1ecf1;
-            border-color: #bee5eb;
-            color: #0c5460;
+        .smart-bg {
+            margin-top: auto;
         }
         
-        /* Estilos para todos los botones de búsqueda (con cruz) - SIEMPRE gris oscuro */
-        .input-group-append .btn,
-        .btn-outline-secondary,
-        .btn-outline-secondary:not(:disabled):not(.disabled) {
-            background-color: #5c636a !important;
-            border-color: #5c636a !important;
-            color: white !important;
-        }
-        
-        .input-group-append .btn:hover,
-        .btn-outline-secondary:hover,
-        .btn-outline-secondary:not(:disabled):not(.disabled):hover {
-            background-color: #5c636a !important;
-            border-color: #5c636a !important;
-            color: white !important;
-        }
-        
-        .input-group-append .btn:focus,
-        .btn-outline-secondary:focus,
-        .btn-outline-secondary:not(:disabled):not(.disabled):focus {
-            background-color: #5c636a !important;
-            border-color: #5c636a !important;
-            color: white !important;
-            box-shadow: none !important;
-        }
-        
-        .input-group-append .btn:active,
-        .btn-outline-secondary:active,
-        .btn-outline-secondary:not(:disabled):not(.disabled):active {
-            background-color: #5c636a !important;
-            border-color: #5c636a !important;
-            color: white !important;
-        }
-        
-        .input-group-append .btn:visited,
-        .btn-outline-secondary:visited {
-            background-color: #5c636a !important;
-            border-color: #5c636a !important;
-            color: white !important;
-        }
-        
-        .input-group-append .btn:link,
-        .btn-outline-secondary:link {
-            background-color: #5c636a !important;
-            border-color: #5c636a !important;
-            color: white !important;
-        }
-        
-        /* Forzar color gris oscuro en todos los estados */
-        .input-group-append .btn:not(:disabled):not(.disabled),
-        .btn-outline-secondary:not(:disabled):not(.disabled) {
-            background-color: #5c636a !important;
-            border-color: #5c636a !important;
-            color: white !important;
-        }
-        
-        @media (max-width: 768px) {
-            .container, .container-fluid {
-                padding-left: 10px;
-                padding-right: 10px;
-            }
-
-            .row {
-                flex-direction: column;
-            }
-
-            .form-group {
-                margin-bottom: 1rem;
-                width: 100% !important;
-            }
-
-            .col-1, .col-2, .col-3, .col-4, .col-5, .col-6,
-            .col-7, .col-8, .col-9, .col-10, .col-11, .col-12 {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-
-            table thead {
-                display: none;
-            }
-
-            table tbody tr {
-                display: block;
-                margin-bottom: 10px;
-                border: 1px solid #ddd;
-                padding: 10px;
-            }
-
-            table tbody td {
-                display: block;
-                width: 100%;
-                text-align: right;
-                position: relative;
-                padding-left: 50%;
-            }
-
-                table tbody td::before {
-                    content: attr(data-label);
-                    position: absolute;
-                    left: 10px;
-                    width: 45%;
-                    padding-right: 10px;
-                    font-weight: bold;
-                    text-align: left;
-                }
-
-            .modal-dialog {
-                max-width: 95% !important;
-            }
-
-            container,
-            .container-fluid,
-            .row,
-            .form-group,
-            .form-control,
-            button,
-            input,
-            select {
-                max-width: 100% !important;
-                box-sizing: border-box;
-            }
-
-            .form-group {
-                padding-left: 30px !important;
-                padding-right: 10px !important;
-            }
-
-            button,
-            input,
-            select {
-                width: 100% !important;
-            }
-            .navbar-toggler {
-                padding: 0.25rem 0.5rem !important;
-                height: auto !important;
-                min-height: auto !important;
-                box-shadow: none;
-                max-width: 25% !important;
-            }
-
-            .navbar-toggler-icon {
-                font-size: 1.2rem;
-            }
+        .solid-background {
+            min-height: calc(100vh - 60px);
+            background-color: #ffffff;
         }
     </style>
 </head>
 
-<body data-spy="scroll" data-target="#navbar" class="static-layout">
-    <div class="container-fluid" ng-app="AngujarJS" ng-controller="ReportegGestion">
-        <div class="solid-background">
-            <div id="side-nav" class="sidenav">
-                <a href="javascript:void(0)" id="side-nav-close">×</a>
+<body ng-controller="ReportegGestion">
+    <div class="container-fluid px-3" style="min-height: 100vh; display: flex; flex-direction: column;">
+        <!-- Navbar -->
+        <div ng-include="'navbar.html'"></div>
+
+        <!-- Contenido principal -->
+        <div style="flex: 1;">
+            <div class="heading-section bg-dark text-white pt-2 pl-3 mb-3">
+            <h3 class="mb-2">Reporte de Gestión</h3>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center" 
+                 style="background:#6c757d; color:#fff; cursor:pointer; user-select: none;"
+                 ng-click="toggleFiltros = !toggleFiltros">
+                <h6 class="mb-0"><i class="fa fa-filter mr-2"></i>Filtros de búsqueda</h6>
+                <i class="fa fa-chevron-down" ng-class="{'fa-chevron-down': !toggleFiltros, 'fa-chevron-up': toggleFiltros}" 
+                   style="transition: transform 0.3s ease;"></i>
             </div>
-            <div id="canvas-overlay"></div>
-            <div class="main-content">
-                <!-- Menu -->
-                <div ng-include="'navbar.html'"></div>
-                <!-- Titulo -->
-                <div class="heading-section bg-dark text-white pt-2 pl-3">
+
+            <div class="card-body" ng-show="toggleFiltros" ng-init="toggleFiltros = true" style="transition: all 0.3s ease;">
+                <form novalidate>
                     <div class="row">
-                        <div class="col-md-12">
-                            <h3 class="mb-0">Reporte de Gestión</h3>
+                        <!-- (Opcional) Fechas -->
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="filtro_fechadesde">Fecha desde</label>
+                                <input type="date" id="filtro_fechadesde" class="form-control" ng-model="filtro_fechadesde">
+                            </div>
                         </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="filtro_fechahasta">Fecha hasta</label>
+                                <input type="date" id="filtro_fechahasta" class="form-control" ng-model="filtro_fechahasta">
                     </div>
                 </div>
-                <!-- Acordeón de Filtros -->
-                <div class="container-fluid mr-3 dishes-text">
-                    <div class="card">
-                        <div class="card-header" style="background-color: #6c757d; color: white; cursor: pointer;" 
-                             ng-click="toggleFiltros = !toggleFiltros">
-                            <h6 class="mb-0 d-flex justify-content-between align-items-center">
-                                <span><i class="fa fa-filter mr-2"></i>Filtros de búsqueda</span>
-                                <i class="fa" ng-class="{'fa-chevron-down': !toggleFiltros, 'fa-chevron-up': toggleFiltros}"></i>
-                            </h6>
+
+                        <!-- Plato (código) + buscador -->
+                        <div class="col-md-3">
+                                        <div class="form-group">
+                                <label for="filtro_plato">Plato</label>
+                                            <div class="input-group">
+                                    <input id="filtro_plato" class="form-control" type="text" ng-model="filtro_plato" placeholder="Código de plato..." />
+                                                <div class="input-group-append">
+                                        <button type="button" class="btn btn-primary" ng-click="buscarPlato()" title="Buscar plato">
+                                                        <i class="fa fa-search"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                        <!-- Centro de Costo -->
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="rep_centro">Centro de Costo</label>
+                                <select id="rep_centro" class="form-control"
+                                        ng-model="rep_centro"
+                                        ng-options="c as c.descripcion for c in centrosdecosto track by c.id">
+                                    <option value="">-- Todos --</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="card-body" ng-show="toggleFiltros" style="display: block !important;">
-                            <form name="form" novalidate>
-                                <!-- Filtros avanzados -->
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_fechadesde" class="form-label">Fecha desde</label>
-                                            <input class="form-control" type="date" id="filtro_fechadesde" ng-model="filtro_fechadesde">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_fechahasta" class="form-label">Fecha hasta</label>
-                                            <input class="form-control" type="date" id="filtro_fechahasta" ng-model="filtro_fechahasta">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_texto" class="form-label">Filtrar por texto</label>
-                                            <input class="form-control" type="text" id="filtro_texto" ng-model="filtro_texto" placeholder="Buscar...">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_planta" class="form-label">Planta</label>
-                                            <select class="form-control" id="filtro_planta" ng-model="filtro_planta">
-                                                <option value="">Seleccione planta</option>
-                                                <option ng-repeat="planta in plantas" value="{{planta.nombre}}">{{planta.nombre}}</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_proyecto" class="form-label">Proyecto</label>
-                                            <select class="form-control" id="filtro_proyecto" ng-model="filtro_proyecto">
-                                                <option value="">Selecciona proyecto</option>
-                                                <option ng-repeat="proyecto in proyectos" value="{{proyecto.nombre}}">{{proyecto.nombre}}</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_legajodesde" class="form-label">Legajo desde</label>
-                                            <div class="input-group">
-                                                <input class="form-control" type="text" id="filtro_legajodesde" ng-model="filtro_legajodesde" placeholder="Legajo desde">
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-outline-secondary" type="button" ng-click="buscarLegajo()" title="Buscar legajo">
-                                                        <i class="fa fa-search"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_legajohasta" class="form-label">Hasta</label>
-                                            <input class="form-control" type="text" id="filtro_legajohasta" ng-model="filtro_legajohasta" placeholder="Legajo hasta">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_plato" class="form-label">Plato</label>
-                                            <div class="input-group">
-                                                <input class="form-control" type="text" id="filtro_plato" ng-model="filtro_plato" placeholder="Buscar plato...">
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-outline-secondary" type="button" ng-click="buscarPlato()" title="Buscar plato">
-                                                        <i class="fa fa-search"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_calificacion" class="form-label">Calificación</label>
-                                            <input class="form-control" type="number" id="filtro_calificacion" ng-model="filtro_calificacion" placeholder="Calificación">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="filtro_turno" class="form-label">Turno</label>
-                                            <select class="form-control" id="filtro_turno" ng-model="filtro_turno">
-                                                <option value="">Selecciona turno</option>
-                                                <option ng-repeat="turno in turnos" value="{{turno.nombre}}">{{turno.nombre}}</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-primary w-100" ng-click="getReporte()" style="height: 38px;">
+                    </div>
+
+                    <div class="row">
+                        <!-- Proyecto -->
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="rep_proyecto">Proyecto</label>
+                                <select id="rep_proyecto" class="form-control"
+                                        ng-model="rep_proyecto"
+                                        ng-options="p as p.descripcion for p in proyectos track by p.id">
+                                    <option value="">-- Todos --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Planta -->
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="rep_planta">Planta</label>
+                                <select id="rep_planta" class="form-control"
+                                        ng-model="rep_planta"
+                                        ng-options="p as p.descripcion for p in plantas track by p.id">
+                                    <option value="">-- Todas --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Turno -->
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="rep_turno">Turno</label>
+                                <select id="rep_turno" class="form-control"
+                                        ng-model="rep_turno"
+                                        ng-options="t as t.descripcion for t in turnos track by t.id">
+                                    <option value="">-- Todos --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- (Opcional) Perfil Nutricional -->
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="filtro_perfilnutricional">Perfil Nutricional</label>
+                                <select id="filtro_perfilnutricional" class="form-control"
+                                        ng-model="filtro_perfilnutricional"
+                                        ng-options="pf as pf.nombre for pf in perfiles track by pf.id">
+                                    <option value="">-- Todos --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <button type="button" class="btn btn-primary" ng-click="getReporte()" style="min-width:220px;">
                                             <i class="fa fa-search mr-1"></i>Generar Reporte
                                         </button>
                                     </div>
                                 </div>
                             </form>
-                        </div>
                     </div>
                 </div>
 
-
-                <div ng-if="ViewAction == 'reporte'" class="container-fluid mr-3 dishes-text">
-                    <!-- Resumen de Totales -->
-                    <div class="card mb-2">
-                        <div class="card-header" style="background-color: #6c757d; color: white;">
+        <!-- Resumen -->
+        <div ng-if="ViewAction == 'reporte'" class="card mb-2">
+            <div class="card-header" style="background:#6c757d; color:#fff;">
                             <h6 class="mb-0"><i class="fa fa-chart-bar mr-2"></i>Resumen del Reporte</h6>
                         </div>
-                        <div class="card-body py-1">
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="text-center">
+            <div class="card-body py-2">
+                <div class="row text-center">
+                    <div class="col-6 col-md-3 mb-2">
                                         <h6 class="text-primary mb-0">{{totales.platos}}</h6>
                                         <small class="text-muted">Cantidad de platos</small>
                                     </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="text-center">
+                    <div class="col-6 col-md-3 mb-2">
                                         <h6 class="text-success mb-0">{{totales.promedio}}</h6>
                                         <small class="text-muted">Promedio de calificación</small>
                                     </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="text-center">
+                    <div class="col-6 col-md-3 mb-2">
                                         <h6 class="text-warning mb-0">{{totales.devueltos}}</h6>
                                         <small class="text-muted">Cantidad devueltos</small>
                                     </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="text-center">
+                    <div class="col-6 col-md-3 mb-2">
                                         <h6 class="text-info mb-0">${{totales.costo}}</h6>
                                         <small class="text-muted">Costo total</small>
-                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Tabla de Resultados -->
-                    <div class="card">
-                        <div class="card-header" style="background-color: #6c757d; color: white;">
-                            <h6 class="mb-0"><i class="fa fa-table mr-2"></i>Detalle del Reporte ({{filtro_fechadesde_inicio}} - {{filtro_fechaactualidad}})</h6>
+        <!-- Tabla -->
+        <div ng-if="ViewAction == 'reporte'" class="card">
+            <div class="card-header" style="background:#6c757d; color:#fff;">
+                <h6 class="mb-0"><i class="fa fa-table mr-2"></i>Detalle del Reporte</h6>
                         </div>
                         <div class="card-body">
-                            <div class="table-responsive table-scroll" style="max-height: 400px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;">
+                <div class="table-responsive table-scroll">
                                 <table class="table table-hover table-sm mb-0">
-                                    <thead style="font-size: 14px; position: sticky; top: 0; z-index: 10;" class="bg-dark">
-                                        <tr class="text-white">
-                                            <th style="width: 12%; min-width: 100px; text-align: left;">Fecha</th>
-                                            <th style="width: 10%; text-align: left;">Hora</th>
-                                            <th style="width: 10%; text-align: left;">Planta</th>
-                                            <th style="width: 15%; text-align: left;">CC</th>
-                                            <th style="width: 15%; text-align: left;">Proyecto</th>
-                                            <th style="width: 8%; text-align: center;">Legajo</th>
-                                            <th style="width: 10%; text-align: left;">Plato</th>
-                                            <th style="width: 8%; text-align: center;">Calificación</th>
-                                            <th style="width: 8%; text-align: right;">Costo</th>
-                                            <th style="width: 4%; text-align: center;">Invitado</th>
+                        <thead class="bg-dark text-white sticky">
+                            <tr>
+                                <th style="min-width:110px;">Fecha</th>
+                                <th>Hora</th>
+                                <th>Planta</th>
+                                <th>CC</th>
+                                <th>Proyecto</th>
+                                <th style="text-align:center;">Legajo</th>
+                                <th>Plato</th>
+                                <th>Perfil Nutricional</th>
+                                <th style="text-align:right;">Costo</th>
+                                <th style="text-align:center;">Invitado</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr ng-repeat="item in dataset | startFrom:currentPage*pageSize | limitTo:pageSize">
-                                            <td style="white-space: nowrap;">{{item.createdate | formatDate}}</td>
+                                <td>{{item.createdate | formatDate}}</td>
                                             <td>{{item.createdate | formatHour}}</td>
                                             <td>{{item.planta}}</td>
                                             <td>{{item.centrodecosto}}</td>
                                             <td>{{item.proyecto}}</td>
-                                            <td style="text-align: center;">{{item.user_fileNumber}}</td>
+                                <td style="text-align:center;">{{item.user_fileNumber}}</td>
                                             <td>{{item.cod_plato}}</td>
-                                            <td style="text-align: center;">{{item.calificacion}}</td>
-                                            <td style="text-align: right;">${{item.monto}}</td>
-                                            <td style="text-align: center;">
-                                                <span ng-class="{'badge badge-success': item.invitado, 'badge badge-secondary': !item.invitado}">
+                                <td>{{item.perfilnutricional}}</td>
+                                <td style="text-align:right;">${{item.monto}}</td>
+                                <td style="text-align:center;">
+                                    <span class="badge" ng-class="{'badge-success': item.invitado, 'badge-secondary': !item.invitado}">
                                                     {{item.invitado | formatBool}}
                                                 </span>
                                             </td>
                                         </tr>
+                            <tr ng-if="(dataset||[]).length === 0">
+                                <td colspan="10" class="text-center text-muted py-3">Sin resultados</td>
+                            </tr>
                                     </tbody>
                                 </table>
                             </div>
                             
-                            <!-- Paginación tipo DataTable -->
+                <!-- Paginación -->
                             <div class="datatable-pagination mt-3">
                                 <div class="row align-items-center">
                                     <div class="col-md-6">
-                                        <div class="pagination-info">
-                                            Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, dataset.length)}} de {{dataset.length}} registros
+                            <div class="text-muted">
+                                Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, (dataset||[]).length)}} de {{(dataset||[]).length}} registros
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="pagination-controls d-flex justify-content-end align-items-center">
-                                            <span class="mr-2">Filas por página:</span>
-                                            <select ng-model="pageSize" ng-change="changePageSize(pageSize)" class="page-size-select mr-3">
+                        <div class="col-md-6 d-flex justify-content-end align-items-center">
+                            <span class="mr-2">Filas:</span>
+                            <select class="form-control form-control-sm mr-3" style="width:80px"
+                                    ng-model="pageSize" ng-change="changePageSize(pageSize)">
                                                 <option value="10">10</option>
-                                                <option value="20">20</option>
+                                <option value="20" selected>20</option>
                                                 <option value="50">50</option>
                                                 <option value="100">100</option>
                                             </select>
                                             
                                             <button class="btn btn-sm btn-outline-secondary page-number-btn" 
-                                                    ng-disabled="currentPage == 0" 
-                                                    ng-click="goToPage(0)" 
-                                                    title="Primera página">
+                                    ng-disabled="currentPage==0" ng-click="goToPage(0)">
                                                 <i class="fa fa-angle-double-left"></i>
                                             </button>
-                                            <button class="btn btn-sm btn-outline-secondary page-number-btn" 
-                                                    ng-disabled="currentPage == 0" 
-                                                    ng-click="goToPage(currentPage - 1)" 
-                                                    title="Página anterior">
+                            <button class="btn btn-sm btn-outline-secondary page-number-btn ml-1"
+                                    ng-disabled="currentPage==0" ng-click="goToPage(currentPage-1)">
                                                 <i class="fa fa-angle-left"></i>
                                             </button>
                                             
@@ -574,81 +325,16 @@
                                                 <span ng-if="page === '...'" class="mx-1">...</span>
                                             </span>
                                             
-                                            <button class="btn btn-sm btn-outline-secondary page-number-btn" 
-                                                    ng-disabled="currentPage >= numberOfPages() - 1" 
-                                                    ng-click="goToPage(currentPage + 1)" 
-                                                    title="Página siguiente">
+                            <button class="btn btn-sm btn-outline-secondary page-number-btn mr-1"
+                                    ng-disabled="currentPage >= numberOfPages()-1" ng-click="goToPage(currentPage+1)">
                                                 <i class="fa fa-angle-right"></i>
                                             </button>
                                             <button class="btn btn-sm btn-outline-secondary page-number-btn" 
-                                                    ng-disabled="currentPage >= numberOfPages() - 1" 
-                                                    ng-click="goToPage(numberOfPages() - 1)" 
-                                                    title="Última página">
+                                    ng-disabled="currentPage >= numberOfPages()-1" ng-click="goToPage(numberOfPages()-1)">
                                                 <i class="fa fa-angle-double-right"></i>
                                             </button>
                                             
-                                            <span class="ml-3 pagination-info">
-                                                Página {{currentPage + 1}} de {{numberOfPages()}}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Modal Buscar Legajo -->
-        <div class="modal fade" id="modalBuscarLegajo" tabindex="-1" role="dialog">
-            <div class="modal-dialog modal-lg" role="document">
-                <div class="modal-content">
-                    <div class="modal-header" style="background-color: #F34949; color: white;">
-                        <h5 class="modal-title"><i class="fa fa-search mr-2"></i>Buscar Persona</h5>
-                        <button type="button" class="close text-white" data-dismiss="modal">
-                            <span>&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label>Buscar por nombre:</label>
-                            <input type="text" class="form-control" ng-model="busquedaLegajo" 
-                                   ng-keyup="buscarUsuarios()" placeholder="Ingrese nombre de la persona...">
-                        </div>
-                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                            <table class="table table-hover table-sm">
-                                <thead class="bg-light">
-                                    <tr>
-                                        <th>Legajo</th>
-                                        <th>Nombre</th>
-                                        <th>Apellido</th>
-                                        <th>Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr ng-repeat="usuario in usuarios track by usuario.legajo">
-                                        <td>{{usuario.legajo}}</td>
-                                        <td>{{usuario.nombre}}</td>
-                                        <td>{{usuario.apellido}}</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-primary" ng-click="seleccionarLegajo(usuario)">
-                                                <i class="fa fa-check"></i> Seleccionar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr ng-if="usuarios.length === 0 && busquedaLegajo.length >= 2">
-                                        <td colspan="4" class="text-center text-muted">
-                                            No se encontraron usuarios
-                                        </td>
-                                    </tr>
-                                    <tr ng-if="busquedaLegajo.length < 2">
-                                        <td colspan="4" class="text-center text-muted">
-                                            Ingrese al menos 2 caracteres para buscar
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <span class="ml-3 text-muted">Página {{currentPage + 1}} de {{numberOfPages()}}</span>
                         </div>
                     </div>
                 </div>
@@ -656,22 +342,19 @@
         </div>
 
         <!-- Modal Buscar Plato -->
-        <div class="modal fade" id="modalBuscarPlato" tabindex="-1" role="dialog">
+        <div class="modal fade" id="modalBuscarPlato" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
-                    <div class="modal-header" style="background-color: #F34949; color: white;">
+                    <div class="modal-header" style="background:#F34949; color:#fff;">
                         <h5 class="modal-title"><i class="fa fa-search mr-2"></i>Buscar Plato</h5>
-                        <button type="button" class="close text-white" data-dismiss="modal">
-                            <span>&times;</span>
-                        </button>
+                        <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                     </div>
                     <div class="modal-body">
                         <div class="form-group">
-                            <label>Buscar plato:</label>
-                            <input type="text" class="form-control" ng-model="busquedaPlato" 
-                                   ng-keyup="buscarPlatos()" placeholder="Ingrese nombre del plato...">
+                            <label>Buscar plato (mín. 2 letras):</label>
+                            <input type="text" class="form-control" ng-model="busquedaPlato" ng-keyup="buscarPlatos()" placeholder="Nombre o código..." />
                         </div>
-                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <div class="table-responsive" style="max-height:300px; overflow-y:auto;">
                             <table class="table table-hover table-sm">
                                 <thead class="bg-light">
                                     <tr>
@@ -684,7 +367,7 @@
                                 <tbody>
                                     <tr ng-repeat="plato in platosFiltrados track by plato.codigo">
                                         <td>{{plato.codigo}}</td>
-                                        <td>{{plato.nombre}}</td>
+                                        <td>{{plato.nombre || plato.descripcion}}</td>
                                         <td>{{plato.descripcion}}</td>
                                         <td>
                                             <button class="btn btn-sm btn-primary" ng-click="seleccionarPlato(plato)">
@@ -692,44 +375,32 @@
                                             </button>
                                         </td>
                                     </tr>
-                                    <tr ng-if="platosFiltrados.length === 0 && busquedaPlato.length >= 2">
-                                        <td colspan="4" class="text-center text-muted">
-                                            No se encontraron platos
-                                        </td>
+                                    <tr ng-if="platosFiltrados.length === 0 && (busquedaPlato||'').length >= 2">
+                                        <td colspan="4" class="text-center text-muted">No se encontraron platos</td>
                                     </tr>
-                                    <tr ng-if="busquedaPlato.length < 2">
-                                        <td colspan="4" class="text-center text-muted">
-                                            Ingrese al menos 2 caracteres para buscar
-                                        </td>
+                                    <tr ng-if="(busquedaPlato||'').length < 2">
+                                        <td colspan="4" class="text-center text-muted">Ingrese al menos 2 caracteres para buscar</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </div> <!-- /modal-body -->
                 </div>
             </div>
         </div>
+        </div> <!-- Fin del contenido principal -->
         
         <!-- Footer -->
-        <div class="footer" ng-include="'footer.html'"></div>
+        <div ng-include="'footer.html'"></div>
     </div>
-    <!-- External JS -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
-    <script src="vendor/bootstrap/popper.min.js"></script>
-    <script src="vendor/bootstrap/bootstrap.min.js"></script>
-    <script src="vendor/select2/select2.min.js "></script>
-    <script src="vendor/owlcarousel/owl.carousel.min.js"></script>
-    <script src="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.js"></script>
-    <script src="vendor/stellar/jquery.stellar.js" type="text/javascript" charset="utf-8"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/js/tempusdominus-bootstrap-4.min.js"></script>
 
-    <!-- Main JS -->
-    <!-- Main JS -->
-    <script src="js/angular.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <!-- Scripts (orden recomendado) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="vendor/bootstrap/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.9/angular.min.js"></script>
+    <script src="js/angular-base64.js"></script>
     <script src="js/navbar-direct.js"></script>
     <script src="js/reporteggestion.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 </body>
 </html>
-

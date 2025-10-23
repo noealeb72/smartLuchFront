@@ -1,313 +1,309 @@
-﻿// === SweetAlert2 shim: crea 'Swal.fire(...)' usando Swal.fire(...) ===
-(function (w) {
-	if (!w.Swal || typeof w.Swal.fire !== 'function') return; // no hay SweetAlert2
+﻿// reporteggestion.js
+// -------------------------------------------------------------
+// Reporte de Gestión - AngularJS 1.x
+// Carga combos (plantas, centros, proyectos, turnos, perfiles)
+// y permite buscar platos con modal.
+// -------------------------------------------------------------
 
-	// solo si NO existe un Swal.fire válido
-	if (!w.Swal.fire || typeof w.Swal.fire !== 'function') {
-		w.Swal.fire = function () {
-			// soporta Swal.fire({ ... })
-			if (arguments.length === 1 && typeof arguments[0] === 'object') {
-				return w.Swal.fire(arguments[0]);
-			}
-			// soporta Swal.fire('titulo','texto','icon')
-			var args = Array.prototype.slice.call(arguments);
-			var opt = {};
-			if (args[0]) opt.title = args[0];
-			if (args[1]) opt.text = args[1];
-			if (args[2]) opt.icon = args[2]; // 'success' | 'error' | 'warning' | 'info' | 'question'
-			return w.Swal.fire(opt);
-		};
-	}
-})(window);
+(function () {
+    'use strict';
 
-var app = angular.module('AngujarJS', []);
+    // Usa o crea el módulo (según exista ya en tu app)
+    var app;
+    try { app = angular.module('AngujarJS'); }
+    catch (e) { app = angular.module('AngujarJS', []); }
 
-app.filter('startFrom', function () {
-	return function (input, start) {
-		start = +start; //parse to int
-		return input.slice(start);
-	}
-});
+    // ====== Filtros seguros ======
+    app.filter('startFrom', function () {
+        return function (input, start) {
+            if (!Array.isArray(input)) return [];
+            start = +start || 0;
+            return input.slice(start);
+        };
+    });
 
-app.filter('formatDate', function () {
-	return function (input) {
-		var date = input.split('T');
-		var fecha = date[0].split('-');
-		var hora = date[1].split('.');
-		input = fecha[2] + '/' + fecha[1] + '/' + fecha[0];
-		return input;
-	}
-});
+    app.filter('formatDate', function () {
+        return function (input) {
+            if (!input || typeof input !== 'string') return input || '';
+            var t = input.split('T')[0] || input;
+            var p = t.split('-'); // YYYY-MM-DD
+            return (p[2] || '') + '/' + (p[1] || '') + '/' + (p[0] || '');
+        };
+    });
 
-app.filter('formatHour', function () {
-	return function (input) {
-		var date = input.split('T');
-		var fecha = date[0].split('-');
-		var hora = date[1].split('.');
-		input = hora[0];
-		return input;
-	}
-});
+    app.filter('formatHour', function () {
+        return function (input) {
+            if (!input || typeof input !== 'string' || input.indexOf('T') === -1) return '';
+            return input.split('T')[1].split('.')[0] || '';
+        };
+    });
 
-app.filter('formatBool', function () {
-	return function (input) {
-		if (input === true) {
-			input = "Si"
-		} else {
-			input = "No"
-		}
-		return input;
-	}
-});
+    app.filter('formatBool', function () {
+        return function (input) { return input ? 'Si' : 'No'; };
+    });
 
-app.filter('formatEstados', function () {
-	return function (input) {
-		switch (input) {
-			case 'C':
-				input = 'Cancelado';
-				break;
-			case 'P':
-				input = 'Pendiente';
-				break;
-			case 'R':
-				input = 'Recibido';
-				break;
-			case 'E':
-				input = 'Entregado';
-				break;
-			case 'D':
-				input = 'Devuelto';
-				break;
-		}
-		return input;
-	}
-});
+    // ====== Controlador principal ======
+    app.controller('ReportegGestion', function ($scope, $http, $timeout, $q, $window) {
 
-app.controller('ReportegGestion', function ($scope, $sce, $http, $window, $timeout) {
+        // ---- Endpoints ----
+        $scope.basePlantas = 'http://localhost:8000/api/planta/';
+        $scope.baseCentrodecostos = 'http://localhost:8000/api/centrodecosto/';
+        $scope.baseProyectos = 'http://localhost:8000/api/proyecto/';
+        $scope.baseTurno = 'http://localhost:8000/api/turno/';
+        $scope.baseReporte = 'http://localhost:8000/api/reporte/';
+        var basePlatos = 'http://localhost:8000/api/plato/';
 
-	$scope.basePlantas = 'http://localhost:8000/api/planta/';
-	$scope.plantas = '';
-	$scope.baseCentrodecostos = 'http://localhost:8000/api/centrodecosto/';
-	$scope.centrosdecosto = '';
-	$scope.baseProyectos = 'http://localhost:8000/api/proyecto/';
-	$scope.proyectos = '';
-	$scope.baseTurno = 'http://localhost:8000/api/turno/';
-	$scope.turnos = '';
-	$scope.baseComanda = 'http://localhost:8000/api/comanda/';
-	$scope.comandas = '';
-	$scope.baseReporte = 'http://localhost:8000/api/reporte/';
-	$scope.reportes = '';
-	$scope.dataset = [];
-	$scope.totales = { platos: 0, promedio: 0, devueltos: 0, costo: 0 };
+        // ---- Modelos UI ----
+        $scope.plantas = [];
+        $scope.centrosdecosto = [];
+        $scope.proyectos = [];
+        $scope.turnos = [];
+        $scope.perfiles = [];         // opcional (plan nutricional)
+        $scope.dataset = [];          // tabla
+        $scope.comandas = [];
+        
+        // ---- Estado del acordeón ----
+        $scope.toggleFiltros = true;  // Inicialmente expandido
+        
+        // Asegurar que el acordeón esté abierto al cargar
+        $scope.$on('$viewContentLoaded', function() {
+            $scope.toggleFiltros = true;
+            $scope.$apply();
+        });
+        
+        // Forzar apertura después de un pequeño delay
+        setTimeout(function() {
+            $scope.toggleFiltros = true;
+            $scope.$apply();
+        }, 100);
+        $scope.filtro_plato = '';
+        $scope.busquedaPlato = '';
+        $scope.platos = [];
+        $scope.platosFiltrados = [];
 
-	$scope.filtro_fechaactualidad = new Date();
+        // Totales
+        $scope.totales = { platos: 0, promedio: 0, devueltos: 0, costo: 0 };
 
-	$scope.user_Rol = localStorage.getItem('role');
-	$scope.user_Nombre = localStorage.getItem('nombre');
-	$scope.user_Apellido = localStorage.getItem('apellido');
-	$scope.user_Planta = localStorage.getItem('planta');
-	$scope.user_Centrodecosto = localStorage.getItem('centrodecosto');
-	$scope.user_Proyecto = localStorage.getItem('proyecto');
-	$scope.user_Jerarquia = localStorage.getItem('role');
-	$scope.user_Perfilnutricional = localStorage.getItem('plannutricional');
-	$scope.user_Bonificacion = localStorage.getItem('bonificacion');
-	$scope.user_DNI = localStorage.getItem('dni');
+        // Paginación
+        $scope.currentPage = 0;
+        $scope.pageSize = 20;
 
-	// Debug: Verificar valores del localStorage
-	console.log('Valores del localStorage:', {
-		planta: $scope.user_Planta,
-		centrodecosto: $scope.user_Centrodecosto,
-		proyecto: $scope.user_Proyecto
-	});
-	
-	// Debug: Verificar todos los valores del localStorage
-	console.log('Todos los valores del localStorage:', {
-		role: localStorage.getItem('role'),
-		nombre: localStorage.getItem('nombre'),
-		apellido: localStorage.getItem('apellido'),
-		planta: localStorage.getItem('planta'),
-		centrodecosto: localStorage.getItem('centrodecosto'),
-		proyecto: localStorage.getItem('proyecto'),
-		plannutricional: localStorage.getItem('plannutricional'),
-		bonificacion: localStorage.getItem('bonificacion'),
-		dni: localStorage.getItem('dni')
-	});
+        $scope.numberOfPages = function () {
+            var len = Array.isArray($scope.dataset) ? $scope.dataset.length : 0;
+            return Math.ceil(len / ($scope.pageSize || 1));
+        };
 
-	$scope.filtro_plato = '';
+        $scope.getPageNumbers = function () {
+            var total = $scope.numberOfPages(), cur = $scope.currentPage + 1, out = [];
+            if (total <= 7) for (var i = 1; i <= total; i++) out.push(i);
+            else {
+                out.push(1);
+                if (cur > 4) out.push('...');
+                var start = Math.max(2, cur - 1), end = Math.min(total - 1, cur + 1);
+                for (var j = start; j <= end; j++) out.push(j);
+                if (cur < total - 3) out.push('...');
+                out.push(total);
+            }
+            return out;
+        };
 
-	// Variables para el buscador de platos
-	$scope.platos = [];
-	$scope.platosFiltrados = [];
-	$scope.busquedaPlato = '';
+        $scope.goToPage = function (p) {
+            if (typeof p !== 'number') return;
+            if (p >= 0 && p < $scope.numberOfPages()) $scope.currentPage = p;
+        };
 
-	// Función para buscar platos
-	$scope.buscarPlato = function() {
-		console.log('=== buscarPlato() ejecutándose ===');
-		$scope.busquedaPlato = '';
-		$scope.platos = [];
-		$scope.platosFiltrados = [];
-		// Cargar platos
-		$http.get('http://localhost:8000/api/plato/getAll')
-			.then(function(response) {
-				$scope.platos = response.data;
-				$scope.platosFiltrados = response.data;
-			})
-			.catch(function(error) {
-				console.log('Error al cargar platos:', error);
-				$scope.platos = [];
-				$scope.platosFiltrados = [];
-			});
-		// Usar $timeout de AngularJS
-		$timeout(function() {
-			console.log('Intentando abrir modal #modalBuscarPlato');
-			var modal = $('#modalBuscarPlato');
-			console.log('Modal encontrado:', modal.length > 0);
-			if (modal.length > 0) {
-				modal.modal('show');
-			} else {
-				console.error('Modal #modalBuscarPlato no encontrado');
-			}
-		}, 100);
-	};
+        $scope.changePageSize = function (n) {
+            n = parseInt(n, 10);
+            $scope.pageSize = isNaN(n) ? 20 : n;
+            $scope.currentPage = 0;
+        };
 
-	// Función para buscar platos por nombre
-	$scope.buscarPlatos = function() {
-		if ($scope.busquedaPlato && $scope.busquedaPlato.length >= 2) {
-			// Filtrar platos localmente
-			$scope.platosFiltrados = $scope.platos.filter(function(plato) {
-				return plato.nombre.toLowerCase().includes($scope.busquedaPlato.toLowerCase()) ||
-					   plato.codigo.toLowerCase().includes($scope.busquedaPlato.toLowerCase());
-			});
-		} else {
-			$scope.platosFiltrados = $scope.platos;
-		}
-	};
+        // ===== Normalizadores =====
+        function toListIdDesc(arr) {
+            if (!Array.isArray(arr)) return [];
+            return arr.map(function (x) {
+                return {
+                    id: x.id || x.Id || x.ID || x.codigo || x.code || x.value || null,
+                    descripcion: x.descripcion || x.Descripcion || x.nombre || x.Nombre || x.detalle || x.text || String(x)
+                };
+            });
+        }
 
-	// Función para seleccionar plato
-	$scope.seleccionarPlato = function(plato) {
-		$scope.filtro_plato = plato.codigo;
-		$('#modalBuscarPlato').modal('hide');
-	};
+        // ===== Cargas de combos =====
+        function cargarPlantas() {
+            console.log('🔄 Cargando plantas...');
+            $http.get($scope.basePlantas + 'getAll')
+                .success(function (data) {
+                    $scope.plantas = toListIdDesc(data);
+                    console.log('✅ Plantas cargadas:', $scope.plantas.length, 'elementos');
+                })
+                .error(function (data, status) {
+                    $scope.plantas = [];
+                    console.error('❌ Error cargando plantas:', status, data);
+                    warn('Error cargando plantas', {status: status, data: data});
+                });
+        }
 
-	$scope.getReporte = function () {
-		// Obtener el reporte solo con filtro de platos
-		$http({
-			url: $scope.baseReporte + 'getComandas',
-			method: "GET",
-			params: { 
-				plato: $scope.filtro_plato || ''
-			}
-		})
-		.then(function (response) {
-			$scope.ViewAction = 'reporte';
-			var data = $scope.Ordena(response.data);
-			$scope.dataset = data;
-			$scope.comandas = data;
-			$scope.currentPage = 0; // Reset pagination
-			// El acordeón permanece abierto siempre
-		})
-		.catch(function (error) {
-			alert('Error al obtener comandas: ' + error.data);
-		});
-	}
+        function cargarCentros() {
+            console.log('🔄 Cargando centros de costo...');
+            $http.get($scope.baseCentrodecostos + 'getAll')
+                .success(function (data) {
+                    $scope.centrosdecosto = toListIdDesc(data);
+                    console.log('✅ Centros cargados:', $scope.centrosdecosto.length, 'elementos');
+                })
+                .error(function (data, status) {
+                    $scope.centrosdecosto = [];
+                    console.error('❌ Error cargando centros:', status, data);
+                    warn('Error cargando centros de costo', {status: status, data: data});
+                });
+        }
 
+        function cargarProyectos() {
+            console.log('🔄 Cargando proyectos...');
+            $http.get($scope.baseProyectos + 'getAll')
+                .success(function (data) {
+                    $scope.proyectos = toListIdDesc(data);
+                    console.log('✅ Proyectos cargados:', $scope.proyectos.length, 'elementos');
+                })
+                .error(function (data, status) {
+                    $scope.proyectos = [];
+                    console.error('❌ Error cargando proyectos:', status, data);
+                    warn('Error cargando proyectos', {status: status, data: data});
+                });
+        }
 
-	$scope.$watch('dataset', function (newValue, oldValue) {
-		if (newValue != oldValue) {
-			$scope.totales = { platos: 0, promedio: 0, devueltos: 0, costo: 0 };
-			var calificaciones = 0;
-			var pedidos = 0;
-			var pedidoscalificaciones = 0;
-			newValue.forEach(x => {
-				$scope.totales.platos += 1;
-				calificaciones += x.calificacion;
-				pedidoscalificaciones += 1;
-				if (x.estado === 'D') { $scope.totales.devueltos += 1;
-				}
-				$scope.totales.costo += x.monto;//contamos devueltos en costos
-			});
-			$scope.totales.promedio = Math.round(calificaciones / pedidoscalificaciones);
-		}
-	}
-	);
+        function cargarTurnos() {
+            console.log('🔄 Cargando turnos...');
+            $http.get($scope.baseTurno + 'GetTurnosDisponibles')
+                .success(function (data) {
+                    $scope.turnos = toListIdDesc(data);
+                    console.log('✅ Turnos cargados:', $scope.turnos.length, 'elementos');
+                })
+                .error(function (data, status) {
+                    $scope.turnos = [];
+                    console.error('❌ Error cargando turnos:', status, data);
+                    warn('Error cargando turnos', {status: status, data: data});
+                });
+        }
 
+        function cargarPerfiles() {
+            console.log('🔄 Cargando perfiles nutricionales...');
+            $http.get('http://localhost:8000/api/plannutricional/getAll')
+                .success(function (data) {
+                    // normalizo a {id, nombre} para ng-options pf as pf.nombre for pf in perfiles track by pf.id
+                    var list = Array.isArray(data) ? data : [];
+                    $scope.perfiles = list.map(function (x) {
+                        return { id: x.id || x.codigo || x.value || null, nombre: x.nombre || x.descripcion || String(x) };
+                    });
+                    console.log('✅ Perfiles cargados:', $scope.perfiles.length, 'elementos');
+                })
+                .error(function (data, status) {
+                    $scope.perfiles = [];
+                    console.error('❌ Error cargando perfiles:', status, data);
+                    // no es crítico
+                });
+        }
 
-	$scope.Ordena = function (pedidos) {
-		pedidos.sort(function (a, b) {
-			return (a.createdate > b.createdate) ? -1 : ((a.createdate > b.createdate) ? 1 : 0);
-		});
-		return pedidos;
-	}
+        // ===== Buscar/seleccionar plato =====
+        $scope.buscarPlato = function () {
+            $scope.busquedaPlato = '';
+            $scope.platos = [];
+            $scope.platosFiltrados = [];
+            $http.get(basePlatos + 'getAll')
+                .then(function (res) {
+                    var data = Array.isArray(res.data) ? res.data : [];
+                    $scope.platos = data;
+                    $scope.platosFiltrados = data.slice();
+                    console.log('Platos:', data.length);
+                    $timeout(function () {
+                        var m = $('#modalBuscarPlato');
+                        if (m.length) m.modal('show');
+                    }, 80);
+                })
+                .catch(function (e) {
+                    warn('Error cargando platos', e, true);
+                });
+        };
 
-	$scope.ViewAction = 'inicio';
-	$scope.toggleFiltros = true; // Siempre abierto
+        $scope.buscarPlatos = function () {
+            var q = ($scope.busquedaPlato || '').toLowerCase();
+            if (q.length < 2) { $scope.platosFiltrados = $scope.platos.slice(); return; }
+            $scope.platosFiltrados = $scope.platos.filter(function (p) {
+                var nombre = (p.nombre || p.descripcion || '').toLowerCase();
+                var codigo = (p.codigo || '').toString().toLowerCase();
+                return nombre.indexOf(q) !== -1 || codigo.indexOf(q) !== -1;
+            });
+        };
 
-	// Forzar que el filtro esté abierto
-	$timeout(function() {
-		$scope.toggleFiltros = true;
-		$scope.$apply();
-	}, 100);
+        $scope.seleccionarPlato = function (plato) {
+            $scope.filtro_plato = (plato && plato.codigo) ? plato.codigo : '';
+            $('#modalBuscarPlato').modal('hide');
+        };
 
-	// Inicializar con filtros abiertos
-	$scope.toggleFiltros = true;
+        // ===== Reporte (por ahora, sólo filtra por plato) =====
+        $scope.getReporte = function () {
+            $http.get($scope.baseReporte + 'getComandas', { params: { plato: $scope.filtro_plato || '' } })
+                .then(function (res) {
+                    var data = Array.isArray(res.data) ? res.data : [];
+                    data.sort(function (a, b) {
+                        var da = a.createdate || '', db = b.createdate || '';
+                        return da > db ? -1 : (da < db ? 1 : 0);
+                    });
+                    $scope.dataset = data;
+                    $scope.comandas = data;
+                    $scope.ViewAction = 'reporte';
+                    $scope.currentPage = 0;
+                })
+                .catch(function (e) {
+                    warn('Error al obtener comandas', e, true);
+                });
+        };
 
+        // Totales
+        $scope.$watch('dataset', function (nv) {
+            if (!Array.isArray(nv)) return;
+            var t = { platos: 0, promedio: 0, devueltos: 0, costo: 0 };
+            var sum = 0, cnt = 0;
+            nv.forEach(function (x) {
+                t.platos += 1;
+                var c = parseFloat(x.calificacion); if (!isNaN(c)) { sum += c; cnt++; }
+                if (x.estado === 'D') t.devueltos += 1;
+                var m = parseFloat(x.monto); if (!isNaN(m)) t.costo += m;
+            });
+            t.promedio = cnt ? Math.round(sum / cnt) : 0;
+            $scope.totales = t;
+        });
 
-	$scope.currentPage = 0;
-	$scope.pageSize = 20;
+        // ===== INIT =====
+        $scope.ViewAction = 'inicio';
+        $scope.toggleFiltros = true;
 
-	$scope.numberOfPages = function () {
-		return Math.ceil($scope.dataset.length / $scope.pageSize);
-	}
+        function warn(msg, err, toast) {
+            console.warn(msg, err);
+            if ($window.Swal && $window.Swal.fire && toast) {
+                $window.Swal.fire({ icon: 'error', title: 'Error', text: (msg + (err && err.status ? ' (' + err.status + ')' : '')) });
+            }
+        }
 
-	// Funciones de paginación tipo DataTable
-	$scope.getPageNumbers = function () {
-		var totalPages = $scope.numberOfPages();
-		var current = $scope.currentPage + 1;
-		var pages = [];
-		
-		if (totalPages <= 7) {
-			// Si hay 7 páginas o menos, mostrar todas
-			for (var i = 1; i <= totalPages; i++) {
-				pages.push(i);
-			}
-		} else {
-			// Lógica para mostrar páginas con elipsis
-			pages.push(1);
-			
-			if (current > 4) {
-				pages.push('...');
-			}
-			
-			var start = Math.max(2, current - 1);
-			var end = Math.min(totalPages - 1, current + 1);
-			
-			for (var i = start; i <= end; i++) {
-				if (i !== 1 && i !== totalPages) {
-					pages.push(i);
-				}
-			}
-			
-			if (current < totalPages - 3) {
-				pages.push('...');
-			}
-			
-			if (totalPages > 1) {
-				pages.push(totalPages);
-			}
-		}
-		
-		return pages;
-	}
+        // Cargar combos al iniciar
+        (function init() {
+            console.log('🔄 Iniciando carga de combos...');
+            cargarPlantas();
+            cargarCentros();
+            cargarProyectos();
+            cargarTurnos();
+            cargarPerfiles();
+            
+            // Verificar carga después de un tiempo
+            setTimeout(function() {
+                console.log('📊 Estado de combos después de 2 segundos:');
+                console.log('Plantas:', $scope.plantas.length);
+                console.log('Centros:', $scope.centrosdecosto.length);
+                console.log('Proyectos:', $scope.proyectos.length);
+                console.log('Turnos:', $scope.turnos.length);
+                console.log('Perfiles:', $scope.perfiles.length);
+            }, 2000);
+        })();
 
-	$scope.goToPage = function (page) {
-		if (page >= 0 && page < $scope.numberOfPages()) {
-			$scope.currentPage = page;
-		}
-	}
-
-	$scope.changePageSize = function (newSize) {
-		$scope.pageSize = parseInt(newSize);
-		$scope.currentPage = 0;
-	}
-
-});
+    });
+})();
