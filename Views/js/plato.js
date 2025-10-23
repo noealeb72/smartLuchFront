@@ -279,7 +279,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     $scope.ViewCreate = function () {
         $scope.ViewAction = 'Nuevo Plato';
         $scope.titulo = 'Agregar nuevo plato';
-        $scope.showValidationErrors = true;
+        $scope.showValidationErrors = false;
         $scope.plato = {
             codigo: '', descripcion: '', ingredientes: '',
             plannutricional: '', costo: 0.00, presentacion: ''

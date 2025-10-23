@@ -70,6 +70,9 @@ app.filter('formatDateArg', function () {
 });
 
 app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
+    // Inicializar fecha por defecto
+    $scope.view_fechadeldia = new Date();
+    
     // Detecta si la pantalla es móvil
     $scope.isMobile = $window.innerWidth < 768;
 
@@ -197,8 +200,10 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
             if (!$scope.view_plato || $scope.view_plato === '') camposFaltantes.push('Plato');
             
             if ($window.Swal && typeof $window.Swal.fire === 'function') {
+                var mensaje = 'Los siguientes campos son obligatorios:\n\n' + camposFaltantes.join('\n');
                 $window.Swal.fire({
                     title: 'Completar campos requeridos',
+                    text: mensaje,
                     icon: 'warning',
                     showCancelButton: false,
                     confirmButtonText: 'Aceptar',
@@ -251,19 +256,64 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     $scope.ModelRead = function (view_id) {
         $http.get($scope.base + 'get/' + view_id)
             .success(function (data) {
-                var aux = (data[0].fechadeldia || '').split('-');
-                var fecha = aux.length === 3 ? new Date(aux[0], aux[1] - 1, aux[2]) : '';
+                console.log('Datos recibidos para edición:', data);
+                
+                // Procesar fecha de manera más robusta
+                var fecha = '';
+                if (data[0].fechadeldia) {
+                    try {
+                        // Intentar diferentes formatos de fecha
+                        var fechaStr = data[0].fechadeldia;
+                        console.log('Fecha original:', fechaStr);
+                        
+                        // Si viene en formato YYYY-MM-DD
+                        if (fechaStr.includes('-')) {
+                            var aux = fechaStr.split('-');
+                            if (aux.length === 3) {
+                                fecha = new Date(aux[0], aux[1] - 1, aux[2]);
+                            }
+                        }
+                        // Si viene en formato DD/MM/YYYY
+                        else if (fechaStr.includes('/')) {
+                            var aux = fechaStr.split('/');
+                            if (aux.length === 3) {
+                                fecha = new Date(aux[2], aux[1] - 1, aux[0]);
+                            }
+                        }
+                        // Si ya es un objeto Date válido
+                        else if (fechaStr instanceof Date) {
+                            fecha = fechaStr;
+                        }
+                        
+                        console.log('Fecha procesada:', fecha);
+                    } catch (e) {
+                        console.error('Error procesando fecha:', e);
+                        fecha = '';
+                    }
+                }
+                
+                // Si no hay fecha válida, usar fecha actual como fallback
+                if (!fecha || fecha === '' || isNaN(fecha.getTime())) {
+                    console.log('Usando fecha actual como fallback');
+                    fecha = new Date();
+                }
 
-                $scope.view_turno = data[0].turno;
-                $scope.view_planta = data[0].planta;
-                $scope.view_centrodecosto = data[0].centrodecosto;
-                $scope.view_jerarquia = data[0].jerarquia;
-                $scope.view_proyecto = data[0].proyecto;
-                $scope.view_plato = data[0].plato;
-                $scope.view_cantidad = data[0].cantidad;
-                $scope.view_comandas = data[0].comandas;
-                $scope.view_despachado = data[0].despachado;
+                $scope.view_turno = data[0].turno || '';
+                $scope.view_planta = data[0].planta || '';
+                $scope.view_centrodecosto = data[0].centrodecosto || '';
+                $scope.view_jerarquia = data[0].jerarquia || '';
+                $scope.view_proyecto = data[0].proyecto || '';
+                $scope.view_plato = data[0].plato || '';
+                $scope.view_cantidad = data[0].cantidad || 1;
+                $scope.view_comandas = data[0].comandas || '';
+                $scope.view_despachado = data[0].despachado || '';
                 $scope.view_fechadeldia = fecha;
+                
+                console.log('Variables asignadas:', {
+                    turno: $scope.view_turno,
+                    planta: $scope.view_planta,
+                    fechadeldia: $scope.view_fechadeldia
+                });
             })
             .error(function () {
                 $window.Swal && $window.Swal.fire({ title: 'Ha ocurrido un error', text: 'API no presente', icon: 'error' });
@@ -318,8 +368,10 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
             if (!$scope.view_plato || $scope.view_plato === '') camposFaltantes.push('Plato');
             
             if ($window.Swal && typeof $window.Swal.fire === 'function') {
+                var mensaje = 'Los siguientes campos son obligatorios:\n\n' + camposFaltantes.join('\n');
                 $window.Swal.fire({
                     title: 'Completar campos requeridos',
+                    text: mensaje,
                     icon: 'warning',
                     showCancelButton: false,
                     confirmButtonText: 'Aceptar',
