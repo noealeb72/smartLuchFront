@@ -145,7 +145,7 @@ app.controller('PlanNutricional', function ($scope, $http) {
     };
 
     $scope.ModelDelete = function (id) {
-        Swal.fire({ title: 'Eliminar registro', text: '¿Desea eliminar el plan nutricional?', icon: 'warning', showCancelButton: true, confirmButtonText: 'OK', cancelButtonText: 'Cancelar' })
+        Swal.fire({ title: 'Baja registro', text: '¿Desea dar de baja el plan nutricional?', icon: 'warning', showCancelButton: true, confirmButtonText: 'OK', cancelButtonText: 'Cancelar' })
             .then(function (r) {
                 if (!r.isConfirmed) return;
                 $http.post($scope.base + 'Delete', { id: id }, { headers: { 'Content-Type': 'application/json; charset=utf-8' } })

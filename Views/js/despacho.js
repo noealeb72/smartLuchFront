@@ -92,7 +92,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				swal(
+				Swal.fire(
 					'Operación Correcta',
 					'',
 					'success'
@@ -100,7 +100,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
-			swal(
+			Swal.fire(
 				'Operación Incorrecta',
 				error,
 				'error'
@@ -137,7 +137,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				}
 			})
 			.error(function (data, status) {
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Api no presente',
 					'error'
@@ -153,7 +153,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				alert('Entro');
 			})
 			.error(function (data, status) {
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Api no presente',
 					'error'
@@ -185,7 +185,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				$scope.Pic = data[0];
 			})
 			.error(function (data, status) {
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Error al obtener foto',
 					'error'
@@ -227,7 +227,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				swal(
+				Swal.fire(
 					'Pedido entregado',
 					'',
 					'success'
@@ -235,7 +235,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
-			swal(
+			Swal.fire(
 				'Operación Incorrecta',
 				error,
 				'error'

@@ -40,7 +40,7 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				swal(
+				Swal.fire(
 					'Operación Correcta',
 					'',
 					'success'
@@ -48,7 +48,7 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
-			swal(
+			Swal.fire(
 				'Operación Incorrecta',
 				error,
 				'error'
@@ -63,7 +63,7 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 				$scope.view_descripcion = data[0].descripcion;
 			})
 			.error(function (data, status) {
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Api no presente',
 					'error'
@@ -84,7 +84,7 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 				$scope.dataset = data;
 			})
 			.error(function (data, status) {
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Api no presente',
 					'error'
@@ -123,7 +123,7 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				swal(
+				Swal.fire(
 					'Operación Correcta',
 					'',
 					'success'
@@ -131,7 +131,7 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
-			swal(
+			Swal.fire(
 				'Operación Incorrecta',
 				error,
 				'error'
@@ -152,7 +152,7 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				swal(
+				Swal.fire(
 					'Operación Correcta',
 					'',
 					'success'
@@ -160,7 +160,7 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
-			swal(
+			Swal.fire(
 				'Operación Incorrecta',
 				error,
 				'error'
@@ -182,9 +182,9 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ViewDelete = function (view_id) {
-		swal({
-			title: 'Eliminar registro',
-			text: 'Desea eliminar el plan nutricional?',
+		Swal.fire({
+			title: 'Baja registro',
+			text: 'Desea dar de baja el plan nutricional?',
 			type: 'warning',
 			showCancelButton: true,
 			confirmButtonColor: '#3085d6',

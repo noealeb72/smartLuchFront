@@ -1,4 +1,26 @@
-﻿var app = angular.module('AngujarJS', []);
+﻿// === SweetAlert2 shim: crea 'Swal.fire(...)' usando Swal.fire(...) ===
+(function (w) {
+	if (!w.Swal || typeof w.Swal.fire !== 'function') return; // no hay SweetAlert2
+
+	// solo si NO existe un Swal.fire válido
+	if (!w.Swal.fire || typeof w.Swal.fire !== 'function') {
+		w.Swal.fire = function () {
+			// soporta Swal.fire({ ... })
+			if (arguments.length === 1 && typeof arguments[0] === 'object') {
+				return w.Swal.fire(arguments[0]);
+			}
+			// soporta Swal.fire('titulo','texto','icon')
+			var args = Array.prototype.slice.call(arguments);
+			var opt = {};
+			if (args[0]) opt.title = args[0];
+			if (args[1]) opt.text = args[1];
+			if (args[2]) opt.icon = args[2]; // 'success' | 'error' | 'warning' | 'info' | 'question'
+			return w.Swal.fire(opt);
+		};
+	}
+})(window);
+
+var app = angular.module('AngujarJS', []);
 
 app.filter('startFrom', function () {
 	return function (input, start) {

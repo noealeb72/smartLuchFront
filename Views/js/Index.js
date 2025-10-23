@@ -1,4 +1,27 @@
-﻿var app = angular.module('AngujarJS', ['ja.qr']);
+﻿// === SweetAlert2 shim: crea 'Swal.fire(...)' usando Swal.fire(...) ===
+(function (w) {
+	if (!w.Swal || typeof w.Swal.fire !== 'function') return; // no hay SweetAlert2
+
+	// solo si NO existe un Swal.fire válido
+	if (!w.Swal.fire || typeof w.Swal.fire !== 'function') {
+		w.Swal.fire = function () {
+			// soporta Swal.fire({ ... })
+			if (arguments.length === 1 && typeof arguments[0] === 'object') {
+				return w.Swal.fire(arguments[0]);
+			}
+			// soporta Swal.fire('titulo','texto','icon')
+			var args = Array.prototype.slice.call(arguments);
+			var opt = {};
+			if (args[0]) opt.title = args[0];
+			if (args[1]) opt.text = args[1];
+			if (args[2]) opt.icon = args[2]; // 'success' | 'error' | 'warning' | 'info' | 'question'
+			return w.Swal.fire(opt);
+		};
+	}
+})(window);
+
+
+var app = angular.module('AngujarJS', ['ja.qr']);
 function normalizar(str) {
 	return (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
@@ -13,8 +36,8 @@ function showInfoToast(msg) {
 		return;
 	}
 	// SweetAlert v1 (fallback, no bloqueante)
-	if (window.swal) {
-		swal({
+	if (window.Swal.fire) {
+		Swal.fire({
 			title: 'Info',
 			text: msg,
 			icon: 'info',
@@ -255,7 +278,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			} else {
 				//$scope.selectedTurno = null;
 				//$scope.turnoDisponible = false;
-				//swal('Sin turnos disponibles', 'Ya no hay turnos activos para hoy.', 'info');
+				//Swal.fire('Sin turnos disponibles', 'Ya no hay turnos activos para hoy.', 'info');
 				showInfoToast('Sin turnos disponibles para hoy.');
 			}
 
@@ -342,7 +365,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 				}, 1000); // Espera para render Angular
 			})
 			.error(function (data, status) {
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Error al obtener pedidos',
 					'error'
@@ -397,7 +420,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 
 			})
 			.catch(function () {
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Error al obtener pedidos',
 					'error'
@@ -423,7 +446,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 		);
 
 		if (pedidoExistente) {
-			swal(
+			Swal.fire(
 				'Pedido ya registrado en esta franja horaria',
 				'No es posible hacer más de un pedido en el mismo horario.',
 				'error'
@@ -449,12 +472,12 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 						if (usuarioSmarTimePlato) {
 							mostrarModalConfirmacion();
 						} else {
-							swal('Error', mensajeSmatTime || "El usuario no tiene fichadas en SmarTime", 'error');
+							Swal.fire('Error', mensajeSmatTime || "El usuario no tiene fichadas en SmarTime", 'error');
 						}
 					})
 					.catch(function (error) {
 						console.error("Error al obtener SmarTime", error);
-						swal('Error', "Error al obtener SmarTime: " + error.statusText, 'error');
+						Swal.fire('Error', "Error al obtener SmarTime: " + error.statusText, 'error');
 					});
 			} else {
 				// Usuario con rol que no requiere control
@@ -498,7 +521,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				swal(
+				Swal.fire(
 					'Operación correcta',
 					'',
 					'success'
@@ -509,12 +532,12 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 				});
 			}
 		}, function (error) {
-			swal(
+			Swal.fire(
 				'Operación Incorrecta',
 				error,
 				'error'
 			);
-			swal('Operación Incorrecta', JSON.stringify(error), 'error');
+			Swal.fire('Operación Incorrecta', JSON.stringify(error), 'error');
 		});
 	};
 
@@ -560,7 +583,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				swal(
+				Swal.fire(
 					'¡Pedido Enviado!',
 					'',
 					'success'
@@ -571,11 +594,11 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 				});
 			}
 		}, function (error) {
-			/*swal(
+			/*Swal.fire(
 				'Operación Incorrecta',
 				error,
 				'error'
-			);*/swal('Operación Incorrecta', JSON.stringify(error), 'error');
+			);*/Swal.fire('Operación Incorrecta', JSON.stringify(error), 'error');
 		});
 	}
 

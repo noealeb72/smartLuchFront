@@ -546,11 +546,11 @@
     <!-- SweetAlert2 v11 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
-    <!-- Shim seguro: NO reescribe Swal, solo crea alias swal(...) -->
+    <!-- Shim seguro: NO reescribe Swal, solo crea alias Swal.fire(...) -->
     <script>
         (function (w) {
             if (!w.Swal || typeof w.Swal.fire !== 'function') return;
-            w.swal = function () {
+            w.Swal.fire = function () {
                 if (arguments.length === 1 && typeof arguments[0] === 'object') {
                     return w.Swal.fire(arguments[0]);
                 }

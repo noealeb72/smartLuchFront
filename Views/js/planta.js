@@ -209,8 +209,8 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 	  
 		if (hasSwal) {
 		  window.Swal.fire({
-			title: 'Eliminar registro',
-			text: 'Desea eliminar la planta?',
+			title: 'Baja registro',
+			text: 'Desea dar de baja la planta?',
 			icon: 'warning',
 			showCancelButton: true,
 			confirmButtonColor: '#3085d6',

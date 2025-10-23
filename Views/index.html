@@ -123,31 +123,35 @@
             background-color: #343a40 !important;
             border-color: #343a40 !important;
             color: white !important;
+            box-shadow: none !important;
         }
         
         .btn-dark:hover {
             background-color: #343a40 !important;
             border-color: #343a40 !important;
             color: white !important;
+            box-shadow: none !important;
         }
         
         .btn-dark:focus {
             background-color: #343a40 !important;
             border-color: #343a40 !important;
             color: white !important;
-            box-shadow: 0 0 0 0.2rem rgba(52, 58, 64, 0.25) !important;
+            box-shadow: none !important;
         }
         
         .btn-dark:active {
             background-color: #343a40 !important;
             border-color: #343a40 !important;
             color: white !important;
+            box-shadow: none !important;
         }
         
         .btn-dark:visited {
             background-color: #343a40 !important;
             border-color: #343a40 !important;
             color: white !important;
+            box-shadow: none !important;
         }
         
         /* Estilo para imagen sin borde cuando es el logo por defecto */
@@ -155,6 +159,46 @@
             border: none !important;
             box-shadow: none !important;
             border-radius: 0 !important;
+        }
+        
+        /* Estilos para que todas las imágenes del menú tengan el mismo tamaño */
+        .card-img {
+            width: 100% !important;
+            height: 200px !important;
+            object-fit: cover !important;
+            border-radius: 8px !important;
+        }
+        
+        /* Estilos para el botón Cancelar - rojo */
+        .btn-danger {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            color: white !important;
+        }
+        
+        .btn-danger:hover {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            color: white !important;
+        }
+        
+        .btn-danger:focus {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            color: white !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+        
+        .btn-danger:active {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            color: white !important;
+        }
+        
+        .btn-danger:visited {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            color: white !important;
         }
     </style>
 
@@ -181,7 +225,7 @@
                                 <div class="col-sm-6 col-12 bienvenida">
                                     <h3>
                                         Bienvenido {{user_Nombre}} {{user_Apellido}}
-                                        
+
                                     </h3>
                                     <h5 style="color: #6c757d;">Te quedan {{pedidosRestantes}} platos bonificados este mes</h5>
                                     <h5 style="color: #6c757d;" ng-if="pedidosInvitadosRestantes > 0">
@@ -331,54 +375,57 @@
                             <div id="confirmModal" class="modal fade" tabindex="-1" role="dialog">
                                 <div class="modal-dialog" role="document">
                                     <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="confirmModalLabel">Confirmar pedido</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
+                                        <div class="modal-header" style="background-color: #343a40; color: white; padding: 10px 15px;">
+                                            <h5 class="modal-title" id="confirmModalLabel" style="color: white; font-size: 16px; margin: 0; font-weight: 500;">Confirmar pedido</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
+                                                <span aria-hidden="true" style="color: white;">&times;</span>
                                             </button>
                                         </div>
                                         <div class="modal-body row">
                                             <div class="col-8 pl-4">
-                                                <div class="container row">
-                                                    <span class="text-info pr-2">Plato</span><span>{{pedidoPlato}}</span>
+                                                <div class="container row d-flex align-items-start">
+                                                    <span class="pr-2" style="color: black; font-weight: bold; white-space: nowrap;">Plato</span><span style="word-wrap: break-word; white-space: normal; flex: 1;">{{pedidoPlato}}</span>
                                                 </div>
                                                 <div class="container row">
-                                                    <span class="text-info pr-2">Costo</span><span>${{pedidoCosto}}</span>
+                                                    <span class="pr-2" style="color: black; font-weight: bold;">Importe</span><span>${{pedidoCosto}}</span>
                                                 </div>
                                                 <div class="container row">
-                                                    <span class="text-info pr-2">Planta</span><span>{{user_Planta}}</span>
+                                                    <span class="pr-2" style="color: black; font-weight: bold;">Planta</span><span>{{user_Planta}}</span>
                                                 </div>
                                                 <div class="container row">
-                                                    <span class="text-info pr-2">Centro de costo</span><span>{{user_Centrodecosto}}</span>
+                                                    <span class="pr-2" style="color: black; font-weight: bold;">Centro de costo</span><span>{{user_Centrodecosto}}</span>
                                                 </div>
                                                 <div class="container row">
-                                                    <span class="text-info pr-2">Proyecto</span><span>{{user_Proyecto}}</span>
+                                                    <span class="pr-2" style="color: black; font-weight: bold;">Proyecto</span><span>{{user_Proyecto}}</span>
                                                 </div>
                                                 <div class="container row">
-                                                    <span class="text-info pr-2">Jerarquia</span><span>{{user_Jerarquia}}</span>
+                                                    <span class="pr-2" style="color: black; font-weight: bold;">Jerarquia</span><span>{{user_Jerarquia}}</span>
                                                 </div>
                                                 <div class="container row">
-                                                    <span class="text-info pr-2">Perfil Nutricional</span><span>{{user_Perfilnutricional}}</span>
+                                                    <span class="pr-2" style="color: black; font-weight: bold;">Perfil Nutricional</span><span>{{user_Perfilnutricional}}</span>
                                                 </div>
                                                 <div class="container row">
-                                                    <span class="text-info pr-2">Platos Bonif. restantes</span><span>{{pedidosRestantes}}</span>
+                                                    <span class="pr-2" style="color: black; font-weight: bold;">Platos Bonif. restantes</span><span>{{pedidosRestantes}}</span>
                                                 </div>
                                             </div>
-                                            <div class="col-4 pl-0 mx-auto">
-                                                <img class="round-img mr-4" style="width:100%" ng-src="{{pedidoPresentacion || defaultImage}}" />
+                                            <div class="col-4 pl-0 mx-auto mt-5">
+                                                <img class="round-img mr-4" style="width:100%; border-radius: 50%; object-fit: cover; aspect-ratio: 1;" ng-src="{{pedidoPresentacion || defaultImage}}" />
                                             </div>
-                                            <div class="col-12 row mt-2">
-                                                <input class="custom-checkbox ml-4 mr-2 mt-1" type="checkbox" ng-model="pedidoInvitado" /><h5>Plato reservado para invitado</h5>
+                                            <div class="col-12 mt-4 pl-4">
+                                                <div class="form-check d-flex align-items-center">
+                                                    <input class="form-check-input mr-2" type="checkbox" ng-model="pedidoInvitado" id="pedidoInvitado">
+                                                    <label class="form-check-label" for="pedidoInvitado" style="font-weight: normal; font-size: 14px; margin: 0;">Plato reservado para invitado</label>
+                                                </div>
                                             </div>
-                                            <div class="col-12 mt-2 pl-4">
+                                            <div class="col-12 mt-4 pl-4">
                                                 <div class="form-group">
                                                     <label for="pedidoComentario">Comentario</label>
                                                     <textarea class="form-control w-100" ng-model="pedidoComentario" rows="2" maxlength="200"></textarea>
                                                 </div>
                                             </div>
                                             <div class="col-12 modal-footer">
-                                                <!--<button type="button" class="btn btn-primary bg-secondary" data-dismiss="modal">Cerrar ventana</button>-->
-                                                <button type="button" class="btn btn-primary" ng-click="confirmaPedido()">Enviar pedido</button>
+                                                <button type="button" class="btn btn-danger mr-2" data-dismiss="modal">Cancelar</button>
+                                                <button type="button" class="btn btn-dark" ng-click="confirmaPedido()">Enviar pedido</button>
                                             </div>
                                         </div>
                                     </div>
@@ -400,11 +447,11 @@
                                             <div class="card-body row">
                                                 <div class="col-sm-6">
                                                     <h5 class="card-title">
-                                                        <span class="badge badge-dark mr-2">Nª {{pedido.user_npedido}}</span><br />{{pedido.descripcion}}
+                                                        <span class="badge badge-dark mr-2">Nª {{pedido.user_npedido}}</span><br /><br />{{pedido.descripcion}}
                                                     </h5>
                                                     <p class="card-text">{{pedido.ingredientes}}</p>
                                                     <p>
-                                                        <span style="font-size: 0.8em;">*Plan Nutricional: </span><span style="color: #343a40; font-weight: 500; font-size: 0.8em;">{{pedido.plannutricional}}</span>
+                                                        <span style="font-size: 0.8em;">* Plan Nutricional: </span><span style="color: #343a40; font-weight: 500; font-size: 0.8em;">{{pedido.plannutricional}}</span>
                                                         <span ng-show="pedido.invitado == true" class="badge badge-secondary">Invitado</span>
                                                     </p>
                                                 </div>
@@ -426,7 +473,6 @@
                                         <span class="px-3 py-3">No hay pedidos vigentes</span>
                                     </div>
                                 </div>
-                                <hr />
                                 <div ng-if="turnoDisponible">
                                     <h4 class="mt-4" style="color: #343a40;">Menú del día</h4>
                                     <!--<h5 class="mt-4">Turno {{selectedTurno}}</h5> -->
@@ -436,7 +482,7 @@
                                     <div class="card mt-2 pl-2" ng-repeat="item in dataset track by $index">
                                         <div class="row no-gutters">
                                             <div class="col-md-4 mt-2 mb-2">
-                                                <img ng-src="{{item.presentacion || defaultImage}}" alt="{{item.descripcion}}" class="card-img" ng-class="{'rised-image': item.presentacion, 'no-border': !item.presentacion}">
+                                                <img ng-src="{{item.presentacion || defaultImage}}" alt="{{item.descripcion}}" class="card-img" ng-class="{'no-border': item.presentacion, 'no-border': !item.presentacion}">
 
                                                 <button type="button"
                                                         class="btn btn-dark btn-sm mt-2"
@@ -454,7 +500,7 @@
                                                     <h5 class="card-title">{{item.descripcion}}</h5>
                                                     <p class="card-text">{{item.ingredientes}}</p>
                                                     <p>
-                                                        <span style="font-size: 0.8em;">*Plan Nutricional: </span><span style="color: #343a40; font-weight: 500; font-size: 0.8em;">{{item.plannutricional}}</span>
+                                                        <span style="font-size: 0.8em;">* Plan Nutricional: </span><span style="color: #343a40; font-weight: 500; font-size: 0.8em;">{{item.plannutricional}}</span>
                                                     </p>
                                                     <p>
                                                         <strong>Importe:</strong>
@@ -569,12 +615,15 @@
         <!-- Main JS -->
         <script src="js/angular.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+        <!-- tu directorio -->
         <script src="js/navbar-direct.js"></script>
         <script src="js/qrcode.min.js"></script>
         <script src="js/angular-qr.min.js"></script>
         <script src="js/index.js"></script>
 
+
     </div>
 </body>
 </html>
+
 

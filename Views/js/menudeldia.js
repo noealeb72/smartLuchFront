@@ -4,10 +4,10 @@
     // Si no está cargado SweetAlert2, no hacemos nada.
     if (!w.Swal) return;
 
-    // 1) Normalizar alias 'swal' (algunas libs viejas lo siguen llamando)
-    if (!w.swal || typeof w.swal !== 'function') {
-        w.swal = function () {
-            // soportar: swal('titulo','texto','icon') y swal({ ... })
+    // 1) Normalizar alias 'Swal.fire' (algunas libs viejas lo siguen llamando)
+    if (!w.Swal.fire || typeof w.Swal.fire !== 'function') {
+        w.Swal.fire = function () {
+            // soportar: Swal.fire('titulo','texto','icon') y Swal.fire({ ... })
             if (arguments.length === 1 && typeof arguments[0] === 'object') {
                 return w.Swal.fire(arguments[0]);
             }

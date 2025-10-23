@@ -350,6 +350,50 @@
          }
         /* Mostrar mensajes de error en envío o al tocar el campo */
         .text-danger { display: inline; }
+        
+        /* Estilos para el paginador personalizado */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .pagination-buttons {
+            display: flex;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+        
+        .pagination-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: #6c757d;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background-color: #e9ecef;
+            color: #495057;
+        }
+        
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .pagination-btn i {
+            font-size: 14px;
+        }
      </style>
  </head>
 
@@ -416,8 +460,7 @@
                  </div>
 
 
-                 <div class="container-fluid mr-3" style="min-height: 428px">
-                     <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;">
+                <div class="container-fluid mr-3" style="min-height: 428px">
                      <div ng-if="ViewAction==='Lista de Items'">
                          <div class="table-responsive">
                              <table class="table table-hover table-sm">
@@ -464,27 +507,26 @@
                                  </tbody>
                              </table>
                          </div>
-                         <!-- Paginación -->
-                         <nav aria-label="Page navigation" class="mt-3">
-                             <ul class="pagination justify-content-center">
-                                 <li class="page-item" ng-class="{disabled: currentPage == 0}">
-                                     <a class="page-link" href="#" ng-click="currentPage = currentPage - 1"
-                                        aria-label="Anterior">
-                                         <span aria-hidden="true">&laquo;</span>
-                                     </a>
-                                 </li>
-                                 <li class="page-item" ng-repeat="n in getNumber(totalPages) track by $index"
-                                     ng-class="{active: $index == currentPage}">
-                                     <a class="page-link" href="#" ng-click="currentPage = $index">{{$index + 1}}</a>
-                                 </li>
-                                 <li class="page-item" ng-class="{disabled: currentPage + 1 >= totalPages}">
-                                     <a class="page-link" href="#" ng-click="currentPage = currentPage + 1"
-                                        aria-label="Siguiente">
-                                         <span aria-hidden="true">&raquo;</span>
-                                     </a>
-                                 </li>
-                             </ul>
-                         </nav>
+                        <!-- Paginación personalizada -->
+                        <div class="pagination-container" ng-if="totalPages > 1" style="display: flex; justify-content: center; margin-top: 20px;">
+                            <div class="pagination-buttons" style="display: flex; background-color: #f8f9fa; border-radius: 8px; padding: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <button class="pagination-btn" 
+                                        ng-disabled="currentPage == 0" 
+                                        ng-click="currentPage=currentPage-1"
+                                        style="background: transparent; border: none; padding: 8px 12px; cursor: pointer; color: #6c757d; font-size: 16px; display: flex; align-items: center; justify-content: center;"
+                                        title="Página anterior">
+                                    <i class="fas fa-angle-double-left" style="font-size: 14px;"></i>
+                                </button>
+                                <div style="width: 1px; background-color: #dee2e6; margin: 4px 0;"></div>
+                                <button class="pagination-btn" 
+                                        ng-disabled="currentPage+1 >= totalPages" 
+                                        ng-click="currentPage=currentPage+1"
+                                        style="background: transparent; border: none; padding: 8px 12px; cursor: pointer; color: #6c757d; font-size: 16px; display: flex; align-items: center; justify-content: center;"
+                                        title="Página siguiente">
+                                    <i class="fas fa-angle-double-right" style="font-size: 14px;"></i>
+                                </button>
+                            </div>
+                        </div>
                      </div>
 
                      <div ng-if="ViewAction==='Nuevo Usuario'">
@@ -509,12 +551,12 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                             <input ng-pattern="/^[a-zA-Zñ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                             <input ng-pattern="/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                              <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_nombre.$error.required || userForm.view_nombre.$dirty && userForm.view_nombre.$error.required" class="text-danger">Nombre requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_apellido">Apellido</label>
-                                             <input ng-pattern="/^[a-zA-Zñ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
+                                             <label for="view_apellido"><span class="text-danger">*</span> Apellido</label>
+                                             <input ng-pattern="/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
                                              <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_apellido.$error.required || userForm.view_apellido.$dirty && userForm.view_apellido.$error.required" class="text-danger">Apellido requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -525,6 +567,7 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_perfil">Perfil</label>
                                              <select class="col-8 form-control" id="view_perfil" ng-model="view_perfil" required>
+                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option value="Admin">Admin</option>
                                                  <option value="Gerencia">Gerencia</option>
                                                  <option value="Cocina">Cocina</option>
@@ -540,6 +583,7 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_planta">Planta</label>
                                              <select class="col-8 form-control" id="view_planta" ng-model="view_planta" required>
+                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option ng-repeat="x in plantas" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                              <span ng-show="(userForm.$submitted || userForm.view_planta.$dirty) && !view_planta" class="text-danger">Planta requerida.</span>
@@ -565,6 +609,7 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_plannutricional">Plan Nutricional</label>
                                              <select class="col-8 form-control" id="view_plannutricional" ng-model="view_plannutricional" required>
+                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option ng-repeat="x in planes" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                              <span ng-show="(userForm.$submitted || userForm.view_plannutricional.$dirty) && !view_plannutricional" class="text-danger">Plan nutricional requerido.</span>
@@ -572,6 +617,7 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_centrodecosto">Centro de costo</label>
                                              <select class="col-8 form-control" id="view_centrodecosto" ng-model="view_centrodecosto" required>
+                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option ng-repeat="x in centros" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                              <span ng-show="(userForm.$submitted || userForm.view_centrodecosto.$dirty) && !view_centrodecosto" class="text-danger">Centro de costo requerido.</span>
@@ -582,8 +628,8 @@
                                              <span ng-show="userForm.$submitted && userForm.view_dni.$error.required || userForm.view_dni.$dirty && userForm.view_dni.$error.required" class="text-danger">DNI requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_domicilio">Domicilio</label>
-                                             <input ng-pattern="/^[a-zA-Z0-9ñ \.]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
+                                             <label for="view_domicilio"><span class="text-danger">*</span> Domicilio</label>
+                                             <input ng-pattern="/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ \.]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
                                              <span ng-show="userForm.view_domicilio.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_domicilio.$error.required || userForm.view_domicilio.$dirty && userForm.view_domicilio.$error.required" class="text-danger">Domicilio requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -593,6 +639,7 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_proyecto">Proyecto</label>
                                              <select class="col-8 form-control" id="view_proyecto" ng-model="view_proyecto" required>
+                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option ng-repeat="x in proyectos" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                              <span ng-show="(userForm.$submitted || userForm.view_proyecto.$dirty) && !view_proyecto" class="text-danger">Proyecto requerido.</span>
@@ -619,10 +666,10 @@
                      <div ng-if="ViewAction==='Editar Usuario'">
                          <div class="container-fluid">
                              <!-- Indicador de sección -->
-                             <div class="alert alert-warning mb-3" role="alert">
-                                 <i class="fa fa-edit mr-2"></i>
-                                 <strong>Editando usuario</strong> - Modifique los campos necesarios y guarde los cambios.
-                             </div>
+                            <div class="alert alert-info mb-3" role="alert">
+                                <i class="fa fa-edit mr-2"></i>
+                                <strong>Editando usuario</strong> - Modifique los campos necesarios y guarde los cambios.
+                            </div>
                              <div class="dishes-text col-12">
                                  <form class="form-group row" name="userForm" ng-submit="ModelUpdate(userForm.$valid,view_id)" novalidate>
                                      <div class="col-6">
@@ -638,12 +685,12 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                             <input ng-pattern="/^[a-zA-Zñ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                             <input ng-pattern="/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                              <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_nombre.$error.required || userForm.view_nombre.$dirty && userForm.view_nombre.$error.required" class="text-danger">Nombre requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_apellido">Apellido</label>
-                                             <input ng-pattern="/^[a-zA-Zñ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
+                                             <label for="view_apellido"><span class="text-danger">*</span> Apellido</label>
+                                             <input ng-pattern="/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
                                              <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_apellido.$error.required || userForm.view_apellido.$dirty && userForm.view_apellido.$error.required" class="text-danger">Apellido requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -654,6 +701,7 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_perfil">Perfil</label>
                                              <select class="col-8 form-control" id="view_perfil" ng-model="view_perfil" required>
+                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option value="Admin">Admin</option>
                                                  <option value="Gerencia">Gerencia</option>
                                                  <option value="Cocina">Cocina</option>
@@ -668,6 +716,7 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_planta">Planta</label>
                                              <select class="col-8 form-control" id="view_planta" ng-model="view_planta" required>
+                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option ng-repeat="x in plantas" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                          </div>
@@ -692,12 +741,14 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_plannutricional">Plan Nutricional</label>
                                              <select class="col-8 form-control" id="view_plannutricional" ng-model="view_plannutricional" required>
+                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option ng-repeat="x in planes" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_centrodecosto">Centro de costo</label>
                                              <select class="col-8 form-control" id="view_centrodecosto" ng-model="view_centrodecosto" required>
+                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option ng-repeat="x in centros" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                          </div>
@@ -707,8 +758,8 @@
                                              <span ng-show="userForm.$submitted && userForm.view_dni.$error.required || userForm.view_dni.$dirty && userForm.view_dni.$error.required" class="text-danger">DNI requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_domicilio">Domicilio</label>
-                                             <input ng-pattern="/^[a-zA-Z0-9ñ \.]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
+                                             <label for="view_domicilio"><span class="text-danger">*</span> Domicilio</label>
+                                             <input ng-pattern="/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ \.]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
                                              <span ng-show="userForm.view_domicilio.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_domicilio.$error.required || userForm.view_domicilio.$dirty && userForm.view_domicilio.$error.required" class="text-danger">Domicilio requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -718,6 +769,7 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_proyecto">Proyecto</label>
                                              <select class="col-8 form-control" id="view_proyecto" ng-model="view_proyecto" required>
+                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option ng-repeat="x in proyectos" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                          </div>

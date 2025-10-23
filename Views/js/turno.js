@@ -1,4 +1,26 @@
-﻿var app = angular.module('AngujarJS', []);
+﻿// === SweetAlert2 shim: crea 'Swal.fire(...)' usando Swal.fire(...) ===
+(function (w) {
+	if (!w.Swal || typeof w.Swal.fire !== 'function') return; // no hay SweetAlert2
+
+	// solo si NO existe un Swal.fire válido
+	if (!w.Swal.fire || typeof w.Swal.fire !== 'function') {
+		w.Swal.fire = function () {
+			// soporta Swal.fire({ ... })
+			if (arguments.length === 1 && typeof arguments[0] === 'object') {
+				return w.Swal.fire(arguments[0]);
+			}
+			// soporta Swal.fire('titulo','texto','icon')
+			var args = Array.prototype.slice.call(arguments);
+			var opt = {};
+			if (args[0]) opt.title = args[0];
+			if (args[1]) opt.text = args[1];
+			if (args[2]) opt.icon = args[2]; // 'success' | 'error' | 'warning' | 'info' | 'question'
+			return w.Swal.fire(opt);
+		};
+	}
+})(window);
+
+var app = angular.module('AngujarJS', []);
 
 app.filter('startFrom', function () {
 	return function (input, start) {
@@ -118,7 +140,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				data: jsonForm
 			}).then(function (success) {
 				if (success) {
-					swal(
+					Swal.fire(
 						'Operación Correcta',
 						'',
 						'success'
@@ -126,7 +148,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 					$scope.ModelReadAll();
 				}
 			}, function (error) {
-				swal(
+				Swal.fire(
 					'Operación Incorrecta',
 					error,
 					'error'
@@ -155,7 +177,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				}
 			})
 			.error(function (data, status) {
-				swal('Ha ocurrido un error', 'Api no presente', 'error');
+				Swal.fire('Ha ocurrido un error', 'Api no presente', 'error');
 			});
 	};
 
@@ -178,7 +200,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				$scope.dataset = data;
 			})
 			.error(function (data, status) {
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Api no presente',
 					'error'
@@ -207,7 +229,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				data: jsonForm
 			}).then(function (success) {
 				if (success) {
-					swal(
+					Swal.fire(
 						'Operación Correcta',
 						'',
 						'success'
@@ -215,7 +237,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 					$scope.ModelReadAll();
 				}
 			}, function (error) {
-				swal(
+				Swal.fire(
 					'Operación Incorrecta',
 					error,
 					'error'
@@ -268,8 +290,8 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 	  
 		if (hasSwal) {
 		  window.Swal.fire({
-			title: 'Eliminar registro',
-			text: 'Desea eliminar el turno?',
+			title: 'Baja registro',
+			text: 'Desea dar de baja el turno?',
 			icon: 'warning',
 			showCancelButton: true,
 			confirmButtonColor: '#3085d6',

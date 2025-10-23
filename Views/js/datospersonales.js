@@ -34,14 +34,14 @@ app.controller('DatosPersonales', function ($scope, $http, $window) {
                 })
                 .catch(function (error) {
                     console.error('Error al obtener los datos personales:', error);
-                    swal(
+                    Swal.fire(
                         'Error',
                         'No se pudieron obtener los datos personales del usuario.',
                         'error'
                     );
                 });
         } else {
-            swal(
+            Swal.fire(
                 'Error',
                 'Usuario no logueado. Por favor inicie sesión.',
                 'error'
@@ -73,21 +73,21 @@ app.controller('DatosPersonales', function ($scope, $http, $window) {
                 url: $scope.base + 'Update', // Endpoint de actualización
                 data: jsonForm
             }).then(function (success) {
-                swal(
+                Swal.fire(
                     'Operación Correcta',
                     'Los datos personales fueron actualizados con éxito.',
                     'success'
                 );
             }).catch(function (error) {
                 console.error('Error al actualizar los datos personales:', error);
-                swal(
+                Swal.fire(
                     'Operación Incorrecta',
                     'Hubo un error al actualizar los datos personales.',
                     'error'
                 );
             });
         } else {
-            swal(
+            Swal.fire(
                 'Error',
                 'Por favor, complete todos los campos requeridos correctamente.',
                 'error'

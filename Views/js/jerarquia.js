@@ -204,7 +204,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				console.log('=== ERROR EN LA PETICIÓN ===');
 				console.log('Status:', status);
 				console.log('Data del error:', data);
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Api no presente',
 					'error'
@@ -226,7 +226,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				$scope.dataset = data;
 			})
 			.error(function (data, status) {
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Api no presente',
 					'error'
@@ -385,8 +385,8 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 
 	$scope.ViewDelete = function (view_id) {
 		Swal.fire({
-			title: 'Eliminar registro',
-			text: 'Desea eliminar la jerarquía?',
+			title: 'Baja registro',
+			text: 'Desea dar de baja la jerarquía?',
 			icon: 'warning',
 			showCancelButton: true,
 			confirmButtonColor: '#3085d6',

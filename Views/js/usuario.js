@@ -79,6 +79,29 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 
 	$scope.ModelCreate = function (form) {
 		console.log('ModelCreate ejecutándose - isValid:', form && form.$valid);
+		
+		// Validación adicional para selects vacíos
+		var selectFields = ['view_perfil', 'view_planta', 'view_proyecto', 'view_centrodecosto'];
+		var emptySelects = [];
+		
+		selectFields.forEach(function(field) {
+			if (!$scope[field] || $scope[field] === '' || $scope[field] === null || $scope[field] === undefined || $scope[field] === '-- Seleccionar --') {
+				var fieldNames = {
+					'view_perfil': 'Perfil',
+					'view_planta': 'Planta', 
+					'view_proyecto': 'Proyecto',
+					'view_centrodecosto': 'Centro de costo'
+				};
+				emptySelects.push(fieldNames[field] || field);
+			}
+		});
+		
+		if (emptySelects.length > 0) {
+			console.warn('Selects vacíos:', emptySelects);
+			$scope.showPopup('Completar campos requeridos', '', 'warning');
+			return;
+		}
+		
 		if (form && !form.$valid) {
 			var requiredErrors = (form.$error && form.$error.required) ? form.$error.required : [];
 			var missing = [];
@@ -89,7 +112,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				}
 			});
 			console.warn('Completar campos requeridos:', missing);
-			$scope.showPopup('Completar campos requeridos', 'Completar: ' + missing.join(', '), 'warning');
+			$scope.showPopup('Completar campos requeridos', '', 'warning');
 			return;
 		}
 
@@ -316,6 +339,29 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 
 	$scope.ModelUpdate = function (isValid, view_id) {
 		console.log('ModelUpdate ejecutándose - isValid:', isValid);
+		
+		// Validación adicional para selects vacíos
+		var selectFields = ['view_perfil', 'view_planta', 'view_proyecto', 'view_centrodecosto'];
+		var emptySelects = [];
+		
+		selectFields.forEach(function(field) {
+			if (!$scope[field] || $scope[field] === '' || $scope[field] === null || $scope[field] === undefined || $scope[field] === '-- Seleccionar --') {
+				var fieldNames = {
+					'view_perfil': 'Perfil',
+					'view_planta': 'Planta', 
+					'view_proyecto': 'Proyecto',
+					'view_centrodecosto': 'Centro de costo'
+				};
+				emptySelects.push(fieldNames[field] || field);
+			}
+		});
+		
+		if (emptySelects.length > 0) {
+			console.warn('Selects vacíos:', emptySelects);
+			$scope.showPopup('Completar campos requeridos', '', 'warning');
+			return;
+		}
+		
 		if (!isValid) { 
 			console.log('Formulario no válido, mostrando popup');
 			console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
@@ -477,25 +523,65 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 		$scope.view_nombre = '';
 		$scope.view_apellido = '';
 		$scope.view_legajo = '';
-		$scope.view_perfil = '';
 		$scope.view_cuil = '';
-		$scope.view_plannutricional = '';
-		$scope.view_planta = '';
 		$scope.view_dni = '';
 		$scope.view_domicilio = '';
 		$scope.view_fechaingreso = '';
-		$scope.view_contrato = '';
-		$scope.view_centrodecosto = '';
-		$scope.view_proyecto = '';
-		$scope.view_centrodecosto = '';
 		$scope.view_bonificacion = 0;
 		$scope.view_previewImage = '';
 		$scope.view_bonificacion_invitado = 0;
 
+		// Inicializar selects inmediatamente
+		$scope.view_perfil = '-- Seleccionar --';
+		$scope.view_plannutricional = '-- Seleccionar --';
+		$scope.view_planta = '-- Seleccionar --';
+		$scope.view_centrodecosto = '-- Seleccionar --';
+		$scope.view_proyecto = '-- Seleccionar --';
+		
+		console.log('ViewCreate - Inicializando selects:', {
+			perfil: $scope.view_perfil,
+			planta: $scope.view_planta,
+			centrodecosto: $scope.view_centrodecosto,
+			proyecto: $scope.view_proyecto
+		});
+
+		// Cargar datos
 		$scope.ModelReadPlanes();
 		$scope.ModelReadPlantas();
 		$scope.ModelReadCentros();
 		$scope.ModelReadProyectos();
+		
+		// Asegurar que los selects mantengan el valor por defecto después de cargar datos
+		setTimeout(function() {
+			console.log('setTimeout - Verificando selects:', {
+				perfil: $scope.view_perfil,
+				planta: $scope.view_planta,
+				centrodecosto: $scope.view_centrodecosto,
+				proyecto: $scope.view_proyecto
+			});
+			
+			if (!$scope.view_perfil || $scope.view_perfil === '') {
+				$scope.view_perfil = '-- Seleccionar --';
+				console.log('Restaurando perfil a -- Seleccionar --');
+			}
+			if (!$scope.view_plannutricional || $scope.view_plannutricional === '') {
+				$scope.view_plannutricional = '-- Seleccionar --';
+				console.log('Restaurando plannutricional a -- Seleccionar --');
+			}
+			if (!$scope.view_planta || $scope.view_planta === '') {
+				$scope.view_planta = '-- Seleccionar --';
+				console.log('Restaurando planta a -- Seleccionar --');
+			}
+			if (!$scope.view_centrodecosto || $scope.view_centrodecosto === '') {
+				$scope.view_centrodecosto = '-- Seleccionar --';
+				console.log('Restaurando centrodecosto a -- Seleccionar --');
+			}
+			if (!$scope.view_proyecto || $scope.view_proyecto === '') {
+				$scope.view_proyecto = '-- Seleccionar --';
+				console.log('Restaurando proyecto a -- Seleccionar --');
+			}
+			$scope.$apply();
+		}, 200);
 	};
 
 	$scope.ModelReadProyectos = function () {
@@ -536,20 +622,20 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	  
 		if (hasSwal) {
 		  window.Swal.fire({
-			title: 'Eliminar registro',
-			text: 'Desea eliminar al usuario?',
+			title: 'Baja registro',
+			text: '¿Desea dar de baja el usuario?',
 			icon: 'warning',
 			showCancelButton: true,
-			confirmButtonColor: '#3085d6',
+			confirmButtonColor: '#5c636a',
 			cancelButtonColor: '#d33',
-			confirmButtonText: 'Sí, eliminar',
+			confirmButtonText: 'OK',
 			cancelButtonText: 'Cancelar'
 		  }).then(function (result) {
 			if (result.isConfirmed) $scope.ModelDelete(view_id);
 		  });
 		} else {
 		  // Fallback nativo si SweetAlert2 no está sano
-		  if (window.confirm('Desea eliminar al usuario?')) {
+		  if (window.confirm('¿Desea dar de baja el usuario?')) {
 					$scope.ModelDelete(view_id);
 				}
 		}

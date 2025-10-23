@@ -272,6 +272,50 @@
             border-color: #F34949 !important;
             color: white !important;
         }
+        
+        /* Estilos para el paginador personalizado */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .pagination-buttons {
+            display: flex;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+        
+        .pagination-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: #6c757d;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background-color: #e9ecef;
+            color: #495057;
+        }
+        
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .pagination-btn i {
+            font-size: 14px;
+        }
     </style>
     <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
@@ -367,14 +411,25 @@
                                     </tr>
                                 </tbody>
                             </table>
-                            <div>
-                                <button class="btn btn-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="currentPage=currentPage-1">
-                                    Anterior
-                                </button>
-                                {{currentPage+1}}/{{numberOfPages()}}
-                                <button class="btn btn-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="currentPage=currentPage+1">
-                                    Siguiente
-                                </button>
+                            <!-- Paginación personalizada -->
+                            <div class="pagination-container" ng-if="numberOfPages() > 1" style="display: flex; justify-content: center; margin-top: 20px;">
+                                <div class="pagination-buttons" style="display: flex; background-color: #f8f9fa; border-radius: 8px; padding: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <button class="pagination-btn" 
+                                            ng-disabled="currentPage == 0" 
+                                            ng-click="currentPage=currentPage-1"
+                                            style="background: transparent; border: none; padding: 8px 12px; cursor: pointer; color: #6c757d; font-size: 16px; display: flex; align-items: center; justify-content: center;"
+                                            title="Página anterior">
+                                        <i class="fas fa-angle-double-left" style="font-size: 14px;"></i>
+                                    </button>
+                                    <div style="width: 1px; background-color: #dee2e6; margin: 4px 0;"></div>
+                                    <button class="pagination-btn" 
+                                            ng-disabled="currentPage+1 == numberOfPages()" 
+                                            ng-click="currentPage=currentPage+1"
+                                            style="background: transparent; border: none; padding: 8px 12px; cursor: pointer; color: #6c757d; font-size: 16px; display: flex; align-items: center; justify-content: center;"
+                                            title="Página siguiente">
+                                        <i class="fas fa-angle-double-right" style="font-size: 14px;"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

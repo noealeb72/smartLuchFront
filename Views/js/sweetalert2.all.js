@@ -466,7 +466,7 @@ var getCancelButton = function getCancelButton() {
 };
 
 var getButtonsWrapper = function getButtonsWrapper() {
-  warnOnce('swal.getButtonsWrapper() is deprecated and will be removed in the next major release, use swal.getActions() instead');
+  warnOnce('Swal.fire.getButtonsWrapper() is deprecated and will be removed in the next major release, use Swal.fire.getActions() instead');
   return elementByClass(swalClasses.actions);
 };
 
@@ -982,7 +982,7 @@ var currentSteps = [];
  * Global function for chaining sweetAlert popups
  */
 var queue = function queue(steps) {
-  var swal = this;
+  var Swal.fire = this;
   currentSteps = steps;
   var resetQueue = function resetQueue() {
     currentSteps = [];
@@ -994,7 +994,7 @@ var queue = function queue(steps) {
       if (i < currentSteps.length) {
         document.body.setAttribute('data-swal2-queue-step', i);
 
-        swal(currentSteps[i]).then(function (result) {
+        Swal.fire(currentSteps[i]).then(function (result) {
           if (typeof result.value !== 'undefined') {
             queueResult.push(result.value);
             step(i + 1, callback);
@@ -1106,7 +1106,7 @@ var staticMethods = Object.freeze({
 });
 
 /**
- * This module containts `WeakMap`s for each effectively-"private  property" that a `swal` has.
+ * This module containts `WeakMap`s for each effectively-"private  property" that a `Swal.fire` has.
  * For example, to set the private property "foo" of `this` to "bar", you can `privateProps.foo.set(this, 'bar')`
  * This is the approach that Babel will probably take to implement private methods/fields
  *   https://github.com/tc39/proposal-private-methods
@@ -2278,7 +2278,7 @@ Swal.default = Swal;
 return Swal;
 
 })));
-if (typeof window !== 'undefined' && window.Sweetalert2){  window.swal = window.sweetAlert = window.Swal = window.SweetAlert = window.Sweetalert2}
+if (typeof window !== 'undefined' && window.Sweetalert2){  window.Swal.fire = window.sweetAlert = window.Swal = window.SweetAlert = window.Sweetalert2}
 
 "undefined"!=typeof document&&function(e,t){var n=e.createElement("style");if(e.getElementsByTagName("head")[0].appendChild(n),n.styleSheet)n.styleSheet.disabled||(n.styleSheet.cssText=t);else try{n.innerHTML=t}catch(e){n.innerText=t}}(document,"@-webkit-keyframes swal2-show {\n" +
 "  0% {\n" +

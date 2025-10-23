@@ -174,6 +174,62 @@
             color: #0c5460;
         }
         
+        /* Estilos para todos los botones de búsqueda (con cruz) - SIEMPRE gris oscuro */
+        .input-group-append .btn,
+        .btn-outline-secondary,
+        .btn-outline-secondary:not(:disabled):not(.disabled) {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+        }
+        
+        .input-group-append .btn:hover,
+        .btn-outline-secondary:hover,
+        .btn-outline-secondary:not(:disabled):not(.disabled):hover {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+        }
+        
+        .input-group-append .btn:focus,
+        .btn-outline-secondary:focus,
+        .btn-outline-secondary:not(:disabled):not(.disabled):focus {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .input-group-append .btn:active,
+        .btn-outline-secondary:active,
+        .btn-outline-secondary:not(:disabled):not(.disabled):active {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+        }
+        
+        .input-group-append .btn:visited,
+        .btn-outline-secondary:visited {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+        }
+        
+        .input-group-append .btn:link,
+        .btn-outline-secondary:link {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+        }
+        
+        /* Forzar color gris oscuro en todos los estados */
+        .input-group-append .btn:not(:disabled):not(.disabled),
+        .btn-outline-secondary:not(:disabled):not(.disabled) {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+        }
+        
         @media (max-width: 768px) {
             .container, .container-fluid {
                 padding-left: 10px;
@@ -292,14 +348,72 @@
                                 <span><i class="fa fa-filter mr-2"></i>Filtros de búsqueda</span>
                                 <i class="fa" ng-class="{'fa-chevron-down': !toggleFiltros, 'fa-chevron-up': toggleFiltros}"></i>
                             </h6>
-                </div>
+                        </div>
                         <div class="card-body" ng-show="toggleFiltros" style="display: block !important;">
                             <form name="form" novalidate>
-                                <!-- Solo filtro de búsqueda de platos -->
+                                <!-- Filtros avanzados -->
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <div class="form-group">
-                                            <label for="filtro_plato" class="form-label">Buscar Plato</label>
+                                            <label for="filtro_fechadesde" class="form-label">Fecha desde</label>
+                                            <input class="form-control" type="date" id="filtro_fechadesde" ng-model="filtro_fechadesde">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_fechahasta" class="form-label">Fecha hasta</label>
+                                            <input class="form-control" type="date" id="filtro_fechahasta" ng-model="filtro_fechahasta">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_texto" class="form-label">Filtrar por texto</label>
+                                            <input class="form-control" type="text" id="filtro_texto" ng-model="filtro_texto" placeholder="Buscar...">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_planta" class="form-label">Planta</label>
+                                            <select class="form-control" id="filtro_planta" ng-model="filtro_planta">
+                                                <option value="">Seleccione planta</option>
+                                                <option ng-repeat="planta in plantas" value="{{planta.nombre}}">{{planta.nombre}}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_proyecto" class="form-label">Proyecto</label>
+                                            <select class="form-control" id="filtro_proyecto" ng-model="filtro_proyecto">
+                                                <option value="">Selecciona proyecto</option>
+                                                <option ng-repeat="proyecto in proyectos" value="{{proyecto.nombre}}">{{proyecto.nombre}}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_legajodesde" class="form-label">Legajo desde</label>
+                                            <div class="input-group">
+                                                <input class="form-control" type="text" id="filtro_legajodesde" ng-model="filtro_legajodesde" placeholder="Legajo desde">
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-outline-secondary" type="button" ng-click="buscarLegajo()" title="Buscar legajo">
+                                                        <i class="fa fa-search"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_legajohasta" class="form-label">Hasta</label>
+                                            <input class="form-control" type="text" id="filtro_legajohasta" ng-model="filtro_legajohasta" placeholder="Legajo hasta">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_plato" class="form-label">Plato</label>
                                             <div class="input-group">
                                                 <input class="form-control" type="text" id="filtro_plato" ng-model="filtro_plato" placeholder="Buscar plato...">
                                                 <div class="input-group-append">
@@ -308,6 +422,24 @@
                                                     </button>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_calificacion" class="form-label">Calificación</label>
+                                            <input class="form-control" type="number" id="filtro_calificacion" ng-model="filtro_calificacion" placeholder="Calificación">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="filtro_turno" class="form-label">Turno</label>
+                                            <select class="form-control" id="filtro_turno" ng-model="filtro_turno">
+                                                <option value="">Selecciona turno</option>
+                                                <option ng-repeat="turno in turnos" value="{{turno.nombre}}">{{turno.nombre}}</option>
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-md-6 d-flex align-items-end">

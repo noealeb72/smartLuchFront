@@ -137,7 +137,7 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window, $ti
 											$scope.filterUser = data;
 										})
 										.error(function (data, status) {
-											swal(
+											Swal.fire(
 												'Ha ocurrido un error',
 												'Error al obtener usuarios de la planta',
 												'error'
@@ -145,7 +145,7 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window, $ti
 										});
 								})
 								.error(function (data, status) {
-									swal(
+									Swal.fire(
 										'Ha ocurrido un error',
 										'Error al obtener turnos',
 										'error'
@@ -153,7 +153,7 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window, $ti
 								});
 						})
 						.error(function (data, status) {
-							swal(
+							Swal.fire(
 								'Ha ocurrido un error',
 								'Error al obtener plantas',
 								'error'
@@ -161,7 +161,7 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window, $ti
 						});
 				})
 				.error(function (data, status) {
-					swal(
+					Swal.fire(
 						'Ha ocurrido un error',
 						'Error al obtener centros de costo',
 						'error'
@@ -169,7 +169,7 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window, $ti
 				});
 		})
 		.error(function (data, status) {
-			swal(
+			Swal.fire(
 				'Ha ocurrido un error',
 				'Error al obtener proyectos',
 				'error'
@@ -258,7 +258,7 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window, $ti
 				$('#filtrosModal').modal('hide');
 			})
 			.error(function (data, status) {
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Error al obtener reporte',
 					'error'
@@ -417,7 +417,7 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window, $ti
 				$scope.ViewAction = 'pedidos';
 			})
 			.error(function (data, status) {
-				swal(
+				Swal.fire(
 					'Ha ocurrido un error',
 					'Error al obtener registros para legajo ' + user,
 					'error'

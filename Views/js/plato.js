@@ -1,11 +1,11 @@
 ﻿// =========================
 // SweetAlert2 alias seguro
-// (no reescribe Swal; solo crea "swal(...)" para compatibilidad)
+// (no reescribe Swal; solo crea "Swal.fire(...)" para compatibilidad)
 // =========================
 (function (w) {
     if (!w.Swal || typeof w.Swal.fire !== 'function') return;
-    if (!w.swal || typeof w.swal !== 'function') {
-        w.swal = function () {
+    if (!w.Swal.fire || typeof w.Swal.fire !== 'function') {
+        w.Swal.fire = function () {
             if (arguments.length === 1 && typeof arguments[0] === 'object') {
                 return w.Swal.fire(arguments[0]);
             }
