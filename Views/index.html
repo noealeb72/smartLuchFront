@@ -200,6 +200,26 @@
             border-color: #dc3545 !important;
             color: white !important;
         }
+        
+        /* Estilos para el select de calificación */
+        #pedidoCalificacion {
+            font-size: 18px !important;
+            border: 1px solid #ddd !important;
+            box-shadow: none !important;
+            background-color: #fff !important;
+        }
+        
+        #pedidoCalificacion option {
+            color: #ffc107 !important;
+            background-color: #fff !important;
+            border: none !important;
+            text-shadow: none !important;
+        }
+        
+        #pedidoCalificacion:focus {
+            border-color: #ffc107 !important;
+            box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important;
+        }
     </style>
 
 
@@ -344,28 +364,33 @@
                             </div>
                             <!--MODAL RECIBIR-->
                             <div class="modal fade" id="receiveModal" tabindex="-1" role="dialog" aria-hidden="true">
-                                <div class="modal-dialog" role="document">
+                                <div class="modal-dialog modal-lg" role="document" style="max-width: 600px;">
                                     <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="receiveModalLabel">Recepción de pedido</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
+                                        <div class="modal-header" style="background-color: #343a40; color: white;">
+                                            <h5 class="modal-title" id="receiveModalLabel" style="color: white;">Recepción del pedido</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
+                                                <span aria-hidden="true" style="color: white;">&times;</span>
                                             </button>
                                         </div>
                                         <div class="modal-body">
-                                            <select class="form-control" id="pedidoCalificacion" ng-model="pedidoCalificacion">
+                                            <div class="mb-3">
+                                                <small class="text-muted">
+                                                    <i class="fa fa-info-circle mr-1"></i>
+                                                    Tu calificación nos ayuda a mejorar la calidad del servicio y los platos que ofrecemos.
+                                                </small>
+                                            </div>
+                                            <select class="form-control" id="pedidoCalificacion" ng-model="pedidoCalificacion" style="font-size: 18px; border: 1px solid #ddd; box-shadow: none; background-color: #fff;">
                                                 <option value="" selected disabled>Calificá tu pedido!</option>
-                                                <option value="1">1</option>
-                                                <option value="2">2</option>
-                                                <option value="3">3</option>
-                                                <option value="4">4</option>
-                                                <option value="5">5</option>
+                                                <option value="1" style="color: #ffc107; background-color: #fff;">⭐</option>
+                                                <option value="2" style="color: #ffc107; background-color: #fff;">⭐⭐</option>
+                                                <option value="3" style="color: #ffc107; background-color: #fff;">⭐⭐⭐</option>
+                                                <option value="4" style="color: #ffc107; background-color: #fff;">⭐⭐⭐⭐</option>
+                                                <option value="5" style="color: #ffc107; background-color: #fff;">⭐⭐⭐⭐⭐</option>
                                             </select>
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="button" class="btn btn-primary bg-secondary" data-dismiss="modal">Volver</button>
-                                            <button ng-click="actualizaPedido('D')" type="button" class="btn btn-warning">Devolver pedido</button>
-                                            <button ng-click="actualizaPedido('R')" type="button" class="btn btn-primary">Recibí mi plato</button>
+                                            <button ng-click="actualizaPedido('D')" type="button" class="btn btn-danger">Devolver pedido</button>
+                                            <button ng-click="actualizaPedido('R')" type="button" class="btn btn-dark">Aceptar plato</button>
                                         </div>
                                     </div>
                                 </div>
@@ -434,7 +459,17 @@
                             <!--MODALES PEDIDO-->
                             <div class="col-12 col-md-8 pt-3 mx-auto">
                                 <h4 class="mt-4 text-danger">Tu próximo pedido reservado</h4>
-                                <div class="card mt-2 pl-2">
+                                
+                                <!-- Mensaje cuando no hay pedidos -->
+                                <div ng-show="pedidoVigente.length === 0" class="card mt-2 pl-2">
+                                    <div class="card-body text-center py-4">
+                                        <h5 class="text-muted">No hay pedidos vigentes</h5>
+                                        <p class="text-muted mb-0">No tienes pedidos pendientes de recibir o cancelar en este momento.</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Lista de pedidos -->
+                                <div class="card mt-2 pl-2" ng-show="pedidoVigente.length > 0">
                                     <div class="row no-gutters" ng-show="pedido.paraRetirar || pedido.paraCancelar" ng-repeat="pedido in pedidoVigente track by $index">
                                         <div class="col-md-4 mt-2 mb-2">
                                             <img ng-src="{{pedido.presentacion || defaultImage}}" class="card-img" alt="...">
@@ -447,7 +482,7 @@
                                             <div class="card-body row">
                                                 <div class="col-sm-6">
                                                     <h5 class="card-title">
-                                                        <span class="badge badge-dark mr-2">Nª {{pedido.user_npedido}}</span><br /><br />{{pedido.descripcion}}
+                                                        <span class="badge badge-dark mr-2">Nª {{pedido.user_npedido || (pedido.user_Pedido && pedido.user_Pedido.id) || 'N/A'}}</span><br /><br />{{pedido.descripcion}}
                                                     </h5>
                                                     <p class="card-text">{{pedido.ingredientes}}</p>
                                                     <p>
@@ -468,9 +503,6 @@
                                         <div class="col-12" ng-if="!$last">
                                             <hr style="margin: 20px 0; border-color: #dee2e6;">
                                         </div>
-                                    </div>
-                                    <div class="row no-gutters" ng-show="pedidosGastados == 0">
-                                        <span class="px-3 py-3">No hay pedidos vigentes</span>
                                     </div>
                                 </div>
                                 <div ng-if="turnoDisponible">

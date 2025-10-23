@@ -109,6 +109,107 @@
             font-size: 12px;
         }
 
+        /* Estilos para botones de acciones */
+        .action-btn {
+            background-color: #343a40 !important;
+            border-color: #343a40 !important;
+            color: white !important;
+            width: 32px !important;
+            height: 32px !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 4px !important;
+            border: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            text-align: center !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+        }
+
+        .action-btn:hover {
+            background-color: #343a40 !important;
+            border-color: #343a40 !important;
+            color: white !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+        }
+
+        .action-btn:focus,
+        .action-btn:active {
+            background-color: #343a40 !important;
+            border-color: #343a40 !important;
+            color: white !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+
+        .action-btn i {
+            color: white !important;
+            font-size: 12px !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: block !important;
+        }
+        
+        /* Estilos para los estados */
+        .badge-danger, .badge-success, .badge-warning, .badge-info {
+            width: 80px !important;
+            display: inline-block !important;
+            text-align: center !important;
+            padding: 6px 8px !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        
+        .badge-danger {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+        
+        .badge-success {
+            background-color: #28a745 !important;
+            color: white !important;
+        }
+        
+        .badge-warning {
+            background-color: #fd7e14 !important;
+            color: white !important;
+        }
+        
+        .badge-info {
+            background-color: #17a2b8 !important;
+            color: white !important;
+        }
+
+        /* Estilos para el modal de información del pedido */
+        #pedidoModal .modal-header {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 10px 15px !important;
+            background-color: #343a40 !important;
+            color: white !important;
+        }
+
+        #pedidoModal .modal-content {
+            width: 100% !important;
+            margin: 0 !important;
+        }
+
+        #pedidoModal .modal-dialog {
+            max-width: 30% !important;
+            width: 30% !important;
+        }
+
+        @media (min-width: 992px) {
+            #pedidoModal .modal-dialog {
+                max-width: 30% !important;
+                width: 30% !important;
+            }
+        }
+
         /* Estilos para el botón de limpiar búsqueda */
         .input-group-append .btn {
             border-left: 0 !important;
@@ -190,22 +291,38 @@
                                     <th class="col-1">Pedido</th>
                                     <th class="col-2">Usuario</th>
                                     <th class="col-2">Plato</th>
-                                    <th class="col-2">Monto</th>
-                                    <th class="col-2">Hora/Fecha</th>
+                                    <th class="col-2">Importe</th>
+                                    <th class="col-2">Fecha</th>
                                     <th class="col-1">Estado</th>
                                     <th class="text-center col-2">Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-repeat="item in (filteredData = (dataset | filter:searchText)) | startFrom:currentPage*pageSize | limitTo:pageSize">
+                                <tr ng-repeat="item in (dataset | filter:customSearch) | startFrom:currentPage*pageSize | limitTo:pageSize">
                                     <td class="col-1">{{item.id}}</td>
-                                    <td class="col-2">{{item.user_id}}</td>
+                                    <td class="col-2">{{item.user_name}} {{item.user_lastName}}</td>
                                     <td class="col-2">{{item.cod_plato}}</td>
-                                    <td class="col-2">{{item.monto}}</td>
+                                    <td class="col-2">${{item.monto | number:2}}</td>
                                     <td class="col-2">{{item.createdate | formatDate}}</td>
-                                    <td class="col-1">{{item.estado | formatEstados}}</td>
+                                    <td class="col-1">
+                                        <span ng-class="{
+                                            'badge badge-danger': item.estado === 'C',
+                                            'badge badge-success': item.estado === 'R',
+                                            'badge badge-warning': item.estado === 'P',
+                                            'badge badge-info': item.estado === 'E'
+                                        }">
+                                            {{item.estado | formatEstados}}
+                                        </span>
+                                    </td>
                                     <td class="text-center col-2">
-                                        <a ng-show="item.estado === 'P'" href="#" data-target="#pedidoModal" data-toggle="modal" ng-click="entregarPedido(item)"><i class="fa fa-file" title="Despachar plato"></i></a>
+                                        <button ng-show="item.estado === 'P'" 
+                                                class="btn btn-dark btn-sm action-btn" 
+                                                data-target="#pedidoModal" 
+                                                data-toggle="modal" 
+                                                ng-click="entregarPedido(item)"
+                                                title="Despachar plato">
+                                            <i class="fa fa-truck"></i>
+                                        </button>
                                     </td>
 
 
@@ -233,48 +350,56 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal fade container-fluid" id="pedidoModal" tabindex="-1" role="dialog" aria-hidden="true">
-                    <div class="modal-dialog container-fluid" role="document">
-                        <div class="modal-content container-fluid">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="pedidoModalLabel">Información del pedido</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
+                <div class="modal fade" id="pedidoModal" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document" style="max-width: 30%; width: 30%;">
+                        <div class="modal-content">
+                            <div class="modal-header" style="background-color: #343a40; color: white; padding: 10px 15px; width: 100%; margin: 0;">
+                                <h5 class="modal-title" id="pedidoModalLabel" style="color: white; font-size: 16px; margin: 0; font-weight: 500;">Información del pedido</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
+                                    <span aria-hidden="true" style="color: white;">&times;</span>
                                 </button>
                             </div>
-                            <div class="modal-body row container-fluid">
+                            <div class="modal-body" style="padding: 20px;">
                                 <div class="row">
-                                    <div class="col-8">
-                                        <div class="container row">
-                                            <span class="text-info pr-2">DNI</span><span>{{view_userid}}</span>
+                                    <div class="col-md-8">
+                                        <div class="mb-3 d-flex align-items-center">
+                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">DNI:</label>
+                                            <span style="color: #333; font-size: 16px;">{{view_userid}}</span>
                                         </div>
-                                        <div class="container row">
-                                            <span class="text-info pr-2">Nombre y Apellido</span><span>{{view_user_name}} {{view_user_lastName}}</span>
+                                        <div class="mb-3 d-flex align-items-center">
+                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">Nombre y Apellido:</label>
+                                            <span style="color: #333; font-size: 16px;">{{view_user_name}} {{view_user_lastName}}</span>
                                         </div>
-                                        <div class="container row">
-                                            <span class="text-info pr-2">Pedido</span><span>{{view_id}}</span>
+                                        <div class="mb-3 d-flex align-items-center">
+                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">Pedido:</label>
+                                            <span style="color: #333; font-size: 16px;">{{view_id}}</span>
                                         </div>
-                                        <div class="container row">
-                                            <span class="text-info pr-2">Codigo de plato</span><span>{{view_codplato}}</span>
+                                        <div class="mb-3 d-flex align-items-center">
+                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">Código de plato:</label>
+                                            <span style="color: #333; font-size: 16px;">{{view_codplato}}</span>
                                         </div>
-                                        <div class="container row">
-                                            <span class="text-info pr-2">Monto</span><span>${{view_monto}}</span>
+                                        <div class="mb-3 d-flex align-items-center">
+                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">Importe:</label>
+                                            <span style="color: #333; font-size: 16px;">${{view_monto | number:2}}</span>
                                         </div>
-                                        <div class="container row">
-                                            <span class="text-info pr-2">Comentario</span><span>{{view_comentario}}</span>
+                                        <div class="mb-3 d-flex align-items-center">
+                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">Comentario:</label>
+                                            <span style="color: #333; font-size: 16px;">{{view_comentario}}</span>
                                         </div>
                                     </div>
-                                    <!--<div class="col-4" ng-if="Pic">
-                                        <img class="round-img" style="width: 100%; border-radius: 50%;" ng-src="{{Pic}}" />
-                                    </div>-->
-                                    <div class="col-4 pl-0 mx-auto" ng-if="Pic">
-                                        <img class="round-img mr-4" style="width:100%" ng-src="{{Pic || defaultImage}}" />
+                                    <div class="col-md-4 d-flex justify-content-center align-items-center">
+                                        <img class="img-fluid" 
+                                             style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: none; box-shadow: none;" 
+                                             ng-src="{{Pic || 'img/logo-preview.png'}}" 
+                                             ng-error="this.src='img/logo-preview.png'"
+                                             onerror="this.src='img/logo-preview.png'" />
                                     </div>
                                 </div>
                             </div>
-                            <div class="modal-footer">
-                                <!--<button type="button" class="btn bg-secondary" data-dismiss="modal">Cerrar ventana</button>-->
-                                <button type="button" class="btn btn-primary" ng-click="confirmarEntrega()">Entregar pedido</button>
+                            <div class="modal-footer" style="border-top: 1px solid #dee2e6; padding: 15px 20px; background-color: #f8f9fa;">
+                                <button type="button" class="btn btn-dark" ng-click="confirmarEntrega()" style="background-color: #343a40; border-color: #343a40; color: white; padding: 10px 20px; font-weight: 500;">
+                                    <i class="fa fa-truck mr-2"></i>Entregar pedido
+                                </button>
                             </div>
                         </div>
                     </div>

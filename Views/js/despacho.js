@@ -12,7 +12,7 @@ app.filter('formatDate', function () {
 		var date = input.split('T');
 		var fecha = date[0].split('-');
 		var hora = date[1].split('.');
-		input = hora[0] + ' ' + fecha[2] + '/' + fecha[1] + '/' + fecha[0];
+		input = fecha[2] + '/' + fecha[1] + '/' + fecha[0] + ' ' + hora[0];
 		return input;
 	}
 });
@@ -135,6 +135,13 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 						}
 					});
 				}
+				
+				// Ordenar por fecha de creación (más nuevos primero)
+				$scope.dataset.sort(function(a, b) {
+					var dateA = new Date(a.createdate);
+					var dateB = new Date(b.createdate);
+					return dateB - dateA; // Orden descendente (más nuevos primero)
+				});
 			})
 			.error(function (data, status) {
 				Swal.fire(
@@ -227,6 +234,9 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
+				// Cerrar el modal
+				$('#pedidoModal').modal('hide');
+				
 				Swal.fire(
 					'Pedido entregado',
 					'',
@@ -252,8 +262,96 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 
 	$scope.currentPage = 0;
 	$scope.pageSize = 20;
+	$scope.searchText = '';
 
 	$scope.numberOfPages = function () {
 		return Math.ceil($scope.dataset.length / $scope.pageSize);
 	}
+
+	// Función de búsqueda personalizada que incluye estados formateados
+	$scope.customSearch = function(item) {
+		if (!$scope.searchText || $scope.searchText === '') {
+			return true;
+		}
+		
+		var searchTerm = $scope.searchText.toLowerCase();
+		var matches = false;
+		
+		// ID
+		if (item.id && item.id.toString().toLowerCase().indexOf(searchTerm) !== -1) {
+			matches = true;
+		}
+		
+		// User ID
+		if (item.user_id && item.user_id.toString().toLowerCase().indexOf(searchTerm) !== -1) {
+			matches = true;
+		}
+		
+		// Nombre y apellido
+		if (item.user_name && item.user_name.toLowerCase().indexOf(searchTerm) !== -1) {
+			matches = true;
+		}
+		if (item.user_lastName && item.user_lastName.toLowerCase().indexOf(searchTerm) !== -1) {
+			matches = true;
+		}
+		// Búsqueda combinada de nombre completo
+		if (item.user_name && item.user_lastName) {
+			var fullName = (item.user_name + ' ' + item.user_lastName).toLowerCase();
+			if (fullName.indexOf(searchTerm) !== -1) {
+				matches = true;
+			}
+		}
+		
+		// Código de plato
+		if (item.cod_plato && item.cod_plato.toLowerCase().indexOf(searchTerm) !== -1) {
+			matches = true;
+		}
+		
+		// Monto
+		if (item.monto && item.monto.toString().toLowerCase().indexOf(searchTerm) !== -1) {
+			matches = true;
+		}
+		
+		// Fecha formateada
+		if (item.createdate) {
+			var formattedDate = $scope.formatDate(item.createdate);
+			if (formattedDate && formattedDate.toLowerCase().indexOf(searchTerm) !== -1) {
+				matches = true;
+			}
+		}
+		
+		// Estado formateado
+		if (item.estado) {
+			var formattedEstado = $scope.formatEstados(item.estado);
+			if (formattedEstado && formattedEstado.toLowerCase().indexOf(searchTerm) !== -1) {
+				matches = true;
+			}
+		}
+		
+		return matches;
+	};
+
+	// Función auxiliar para formatear fecha
+	$scope.formatDate = function(dateString) {
+		if (!dateString) return '';
+		var date = new Date(dateString);
+		var day = date.getDate().toString().padStart(2, '0');
+		var month = (date.getMonth() + 1).toString().padStart(2, '0');
+		var year = date.getFullYear();
+		var hours = date.getHours().toString().padStart(2, '0');
+		var minutes = date.getMinutes().toString().padStart(2, '0');
+		var seconds = date.getSeconds().toString().padStart(2, '0');
+		return day + '/' + month + '/' + year + ' ' + hours + ':' + minutes + ':' + seconds;
+	};
+
+	// Función auxiliar para formatear estados
+	$scope.formatEstados = function(estado) {
+		switch (estado) {
+			case 'C': return 'Cancelado';
+			case 'P': return 'Pendiente';
+			case 'R': return 'Recibido';
+			case 'E': return 'Entregado';
+			default: return estado;
+		}
+	};
 });

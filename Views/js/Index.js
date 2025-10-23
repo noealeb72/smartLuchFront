@@ -326,6 +326,8 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 							plato.paraCancelar = true;
 							$scope.pedidoVigente.push(plato);
 						} else if (x.estado == 'E') {
+							plato.user_npedido = x.id;
+							plato.datoQR = 'N' + x.id;
 							plato.user_Pedido = x;
 							plato.paraRetirar = true;
 							plato.paraCancelar = false;
@@ -404,6 +406,8 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 						plato.paraCancelar = true;
 						$scope.pedidoVigente.push(plato);
 					} else if (x.estado === 'E') {
+						plato.user_npedido = x.id;
+						plato.datoQR = 'N' + x.id;
 						plato.user_Pedido = x;
 						plato.paraRetirar = true;
 						plato.paraCancelar = false;
