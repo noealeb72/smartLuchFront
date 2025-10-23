@@ -155,7 +155,7 @@
         }
         
         /* Estilos para los estados */
-        .badge-danger, .badge-success, .badge-warning, .badge-info {
+        .badge-danger, .badge-success, .badge-warning, .badge-info, .badge-secondary {
             width: 80px !important;
             display: inline-block !important;
             text-align: center !important;
@@ -181,6 +181,11 @@
         
         .badge-info {
             background-color: #17a2b8 !important;
+            color: white !important;
+        }
+        
+        .badge-secondary {
+            background-color: #6c757d !important;
             color: white !important;
         }
 
@@ -309,7 +314,8 @@
                                             'badge badge-danger': item.estado === 'C',
                                             'badge badge-success': item.estado === 'R',
                                             'badge badge-warning': item.estado === 'P',
-                                            'badge badge-info': item.estado === 'E'
+                                            'badge badge-info': item.estado === 'E',
+                                            'badge badge-secondary': item.estado === 'D'
                                         }">
                                             {{item.estado | formatEstados}}
                                         </span>

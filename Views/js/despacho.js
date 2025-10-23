@@ -351,6 +351,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 			case 'P': return 'Pendiente';
 			case 'R': return 'Recibido';
 			case 'E': return 'Entregado';
+			case 'D': return 'Devuelto';
 			default: return estado;
 		}
 	};
