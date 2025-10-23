@@ -201,7 +201,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                     title: 'Completar campos requeridos',
                     icon: 'warning',
                     showCancelButton: false,
-                    confirmButtonText: 'Entendido',
+                    confirmButtonText: 'Aceptar',
                     confirmButtonColor: '#495057',
                     buttonsStyling: true
                 });
@@ -322,7 +322,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                     title: 'Completar campos requeridos',
                     icon: 'warning',
                     showCancelButton: false,
-                    confirmButtonText: 'Entendido',
+                    confirmButtonText: 'Aceptar',
                     confirmButtonColor: '#495057',
                     buttonsStyling: true
                 });

@@ -441,6 +441,16 @@
                                                ng-model="plato.ingredientes" placeholder="Ingrese ingredientes" required>
                                         <span ng-show="(plato.ingredientes === '' || plato.ingredientes === null) && showValidationErrors" class="text-danger">Campo Ingredientes requerido</span>
                                     </div>
+
+                                    <div class="pb-3 form-group">
+                                        <label for="plannutricional"><span class="text-danger">*</span> Plan Nutricional</label>
+                                        <select class="col-8 form-control" id="plannutricional" name="plannutricional"
+                                                ng-model="plato.plannutricional" required>
+                                            <option value="" selected>-- Seleccionar --</option>
+                                            <option ng-repeat="x in planes" value="{{x.nombre}}">{{x.nombre}}</option>
+                                        </select>
+                                        <span ng-show="(plato.plannutricional === '' || plato.plannutricional === null) && showValidationErrors" class="text-danger">Campo Plan Nutricional requerido</span>
+                                    </div>
                                 </div>
 
                                 <div class="col-6" style="padding-left: 0px; padding-right:0px !important">
@@ -456,7 +466,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="pb-3 form-group">
+                                    <div class="pb-3 form-group" style="margin-top: 40px !important;">
                                         <label for="costo">Costo ($)</label>
                                         <input class="col-8 form-control" type="number" id="costo" name="costo"
                                                ng-model="plato.costo" placeholder="0.00" min="0" step="0.01"
@@ -465,18 +475,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Fila para Plan Nutricional -->
-                                <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
-                                    <div class="pb-3 form-group">
-                                        <label for="plannutricional"><span class="text-danger">*</span> Plan Nutricional</label>
-                                        <select class="col-8 form-control" id="plannutricional" name="plannutricional"
-                                                ng-model="plato.plannutricional" required>
-                                            <option value="" selected>-- Seleccionar --</option>
-                                            <option ng-repeat="x in planes" value="{{x.nombre}}">{{x.nombre}}</option>
-                                        </select>
-                                        <span ng-show="(plato.plannutricional === '' || plato.plannutricional === null) && showValidationErrors" class="text-danger">Campo Plan Nutricional requerido</span>
-                                    </div>
-                                </div>
                                 <div class="col-6" style="padding-left: 0px; padding-right:0px !important">
                                     <!-- Espacio vacío para mantener alineación -->
                                 </div>

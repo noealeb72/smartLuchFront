@@ -126,14 +126,14 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
             if (!$scope.plato.ingredientes || $scope.plato.ingredientes.trim() === '') camposFaltantes.push('Ingredientes');
             if (!$scope.plato.plannutricional || $scope.plato.plannutricional.trim() === '') camposFaltantes.push('Plan Nutricional');
             
-            var mensaje = 'Los siguientes campos son obligatorios:\n\n• ' + camposFaltantes.join('\n• ');
+            var mensaje = '';
             
             Swal.fire({
                 title: 'Completar campos requeridos',
                 text: mensaje,
                 icon: 'warning',
                 showCancelButton: false,
-                confirmButtonText: 'Entendido',
+                confirmButtonText: 'Aceptar',
                 confirmButtonColor: '#495057',
                 buttonsStyling: true
             });
@@ -145,7 +145,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
             ingredientes: $scope.plato.ingredientes,
             plannutricional: $scope.plato.plannutricional,
             descripcion: $scope.plato.descripcion,
-            costo: $scope.plato.costo || 0,
+            costo: $scope.plato.costo || 0.00,
             presentacion: $scope.view_previewImage || ''
         };
 
@@ -214,14 +214,14 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
             if (!$scope.plato.ingredientes || $scope.plato.ingredientes.trim() === '') camposFaltantes.push('Ingredientes');
             if (!$scope.plato.plannutricional || $scope.plato.plannutricional.trim() === '') camposFaltantes.push('Plan Nutricional');
             
-            var mensaje = 'Los siguientes campos son obligatorios:\n\n• ' + camposFaltantes.join('\n• ');
+            var mensaje = '';
             
             Swal.fire({
                 title: 'Completar campos requeridos',
                 text: mensaje,
                 icon: 'warning',
                 showCancelButton: false,
-                confirmButtonText: 'Entendido',
+                confirmButtonText: 'Aceptar',
                 confirmButtonColor: '#495057',
                 buttonsStyling: true
             });
@@ -234,7 +234,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
             ingredientes: $scope.plato.ingredientes,
             plannutricional: $scope.plato.plannutricional,
             descripcion: $scope.plato.descripcion,
-            costo: $scope.plato.costo || 0,
+            costo: $scope.plato.costo || 0.00,
             presentacion: $scope.view_previewImage || ''
         };
 
@@ -279,7 +279,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
         $scope.showValidationErrors = false;
         $scope.plato = {
             codigo: '', descripcion: '', ingredientes: '',
-            plannutricional: '', costo: 0, presentacion: ''
+            plannutricional: '', costo: 0.00, presentacion: ''
         };
         $scope.view_id = -1;
         $scope.view_previewImage = '';
@@ -300,7 +300,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
         if ($event && $event.stopPropagation) $event.stopPropagation();
 
         Swal.fire({
-            title: 'Eliminar registro',
+            title: 'Baja registro',
             text: 'Desea eliminar plato?',
             icon: 'warning',
             showCancelButton: true,
