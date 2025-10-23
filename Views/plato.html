@@ -270,6 +270,30 @@
         .breadcrumb-container {
             margin-top: 0px;
         }
+        
+        /* Estilos para que el fondo blanco llegue hasta el final */
+        html, body {
+            height: 100%;
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container-fluid {
+            flex: 1;
+        }
+        
+        .solid-background {
+            min-height: calc(100vh - 60px);
+            background-color: #ffffff;
+        }
+        
+        .smart-bg {
+            margin-top: auto;
+        }
     </style>
 </head>
 
@@ -421,7 +445,7 @@
                                                ng-minlength="1" ng-maxlength="20"
                                                class="col-8 form-control" type="text" id="codigo" name="codigo"
                                                ng-model="plato.codigo" placeholder="Ingrese código" required>
-                                        <span ng-show="(plato.codigo === '' || plato.codigo === null) && showValidationErrors" class="text-danger">Campo Código requerido</span>
+                                        <span ng-show="(!plato.codigo || plato.codigo.trim() === '') && showValidationErrors" class="text-danger">Campo Código requerido</span>
                                     </div>
 
                                     <div class="pb-3 form-group">
@@ -430,7 +454,7 @@
                                                ng-minlength="2" ng-maxlength="140"
                                                class="col-8 form-control" type="text" id="descripcion" name="descripcion"
                                                ng-model="plato.descripcion" placeholder="Ingrese descripción" required>
-                                        <span ng-show="(plato.descripcion === '' || plato.descripcion === null) && showValidationErrors" class="text-danger">Campo Descripción requerido</span>
+                                        <span ng-show="(!plato.descripcion || plato.descripcion.trim() === '') && showValidationErrors" class="text-danger">Campo Descripción requerido</span>
                                     </div>
 
                                     <div class="pb-3 form-group">
@@ -439,17 +463,17 @@
                                                ng-minlength="2" ng-maxlength="140"
                                                class="col-8 form-control" type="text" id="ingredientes" name="ingredientes"
                                                ng-model="plato.ingredientes" placeholder="Ingrese ingredientes" required>
-                                        <span ng-show="(plato.ingredientes === '' || plato.ingredientes === null) && showValidationErrors" class="text-danger">Campo Ingredientes requerido</span>
+                                        <span ng-show="(!plato.ingredientes || plato.ingredientes.trim() === '') && showValidationErrors" class="text-danger">Campo Ingredientes requerido</span>
                                     </div>
 
                                     <div class="pb-3 form-group">
                                         <label for="plannutricional"><span class="text-danger">*</span> Plan Nutricional</label>
                                         <select class="col-8 form-control" id="plannutricional" name="plannutricional"
                                                 ng-model="plato.plannutricional" required>
-                                            <option value="" selected>-- Seleccionar --</option>
+                                            <option value="" ng-if="ViewAction === 'Nuevo Plato'">-- Seleccionar --</option>
                                             <option ng-repeat="x in planes" value="{{x.nombre}}">{{x.nombre}}</option>
                                         </select>
-                                        <span ng-show="(plato.plannutricional === '' || plato.plannutricional === null) && showValidationErrors" class="text-danger">Campo Plan Nutricional requerido</span>
+                                        <span ng-show="(!plato.plannutricional || plato.plannutricional.trim() === '') && showValidationErrors" class="text-danger">Campo Plan Nutricional requerido</span>
                                     </div>
                                 </div>
 

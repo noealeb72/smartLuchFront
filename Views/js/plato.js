@@ -41,6 +41,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     $scope.dataset = [];
     $scope.filteredData = null;
     $scope.planes = [];
+    $scope.showValidationErrors = false;
 
     // filtros
     $scope.filtroCostoMin = null;
@@ -108,6 +109,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     // --------- CRUD ---------
     $scope.ModelCreate = function (isValid) {
         $scope.showValidationErrors = true;
+        console.log('ModelCreate - showValidationErrors:', $scope.showValidationErrors, 'isValid:', isValid);
         
         if (!isValid) {
             // Marcar todos los campos como tocados
@@ -119,7 +121,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                 });
             }
             
-            // Recopilar campos faltantes
+            // Recopilar campos faltantes para el popup
             var camposFaltantes = [];
             if (!$scope.plato.codigo || $scope.plato.codigo.trim() === '') camposFaltantes.push('Código');
             if (!$scope.plato.descripcion || $scope.plato.descripcion.trim() === '') camposFaltantes.push('Descripción');
@@ -196,6 +198,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
 
     $scope.ModelUpdate = function (isValid, view_id) {
         $scope.showValidationErrors = true;
+        console.log('ModelUpdate - showValidationErrors:', $scope.showValidationErrors, 'isValid:', isValid);
         
         if (!isValid) {
             // Marcar todos los campos como tocados
@@ -207,7 +210,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                 });
             }
             
-            // Recopilar campos faltantes
+            // Recopilar campos faltantes para el popup
             var camposFaltantes = [];
             if (!$scope.plato.codigo || $scope.plato.codigo.trim() === '') camposFaltantes.push('Código');
             if (!$scope.plato.descripcion || $scope.plato.descripcion.trim() === '') camposFaltantes.push('Descripción');
@@ -276,7 +279,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     $scope.ViewCreate = function () {
         $scope.ViewAction = 'Nuevo Plato';
         $scope.titulo = 'Agregar nuevo plato';
-        $scope.showValidationErrors = false;
+        $scope.showValidationErrors = true;
         $scope.plato = {
             codigo: '', descripcion: '', ingredientes: '',
             plannutricional: '', costo: 0.00, presentacion: ''
@@ -289,7 +292,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     $scope.ViewUpdate = function (view_id) {
         $scope.ViewAction = 'Editar Plato';
         $scope.titulo = 'Modificar plato';
-        $scope.showValidationErrors = false;
+        $scope.showValidationErrors = true;
         $scope.view_id = view_id;
         $scope.ModelRead(view_id);
         $scope.ModelReadPlanes();
@@ -319,7 +322,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     $scope.ViewCancel = function () {
         $scope.ViewAction = 'Platos';
         $scope.titulo = 'Gestión de Platos';
-        $scope.showValidationErrors = false;
+        $scope.showValidationErrors = true;
     };
 
     // --------- Imagen (preview/base64) ---------
