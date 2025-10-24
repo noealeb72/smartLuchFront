@@ -62,8 +62,9 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
     $scope.showError = function (title, text) { $scope.showPopup(title, text || '', 'error'); };
 
     // CREATE
-    $scope.ModelCreate = function (isValid) {
-        console.log('=== VALIDACIÓN CREATE PLANTA === isValid:', isValid);
+     $scope.ModelCreate = function (isValid) {
+         console.log('=== VALIDACIÓN CREATE PLANTA === isValid:', isValid);
+         console.log('=== FUNCIÓN MODELCREATE EJECUTADA ===');
 
         // Tomo valores desde ng-model y respaldo desde el DOM
         var nombre = ($scope.view_nombre || '').trim();
@@ -78,30 +79,18 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
         if (!nombre) errores.push('Nombre');
         if (!descripcion) errores.push('Descripción');
 
-        if (!isValid || errores.length > 0) {
-            $scope.showValidationErrors = true;
-
-            if ($scope.plantaForm) {
-                if ($scope.plantaForm.view_nombre) { $scope.plantaForm.view_nombre.$setTouched(); }
-                if ($scope.plantaForm.view_descripcion) { $scope.plantaForm.view_descripcion.$setTouched(); }
-            }
-
-            setTimeout(function () {
-                if (!nombre && nombreField) nombreField.classList.add('show-validation-error');
-                if (!descripcion && descripcionField) descripcionField.classList.add('show-validation-error');
-            }, 0);
-
-            Swal.fire({
-                title: 'Completar campos requeridos',
-                text: errores.length ? 'Faltan: ' + errores.join(', ') : '',
-                icon: 'warning',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#6c757d',
-                allowOutsideClick: false,
-                allowEscapeKey: false
-            });
-            return;
-        }
+         if (!isValid || errores.length > 0) {
+             Swal.fire({
+                 title: 'Completar campos requeridos',
+                 //text: errores.length ? '' + errores.join(', ') : '',
+                 icon: 'warning',
+                 confirmButtonText: 'Aceptar',
+                 confirmButtonColor: '#6c757d',
+                 allowOutsideClick: false,
+                 allowEscapeKey: false
+             });
+             return;
+         }
 
         // Payload usando valores validados
         var jsonForm = { nombre: nombre, descripcion: descripcion };
@@ -171,30 +160,26 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
         if (!nombre) errores.push('Nombre');
         if (!descripcion) errores.push('Descripción');
 
-        if (!isValid || errores.length > 0) {
-            $scope.showValidationErrors = true;
-
-            if ($scope.plantaForm) {
-                if ($scope.plantaForm.view_nombre) { $scope.plantaForm.view_nombre.$setTouched(); }
-                if ($scope.plantaForm.view_descripcion) { $scope.plantaForm.view_descripcion.$setTouched(); }
-            }
-
-            setTimeout(function () {
-                if (!nombre && nombreField) nombreField.classList.add('show-validation-error');
-                if (!descripcion && descripcionField) descripcionField.classList.add('show-validation-error');
-            }, 0);
-
-            Swal.fire({
-                title: 'Completar campos requeridos',
-                text: errores.length ? 'Faltan: ' + errores.join(', ') : '',
-                icon: 'warning',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#6c757d',
-                allowOutsideClick: false,
-                allowEscapeKey: false
-            });
-            return;
-        }
+         if (!isValid || errores.length > 0) {
+             console.log('=== DEBUG VALIDACIÓN ===');
+             console.log('ViewAction:', $scope.ViewAction);
+             console.log('showValidationErrors antes:', $scope.showValidationErrors);
+             
+             // Mostrar leyendas rojas en ambos modos
+             $scope.showValidationErrors = true;
+             console.log('showValidationErrors después:', $scope.showValidationErrors);
+             
+             Swal.fire({
+                 title: 'Completar campos requeridos',
+                 //text: errores.length ? 'Faltan: ' + errores.join(', ') : '',
+                 icon: 'warning',
+                 confirmButtonText: 'Aceptar',
+                 confirmButtonColor: '#6c757d',
+                 allowOutsideClick: false,
+                 allowEscapeKey: false
+             });
+             return;
+         }
 
         // Payload usando valores validados
         var jsonForm = { id: view_id, nombre: nombre, descripcion: descripcion };
@@ -293,6 +278,7 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
     };
 
     // Init
+    $scope.showValidationErrors = false;
     $scope.ModelReadAll();
     $scope.data = [];
     for (var i = 0; i < 45; i++) $scope.data.push("Item " + i);

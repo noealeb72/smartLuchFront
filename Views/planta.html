@@ -76,10 +76,12 @@
             gap: 8px !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
             transition: all .2s ease !important;
+            cursor: pointer !important;
         }
 
             .btn-primary:hover {
                 box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+                cursor: pointer !important;
             }
 
         .btn-cancelar {
@@ -104,16 +106,8 @@
             color: #fff !important;
         }
 
-        /* Errores de validación visibles cuando se tocan campos */
-        .form-control.ng-invalid.ng-touched {
-            border-color: #dc3545 !important;
-            box-shadow: 0 0 0 .2rem rgba(220,53,69,.25) !important;
-        }
-        /* Forzar borde rojo manual (cuando mostramos popup) */
-        .form-control.show-validation-error {
-            border-color: #dc3545 !important;
-            box-shadow: 0 0 0 .2rem rgba(220,53,69,.25) !important;
-        }
+        /* Bordes rojos removidos - solo leyendas rojas */
+        /* Borde rojo removido - solo leyendas rojas */
 
         /* Paginación */
         .pagination-container {
