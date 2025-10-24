@@ -355,55 +355,46 @@
             max-height: 100vh !important;
         }
         
-        /* Estilos para paginación con doble flecha */
+        /* Estilos para paginación - Estilo de imagen */
         .pagination-container {
             display: flex;
             justify-content: center;
+            align-items: center;
             margin-top: 20px;
-        }
-        
-        .pagination-buttons {
-            display: flex;
             gap: 10px;
         }
         
         .pagination-btn {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 8px 12px;
-            color: #6c757d;
+            background: #6c757d;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            color: white;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 40px;
-            height: 40px;
+            font-weight: bold;
+            font-size: 14px;
+            min-width: 80px;
+            height: 36px;
             transition: all 0.2s ease;
         }
         
         .pagination-btn:hover:not(:disabled) {
-            background: #e9ecef;
-            border-color: #adb5bd;
+            background: #5a6268;
             transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         
         .pagination-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.6;
             cursor: not-allowed;
+            background: #6c757d;
         }
         
-        .pagination-btn i {
-            font-size: 16px;
-        }
-        
-        .pagination-btn:first-child i {
-            color: #dc3545;
-        }
-        
-        .pagination-btn:last-child i {
-            color: #007bff;
+        .pagination-indicator {
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: normal;
+            margin: 0 10px;
         }
     </style>
     
@@ -504,23 +495,24 @@
                                 </tbody>
                             </table>
                             <!-- Paginación con estilo de imagen -->
-                            <div class="pagination-container" ng-if="numberOfPages() > 1" style="display: flex; justify-content: center; margin-top: 20px;">
-                                <div class="pagination-buttons" style="display: flex; gap: 10px;">
-                                    <button class="pagination-btn" 
-                                            ng-disabled="currentPage == 0" 
-                                            ng-click="currentPage=currentPage-1"
-                                            style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 8px 12px; color: #6c757d; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 40px; height: 40px;"
-                                            ng-style="{'opacity': currentPage == 0 ? '0.5' : '1', 'cursor': currentPage == 0 ? 'not-allowed' : 'pointer'}">
-                                        <i class="fas fa-angle-double-left" style="font-size: 16px; color: #dc3545;"></i>
-                                    </button>
-                                    <button class="pagination-btn" 
-                                            ng-disabled="currentPage+1 == numberOfPages()" 
-                                            ng-click="currentPage=currentPage+1"
-                                            style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 8px 12px; color: #6c757d; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 40px; height: 40px;"
-                                            ng-style="{'opacity': currentPage+1 == numberOfPages() ? '0.5' : '1', 'cursor': currentPage+1 == numberOfPages() ? 'not-allowed' : 'pointer'}">
-                                        <i class="fas fa-angle-double-right" style="font-size: 16px; color: #007bff;"></i>
-                                    </button>
-                                </div>
+                            <div class="pagination-container" ng-if="numberOfPages() > 1" style="display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 10px;">
+                                <button class="pagination-btn" 
+                                        ng-disabled="currentPage == 0" 
+                                        ng-click="currentPage=currentPage-1"
+                                        style="background: #6c757d; border: none; border-radius: 4px; padding: 8px 16px; color: white; cursor: pointer; font-weight: bold; font-size: 14px; min-width: 80px; height: 36px;"
+                                        ng-style="{'opacity': currentPage == 0 ? '0.6' : '1', 'cursor': currentPage == 0 ? 'not-allowed' : 'pointer', 'background': currentPage == 0 ? '#6c757d' : '#6c757d'}">
+                                    Anterior
+                                </button>
+                                <span class="pagination-indicator" style="color: #6c757d; font-size: 14px; font-weight: normal; margin: 0 10px;">
+                                    {{currentPage+1}}/{{numberOfPages()}}
+                                </span>
+                                <button class="pagination-btn" 
+                                        ng-disabled="currentPage+1 == numberOfPages()" 
+                                        ng-click="currentPage=currentPage+1"
+                                        style="background: #6c757d; border: none; border-radius: 4px; padding: 8px 16px; color: white; cursor: pointer; font-weight: bold; font-size: 14px; min-width: 80px; height: 36px;"
+                                        ng-style="{'opacity': currentPage+1 == numberOfPages() ? '0.6' : '1', 'cursor': currentPage+1 == numberOfPages() ? 'not-allowed' : 'pointer', 'background': currentPage+1 == numberOfPages() ? '#6c757d' : '#6c757d'}">
+                                    Siguiente
+                                </button>
                             </div>
 
                         </div>
