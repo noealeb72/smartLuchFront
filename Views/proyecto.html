@@ -409,9 +409,10 @@
                                 <div class="dishes-text col-12">
                                     <form class="form-group" name="proyectoForm" ng-submit="ModelUpdate(proyectoForm,view_id)" novalidate>
                                         <div class="pb-3 form-group">
-                                            <label for="view_nombre">Nombre</label>
+                                            <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
                                             <input ng-pattern="/^[a-zA-Zñ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                             <span ng-show="proyectoForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="proyectoForm.view_nombre.$error.required && proyectoForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
+                                            <span ng-show="showValidationErrors && (!view_nombre || view_nombre.trim() === '')" class="text-danger">Nombre requerido.</span>
                                         </div>
                                         <div class="pb-3 form-group">
                                             <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
@@ -431,7 +432,7 @@
                                                 <option ng-repeat="x in plantas" value="{{x.nombre}}">{{x.nombre}}</option>
                                             </select>
                                         </div>
-                                        <button type="submit" class="btn-primary mt-3" ng-disabled="proyectoForm.$invalid">
+                                        <button type="submit" class="btn-primary mt-3">
                                             <i class="fa fa-save mr-1"></i>Guardar
                                         </button>
                                         <button type="button" class="btn-cancelar mt-3" ng-click="ViewCancel()">

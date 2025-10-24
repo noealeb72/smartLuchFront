@@ -206,7 +206,7 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 	$scope.ModelRead = function (view_id) {
 		$http.get($scope.base + 'get/' + view_id)
 			.then(function (response) {
-				$scope.ModelReadCentrodecostos();
+				$scope.ModelReadCentros();
 				$scope.ModelReadPlantas();
 				$scope.view_nombre = response.data[0].nombre;
 				$scope.view_descripcion = response.data[0].descripcion;
@@ -251,47 +251,62 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 		console.log('=== ModelUpdate DEBUG ===');
 		console.log('ModelUpdate called with form:', form, 'view_id:', view_id);
 		
-		// Validar si el formulario es válido
-		if (!form.$valid) {
-			alert('Campos requeridos: Por favor complete todos los campos obligatorios');
-			return;
-		}
-		
-		// Leer valores del modelo
-		var nombre = $scope.view_nombre;
-		var descripcion = $scope.view_descripcion;
-		var planta = $scope.view_planta;
-		var centrodecosto = $scope.view_centrodecosto;
-		
-		console.log('Form data:', {
+		// Obtener valores directamente del DOM para asegurar que tenemos los valores actuales
+		var nombre = document.getElementById('view_nombre')?.value || $scope.view_nombre || '';
+		var descripcion = document.getElementById('view_descripcion')?.value || $scope.view_descripcion || '';
+		var planta = document.getElementById('view_planta')?.value || $scope.view_planta || '';
+		var centrodecosto = document.getElementById('view_centrodecosto')?.value || $scope.view_centrodecosto || '';
+
+		// Limpiar espacios en blanco
+		nombre = nombre.trim();
+		descripcion = descripcion.trim();
+		planta = planta.trim();
+		centrodecosto = centrodecosto.trim();
+
+		console.log('Valores obtenidos:', {
 			nombre: nombre,
 			descripcion: descripcion,
 			planta: planta,
 			centrodecosto: centrodecosto
 		});
 
-		// Validación de campos vacíos
-		if (!nombre || nombre.trim() === '') {
-			alert('El campo Nombre es obligatorio');
+		console.log('Valores del scope:', {
+			view_nombre: $scope.view_nombre,
+			view_descripcion: $scope.view_descripcion,
+			view_planta: $scope.view_planta,
+			view_centrodecosto: $scope.view_centrodecosto
+		});
+
+		console.log('Valores del DOM:', {
+			nombre_dom: document.getElementById('view_nombre')?.value,
+			descripcion_dom: document.getElementById('view_descripcion')?.value,
+			planta_dom: document.getElementById('view_planta')?.value,
+			centrodecosto_dom: document.getElementById('view_centrodecosto')?.value
+		});
+
+		// Solo validar campos obligatorios: Nombre y Descripción
+		$scope.showValidationErrors = false;
+
+		if (!nombre || !descripcion) {
+			$scope.showValidationErrors = true;
+
+			Swal.fire({
+				title: 'Campos requeridos',
+				text: 'Completar campos requeridos',
+				icon: 'warning',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
 			return;
 		}
 
-		if (!descripcion || descripcion.trim() === '') {
-			alert('El campo Descripción es obligatorio');
-			return;
-		}
-
-		if (!planta || planta.trim() === '') {
-			alert('El campo Planta es obligatorio');
-			return;
-		}
-
-		if (!centrodecosto || centrodecosto.trim() === '') {
-			alert('El campo Centro de costo es obligatorio');
-			return;
-		}
-		
-		var jsonForm = { id: view_id, nombre: nombre, descripcion: descripcion, planta: planta, centrodecosto: centrodecosto };
+		var jsonForm = { 
+			id: view_id, 
+			nombre: nombre, 
+			descripcion: descripcion, 
+			planta: planta, 
+			centrodecosto: centrodecosto 
+		};
 
 		console.log('Enviando datos al servidor:', jsonForm);
 		
@@ -425,6 +440,7 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 	$scope.ViewUpdate = function (view_id) {
 		$scope.ViewAction = 'Editar Proyecto';
 		$scope.view_id = view_id;
+		$scope.showValidationErrors = false;
 		$scope.ModelRead(view_id);
 		$scope.ModelReadPlantas();
 		$scope.ModelReadCentros();
