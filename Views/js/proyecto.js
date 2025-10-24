@@ -31,6 +31,7 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 	$scope.basePlanta = 'http://localhost:8000/api/planta/';
 	$scope.plantas = '';
 	$scope.searchText = ''; // Modelo de búsqueda vacío al inicio
+	$scope.showValidationErrors = false; // Variable para mostrar leyendas de validación
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
 	$scope.user_Nombre = localStorage.getItem('nombre');
@@ -43,15 +44,12 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 	$scope.user_Bonificacion = localStorage.getItem('bonificacion');
 	$scope.user_DNI = localStorage.getItem('dni');
 
-	$scope.ModelCreate = function (form) {
+	/*$scope.ModelCreate = function (form) {
 		console.log('=== ModelCreate DEBUG ===');
 		console.log('ModelCreate called with form:', form);
 		
-		// Validar si el formulario es válido
-		if (!form.$valid) {
-			alert('Campos requeridos: Por favor complete todos los campos obligatorios');
-			return;
-		}
+		// Inicializar variable de validación
+		$scope.showValidationErrors = false;
 		
 		// Leer valores del modelo
 		var nombre = $scope.view_nombre;
@@ -67,23 +65,29 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 		});
 
 		// Validación de campos vacíos
+		var camposFaltantes = [];
+		
 		if (!nombre || nombre.trim() === '') {
-			alert('El campo Nombre es obligatorio');
-			return;
+			camposFaltantes.push('Nombre');
 		}
 
 		if (!descripcion || descripcion.trim() === '') {
-			alert('El campo Descripción es obligatorio');
-			return;
+			camposFaltantes.push('Descripción');
 		}
 
-		if (!planta || planta.trim() === '') {
-			alert('El campo Planta es obligatorio');
-			return;
-		}
-
-		if (!centrodecosto || centrodecosto.trim() === '') {
-			alert('El campo Centro de costo es obligatorio');
+		// Si hay campos faltantes, mostrar popup y leyendas rojas
+		if (camposFaltantes.length > 0) {
+			$scope.showValidationErrors = true;
+			
+			// Mostrar popup con SweetAlert2
+			Swal.fire({
+				title: 'Campos requeridos',
+				text: 'Completar campos requeridos',
+				icon: 'warning',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
+			
 			return;
 		}
 
@@ -102,14 +106,102 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 		}).then(function (success) {
 			console.log('HTTP Success response:', success);
 			if (success) {
-				alert('Éxito: Proyecto creado correctamente');
+				Swal.fire({
+					title: 'Éxito',
+					text: 'Proyecto creado correctamente',
+					icon: 'success',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
 			console.log('HTTP Error response:', error);
-			alert('Error: ' + (error.data || error.statusText || 'Error desconocido'));
+			Swal.fire({
+				title: 'Error',
+				text: error.data || error.statusText || 'Error desconocido',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
+		});
+	};*/
+	$scope.ModelCreate = function () {
+		console.log('=== ModelCreate DEBUG ===');
+
+		// Obtener valores del scope y como fallback del DOM
+		var nombre = $scope.view_nombre || document.getElementById('view_nombre')?.value || '';
+		var descripcion = $scope.view_descripcion || document.getElementById('view_descripcion')?.value || '';
+		var planta = $scope.view_planta || document.getElementById('view_planta')?.value || '';
+		var centrodecosto = $scope.view_centrodecosto || document.getElementById('view_centrodecosto')?.value || '';
+
+		// Limpiar espacios en blanco
+		nombre = nombre.trim();
+		descripcion = descripcion.trim();
+		planta = planta.trim();
+		centrodecosto = centrodecosto.trim();
+
+		console.log('Valores obtenidos:', {
+			nombre: nombre,
+			descripcion: descripcion,
+			planta: planta,
+			centrodecosto: centrodecosto
+		});
+
+		// Solo validar campos obligatorios: Nombre y Descripción
+		$scope.showValidationErrors = false;
+
+		if (!nombre || !descripcion) {
+			$scope.showValidationErrors = true;
+
+			Swal.fire({
+				title: 'Campos requeridos',
+				text: 'Completar campos requeridos',
+				icon: 'warning',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
+			return;
+		}
+
+		var jsonForm = {
+			nombre: nombre,
+			descripcion: descripcion,
+			planta: planta,
+			centrodecosto: centrodecosto
+		};
+
+		console.log('Enviando datos al servidor:', jsonForm);
+
+		$http({
+			method: 'post',
+			headers: {
+				"Content-Type": "application/json; charset=utf-8",
+				"Authorization": ""
+			},
+			url: $scope.base + 'Create',
+			data: jsonForm
+		}).then(function (success) {
+				Swal.fire({
+					title: 'Éxito',
+					text: 'Proyecto creado correctamente',
+					icon: 'success',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
+			$scope.ModelReadAll();
+		}, function (error) {
+			Swal.fire({
+				title: 'Error',
+				text: error.data || error.statusText || 'Error desconocido',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
 		});
 	};
+
+
 
 	$scope.ModelRead = function (view_id) {
 		$http.get($scope.base + 'get/' + view_id)
@@ -121,7 +213,13 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 				$scope.view_planta = response.data[0].planta;
 				$scope.view_centrodecosto = response.data[0].centrodecosto;
 			}, function (error) {
-				alert('Error: No se pudo cargar el proyecto');
+				Swal.fire({
+					title: 'Error',
+					text: 'No se pudo cargar el proyecto',
+					icon: 'error',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
 			});
 	};
 
@@ -139,7 +237,13 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 			.then(function (response) {
 				$scope.dataset = response.data;
 			}, function (error) {
-				alert('Error: No se pudo cargar la lista de proyectos');
+				Swal.fire({
+					title: 'Error',
+					text: 'No se pudo cargar la lista de proyectos',
+					icon: 'error',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
 			});
 	};
 
@@ -202,12 +306,24 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 		}).then(function (success) {
 			console.log('HTTP Success response:', success);
 			if (success) {
-				alert('Éxito: Proyecto actualizado correctamente');
+				Swal.fire({
+					title: 'Éxito',
+					text: 'Proyecto actualizado correctamente',
+					icon: 'success',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
 			console.log('HTTP Error response:', error);
-			alert('Error: ' + (error.data || error.statusText || 'Error desconocido'));
+			Swal.fire({
+				title: 'Error',
+				text: error.data || error.statusText || 'Error desconocido',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
 		});
 	};
 
@@ -224,11 +340,23 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				alert('Éxito: Proyecto eliminado correctamente');
+				Swal.fire({
+					title: 'Éxito',
+					text: 'Proyecto eliminado correctamente',
+					icon: 'success',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
-			alert('Error: No se pudo eliminar el proyecto');
+			Swal.fire({
+				title: 'Error',
+				text: 'No se pudo eliminar el proyecto',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
 		});
 	}
 
@@ -247,7 +375,13 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 					$scope.$apply();
 				}
 			}, function (error) {
-				alert('Error: No se pudo cargar la lista de centros de costo');
+				Swal.fire({
+					title: 'Error',
+					text: 'No se pudo cargar la lista de centros de costo',
+					icon: 'error',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
 			});
 	};
 
@@ -266,7 +400,13 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 					$scope.$apply();
 				}
 			}, function (error) {
-				alert('Error: No se pudo cargar la lista de plantas');
+				Swal.fire({
+					title: 'Error',
+					text: 'No se pudo cargar la lista de plantas',
+					icon: 'error',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
 			});
 	};
 
@@ -277,6 +417,7 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 		$scope.view_descripcion = '';
 		$scope.view_planta = '';
 		$scope.view_centrodecosto = '';
+		$scope.showValidationErrors = false;
 		$scope.ModelReadPlantas();
 		$scope.ModelReadCentros();
 	};
@@ -297,6 +438,7 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 
 	$scope.ViewCancel = function () {
 		$scope.ViewAction = 'Lista de Items';
+		$scope.showValidationErrors = false;
 	};
 
 	$scope.ModelReadAll();
