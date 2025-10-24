@@ -447,9 +447,20 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ViewDelete = function (view_id) {
-		if (confirm('¿Desea eliminar el proyecto?')) {
-			$scope.ModelDelete(view_id);
-		}
+		Swal.fire({
+			title: 'Eliminar registro',
+			text: 'Desea eliminar proyecto?',
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonText: 'Aceptar',
+			cancelButtonText: 'Cancel',
+			confirmButtonColor: '#5c636a',
+			cancelButtonColor: '#dc3545'
+		}).then((result) => {
+			if (result.isConfirmed) {
+				$scope.ModelDelete(view_id);
+			}
+		});
 	};
 
 	$scope.ViewCancel = function () {
