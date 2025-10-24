@@ -51,7 +51,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				title: title, 
 				text: text, 
 				icon: icon,
-				confirmButtonText: 'Entendido'
+				confirmButtonText: 'Aceptar'
 			}); 
 		} else {
 			alert(title + '\n' + text);
@@ -64,7 +64,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			title: title,
 			text: text || '',
 			icon: 'success',
-			confirmButtonText: 'Entendido'
+			confirmButtonText: 'Aceptar'
 		});
 	};
 
@@ -74,7 +74,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			title: title,
 			text: text || '',
 			icon: 'error',
-			confirmButtonText: 'Entendido'
+			confirmButtonText: 'Aceptar'
 		});
 	};
 
@@ -90,40 +90,40 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			// Validar campos vacíos
 			if (!$scope.view_codigo || $scope.view_codigo.trim() === '') {
 				Swal.fire({
-					title: 'Campos requeridos',
-					text: 'El campo Código es obligatorio',
+					title: 'Completar campos requeridos',
+					//text: 'El campo Código es obligatorio',
 					icon: 'warning',
-					confirmButtonText: 'Entendido'
+					confirmButtonText: 'Aceptar'
 				});
 				return;
 			}
 
 			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
 				Swal.fire({
-					title: 'Campos requeridos',
-					text: 'El campo Descripción es obligatorio',
+					title: 'Completar campos requeridos',
+					//text: 'El campo Descripción es obligatorio',
 					icon: 'warning',
-					confirmButtonText: 'Entendido'
+					confirmButtonText: 'Aceptar'
 				});
 				return;
 			}
 
 			if (!$scope.view_horadesde || $scope.view_horadesde.trim() === '') {
 				Swal.fire({
-					title: 'Campos requeridos',
-					text: 'El campo Hora Desde es obligatorio',
+					title: 'Completar campos requeridos',
+					//text: 'El campo Hora Desde es obligatorio',
 					icon: 'warning',
-					confirmButtonText: 'Entendido'
+					confirmButtonText: 'Aceptar'
 				});
 				return;
 			}
 
 			if (!$scope.view_horahasta || $scope.view_horahasta.trim() === '') {
 				Swal.fire({
-					title: 'Campos requeridos',
-					text: 'El campo Hora Hasta es obligatorio',
+					title: 'Completar campos requeridos',
+					//text: 'El campo Hora Hasta es obligatorio',
 					icon: 'warning',
-					confirmButtonText: 'Entendido'
+					confirmButtonText: 'Aceptar'
 				});
 				return;
 			}
@@ -140,19 +140,23 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				data: jsonForm
 			}).then(function (success) {
 				if (success) {
-					Swal.fire(
-						'Operación Correcta',
-						'',
-						'success'
-					);
+			Swal.fire({
+				title: 'Operación Correcta',
+				text: '',
+				icon: 'success',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 					$scope.ModelReadAll();
 				}
 			}, function (error) {
-				Swal.fire(
-					'Operación Incorrecta',
-					error,
-					'error'
-				);
+			Swal.fire({
+				title: 'Operación Incorrecta',
+				text: error,
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 			});
 		} else {
 			alert('Atributo Invalido en los datos');
@@ -177,7 +181,13 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				}
 			})
 			.error(function (data, status) {
-				Swal.fire('Ha ocurrido un error', 'Api no presente', 'error');
+				Swal.fire({
+				title: 'Ha ocurrido un error',
+				text: 'Api no presente',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
 			});
 	};
 
@@ -200,11 +210,13 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				$scope.dataset = data;
 			})
 			.error(function (data, status) {
-				Swal.fire(
-					'Ha ocurrido un error',
-					'Api no presente',
-					'error'
-				);
+			Swal.fire({
+				title: 'Ha ocurrido un error',
+				text: 'Api no presente',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 			});
 	};
 
@@ -229,19 +241,23 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				data: jsonForm
 			}).then(function (success) {
 				if (success) {
-					Swal.fire(
-						'Operación Correcta',
-						'',
-						'success'
-					);
+			Swal.fire({
+				title: 'Operación Correcta',
+				text: '',
+				icon: 'success',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 					$scope.ModelReadAll();
 				}
 			}, function (error) {
-				Swal.fire(
-					'Operación Incorrecta',
-					error,
-					'error'
-				);
+			Swal.fire({
+				title: 'Operación Incorrecta',
+				text: error,
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 			});
 		} else {
 			alert('Atributo Invalido en los datos');
@@ -294,16 +310,16 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			text: 'Desea dar de baja el turno?',
 			icon: 'warning',
 			showCancelButton: true,
-			confirmButtonColor: '#3085d6',
+			  confirmButtonColor: '#343A40',
 			cancelButtonColor: '#d33',
-			confirmButtonText: 'Sí, eliminar',
+			confirmButtonText: 'Aceptar',
 			cancelButtonText: 'Cancelar'
 		  }).then(function (result) {
 			if (result.isConfirmed) $scope.ModelDelete(view_id);
 		  });
 		} else {
 		  // Fallback nativo si SweetAlert2 no está sano
-		  if (window.confirm('Desea eliminar el turno?')) {
+		  if (window.confirm('Desea dar de baja al turno?')) {
 			$scope.ModelDelete(view_id);
 		  }
 		}
