@@ -567,11 +567,10 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_perfil">Perfil</label>
                                              <select class="col-8 form-control" id="view_perfil" ng-model="view_perfil" required>
-                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option value="Admin">Admin</option>
-                                                 <option value="Gerencia">Gerencia</option>
                                                  <option value="Cocina">Cocina</option>
                                                  <option value="Comensal">Comensal</option>
+                                                 <option value="Gerencia">Gerencia</option>
                                              </select>
                                              <span ng-show="(userForm.$submitted || userForm.view_perfil.$dirty) && !view_perfil" class="text-danger">Perfil requerido.</span>
                                          </div>
@@ -583,8 +582,7 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_planta">Planta</label>
                                              <select class="col-8 form-control" id="view_planta" ng-model="view_planta" required>
-                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
-                                                 <option ng-repeat="x in plantas" value="{{x.nombre}}">{{x.nombre}}</option>
+                                                 <option ng-repeat="x in plantas | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                              <span ng-show="(userForm.$submitted || userForm.view_planta.$dirty) && !view_planta" class="text-danger">Planta requerida.</span>
                                          </div>
@@ -609,16 +607,14 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_plannutricional">Plan Nutricional</label>
                                              <select class="col-8 form-control" id="view_plannutricional" ng-model="view_plannutricional" required>
-                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
-                                                 <option ng-repeat="x in planes" value="{{x.nombre}}">{{x.nombre}}</option>
+                                                 <option ng-repeat="x in planes | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                              <span ng-show="(userForm.$submitted || userForm.view_plannutricional.$dirty) && !view_plannutricional" class="text-danger">Plan nutricional requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_centrodecosto">Centro de costo</label>
                                              <select class="col-8 form-control" id="view_centrodecosto" ng-model="view_centrodecosto" required>
-                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
-                                                 <option ng-repeat="x in centros" value="{{x.nombre}}">{{x.nombre}}</option>
+                                                 <option ng-repeat="x in centros | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                              <span ng-show="(userForm.$submitted || userForm.view_centrodecosto.$dirty) && !view_centrodecosto" class="text-danger">Centro de costo requerido.</span>
                                          </div>
@@ -633,14 +629,14 @@
                                              <span ng-show="userForm.view_domicilio.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_domicilio.$error.required || userForm.view_domicilio.$dirty && userForm.view_domicilio.$error.required" class="text-danger">Domicilio requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_fechaingreso">Fecha de ingreso</label>
+                                             <label for="view_fechaingreso"><span class="text-danger">*</span> Fecha de ingreso</label>
                                              <input class="col-8 form-control" type="date" id="view_fechaingreso" ng-model="view_fechaingreso" placeholder="Ingrese fecha de ingreso" required>
+                                             <span ng-show="(userForm.$submitted || userForm.view_fechaingreso.$dirty) && !view_fechaingreso" class="text-danger">Fecha de ingreso requerida.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_proyecto">Proyecto</label>
                                              <select class="col-8 form-control" id="view_proyecto" ng-model="view_proyecto" required>
-                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
-                                                 <option ng-repeat="x in proyectos" value="{{x.nombre}}">{{x.nombre}}</option>
+                                                 <option ng-repeat="x in proyectos | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                              <span ng-show="(userForm.$submitted || userForm.view_proyecto.$dirty) && !view_proyecto" class="text-danger">Proyecto requerido.</span>
                                          </div>
@@ -701,7 +697,6 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_perfil">Perfil</label>
                                              <select class="col-8 form-control" id="view_perfil" ng-model="view_perfil" required>
-                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
                                                  <option value="Admin">Admin</option>
                                                  <option value="Gerencia">Gerencia</option>
                                                  <option value="Cocina">Cocina</option>
@@ -716,8 +711,7 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_planta">Planta</label>
                                              <select class="col-8 form-control" id="view_planta" ng-model="view_planta" required>
-                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
-                                                 <option ng-repeat="x in plantas" value="{{x.nombre}}">{{x.nombre}}</option>
+                                                 <option ng-repeat="x in plantas | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -741,15 +735,13 @@
                                          <div class="pb-3 form-group">
                                              <label for="view_plannutricional">Plan Nutricional</label>
                                              <select class="col-8 form-control" id="view_plannutricional" ng-model="view_plannutricional" required>
-                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
-                                                 <option ng-repeat="x in planes" value="{{x.nombre}}">{{x.nombre}}</option>
+                                                 <option ng-repeat="x in planes | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_centrodecosto">Centro de costo</label>
                                              <select class="col-8 form-control" id="view_centrodecosto" ng-model="view_centrodecosto" required>
-                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
-                                                 <option ng-repeat="x in centros" value="{{x.nombre}}">{{x.nombre}}</option>
+                                                 <option ng-repeat="x in centros | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -763,14 +755,14 @@
                                              <span ng-show="userForm.view_domicilio.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_domicilio.$error.required || userForm.view_domicilio.$dirty && userForm.view_domicilio.$error.required" class="text-danger">Domicilio requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_fechaingreso">Fecha de ingreso</label>
+                                             <label for="view_fechaingreso"><span class="text-danger">*</span> Fecha de ingreso</label>
                                              <input class="col-8 form-control" type="date" id="view_fechaingreso" ng-model="view_fechaingreso" placeholder="Ingrese fecha de ingreso" required>
+                                             <span ng-show="(userForm.$submitted || userForm.view_fechaingreso.$dirty) && !view_fechaingreso" class="text-danger">Fecha de ingreso requerida.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_proyecto">Proyecto</label>
                                              <select class="col-8 form-control" id="view_proyecto" ng-model="view_proyecto" required>
-                                                 <option value="-- Seleccionar --">-- Seleccionar --</option>
-                                                 <option ng-repeat="x in proyectos" value="{{x.nombre}}">{{x.nombre}}</option>
+                                                 <option ng-repeat="x in proyectos | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                              </select>
                                          </div>
                                          <div class="pb-3 form-group">
