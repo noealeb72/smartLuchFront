@@ -1,35 +1,33 @@
 ﻿<!DOCTYPE html>
-<html>
-
+<html lang="es" ng-app="AngujarJS">
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>SmartLunch</title>
-    <meta name="description" content="SmartLunch">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <!-- External CSS -->
-    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
-    <link rel="stylesheet" href="vendor/select2/select2.min.css">
-    <link rel="stylesheet" href="vendor/owlcarousel/owl.carousel.min.css">
-    <link rel="stylesheet" href="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/css/tempusdominus-bootstrap-4.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/brands.css">
-    <!-- Fonts -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700|Josefin+Sans:300,400,700">
-    <link rel="stylesheet" href="https://cdn.linearicons.com/free/1.0.0/icon-font.min.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/style.min.css">
-    <link rel="stylesheet" href="css/smartstyle.css">
-    
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>SmartLunch - Planta</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- CSS externos -->
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="vendor/select2/select2.min.css" />
+    <link rel="stylesheet" href="vendor/owlcarousel/owl.carousel.min.css" />
+    <link rel="stylesheet" href="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/css/tempusdominus-bootstrap-4.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/brands.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700|Josefin+Sans:300,400,700" />
+    <link rel="stylesheet" href="https://cdn.linearicons.com/free/1.0.0/icon-font.min.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" />
+
+    <!-- Tus estilos -->
+    <link rel="stylesheet" href="css/style.min.css" />
+    <link rel="stylesheet" href="css/smartstyle.css" />
+
     <style>
-        /* Estilos para mantener el footer en la parte inferior - COPIADO DE USUARIOS.HTML */
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
         }
-        
+
         .footer-sticky {
             position: fixed;
             bottom: 0;
@@ -37,83 +35,12 @@
             width: 100%;
             z-index: 1000;
         }
-        
-        /* Asegurar que el footer tenga el fondo rojo correcto */
-        .footer-sticky .smart-bg {
-            background-color: #F34949 !important;
-        }
-        
-        /* Agregar padding al contenido para que no se oculte detrás del footer */
+
         body {
             padding-bottom: 80px;
         }
-        
-        /* COPIADO EXACTO DE USUARIOS.HTML - Estilos que funcionan */
-        /* Botón de editar con ícono del lápiz */
-        .btn-link[title="Editar"] {
-            background-color: #495057 !important;
-            border-color: #495057 !important;
-            color: white !important;
-            border-radius: 4px !important;
-        }
-        
-        .btn-link[title="Editar"]:hover {
-            background-color: #495057 !important;
-            border-color: #495057 !important;
-            color: white !important;
-        }
-        
-        .btn-link[title="Editar"]:focus {
-            background-color: #495057 !important;
-            border-color: #495057 !important;
-            color: white !important;
-            box-shadow: none !important;
-        }
-        
-        .btn-link[title="Editar"]:active {
-            background-color: #495057 !important;
-            border-color: #495057 !important;
-            color: white !important;
-        }
-        
-        /* Ícono del lápiz en color blanco */
-        .btn-link[title="Editar"] i.fa-edit {
-            color: white !important;
-        }
-        
-        /* Botón de eliminar con el mismo estilo que editar pero rojo */
-        .btn-link[title="Eliminar"] {
-            background-color: #F34949 !important;
-            border-color: #F34949 !important;
-            color: white !important;
-            border-radius: 4px !important;
-        }
-        
-        .btn-link[title="Eliminar"]:hover {
-            background-color: #F34949 !important;
-            border-color: #F34949 !important;
-            color: white !important;
-        }
-        
-        .btn-link[title="Eliminar"]:focus {
-            background-color: #F34949 !important;
-            border-color: #F34949 !important;
-            color: white !important;
-            box-shadow: none !important;
-        }
-        
-        .btn-link[title="Eliminar"]:active {
-            background-color: #F34949 !important;
-            border-color: #F34949 !important;
-            color: white !important;
-        }
-        
-        /* Ícono de la basura en color blanco */
-        .btn-link[title="Eliminar"] i.fa-trash {
-            color: white !important;
-        }
-        
-        /* Asegurar que todos los botones tengan el mismo tamaño */
+
+        /* Botones consistentes */
         .btn-primary,
         .btn-cancelar,
         .btn-link[title="Editar"],
@@ -127,196 +54,83 @@
             align-items: center !important;
             justify-content: center !important;
         }
-        
-        /* Botón Guardar - Gris oscuro sin borde negro */
+
+        .btn-link[title="Editar"] {
+            background-color: #495057 !important;
+            color: #fff !important;
+            border-radius: 4px !important;
+        }
+
+        .btn-link[title="Eliminar"] {
+            background-color: #F34949 !important;
+            color: #fff !important;
+            border-radius: 4px !important;
+        }
+
         .btn-primary {
             background-color: #5c636a !important;
             border: none !important;
-            color: white !important;
+            color: #fff !important;
             border-radius: 6px !important;
             font-weight: 500 !important;
-            padding: 8px 16px !important;
-            display: inline-flex !important;
-            align-items: center !important;
             gap: 8px !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            cursor: pointer !important;
-            transition: all 0.2s ease !important;
-            outline: none !important;
+            transition: all .2s ease !important;
         }
-        
-        .btn-primary:hover {
-            background-color: #5c636a !important;
-            border: none !important;
-            color: white !important;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
-            cursor: pointer !important;
-            outline: none !important;
-        }
-        
-        .btn-primary:focus {
-            background-color: #5c636a !important;
-            border: none !important;
-            color: white !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            cursor: pointer !important;
-            outline: none !important;
-        }
-        
-        .btn-primary:active {
-            background-color: #5c636a !important;
-            border: none !important;
-            color: white !important;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
-            cursor: pointer !important;
-            outline: none !important;
-        }
-        
-        .btn-primary:visited {
-            background-color: #5c636a !important;
-            border: none !important;
-            color: white !important;
-            cursor: pointer !important;
-            outline: none !important;
-        }
-        
-        /* Botón Cancelar - Rojo sin borde negro */
+
+            .btn-primary:hover {
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+            }
+
         .btn-cancelar {
             background-color: #dc3545 !important;
             border: none !important;
-            color: white !important;
+            color: #fff !important;
             border-radius: 6px !important;
             font-weight: 500 !important;
-            padding: 8px 16px !important;
-            display: inline-flex !important;
-            align-items: center !important;
             gap: 8px !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            cursor: pointer !important;
-            transition: all 0.2s ease !important;
-            outline: none !important;
+            transition: all .2s ease !important;
         }
-        
-        .btn-cancelar:hover {
-            background-color: #dc3545 !important;
-            border: none !important;
-            color: white !important;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
-            cursor: pointer !important;
-            outline: none !important;
-        }
-        
-        .btn-cancelar:focus {
-            background-color: #dc3545 !important;
-            border: none !important;
-            color: white !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            cursor: pointer !important;
-            outline: none !important;
-        }
-        
-        .btn-cancelar:active {
-            background-color: #F34949 !important;
-            border-color: #F34949 !important;
-            color: white !important;
-            transform: translateY(0) !important;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
-        }
-        
-        .btn-cancelar:visited {
-            background-color: #F34949 !important;
-            border-color: #F34949 !important;
-            color: white !important;
-        }
-        
-        /* Íconos de los botones en color blanco */
-        .btn-primary i.fa-save,
-        .btn-cancelar i.fa-times,
-        .btn-primary[ng-click="ViewCreate()"] i.fa-plus {
-            color: white !important;
-        }
-        
-        /* Estilos para SweetAlert2 - Botón Entendido */
+
+        /* SweetAlert2 */
         .swal2-confirm {
             background-color: #495057 !important;
-            border-color: #495057 !important;
-            color: white !important;
+            color: #fff !important;
         }
-        
-        .swal2-confirm:hover {
-            background-color: #495057 !important;
-            border-color: #495057 !important;
-            color: white !important;
-        }
-        
-        .swal2-confirm:focus {
-            background-color: #495057 !important;
-            border-color: #495057 !important;
-            color: white !important;
-            box-shadow: none !important;
-        }
-        
-        .swal2-confirm:active {
-            background-color: #495057 !important;
-            border-color: #495057 !important;
-            color: white !important;
-        }
-        
-        /* Estilos para SweetAlert2 - Botón Cancelar */
+
         .swal2-cancel {
             background-color: #F34949 !important;
-            border-color: #F34949 !important;
-            color: white !important;
+            color: #fff !important;
         }
-        
-        /* Estilos para campos con error de validación */
-        .form-control.ng-invalid.ng-touched,
-        .form-control.ng-invalid.show-validation-error {
+
+        /* Errores de validación visibles cuando se tocan campos */
+        .form-control.ng-invalid.ng-touched {
             border-color: #dc3545 !important;
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+            box-shadow: 0 0 0 .2rem rgba(220,53,69,.25) !important;
         }
-        
-        .form-control.ng-invalid.ng-touched:focus,
-        .form-control.ng-invalid.show-validation-error:focus {
+        /* Forzar borde rojo manual (cuando mostramos popup) */
+        .form-control.show-validation-error {
             border-color: #dc3545 !important;
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+            box-shadow: 0 0 0 .2rem rgba(220,53,69,.25) !important;
         }
-        
-        .swal2-cancel:hover {
-            background-color: #F34949 !important;
-            border-color: #F34949 !important;
-            color: white !important;
-        }
-        
-        .swal2-cancel:focus {
-            background-color: #F34949 !important;
-            border-color: #F34949 !important;
-            color: white !important;
-            box-shadow: none !important;
-        }
-        
-        .swal2-cancel:active {
-            background-color: #F34949 !important;
-            border-color: #F34949 !important;
-            color: white !important;
-        }
-        
-        /* Estilos para el paginador personalizado */
+
+        /* Paginación */
         .pagination-container {
             display: flex;
             justify-content: center;
             margin-top: 20px;
         }
-        
+
         .pagination-buttons {
             display: flex;
-            background-color: #f8f9fa;
+            background: #f8f9fa;
             border-radius: 8px;
             padding: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             border: 1px solid #e9ecef;
         }
-        
+
         .pagination-btn {
             background: transparent;
             border: none;
@@ -327,35 +141,32 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
+            transition: all .2s ease;
             border-radius: 4px;
         }
-        
-        .pagination-btn:hover:not(:disabled) {
-            background-color: #e9ecef;
-            color: #495057;
-        }
-        
-        .pagination-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        
-        .pagination-btn i {
-            font-size: 14px;
-        }
+
+            .pagination-btn:hover:not(:disabled) {
+                background: #e9ecef;
+                color: #495057;
+            }
+
+            .pagination-btn:disabled {
+                opacity: .4;
+                cursor: not-allowed;
+            }
     </style>
-    <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
 </head>
 
-<body data-spy="scroll" data-target="#navbar" class="static-layout">
-    <div class="container-fluid" ng-app="AngujarJS" ng-controller="Planta">
+<body data-spy="scroll" data-target="#navbar" class="static-layout" ng-controller="Planta">
+    <div class="container-fluid">
         <div class="solid-background">
-            <!-- Menu -->
-            <!-- Menu -->
-            <div ng-include="'navbar.html'"> </div>
-            <!-- Titulo y Migas de Pan -->
+
+            <!-- Navbar -->
+            <div ng-include="'navbar.html'"></div>
+
+            <!-- Encabezado -->
             <div class="heading-section bg-dark text-white pt-2 pl-3">
                 <div class="row">
                     <div class="col-md-8">
@@ -363,45 +174,38 @@
                     </div>
                     <div class="col-md-4">
                         <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Lista de Items'">
-                            <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
+                            <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: .9em;">
                                 <li class="breadcrumb-item">
-                                    <a href="#" ng-click="ViewAction = 'Lista de Items'; ModelReadAll()" class="text-white-50" style="text-decoration: none;">
+                                    <a href="#" ng-click="ViewAction='Lista de Items'; ModelReadAll()" class="text-white-50" style="text-decoration:none;">
                                         <i class="fa fa-home mr-1"></i>Planta
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item active text-white" aria-current="page">
-                                    <span ng-if="ViewAction === 'Nueva Planta'">
-                                        <i class="fa fa-plus mr-1"></i>Nuevo
-                                    </span>
-                                    <span ng-if="ViewAction === 'Editar Planta'">
-                                        <i class="fa fa-edit mr-1"></i>Editar
-                                    </span>
+                                    <span ng-if="ViewAction==='Nueva Planta'"><i class="fa fa-plus mr-1"></i>Nuevo</span>
+                                    <span ng-if="ViewAction==='Editar Planta'"><i class="fa fa-edit mr-1"></i>Editar</span>
                                 </li>
                             </ol>
                         </nav>
                     </div>
                 </div>
             </div>
-            <div class="container-fluid" style="margin-top: 0 !important;">
 
-                <!-- Agregar -->
+            <div class="container-fluid" style="margin-top:0 !important;">
+                <!-- Botón Agregar -->
                 <div class="dishes-text row mb-2">
                     <div class="col text-right" ng-show="ViewAction !== 'Nueva Planta' && ViewAction !== 'Editar Planta'">
-                        <button type="button" class="btn btn-primary mb-2 mr-3"
-                                ng-click="ViewCreate()"
-                                style="padding: 0.25rem 0.75rem;">
+                        <button type="button" class="btn btn-primary mb-2 mr-3" ng-click="ViewCreate()">
                             <i class="fa fa-plus text-white" style="font-size:16px; font-weight:800;"></i> Agregar
                         </button>
                     </div>
                 </div>
+
                 <!-- Buscar -->
-                <div class="row my-3">
-                    <div class="col-md-12" ng-show="ViewAction !== 'Nueva Planta' && ViewAction !== 'Editar Planta'">
+                <div class="row my-3" ng-show="ViewAction==='Lista de Items'">
+                    <div class="col-md-12">
                         <label for="buscarPlanta">Buscar</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" ng-model="searchText"
-                                   id="buscarPlanta" title="Buscar Planta"
-                                   placeholder="Filtrar por nombre, descripción...">
+                            <input type="text" class="form-control" ng-model="searchText" id="buscarPlanta" placeholder="Filtrar por nombre, descripción..." />
                             <div class="input-group-append">
                                 <button type="button" class="btn btn-outline-secondary" title="Limpiar" ng-click="searchText=''">
                                     <i class="fas fa-times"></i>
@@ -410,153 +214,188 @@
                         </div>
                     </div>
                 </div>
-                <div class="container-fluid mr-3" style="min-height: 370px">
-                    <div ng-if="ViewAction==='Lista de Items'">
 
-                        <div class="table-responsive">
-                            <table class="table table-hover table-sm">
-                                <thead style="font-size: 14px;">
-                                    <tr class="bg-dark text-white">
-                                        <th class="col-2">Nombre</th>
-                                        <th class="col-8">Descripción</th>
-                                        <th class="text-center col-2">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr ng-repeat="item in (filteredData = (dataset | filter:searchText)) | startFrom:currentPage*pageSize | limitTo:pageSize">
-                                        <td class="col-2">{{item.nombre}}</td>
-                                        <td class="col-8">{{item.descripcion}}</td>
-                                        <td class="text-center col-2">
-                                            <button type="button" class="btn btn-link p-0 align-middle"
-                                                    ng-click="ViewUpdate(item.id)" title="Editar" style="cursor: pointer;">
-                                                <i class="fa fa-edit" style="color:white"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-link p-0 align-middle ml-2"
-                                                    ng-click="ViewDelete(item.id)" title="Eliminar" style="cursor: pointer;">
-                                                <i class="fa fa-trash" style="color:white"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <!-- Paginación personalizada -->
-                            <div class="pagination-container" ng-if="numberOfPages() > 1" style="display: flex; justify-content: center; margin-top: 20px;">
-                                <div class="pagination-buttons" style="display: flex; background-color: #f8f9fa; border-radius: 8px; padding: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                    <button class="pagination-btn" 
-                                            ng-disabled="currentPage == 0" 
-                                            ng-click="currentPage=currentPage-1"
-                                            style="background: transparent; border: none; padding: 8px 12px; cursor: pointer; color: #6c757d; font-size: 16px; display: flex; align-items: center; justify-content: center;"
-                                            title="Página anterior">
-                                        <i class="fas fa-angle-double-left" style="font-size: 14px;"></i>
-                                    </button>
-                                    <div style="width: 1px; background-color: #dee2e6; margin: 4px 0;"></div>
-                                    <button class="pagination-btn" 
-                                            ng-disabled="currentPage+1 == numberOfPages()" 
-                                            ng-click="currentPage=currentPage+1"
-                                            style="background: transparent; border: none; padding: 8px 12px; cursor: pointer; color: #6c757d; font-size: 16px; display: flex; align-items: center; justify-content: center;"
-                                            title="Página siguiente">
-                                        <i class="fas fa-angle-double-right" style="font-size: 14px;"></i>
-                                    </button>
+                <!-- Lista -->
+                <div class="container-fluid mr-3" style="min-height:370px" ng-if="ViewAction==='Lista de Items'">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead style="font-size:14px;">
+                                <tr class="bg-dark text-white">
+                                    <th class="col-2">Nombre</th>
+                                    <th class="col-8">Descripción</th>
+                                    <th class="text-center col-2">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="item in (filteredData = (dataset | filter:searchText)) | startFrom:currentPage*pageSize | limitTo:pageSize">
+                                    <td class="col-2">{{item.nombre}}</td>
+                                    <td class="col-8">{{item.descripcion}}</td>
+                                    <td class="text-center col-2">
+                                        <button type="button" class="btn btn-link p-0 align-middle" ng-click="ViewUpdate(item.id)" title="Editar">
+                                            <i class="fa fa-edit" style="color:white"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-link p-0 align-middle ml-2" ng-click="ViewDelete(item.id)" title="Eliminar">
+                                            <i class="fa fa-trash" style="color:white"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Paginación -->
+                        <div class="pagination-container" ng-if="numberOfPages() > 1">
+                            <div class="pagination-buttons">
+                                <button class="pagination-btn" ng-disabled="currentPage == 0" ng-click="currentPage=currentPage-1" title="Página anterior">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </button>
+                                <div style="width:1px; background:#dee2e6; margin:4px 0;"></div>
+                                <button class="pagination-btn" ng-disabled="currentPage+1 >= numberOfPages()" ng-click="currentPage=currentPage+1" title="Página siguiente">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nueva Planta -->
+                <div ng-if="ViewAction==='Nueva Planta'">
+                    <div class="container-fluid">
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="fa fa-info-circle mr-2"></i>
+                            <strong>Creando nueva planta</strong> - Complete los campos obligatorios para guardar.
+                        </div>
+
+                        <div class="dishes-text col-12">
+                            <!-- IMPORTANTE: name="plantaForm" para que el JS pueda tocar los controles -->
+                            <form class="form-group" name="plantaForm" ng-submit="ModelCreate(plantaForm.$valid)" novalidate>
+                                <div class="pb-3 form-group">
+                                    <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
+                                    <input class="col-8 form-control"
+                                           type="text"
+                                           id="view_nombre"
+                                           name="view_nombre"
+                                           ng-model="view_nombre"
+                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/"
+                                           ng-minlength="2"
+                                           ng-maxlength="20"
+                                           required />
+                                    <span class="text-danger" ng-show="showValidationErrors && !view_nombre">Nombre requerido.</span>
                                 </div>
-                            </div>
-                        </div>
 
-                    </div>
-                    <div ng-if="ViewAction==='Nueva Planta'">
-                        <div class="container-fluid">
-                            <div class="alert alert-info mb-3" role="alert">
-                                <i class="fa fa-info-circle mr-2"></i>
-                                <strong>Creando nueva planta</strong> - Complete los campos obligatorios para guardar.
-                            </div>
-                            <div class="dishes-text col-12">
-                                <form class="form-group" name="plantaForm" ng-submit="ModelCreate(true)" novalidate>
-                                    <div class="pb-3 form-group">
-                                        <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
-                                        <span ng-show="plantaForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="(plantaForm.view_nombre.$error.required && plantaForm.view_nombre.$dirty) || (showValidationErrors && !view_nombre)" class="text-danger">Nombre requerido.</span>
-                                    </div>
-                                    <div class="pb-3 form-group">
-                                        <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripción" required>
-                                        <span ng-show="plantaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="(plantaForm.view_descripcion.$error.required && plantaForm.view_descripcion.$dirty) || (showValidationErrors && !view_descripcion)" class="text-danger">Descripción requerida.</span>
-                                    </div>
+                                <div class="pb-3 form-group">
+                                    <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
+                                    <input class="col-8 form-control"
+                                           type="text"
+                                           id="view_descripcion"
+                                           name="view_descripcion"
+                                           ng-model="view_descripcion"
+                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/"
+                                           ng-minlength="4"
+                                           ng-maxlength="140"
+                                           required />
+                                    <span class="text-danger" ng-show="showValidationErrors && !view_descripcion">Descripción requerida.</span>
+                                </div>
 
-
-                                    <div class="d-flex gap-2 mt-3">
-                                        <button type="submit" class="btn-primary mr-3" style="cursor: pointer;">
-                                            <i class="fa fa-save mr-1"></i>Guardar
-                                        </button>
-                                        <button type="button" class="btn-cancelar" ng-click="ViewCancel()" style="cursor: pointer;">
-                                            <i class="fa fa-times mr-1"></i>Cancelar
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    <div ng-if="ViewAction==='Editar Planta'">
-                        <div class="container-fluid">
-                            <div class="alert alert-info mb-3" role="alert">
-                                <i class="fa fa-edit mr-2"></i>
-                                <strong>Editando planta</strong> - Modifique los campos necesarios y guarde los cambios.
-                            </div>
-                            <div class="dishes-text col-12">
-                                <form class="form-group" name="plantaForm" ng-submit="ModelUpdate(true,view_id)" novalidate>
-                                    <div class="pb-3 form-group">
-                                        <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
-                                        <span ng-show="plantaForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="(plantaForm.view_nombre.$error.required && plantaForm.view_nombre.$dirty) || (showValidationErrors && !view_nombre)" class="text-danger">Nombre requerido.</span>
-                                    </div>
-                                    <div class="pb-3 form-group">
-                                        <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripcion" required>
-                                        <span ng-show="plantaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="plantaForm.view_descripcion.$error.required && plantaForm.view_descripcion.$dirty" class="text-danger">Descripcion requerida.</span>
-                                    </div>
-                                    <button type="submit" class="btn-primary mt-3">
+                                <div class="d-flex gap-2 mt-3">
+                                    <button type="submit" class="btn-primary mr-3">
                                         <i class="fa fa-save mr-1"></i>Guardar
                                     </button>
-                                    <button type="button" class="btn-cancelar mt-3" ng-click="ViewCancel()">
+                                    <button type="button" class="btn-cancelar" ng-click="ViewCancel()">
                                         <i class="fa fa-times mr-1"></i>Cancelar
                                     </button>
-                                </form>
-                            </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <!-- Footer -->
-        <div class="footer-sticky">
-            <div class="smart-bg text-white">
-                <div class="container">  
-                    <div class="row pt-3">
-                        <div class="col-md-12 d-flex align-items-center">
-                            <p class="mx-auto text-center mb-0 text-white">
-                                Copyright 2020. All Right Reserved. Grupo Datco SRL
-                            </p>
+
+                <!-- Editar Planta -->
+                <div ng-if="ViewAction==='Editar Planta'">
+                    <div class="container-fluid">
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="fa fa-edit mr-2"></i>
+                            <strong>Editando planta</strong> - Modifique los campos necesarios y guarde los cambios.
                         </div>
+
+                        <div class="dishes-text col-12">
+                            <form class="form-group" name="plantaForm" ng-submit="ModelUpdate(plantaForm.$valid, view_id)" novalidate>
+                                <div class="pb-3 form-group">
+                                    <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
+                                    <input class="col-8 form-control"
+                                           type="text"
+                                           id="view_nombre"
+                                           name="view_nombre"
+                                           ng-model="view_nombre"
+                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/"
+                                           ng-minlength="2"
+                                           ng-maxlength="20"
+                                           required />
+                                    <span class="text-danger" ng-show="showValidationErrors && !view_nombre">Nombre requerido.</span>
+                                </div>
+
+                                <div class="pb-3 form-group">
+                                    <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
+                                    <input class="col-8 form-control"
+                                           type="text"
+                                           id="view_descripcion"
+                                           name="view_descripcion"
+                                           ng-model="view_descripcion"
+                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/"
+                                           ng-minlength="4"
+                                           ng-maxlength="140"
+                                           required />
+                                    <span class="text-danger" ng-show="showValidationErrors && !view_descripcion">Descripción requerida.</span>
+                                </div>
+
+                                <div class="d-flex gap-2 mt-3">
+                                    <button type="submit" class="btn-primary mr-3">
+                                        <i class="fa fa-save mr-1"></i>Guardar
+                                    </button>
+                                    <button type="button" class="btn-cancelar" ng-click="ViewCancel()">
+                                        <i class="fa fa-times mr-1"></i>Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
                     </div>
-                    <br />
                 </div>
+
             </div>
         </div>
     </div>
-    <!-- External JS -->
+
+    <!-- Footer -->
+    <div class="footer-sticky">
+        <div class="smart-bg text-white">
+            <div class="container">
+                <div class="row pt-3">
+                    <div class="col-md-12 d-flex align-items-center">
+                        <p class="mx-auto text-center mb-0 text-white">
+                            Copyright 2020. All Right Reserved. Grupo Datco SRL
+                        </p>
+                    </div>
+                </div>
+                <br />
+            </div>
+        </div>
+    </div>
+
+    <!-- JS externos -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
     <script src="vendor/bootstrap/popper.min.js"></script>
     <script src="vendor/bootstrap/bootstrap.min.js"></script>
-    <script src="vendor/select2/select2.min.js "></script>
+    <script src="vendor/select2/select2.min.js"></script>
     <script src="vendor/owlcarousel/owl.carousel.min.js"></script>
     <script src="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.js"></script>
-    <script src="vendor/stellar/jquery.stellar.js" type="text/javascript" charset="utf-8"></script>
+    <script src="vendor/stellar/jquery.stellar.js" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/js/tempusdominus-bootstrap-4.min.js"></script>
 
-    <!-- Main JS -->
-    <!-- Main JS -->
+    <!-- Angular + SweetAlert2 + App -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="js/navbar-direct.js"></script>
-    <script src="js/planta.js?v=7.0"></script>
+    <script src="js/planta.js?v=7.1"></script>
 </body>
 </html>
