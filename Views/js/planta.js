@@ -80,6 +80,13 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
         if (!descripcion) errores.push('Descripción');
 
          if (!isValid || errores.length > 0) {
+             console.log('=== DEBUG VALIDACIÓN CREATE ===');
+             console.log('showValidationErrors antes:', $scope.showValidationErrors);
+             
+             // Mostrar leyendas rojas
+             $scope.showValidationErrors = true;
+             console.log('showValidationErrors después:', $scope.showValidationErrors);
+             
              Swal.fire({
                  title: 'Completar campos requeridos',
                  //text: errores.length ? '' + errores.join(', ') : '',
