@@ -91,20 +91,24 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 			url: $scope.base + 'Create',
 			data: jsonForm
 		}).then(function (success) {
-			if (success) {
-				Swal.fire(
-					'Operación Correcta',
-					'',
-					'success'
-				);
+		if (success) {
+			Swal.fire({
+				title: 'Operación Correcta',
+				text: '',
+				icon: 'success',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
-			Swal.fire(
-				'Operación Incorrecta',
-				error,
-				'error'
-			);
+			Swal.fire({
+				title: 'Operación Incorrecta',
+				text: error,
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 		});
 	};
 
@@ -144,11 +148,13 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				});
 			})
 			.error(function (data, status) {
-				Swal.fire(
-					'Ha ocurrido un error',
-					'Api no presente',
-					'error'
-				);
+			Swal.fire({
+				title: 'Ha ocurrido un error',
+				text: 'No hay comunicación con la Api del sistema',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 			});
 	};
 
@@ -160,11 +166,13 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				alert('Entro');
 			})
 			.error(function (data, status) {
-				Swal.fire(
-					'Ha ocurrido un error',
-					'Api no presente',
-					'error'
-				);
+			Swal.fire({
+				title: 'Ha ocurrido un error',
+				text: 'Api no presente',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
 			});
 	};*/
 
@@ -192,11 +200,13 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				$scope.Pic = data[0];
 			})
 			.error(function (data, status) {
-				Swal.fire(
-					'Ha ocurrido un error',
-					'Error al obtener foto',
-					'error'
-				);
+			Swal.fire({
+				title: 'Ha ocurrido un error',
+				text: 'Error al obtener foto',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 			})
 		.catch (function(response) {
 			console.log("ERROR:", response);
@@ -237,19 +247,23 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				// Cerrar el modal
 				$('#pedidoModal').modal('hide');
 				
-				Swal.fire(
-					'Pedido entregado',
-					'',
-					'success'
-				);
+			Swal.fire({
+				title: 'Pedido entregado',
+				text: '',
+				icon: 'success',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
-			Swal.fire(
-				'Operación Incorrecta',
-				error,
-				'error'
-			);
+			Swal.fire({
+				title: 'Operación Incorrecta',
+				text: error,
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 		});
 	}
 

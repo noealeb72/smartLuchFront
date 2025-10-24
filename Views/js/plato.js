@@ -136,7 +136,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                 icon: 'warning',
                 showCancelButton: false,
                 confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#495057',
+                confirmButtonColor: '#343A40',
                 buttonsStyling: true
             });
             return;
@@ -225,7 +225,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                 icon: 'warning',
                 showCancelButton: false,
                 confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#495057',
+                confirmButtonColor: '#343A40',
                 buttonsStyling: true
             });
             return;
@@ -309,7 +309,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
             showCancelButton: true,
             confirmButtonText: 'Aceptar',
             cancelButtonText: 'Cancel',
-            confirmButtonColor: '#495057',
+            confirmButtonColor: '#343A40',
             cancelButtonColor: '#dc3545',
             buttonsStyling: true
         }).then((result) => {

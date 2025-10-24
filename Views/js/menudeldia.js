@@ -203,11 +203,11 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                 var mensaje = 'Los siguientes campos son obligatorios:\n\n' + camposFaltantes.join('\n');
                 $window.Swal.fire({
                     title: 'Completar campos requeridos',
-                    text: mensaje,
+                    //text: mensaje,
                     icon: 'warning',
                     showCancelButton: false,
                     confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#495057',
+                    confirmButtonColor: '#343A40',
                     buttonsStyling: true
                 });
             }
@@ -371,11 +371,11 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                 var mensaje = 'Los siguientes campos son obligatorios:\n\n' + camposFaltantes.join('\n');
                 $window.Swal.fire({
                     title: 'Completar campos requeridos',
-                    text: mensaje,
+                    //text: mensaje,
                     icon: 'warning',
                     showCancelButton: false,
                     confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#495057',
+                    confirmButtonColor: '#343A40',
                     buttonsStyling: true
                 });
             }
@@ -555,9 +555,9 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                 text: '¿Desea dar de baja el plato?',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'OK',
+                confirmButtonText: 'Aceptar',
                 cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#3085d6',
+                confirmButtonColor: '#343A40',
                 cancelButtonColor: '#d33',
                 allowOutsideClick: false
             }).then((res) => {
@@ -582,7 +582,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                 text: 'Este menú volverá a estar disponible.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'Sí, activar',
+                confirmButtonText: 'Aceptar',
                 cancelButtonText: 'Cancelar',
                 allowOutsideClick: false
             }).then((res) => {

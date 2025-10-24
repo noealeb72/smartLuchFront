@@ -76,13 +76,13 @@ app.controller('PlanNutricional', function ($scope, $http) {
             // Verificar si SweetAlert2 está disponible
             if (typeof Swal !== 'undefined') {
                 Swal.fire({ 
-                    title: '¡Campos Obligatorios!', 
-                    text: 'Debes completar los campos Nombre y Descripción para continuar.', 
+                    title: 'Completar campos requeridos', 
+                    //text: 'Debes completar los campos Nombre y Descripción para continuar.', 
                     icon: 'warning',
-                    confirmButtonText: 'Entendido'
+                    confirmButtonText: 'Aceptar'
                 }); 
             } else {
-                alert('¡Campos Obligatorios!\nDebes completar los campos Nombre y Descripción para continuar.');
+                alert('¡Campos Obligatorios!');
             }
             return; 
         }
@@ -93,13 +93,13 @@ app.controller('PlanNutricional', function ($scope, $http) {
             
             if (typeof Swal !== 'undefined') {
                 Swal.fire({ 
-                    title: '¡Campos Vacíos!', 
-                    text: 'Los campos Nombre y Descripción no pueden estar vacíos.', 
+                    title: 'Completar campos obligatorios', 
+                    //text: 'Los campos Nombre y Descripción no pueden estar vacíos.', 
                     icon: 'error',
-                    confirmButtonText: 'Entendido'
+                    confirmButtonText: 'Aceptar'
                 }); 
             } else {
-                alert('¡Campos Vacíos!\nLos campos Nombre y Descripción no pueden estar vacíos.');
+                alert('¡Campos Vacíos!');
             }
             return; 
         }

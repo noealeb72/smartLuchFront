@@ -25,10 +25,10 @@ app.filter('formatDateArg', function () {
 
 app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 	$scope.titulo = 'Proyecto';  // Título inicial
-	$scope.base = 'http://localhost:8002/api/proyecto/';
-	$scope.baseCentrodecostos = 'http://localhost:8002/api/centrodecosto/';
+	$scope.base = 'http://localhost:8000/api/proyecto/';
+	$scope.baseCentrodecostos = 'http://localhost:8000/api/centrodecosto/';
 	$scope.centros = '';
-	$scope.basePlanta = 'http://localhost:8002/api/planta/';
+	$scope.basePlanta = 'http://localhost:8000/api/planta/';
 	$scope.plantas = '';
 	$scope.searchText = ''; // Modelo de búsqueda vacío al inicio
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
@@ -235,7 +235,17 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 	$scope.ModelReadCentros = function () {
 		$http.get($scope.baseCentrodecostos + 'getAll')
 			.then(function (response) {
-				$scope.centros = response.data;
+				// Ordenar alfabéticamente por nombre
+				$scope.centros = response.data.sort(function(a, b) {
+					return a.nombre.localeCompare(b.nombre);
+				});
+				
+				// Si estamos en modo "Nueva Proyecto" y hay centros disponibles, seleccionar el primero
+				if ($scope.ViewAction === 'Nueva Proyecto' && $scope.centros.length > 0) {
+					$scope.view_centrodecosto = $scope.centros[0].nombre;
+					console.log('Centro de costo seleccionado automáticamente:', $scope.view_centrodecosto);
+					$scope.$apply();
+				}
 			}, function (error) {
 				alert('Error: No se pudo cargar la lista de centros de costo');
 			});
@@ -244,14 +254,24 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 	$scope.ModelReadPlantas = function () {
 		$http.get($scope.basePlanta + 'getAll')
 			.then(function (response) {
-				$scope.plantas = response.data;
+				// Ordenar alfabéticamente por nombre
+				$scope.plantas = response.data.sort(function(a, b) {
+					return a.nombre.localeCompare(b.nombre);
+				});
+				
+				// Si estamos en modo "Nueva Proyecto" y hay plantas disponibles, seleccionar la primera
+				if ($scope.ViewAction === 'Nueva Proyecto' && $scope.plantas.length > 0) {
+					$scope.view_planta = $scope.plantas[0].nombre;
+					console.log('Planta seleccionada automáticamente:', $scope.view_planta);
+					$scope.$apply();
+				}
 			}, function (error) {
 				alert('Error: No se pudo cargar la lista de plantas');
 			});
 	};
 
 	$scope.ViewCreate = function () {
-		$scope.ViewAction = 'Nuevo Proyecto';
+		$scope.ViewAction = 'Nueva Proyecto';
 		$scope.view_id = -1;
 		$scope.view_nombre = '';
 		$scope.view_descripcion = '';

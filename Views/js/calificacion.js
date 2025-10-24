@@ -187,9 +187,9 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 			text: 'Desea dar de baja el plan nutricional?',
 			type: 'warning',
 			showCancelButton: true,
-			confirmButtonColor: '#3085d6',
+			confirmButtonColor: '#343A40',
 			cancelButtonColor: '#d33',
-			confirmButtonText: 'OK'
+			confirmButtonText: 'Aceptar'
 		})
 			.then(function (ConfirmClick) {
 				if (ConfirmClick.value === true) {

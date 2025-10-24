@@ -366,12 +366,14 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 
 				}, 1000); // Espera para render Angular
 			})
-			.error(function (data, status) {
-				Swal.fire(
-					'Ha ocurrido un error',
-					'Error al obtener pedidos',
-					'error'
-				);
+		.error(function (data, status) {
+			Swal.fire({
+				title: 'Ha ocurrido un error',
+				text: 'Error al obtener pedidos',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 			});
 	};
 	
@@ -423,12 +425,14 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 				$scope.pedidosInvitadosRestantes = $scope.user_BonificacionInvitado - pedidosInvitados;
 
 			})
-			.catch(function () {
-				Swal.fire(
-					'Ha ocurrido un error',
-					'Error al obtener pedidos',
-					'error'
-				);
+		.catch(function () {
+			Swal.fire({
+				title: 'Ha ocurrido un error',
+				text: 'Error al obtener pedidos',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
 			});
 	};*/
 
@@ -450,11 +454,15 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 		);
 
 		if (pedidoExistente) {
-			Swal.fire(
-				'Pedido ya registrado en esta franja horaria',
-				'No es posible hacer más de un pedido en el mismo horario.',
-				'error'
-			);
+			Swal.fire({
+				title: 'Pedido ya registrado en esta franja horaria',
+				text: 'No es posible hacer más de un pedido en el mismo horario.',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40',
+				allowOutsideClick: false,
+				allowEscapeKey: false
+			});
 			return;
 		}
 
@@ -476,12 +484,24 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 						if (usuarioSmarTimePlato) {
 							mostrarModalConfirmacion();
 						} else {
-							Swal.fire('Error', mensajeSmatTime || "El usuario no tiene fichadas en SmarTime", 'error');
+							Swal.fire({
+								title: 'Error',
+								text: mensajeSmatTime || "El usuario no tiene fichadas en SmarTime",
+								icon: 'error',
+								confirmButtonText: 'Aceptar',
+								confirmButtonColor: '#343A40'
+							});
 						}
 					})
 					.catch(function (error) {
 						console.error("Error al obtener SmarTime", error);
-						Swal.fire('Error', "Error al obtener SmarTime: " + error.statusText, 'error');
+						Swal.fire({
+							title: 'Error',
+							text: "Error al obtener SmarTime: " + error.statusText,
+							icon: 'error',
+							confirmButtonText: 'Aceptar',
+							confirmButtonColor: '#343A40'
+						});
 					});
 			} else {
 				// Usuario con rol que no requiere control
@@ -524,24 +544,34 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			url: $scope.baseComanda + 'Update',
 			data: jsonForm
 		}).then(function (success) {
-			if (success) {
-				Swal.fire(
-					'Operación correcta',
-					'',
-					'success'
-				).then(() => {
+		if (success) {
+			Swal.fire({
+				title: 'Operación correcta',
+				text: '',
+				icon: 'success',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			}).then(() => {
 					cerrarModales();
 					recargar();
 					//$scope.recargaPagina();
 				});
 			}
 		}, function (error) {
-			Swal.fire(
-				'Operación Incorrecta',
-				error,
-				'error'
-			);
-			Swal.fire('Operación Incorrecta', JSON.stringify(error), 'error');
+			Swal.fire({
+				title: 'Operación Incorrecta',
+				text: error,
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
+			Swal.fire({
+				title: 'Operación Incorrecta',
+				text: JSON.stringify(error),
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 		});
 	};
 
@@ -587,22 +617,28 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				Swal.fire(
-					'¡Pedido Enviado!',
-					'',
-					'success'
-				).then(() => {					
+				Swal.fire({
+					title: '¡Pedido Enviado!',
+					text: '',
+					icon: 'success',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#343A40',
+					allowOutsideClick: false,
+					allowEscapeKey: false
+				}).then(() => {					
 					cerrarModales();
 					recargar();
 					//$scope.recargaPagina();
 				});
 			}
 		}, function (error) {
-			/*Swal.fire(
-				'Operación Incorrecta',
-				error,
-				'error'
-			);*/Swal.fire('Operación Incorrecta', JSON.stringify(error), 'error');
+			Swal.fire({
+				title: 'Operación Incorrecta',
+				text: JSON.stringify(error),
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#343A40'
+			});
 		});
 	}
 

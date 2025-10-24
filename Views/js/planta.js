@@ -53,7 +53,7 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
     // Helpers SweetAlert2
     $scope.showPopup = function (title, text, icon) {
         if (typeof Swal !== 'undefined' && Swal.fire) {
-            Swal.fire({ title: title, text: text || '', icon: icon || 'info', confirmButtonText: 'Entendido' });
+            Swal.fire({ title: title, text: text || '', icon: icon || 'info', confirmButtonText: 'Aceptar' });
         } else {
             alert((title || 'Aviso') + (text ? '\n' + text : ''));
         }
@@ -92,7 +92,7 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
                  //text: errores.length ? '' + errores.join(', ') : '',
                  icon: 'warning',
                  confirmButtonText: 'Aceptar',
-                 confirmButtonColor: '#6c757d',
+                 confirmButtonColor: '#343A40',
                  allowOutsideClick: false,
                  allowEscapeKey: false
              });
@@ -181,7 +181,7 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
                  //text: errores.length ? 'Faltan: ' + errores.join(', ') : '',
                  icon: 'warning',
                  confirmButtonText: 'Aceptar',
-                 confirmButtonColor: '#6c757d',
+                 confirmButtonColor: '#343A40',
                  allowOutsideClick: false,
                  allowEscapeKey: false
              });
@@ -262,9 +262,9 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
                 text: '¿Desea dar de baja la planta?',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#6c757d',
+                confirmButtonColor: '#343A40',
                 cancelButtonColor: '#d33',
-                confirmButtonText: 'Sí, eliminar',
+                confirmButtonText: 'Aceptar',
                 cancelButtonText: 'Cancelar'
             }).then(function (result) {
                 if (result.isConfirmed) $scope.ModelDelete(view_id);

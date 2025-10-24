@@ -30,7 +30,13 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
     // Helpers SweetAlert2
     function swalWarn(msg) {
         if (typeof Swal !== 'undefined' && Swal.fire) {
-            Swal.fire({ title: 'Completar campos requeridos', text: msg || '', icon: 'warning', confirmButtonText: 'Aceptar' });
+            Swal.fire({
+                title: 'Completar campos requeridos',
+                text: msg || '',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#343A40'   // <— color del botón
+            });
         } else {
             alert('Completar campos requeridos.\n' + (msg || ''));
         }
@@ -69,7 +75,7 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
         if (!nombre || !descripcion) {
             console.log('VALIDACIÓN FALLÓ - Campos obligatorios vacíos');
             $scope.showValidationErrors = true;
-            swalWarn('Los campos Nombre y Descripción son obligatorios');
+            swalWarn('');
             return;
         }
         
@@ -87,9 +93,21 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
         $http.post($scope.base + 'Create', jsonForm, {
             headers: { "Content-Type": "application/json; charset=utf-8" }
         })
-            .then(function (response) {
+            /*.then(function (response) {
                 console.log('Respuesta del servidor:', response);
                 swalOk('Operación Correcta', 'Centro de costo creado');
+                $scope.ViewCancel();
+                $scope.ModelReadAll();
+            })*/
+            .then(function (response) {
+                console.log('Respuesta del servidor:', response);
+                Swal.fire({
+                    title: 'Operación Correcta',
+                    text: 'Centro de costo creado',
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#343A40' // <-- color del botón
+                });
                 $scope.ViewCancel();
                 $scope.ModelReadAll();
             })
@@ -150,7 +168,7 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
             headers: { "Content-Type": "application/json; charset=utf-8" }
         })
             .then(function () {
-                swalOk('Operación Correcta', 'Centro de costo actualizado');
+                swalOk('Operación Correcta', 'Centro de costo actualizado', { confirmButtonColor: '#343A40' });
                 $scope.ViewCancel();
                 $scope.ModelReadAll();
             })
@@ -166,10 +184,10 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
             headers: { "Content-Type": "application/json; charset=utf-8" }
         })
             .then(function () {
-                swalOk('Operación Correcta', 'Centro de costo eliminado');
+                swalOk('Operación Correcta', 'Centro de costo eliminado', { confirmButtonColor: '#343A40' });
                 $scope.ModelReadAll();
             })
-            .catch(function () { swalErr('Operación Incorrecta', 'No se pudo eliminar el centro de costo'); });
+            .catch(function () { swalErr('Operación Incorrecta', 'No se pudo eliminar el centro de costo', { confirmButtonColor: '#343A40' }); });
     };
 
     // === Catálogo de plantas ===
@@ -241,11 +259,13 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
         if (typeof Swal !== 'undefined' && Swal.fire) {
             Swal.fire({
                 title: 'Baja registro',
-                text: '¿Desea eliminar el centro de costo?',
+                text: '¿Desea dar de baja el centro de costo?',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Aceptar',
-                cancelButtonText: 'Cancelar'
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#343A40',
+               cancelButtonColor: '#d33'
             }).then(function (r) {
                 if (r.isConfirmed) $scope.ModelDelete(view_id);
             });
