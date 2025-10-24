@@ -136,20 +136,36 @@ app.controller('PlanNutricional', function ($scope, $http) {
     };
 
     $scope.ModelUpdate = function (isValid, id, form) {
-        if (!isValid) { touchAll(form); Swal.fire({ title: 'Validación', text: 'Completá Nombre y Descripción.', icon: 'warning' }); return; }
+        if (!isValid) { touchAll(form); Swal.fire({ title: 'Completar campos requeridos', icon: 'warning' }); return; }
         var payload = { id: id, nombre: ($scope.view_nombre || '').trim(), descripcion: ($scope.view_descripcion || '').trim() };
         if (!payload.nombre || !payload.descripcion) { touchAll(form); Swal.fire({ title: 'Validación', text: 'Nombre y Descripción son obligatorios.', icon: 'warning' }); return; }
         $http.post($scope.base + 'Update', payload, { headers: { 'Content-Type': 'application/json; charset=utf-8' } })
-            .then(function () { Swal.fire({ title: 'Operación Correcta', icon: 'success' }); $scope.ModelReadAll(); })
+            //.then(function () { Swal.fire({ title: 'Operación Correcta', icon: 'success' }); $scope.ModelReadAll(); })
+            .then(function () {
+                Swal.fire({
+                    title: 'Operación Correcta',
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar' // <— texto del botón
+                });
+                $scope.ModelReadAll();
+            })
             .catch(function (err) { Swal.fire({ title: 'Operación Incorrecta', text: msgError(err), icon: 'error' }); });
     };
 
     $scope.ModelDelete = function (id) {
-        Swal.fire({ title: 'Baja registro', text: '¿Desea dar de baja el plan nutricional?', icon: 'warning', showCancelButton: true, confirmButtonText: 'OK', cancelButtonText: 'Cancelar' })
+        Swal.fire({ title: 'Baja registro', text: '¿Desea dar de baja el plan nutricional?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Aceptar', cancelButtonText: 'Cancelar' })
             .then(function (r) {
                 if (!r.isConfirmed) return;
                 $http.post($scope.base + 'Delete', { id: id }, { headers: { 'Content-Type': 'application/json; charset=utf-8' } })
-                    .then(function () { Swal.fire({ title: 'Operación Correcta', icon: 'success' }); $scope.ModelReadAll(); })
+                    .then(function () {
+                        Swal.fire({
+                            title: 'Operación Correcta',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar' // <— texto del botón
+                        });
+                        $scope.ModelReadAll();
+                    })
+
                     .catch(function (err) { Swal.fire({ title: 'Operación Incorrecta', text: msgError(err), icon: 'error' }); });
             });
     };
