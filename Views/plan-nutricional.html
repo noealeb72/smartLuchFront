@@ -237,6 +237,41 @@
             color: white !important;
         }
         
+        /* Paginación */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .pagination-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 12px;
+            color: #6c757d;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .pagination-btn:disabled {
+            color: #adb5bd;
+            cursor: not-allowed;
+        }
+        
         /* Estilos para SweetAlert2 - Botón Entendido */
         .swal2-confirm {
             background-color: #495057 !important;
@@ -519,21 +554,17 @@
                                 </tbody>
                             </table>
 
-                            <!-- Paginación basada en 'filtered' -->
-                            <div class="mt-2">
-                                <button class="btn btn-secondary btn-sm"
-                                        ng-disabled="currentPage == 0"
-                                        ng-click="currentPage = currentPage - 1"
-                                        style="cursor: pointer;">
-                                    Anterior
-                                </button>
-                                {{currentPage + 1}}/{{numberOfPages()}}
-                                <button class="btn btn-secondary btn-sm"
-                                        ng-disabled="currentPage + 1 == numberOfPages()"
-                                        ng-click="currentPage = currentPage + 1"
-                                        style="cursor: pointer;">
-                                    Siguiente
-                                </button>
+                            <!-- Paginación -->
+                            <div class="pagination-container" ng-if="numberOfPages() > 1">
+                                <div class="pagination-buttons">
+                                    <button class="pagination-btn" ng-disabled="currentPage == 0" ng-click="currentPage=currentPage-1" title="Página anterior">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </button>
+                                    <div style="width:1px; background:#dee2e6; margin:4px 0;"></div>
+                                    <button class="pagination-btn" ng-disabled="currentPage+1 >= numberOfPages()" ng-click="currentPage=currentPage+1" title="Página siguiente">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -689,7 +720,7 @@
     <!-- App JS -->
     <script src="js/navbar-direct.js"></script>
     <script src="js/plan-nutricional.js"></script>
-    <!-- Panel de debug global -->
-    <script src="js/auto-debug-panel.js"></script>
+    <!-- Panel de debug global - OCULTO -->
+    <!-- <script src="js/auto-debug-panel.js"></script> -->
 </body>
 </html>

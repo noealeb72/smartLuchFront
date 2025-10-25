@@ -18,6 +18,15 @@ app.controller('PlanNutricional', function ($scope, $http) {
     // -------- Config ----------
     $scope.user_Rol = localStorage.getItem('role') || '';
     $scope.base = 'http://localhost:8000/api/plannutricional/';
+    
+    // -------- Paginación ----------
+    $scope.currentPage = 0;
+    $scope.pageSize = 10;
+    
+    $scope.numberOfPages = function () {
+        var len = Array.isArray($scope.dataset) ? $scope.dataset.length : 0;
+        return Math.ceil(len / ($scope.pageSize || 1));
+    };
 
     // -------- Helpers ----------
     function normalize(s) {
