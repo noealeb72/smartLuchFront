@@ -98,7 +98,7 @@
         }
         
         /* Ícono del lápiz en color blanco */
-        .btn-link[title="Editar"] i.fa-edit {
+        .btn-link[title="Editar"] i.fas.fa-edit {
             color: white !important;
         }
         
@@ -139,6 +139,144 @@
         
         /* Ícono de la basura en color blanco */
         .btn-link[title="Eliminar"] i.fa-trash {
+            color: white !important;
+        }
+        
+        /* Botones de acción en la tabla */
+        .btn-link[title="Editar"] {
+            background-color: #6c757d !important;
+            border: none !important;
+            border-radius: 4px !important;
+            padding: 6px 8px !important;
+            margin-right: 5px !important;
+        }
+        
+        .btn-link[title="Eliminar"] {
+            background-color: #dc3545 !important;
+            border: none !important;
+            border-radius: 4px !important;
+            padding: 6px 8px !important;
+        }
+        
+        .btn-link[title="Editar"]:hover {
+            background-color: #5a6268 !important;
+        }
+        
+        .btn-link[title="Eliminar"]:hover {
+            background-color: #c82333 !important;
+        }
+        
+        /* Botón de búsqueda (limpiar) */
+        .input-group-append .btn {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+        }
+        
+        .input-group-append .btn:hover {
+            background-color: #495057 !important;
+            border-color: #495057 !important;
+            color: white !important;
+        }
+        
+        .input-group-append .btn:focus {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        /* Campos de hora - formato HH:MM con selector de tiempo */
+        input[type="time"] {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+            font-size: 14px !important;
+            padding: 8px 12px !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 4px !important;
+            background-color: white !important;
+            color: #495057 !important;
+            cursor: pointer !important;
+        }
+        
+        input[type="time"]:focus {
+            border-color: #80bdff !important;
+            outline: 0 !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        }
+        
+        /* Mostrar el ícono del reloj en navegadores WebKit */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            background: transparent !important;
+            bottom: 0 !important;
+            color: transparent !important;
+            cursor: pointer !important;
+            height: auto !important;
+            left: 0 !important;
+            position: absolute !important;
+            right: 0 !important;
+            top: 0 !important;
+            width: auto !important;
+        }
+        
+        /* Estilo del texto de hora */
+        input[type="time"]::-webkit-datetime-edit-text {
+            color: #495057 !important;
+            font-weight: 500 !important;
+        }
+        
+        input[type="time"]::-webkit-datetime-edit-hour-field,
+        input[type="time"]::-webkit-datetime-edit-minute-field {
+            color: #495057 !important;
+            font-weight: 500 !important;
+            font-size: 14px !important;
+        }
+        
+        /* Para Firefox - asegurar que aparezca el selector */
+        input[type="time"] {
+            appearance: none !important;
+            -moz-appearance: none !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 8px center !important;
+            background-size: 16px 16px !important;
+            padding-right: 35px !important;
+        }
+        
+        /* Ícono del botón Agregar */
+        .btn-primary i.fa-plus {
+            color: white !important;
+            font-size: 16px !important;
+            font-weight: 800 !important;
+            display: inline-block !important;
+        }
+        
+        /* Asegurar que todos los iconos FontAwesome se muestren */
+        .fas, .far, .fab {
+            font-family: "Font Awesome 5 Free" !important;
+            font-weight: 900 !important;
+            display: inline-block !important;
+            line-height: 1 !important;
+        }
+        
+        /* Iconos específicos */
+        .fas.fa-home:before { content: "\f015" !important; }
+        .fas.fa-plus:before { content: "\f067" !important; }
+        .fas.fa-edit:before { content: "\f044" !important; }
+        .fas.fa-trash:before { content: "\f1f8" !important; }
+        .fas.fa-save:before { content: "\f0c7" !important; }
+        .fas.fa-times:before { content: "\f00d" !important; }
+        .fas.fa-info-circle:before { content: "\f05a" !important; }
+        
+        /* Botón Agregar específico */
+        .btn-primary {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+            color: white !important;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3 !important;
+            border-color: #0056b3 !important;
             color: white !important;
         }
         
@@ -274,15 +412,15 @@
                             <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
                                 <li class="breadcrumb-item">
                                     <a href="#" ng-click="ViewAction = 'Lista de Items'; ModelReadAll()" class="text-white-50" style="text-decoration: none;">
-                                        <i class="fa fa-home mr-1"></i>Turno
+                                        <i class="fas fa-home mr-1"></i>Turno
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item active text-white" aria-current="page">
                                     <span ng-if="ViewAction === 'Nuevo Turno'">
-                                        <i class="fa fa-plus mr-1"></i>Nuevo
+                                        <i class="fas fa-plus mr-1"></i>Nuevo
                                     </span>
                                     <span ng-if="ViewAction === 'Editar Turno'">
-                                        <i class="fa fa-edit mr-1"></i>Editar
+                                        <i class="fas fa-edit mr-1"></i>Editar
                                     </span>
                                 </li>
                             </ol>
@@ -296,10 +434,8 @@
                 <!-- Agregar -->
                 <div class="dishes-text row mb-2">
                     <div class="col text-right" ng-show="ViewAction !== 'Nuevo Turno' && ViewAction !== 'Editar Turno'">
-                        <button type="button" class="btn btn-primary mb-2 mr-3"
-                                ng-click="ViewCreate()"
-                                style="padding: 0.25rem 0.75rem;">
-                            <i class="fa fa-plus text-white" style="font-size:16px; font-weight:800;"></i> Agregar
+                        <button type="button" class="btn btn-primary mb-2 mr-3" ng-click="ViewCreate()">
+                            <i class="fas fa-plus text-white" style="font-size:16px; font-weight:800;"></i> Agregar
                         </button>
                     </div>
                 </div>
@@ -344,11 +480,11 @@
                                         <td class="text-center col-2">
                                             <button type="button" class="btn btn-link p-0 align-middle"
                                                     ng-click="ViewUpdate(item.id)" title="Editar" style="cursor: pointer;">
-                                                <i class="fa fa-edit" style="color:white"></i>
+                                                <i class="fas fa-edit" style="color:white"></i>
                                             </button>
                                             <button type="button" class="btn btn-link p-0 align-middle ml-2"
                                                     ng-click="ViewDelete(item.id)" title="Eliminar" aria-label="Eliminar" style="cursor: pointer;">
-                                                <i class="fa fa-trash" style="color:white"></i>
+                                                <i class="fas fa-trash" style="color:white"></i>
                                             </button>
                                         </td>
                                     </tr>
@@ -369,7 +505,7 @@
                     <div ng-if="ViewAction==='Nuevo Turno'">
                         <div class="container-fluid">
                             <div class="alert alert-info mb-3" role="alert">
-                                <i class="fa fa-info-circle mr-2"></i>
+                                <i class="fas fa-info-circle mr-2"></i>
                                 <strong>Creando nuevo turno</strong> - Complete los campos con * porque son obligatorios para guardar un nuevo turno.
                             </div>
                             <div class="dishes-text col-12">
@@ -386,18 +522,20 @@
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_horadesde"><span class="text-danger">*</span> Hora desde</label>
-                                        <input class="col-8 form-control" type="time" id="view_horadesde" placeholder="Ingrese hora de inicio" required>
+                                        <input class="col-8 form-control" type="time" id="view_horadesde" name="view_horadesde" ng-model="view_horadesde" placeholder="HH:MM" step="60" min="00:00" max="23:59" required>
+                                        <span ng-show="showValidationErrors && (!view_horadesde || view_horadesde.trim() === '')" class="text-danger">Hora desde requerida.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_horahasta"><span class="text-danger">*</span> Hora hasta</label>
-                                        <input class="col-8 form-control" type="time" id="view_horahasta" placeholder="Ingrese hora de finalización" required>
+                                        <input class="col-8 form-control" type="time" id="view_horahasta" name="view_horahasta" ng-model="view_horahasta" placeholder="HH:MM" step="60" min="00:00" max="23:59" required>
+                                        <span ng-show="showValidationErrors && (!view_horahasta || view_horahasta.trim() === '')" class="text-danger">Hora hasta requerida.</span>
                                     </div>
-                                    <button type="submit" class="btn-primary mt-3" ng-disabled="turnoForm.$invalid">
-                                        <i class="fa fa-save mr-1"></i>Guardar
+                                    <button type="submit" class="btn-primary mt-3" >
+                                        <i class="fas fa-save mr-1"></i>Guardar
                                     </button>
 
                                     <button type="button" class="btn-cancelar mt-3" ng-click="ViewCancel()">
-                                        <i class="fa fa-times mr-1"></i>Cancelar
+                                        <i class="fas fa-times mr-1"></i>Cancelar
                                     </button>
                                 </form>
                             </div>
@@ -405,8 +543,8 @@
                     </div>
                     <div ng-if="ViewAction==='Editar Turno'">
                         <div class="container-fluid">
-                            <div class="alert alert-warning mb-3" role="alert">
-                                <i class="fa fa-edit mr-2"></i>
+                            <div class="alert alert-info mb-3" role="alert">
+                                <i class="fas fa-edit mr-2"></i>
                                 <strong>Editando turno</strong> - Modifique los campos necesarios, complete los requeridos y guarde los cambios.
                             </div>
                             <div class="dishes-text col-12">
@@ -415,26 +553,28 @@
 
                                         <label for="view_codigo"><span class="text-danger">*</span> Código</label>
                                         <input ng-pattern="/^[a-zA-Z0-9._%+-]*$/" ng-minlength="1" ng-maxlength="20" class="col-8 form-control" type="text" id="view_codigo" name="view_codigo" ng-model="view_codigo" placeholder="Ingrese codigo" required>
-                                        <span ng-show="turnoForm.view_codigo.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="turnoForm.view_codigo.$error.required && turnoForm.view_codigo.$dirty" class="text-danger">Codigo requerido.</span>
+                                        <span ng-show="turnoForm.view_codigo.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="showValidationErrors && (!view_codigo || view_codigo.trim() === '')" class="text-danger">Codigo requerido.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
                                         <input ng-pattern="/^[a-zA-Z0-9._%+-ñáéíóúÁÉÍÓÚ\s]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripción" required>
-                                        <span ng-show="turnoForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="turnoForm.view_descripcion.$error.required && turnoForm.view_descripcion.$dirty" class="text-danger">Descripción requerida.</span>
+                                        <span ng-show="turnoForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="showValidationErrors && (!view_descripcion || view_descripcion.trim() === '')" class="text-danger">Descripción requerida.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_horadesde"><span class="text-danger">*</span> Hora desde</label>
-                                        <input class="col-8 form-control" type="time" id="view_horadesde" placeholder="Ingrese hora de inicio" required>
+                                        <input class="col-8 form-control" type="time" id="view_horadesde" name="view_horadesde" ng-model="view_horadesde" placeholder="HH:MM" step="60" min="00:00" max="23:59" required>
+                                        <span ng-show="showValidationErrors && (!view_horadesde || view_horadesde.trim() === '')" class="text-danger">Hora desde requerida.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_horahasta"><span class="text-danger">*</span> Hora hasta</label>
-                                        <input class="col-8 form-control" type="time" id="view_horahasta" placeholder="Ingrese hora de finalización" required>
+                                        <input class="col-8 form-control" type="time" id="view_horahasta" name="view_horahasta" ng-model="view_horahasta" placeholder="HH:MM" step="60" min="00:00" max="23:59" required>
+                                        <span ng-show="showValidationErrors && (!view_horahasta || view_horahasta.trim() === '')" class="text-danger">Hora hasta requerida.</span>
                                     </div>
-                                    <button type="submit" class="btn-primary mt-3" ng-disabled="turnoForm.$invalid">
-                                        <i class="fa fa-save mr-1"></i>Guardar
+                                    <button type="submit" class="btn-primary mt-3">
+                                        <i class="fas fa-save mr-1"></i>Guardar
                                     </button>
                                     <button type="button" class="btn-cancelar mt-3" ng-click="ViewCancel()">
-                                        <i class="fa fa-times mr-1"></i>Cancelar
+                                        <i class="fas fa-times mr-1"></i>Cancelar
                                     </button>
                                 </form>
                             </div>

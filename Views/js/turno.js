@@ -37,12 +37,61 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 	$scope.user_Nombre = localStorage.getItem('nombre');
 	$scope.user_Apellido = localStorage.getItem('apellido');
 	$scope.user_Planta = localStorage.getItem('planta');
+	
+	// Función para formatear hora a HH:MM
+	$scope.formatTime = function(time) {
+		if (!time) return '';
+		// Si ya está en formato HH:MM, devolverlo
+		if (time.match(/^\d{2}:\d{2}$/)) return time;
+		// Si está en formato H:MM, agregar 0 al inicio
+		if (time.match(/^\d{1}:\d{2}$/)) return '0' + time;
+		// Si está en formato HH:M, agregar 0 al final
+		if (time.match(/^\d{2}:\d{1}$/)) return time + '0';
+		// Si está en formato H:M, agregar 0s
+		if (time.match(/^\d{1}:\d{1}$/)) return '0' + time + '0';
+		return time;
+	};
+	
+	// Función para inicializar campos de hora con selector de tiempo
+	$scope.initTimeFields = function() {
+		setTimeout(function() {
+			var horaDesdeField = document.getElementById('view_horadesde');
+			var horaHastaField = document.getElementById('view_horahasta');
+			
+			if (horaDesdeField) {
+				horaDesdeField.type = 'time';
+				horaDesdeField.step = 60;
+				horaDesdeField.min = '00:00';
+				horaDesdeField.max = '23:59';
+			}
+			
+			if (horaHastaField) {
+				horaHastaField.type = 'time';
+				horaHastaField.step = 60;
+				horaHastaField.min = '00:00';
+				horaHastaField.max = '23:59';
+			}
+		}, 100);
+	};
+	
+	// Función para asegurar formato HH:MM en campos de hora
+	$scope.ensureTimeFormat = function() {
+		if ($scope.view_horadesde) {
+			$scope.view_horadesde = $scope.formatTime($scope.view_horadesde);
+		}
+		if ($scope.view_horahasta) {
+			$scope.view_horahasta = $scope.formatTime($scope.view_horahasta);
+		}
+	};
 	$scope.user_Centrodecosto = localStorage.getItem('centrodecosto');
 	$scope.user_Proyecto = localStorage.getItem('proyecto');
 	$scope.user_Jerarquia = localStorage.getItem('role');
 	$scope.user_Perfilnutricional = localStorage.getItem('plannutricional');
 	$scope.user_Bonificacion = localStorage.getItem('bonificacion');
 	$scope.user_DNI = localStorage.getItem('dni');
+
+	// Inicializar variable para mostrar errores de validación
+	$scope.showValidationErrors = false;
 
 	// Función helper para mostrar popup
 	$scope.showPopup = function(title, text, icon) {
@@ -54,7 +103,8 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				confirmButtonText: 'Aceptar'
 			}); 
 		} else {
-			alert(title + '\n' + text);
+			// Fallback si SweetAlert2 no está disponible
+			console.error('SweetAlert2 no está disponible');
 		}
 	};
 
@@ -64,7 +114,8 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			title: title,
 			text: text || '',
 			icon: 'success',
-			confirmButtonText: 'Aceptar'
+			confirmButtonText: 'Aceptar',
+			confirmButtonColor: '#5c636a'
 		});
 	};
 
@@ -74,7 +125,8 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			title: title,
 			text: text || '',
 			icon: 'error',
-			confirmButtonText: 'Aceptar'
+			confirmButtonText: 'Aceptar',
+			confirmButtonColor: '#5c636a'
 		});
 	};
 
@@ -85,6 +137,9 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
 			$scope.view_horadesde = $window.document.getElementById('view_horadesde').value;
 			$scope.view_horahasta = $window.document.getElementById('view_horahasta').value;
+			
+			// Asegurar formato HH:MM
+			$scope.ensureTimeFormat();
 			//
 
 			// Validar campos vacíos
@@ -93,7 +148,8 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 					title: 'Completar campos requeridos',
 					//text: 'El campo Código es obligatorio',
 					icon: 'warning',
-					confirmButtonText: 'Aceptar'
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
 				});
 				return;
 			}
@@ -103,7 +159,8 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 					title: 'Completar campos requeridos',
 					//text: 'El campo Descripción es obligatorio',
 					icon: 'warning',
-					confirmButtonText: 'Aceptar'
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
 				});
 				return;
 			}
@@ -113,7 +170,8 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 					title: 'Completar campos requeridos',
 					//text: 'El campo Hora Desde es obligatorio',
 					icon: 'warning',
-					confirmButtonText: 'Aceptar'
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
 				});
 				return;
 			}
@@ -123,7 +181,8 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 					title: 'Completar campos requeridos',
 					//text: 'El campo Hora Hasta es obligatorio',
 					icon: 'warning',
-					confirmButtonText: 'Aceptar'
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
 				});
 				return;
 			}
@@ -159,7 +218,20 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			});
 			});
 		} else {
-			alert('Atributo Invalido en los datos');
+			/*Swal.fire({
+				title: 'Error',
+				text: 'Atributo Invalido en los datos',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});*/
+			Swal.fire({
+				title: 'Completar campos requeridos',
+				text: '',
+				icon: 'warning',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
 		}
 	};
 
@@ -221,13 +293,68 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ModelUpdate = function (isValid,view_id) {
+		console.log('ModelUpdate ejecutándose - isValid:', isValid, 'view_id:', view_id);
 		if (isValid) {
 			// debería ser automatico 
 			$scope.view_codigo = $window.document.getElementById('view_codigo').value;
 			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
 			$scope.view_horadesde = $window.document.getElementById('view_horadesde').value;
 			$scope.view_horahasta = $window.document.getElementById('view_horahasta').value;
+			
+			// Asegurar formato HH:MM
+			$scope.ensureTimeFormat();
 			//
+
+			// Validar campos vacíos
+			console.log('Validando campos - codigo:', $scope.view_codigo, 'descripcion:', $scope.view_descripcion, 'horadesde:', $scope.view_horadesde, 'horahasta:', $scope.view_horahasta);
+			
+			if (!$scope.view_codigo || $scope.view_codigo.trim() === '') {
+				console.log('Campo codigo vacío, mostrando popup y leyendas');
+				$scope.showValidationErrors = true;
+				Swal.fire({
+					title: 'Completar campos requeridos',
+					icon: 'warning',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
+				return;
+			}
+
+			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
+				console.log('Campo descripcion vacío, mostrando popup y leyendas');
+				$scope.showValidationErrors = true;
+				Swal.fire({
+					title: 'Completar campos requeridos',
+					icon: 'warning',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
+				return;
+			}
+
+			if (!$scope.view_horadesde || $scope.view_horadesde.trim() === '') {
+				console.log('Campo horadesde vacío, mostrando popup y leyendas');
+				$scope.showValidationErrors = true;
+				Swal.fire({
+					title: 'Completar campos requeridos',
+					icon: 'warning',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
+				return;
+			}
+
+			if (!$scope.view_horahasta || $scope.view_horahasta.trim() === '') {
+				console.log('Campo horahasta vacío, mostrando popup y leyendas');
+				$scope.showValidationErrors = true;
+				Swal.fire({
+					title: 'Completar campos requeridos',
+					icon: 'warning',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
+				return;
+			}
 
 			var jsonForm = { id: view_id, codigo: $scope.view_codigo, descripcion: $scope.view_descripcion, horadesde: $scope.view_horadesde, horahasta: $scope.view_horahasta };
 
@@ -260,7 +387,20 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			});
 			});
 		} else {
-			alert('Atributo Invalido en los datos');
+			/*Swal.fire({
+				title: 'Error',
+				text: 'Atributo Invalido en los datos',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});*/
+			Swal.fire({
+				title: 'Completar campos requeridos',
+				text: '',
+				icon: 'warning',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
 		}
 	};
 
@@ -292,12 +432,16 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 		$scope.view_descripcion = '';
 		$scope.view_horadesde = '';
 		$scope.view_horahasta = '';
+		$scope.showValidationErrors = false;
+		$scope.initTimeFields();
 	};
 
 	$scope.ViewUpdate = function (view_id) {
 		$scope.ViewAction = 'Editar Turno';
 		$scope.view_id = view_id;
+		$scope.showValidationErrors = false;
 		$scope.ModelRead(view_id);
+		$scope.initTimeFields();
 	};
 
 	$scope.ViewDelete = function (view_id) {
@@ -327,6 +471,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 
 	$scope.ViewCancel = function () {
 		$scope.ViewAction = 'Lista de Items';
+		$scope.showValidationErrors = false;
 	};
 
 	$scope.ModelReadAll();
