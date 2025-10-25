@@ -523,12 +523,12 @@
                                     <div class="pb-3 form-group">
                                         <label for="view_horadesde"><span class="text-danger">*</span> Hora desde</label>
                                         <input class="col-8 form-control" type="time" id="view_horadesde" name="view_horadesde" ng-model="view_horadesde" placeholder="HH:MM" step="60" min="00:00" max="23:59" required>
-                                        <span ng-show="showValidationErrors && (!view_horadesde || view_horadesde.trim() === '')" class="text-danger">Hora desde requerida.</span>
+                                        <span ng-show="showValidationErrors && !view_horadesde" class="text-danger">Hora desde requerida.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_horahasta"><span class="text-danger">*</span> Hora hasta</label>
                                         <input class="col-8 form-control" type="time" id="view_horahasta" name="view_horahasta" ng-model="view_horahasta" placeholder="HH:MM" step="60" min="00:00" max="23:59" required>
-                                        <span ng-show="showValidationErrors && (!view_horahasta || view_horahasta.trim() === '')" class="text-danger">Hora hasta requerida.</span>
+                                        <span ng-show="showValidationErrors && !view_horahasta" class="text-danger">Hora hasta requerida.</span>
                                     </div>
                                     <button type="submit" class="btn-primary mt-3" >
                                         <i class="fas fa-save mr-1"></i>Guardar
@@ -553,22 +553,22 @@
 
                                         <label for="view_codigo"><span class="text-danger">*</span> Código</label>
                                         <input ng-pattern="/^[a-zA-Z0-9._%+-]*$/" ng-minlength="1" ng-maxlength="20" class="col-8 form-control" type="text" id="view_codigo" name="view_codigo" ng-model="view_codigo" placeholder="Ingrese codigo" required>
-                                        <span ng-show="turnoForm.view_codigo.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="showValidationErrors && (!view_codigo || view_codigo.trim() === '')" class="text-danger">Codigo requerido.</span>
+                                        <span ng-show="turnoForm.view_codigo.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="showValidationErrors && !view_codigo" class="text-danger">Codigo requerido.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
                                         <input ng-pattern="/^[a-zA-Z0-9._%+-ñáéíóúÁÉÍÓÚ\s]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripción" required>
-                                        <span ng-show="turnoForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="showValidationErrors && (!view_descripcion || view_descripcion.trim() === '')" class="text-danger">Descripción requerida.</span>
+                                        <span ng-show="turnoForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="showValidationErrors && !view_descripcion" class="text-danger">Descripción requerida.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_horadesde"><span class="text-danger">*</span> Hora desde</label>
                                         <input class="col-8 form-control" type="time" id="view_horadesde" name="view_horadesde" ng-model="view_horadesde" placeholder="HH:MM" step="60" min="00:00" max="23:59" required>
-                                        <span ng-show="showValidationErrors && (!view_horadesde || view_horadesde.trim() === '')" class="text-danger">Hora desde requerida.</span>
+                                        <span ng-show="showValidationErrors && !view_horadesde" class="text-danger">Hora desde requerida.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_horahasta"><span class="text-danger">*</span> Hora hasta</label>
                                         <input class="col-8 form-control" type="time" id="view_horahasta" name="view_horahasta" ng-model="view_horahasta" placeholder="HH:MM" step="60" min="00:00" max="23:59" required>
-                                        <span ng-show="showValidationErrors && (!view_horahasta || view_horahasta.trim() === '')" class="text-danger">Hora hasta requerida.</span>
+                                        <span ng-show="showValidationErrors && !view_horahasta" class="text-danger">Hora hasta requerida.</span>
                                     </div>
                                     <button type="submit" class="btn-primary mt-3">
                                         <i class="fas fa-save mr-1"></i>Guardar
