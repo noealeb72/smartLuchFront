@@ -402,23 +402,27 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
 </head>
 
-<body data-spy="scroll" data-target="#navbar" class="static-layout">
-    <div class="container-fluid" ng-app="AngujarJS" ng-controller="Jerarquia">
-        <div class="solid-background">
-            <!-- Menu -->
-            <div ng-include="'navbar-direct.html'"></div>
-            <!-- Titulo y Migas de Pan -->
+<body data-spy="scroll" data-target="#navbar" class="static-layout" ng-controller="Jerarquia" style="min-height: 100vh; display: flex; flex-direction: column;">
+    <div class="container-fluid" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="solid-background" style="flex: 1;">
+            <!-- Navbar (envuelto con su propio controller para leer localStorage) -->
+            <div ng-controller="NavbarCtrl" ng-include="'navbar.html'"></div>
+
+            <!-- Título y Breadcrumbs -->
             <div class="heading-section bg-dark text-white pt-2 pl-3">
                 <div class="row">
                     <div class="col-md-8">
-                        <h3 class="mb-0">Jerarquia</h3>
+                        <h3 class="mb-0" ng-if="ViewAction === 'Lista de Items'">Jerarquía</h3>
+                        <h3 class="mb-0" ng-if="ViewAction === 'Nueva Jerarquia'">Nueva Jerarquía</h3>
+                        <h3 class="mb-0" ng-if="ViewAction === 'Editar Jerarquia'">Editar Jerarquía</h3>
                     </div>
                     <div class="col-md-4">
+                        <!-- Breadcrumbs -->
                         <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Lista de Items'">
                             <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
                                 <li class="breadcrumb-item">
                                     <a href="#" ng-click="ViewAction = 'Lista de Items'; ModelReadAll()" class="text-white-50" style="text-decoration: none;">
-                                        <i class="fa fa-home mr-1"></i>Jerarquia
+                                        <i class="fa fa-home mr-1"></i>Jerarquía
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item active text-white" aria-current="page">
@@ -435,38 +439,46 @@
                 </div>
             </div>
 
-            <div class="container-fluid" style="margin-top: 0 !important;">
+            <div class="container-fluid" style="margin-top:0!important;">
 
-                <!-- Agregar -->
-                <div class="dishes-text row mb-2">
-                    <div class="col text-right" ng-show="ViewAction !== 'Nueva Jerarquia' && ViewAction !== 'Editar Jerarquia'">
+                <!-- Botón Agregar (solo en lista) -->
+                <div class="dishes-text row mb-2" ng-if="ViewAction === 'Lista de Items'">
+                    <div class="col text-right">
                         <button type="button" class="btn btn-primary mb-2 mr-3"
-                                ng-click="ViewCreate()"
-                                style="padding: 0.25rem 0.75rem;">
-                            <i class="fa fa-plus text-white" style="font-size:16px; font-weight:800;"></i> Agregar
+                                ng-click="ViewCreate()" style="padding:0.25rem 0.75rem; cursor: pointer;">
+                            <i class="fa fa-plus text-white" style="font-size:16px;font-weight:800;"></i> Agregar
                         </button>
                     </div>
                 </div>
+
                 <!-- Buscar -->
                 <div class="row my-3">
-                    <div class="col-md-12" ng-show="ViewAction !== 'Nueva Jerarquia' && ViewAction !== 'Editar Jerarquia'">
-                        <label for="buscarJerarquia">Buscar</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" ng-model="searchText" 
-                                   id="buscarJerarquia" title="Buscar Jerarquia" 
+                    <div class="col-md-12">
+                        <label for="buscarJerarquia" ng-show="ViewAction === 'Lista de Items'">Buscar</label>
+                        <div class="input-group" ng-show="ViewAction === 'Lista de Items'">
+                            <input type="text" class="form-control" ng-model="searchText"
+                                   title="Buscar Jerarquía"
+                                   id="buscarJerarquia"
                                    placeholder="Filtrar por nombre, descripción...">
                             <div class="input-group-append">
-                                <button type="button" class="btn btn-outline-secondary" title="Limpiar" ng-click="searchText=''">
-                                    <i class="fas fa-times"></i>
+                                <button class="btn btn-outline-secondary" type="button" 
+                                        ng-click="searchText = ''; currentPage = 0;" 
+                                        ng-disabled="!searchText"
+                                        title="Limpiar búsqueda"
+                                        style="cursor: pointer;">
+                                    <i class="fa fa-times"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="container-fluid mr-3" style="min-height: 370px;">
+
+                <div class="container-fluid mr-3" style="min-height:370px">
+                    <hr style="border-top:2px solid rgba(0,0,0,.1);margin-top:0!important;">
+
+                    <!-- Lista -->
                     <div ng-if="ViewAction==='Lista de Items'">
                         <div class="table-responsive">
-
                             <table class="table table-hover table-sm">
                                 <thead style="font-size: 14px;">
                                     <tr class="bg-dark text-white">
@@ -518,71 +530,68 @@
                         </div>
                     </div>
 
+                    <!-- Nueva Jerarquía -->
                     <div ng-if="ViewAction==='Nueva Jerarquia'">
                         <div class="container-fluid">
+                            <!-- Indicador de sección -->
                             <div class="alert alert-info mb-3" role="alert">
                                 <i class="fa fa-info-circle mr-2"></i>
                                 <strong>Creando nueva jerarquía</strong> - Complete los campos obligatorios para guardar.
                             </div>
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="jerarquiaForm" ng-submit="ModelCreate(jerarquiaForm.$valid, jerarquiaForm)" novalidate>
-                                    <!-- Recuadro para los campos del formulario -->
-                                    <div class="form-container">
-                                        <div class="pb-3 form-group">
-                                            <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                            <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
-                                            <span ng-show="jerarquiaForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_nombre.$error.required && jerarquiaForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
-                                        </div>
-                                        <div class="pb-3 form-group">
-                                            <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
-                                            <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese Descripción" required>
-                                            <span ng-show="jerarquiaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_descripcion.$error.required && jerarquiaForm.view_descripcion.$dirty" class="text-danger">Descripción requerida.</span>
-                                        </div>
-                                        <div class="pb-3 form-group">
-                                            <label for="view_bonificacion"><span class="text-danger">*</span> Porcentaje de bonificación (%)</label>
-                                            <input class="form-control"
-                                                   type="number"
-                                                   id="view_bonificacion_nueva"
-                                                   name="view_bonificacion"
-                                                   ng-model="view_bonificacion"
-                                                   placeholder="Ingrese porcentaje (0-100)"
-                                                   min="0"
-                                                   max="100"
-                                                   step="1"
-                                                   onkeypress="return event.charCode >= 48 && event.charCode <= 57"
-                                                   oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;"
-                                                   ng-keyup="validatePercentage(view_bonificacion)"
-                                                   onpaste="setTimeout(function(){if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;}, 10)"
-                                                   inputmode="numeric"
-                                                   required
-                                                   />
+                                    <div class="pb-3 form-group">
+                                        <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
+                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                        <span ng-show="jerarquiaForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_nombre.$error.required && jerarquiaForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
+                                    </div>
+                                    <div class="pb-3 form-group">
+                                        <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
+                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese Descripción" required>
+                                        <span ng-show="jerarquiaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_descripcion.$error.required && jerarquiaForm.view_descripcion.$dirty" class="text-danger">Descripción requerida.</span>
+                                    </div>
+                                    <div class="pb-3 form-group">
+                                        <label for="view_bonificacion"><span class="text-danger">*</span> Porcentaje de bonificación (%)</label>
+                                        <input class="col-8 form-control"
+                                               type="number"
+                                               id="view_bonificacion_nueva"
+                                               name="view_bonificacion"
+                                               ng-model="view_bonificacion"
+                                               placeholder="Ingrese porcentaje (0-100)"
+                                               min="0"
+                                               max="100"
+                                               step="1"
+                                               onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                                               oninput="if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;"
+                                               ng-keyup="validatePercentage(view_bonificacion)"
+                                               onpaste="setTimeout(function(){if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;}, 10)"
+                                               inputmode="numeric"
+                                               required />
 
-                                            <!-- Mensajes -->
-                                            <small class="text-danger"
-                                                   ng-show="jerarquiaForm.$submitted && jerarquiaForm.view_bonificacion_editar.$error.required">
-                                                Porcentaje de bonificación requerido.
-                                            </small>
-                                            <small class="text-danger"
-                                                   ng-show="jerarquiaForm.view_bonificacion_editar.$touched && (jerarquiaForm.view_bonificacion_editar.$error.min || view_bonificacion_editar < 0)">
-                                                Debe ser un número entre 0 y 100.
-                                            </small>
-                                            <small class="text-danger"
-                                                   ng-show="jerarquiaForm.view_bonificacion_editar.$touched && (view_bonificacion_editar > 100)">
-                                                El porcentaje no puede ser mayor a 100.
-                                            </small>
-                                            <small class="text-danger"
-                                                   ng-show="jerarquiaForm.view_bonificacion_editar.$touched && (jerarquiaForm.view_bonificacion_editar.$error.pattern || jerarquiaForm.view_bonificacion_editar.$error.number)">
-                                                Ingresá solo números enteros.
-                                            </small>
-                                        </div>
+                                        <!-- Mensajes -->
+                                        <small class="text-danger"
+                                               ng-show="jerarquiaForm.$submitted && jerarquiaForm.view_bonificacion.$error.required">
+                                            Porcentaje de bonificación requerido.
+                                        </small>
+                                        <small class="text-danger"
+                                               ng-show="jerarquiaForm.view_bonificacion.$touched && (jerarquiaForm.view_bonificacion.$error.min || view_bonificacion < 0)">
+                                            Debe ser un número entre 0 y 100.
+                                        </small>
+                                        <small class="text-danger"
+                                               ng-show="jerarquiaForm.view_bonificacion.$touched && (view_bonificacion > 100)">
+                                            El porcentaje no puede ser mayor a 100.
+                                        </small>
+                                        <small class="text-danger"
+                                               ng-show="jerarquiaForm.view_bonificacion.$touched && (jerarquiaForm.view_bonificacion.$error.pattern || jerarquiaForm.view_bonificacion.$error.number)">
+                                            Ingresá solo números enteros.
+                                        </small>
                                     </div>
 
-                                    <!-- Botones alineados a la izquierda -->
-                                    <div class="form-actions" style="text-align: left;">
-                                        <button type="submit" class="btn-primary" ng-disabled="jerarquiaForm.$invalid">
+                                    <div class="mt-2">
+                                        <button type="submit" class="btn-primary mt-3 mr-3" style="cursor: pointer;">
                                             <i class="fa fa-save mr-1"></i>Guardar
                                         </button>
-                                        <button type="button" class="btn-cancelar" ng-click="ViewCancel()">
+                                        <button type="button" class="btn-cancelar mt-3" ng-click="ViewCancel()" style="cursor: pointer;">
                                             <i class="fa fa-times mr-1"></i>Cancelar
                                         </button>
                                     </div>
