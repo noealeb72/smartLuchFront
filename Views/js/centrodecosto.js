@@ -150,31 +150,52 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
     // === UPDATE ===
     $scope.ModelUpdate = function (formValid, view_id) {
         var form = $scope.centroForm;
-        var nombre = ($scope.view_nombre || '').trim();
-        var descripcion = ($scope.view_descripcion || '').trim();
-        var planta = ($scope.view_planta || '').trim();
+        
+        // Esperar un poco para que el DOM se actualice
+        setTimeout(function() {
+            // Obtener valores directamente del DOM como respaldo
+            var nombreField = document.getElementById('view_nombre');
+            var descripcionField = document.getElementById('view_descripcion');
+            var plantaField = document.getElementById('view_planta');
+            
+            var nombre = nombreField ? nombreField.value.trim() : '';
+            var descripcion = descripcionField ? descripcionField.value.trim() : '';
+            var planta = plantaField ? plantaField.value.trim() : '';
 
-        // Solo validamos nombre y descripción, planta es opcional
-        if (!formValid || !nombre || !descripcion) {
-            $scope.showValidationErrors = true;
-            touchAll(form);
-            swalWarn();
-            return;
-        }
+            console.log('=== UPDATE CENTRO DE COSTO ===');
+            console.log('Valores desde DOM (actuales):');
+            console.log('nombre:', nombre);
+            console.log('descripcion:', descripcion);
+            console.log('planta:', planta);
+            console.log('Valores desde scope (pueden estar desactualizados):');
+            console.log('view_nombre:', $scope.view_nombre);
+            console.log('view_descripcion:', $scope.view_descripcion);
+            console.log('view_planta:', $scope.view_planta);
 
-        var jsonForm = { id: view_id, nombre: nombre, descripcion: descripcion, planta: planta };
+            // Solo validamos nombre y descripción, planta es opcional
+            if (!formValid || !nombre || !descripcion) {
+                $scope.showValidationErrors = true;
+                touchAll(form);
+                swalWarn();
+                return;
+            }
 
-        $http.post($scope.base + 'Update', jsonForm, {
-            headers: { "Content-Type": "application/json; charset=utf-8" }
-        })
-            .then(function () {
-                swalOk('Operación Correcta', 'Centro de costo actualizado', { confirmButtonColor: '#343A40' });
-                $scope.ViewCancel();
-                $scope.ModelReadAll();
+            var jsonForm = { id: view_id, nombre: nombre, descripcion: descripcion, planta: planta };
+            console.log('Payload Update:', jsonForm);
+
+            $http.post($scope.base + 'Update', jsonForm, {
+                headers: { "Content-Type": "application/json; charset=utf-8" }
             })
-            .catch(function (err) {
-                swalErr('Operación Incorrecta', (err && (err.data || err.statusText)) || '');
-            });
+                .then(function () {
+                    swalOk('Operación Correcta', 'Centro de costo actualizado', { confirmButtonColor: '#343A40' });
+                    $scope.ViewCancel();
+                    $scope.ModelReadAll();
+                })
+                .catch(function (err) {
+                    var msg = (err && (err.data || err.statusText)) || 'Error desconocido';
+                    swalErr('Operación Incorrecta', msg);
+                });
+        }, 100);
     };
 
     // === DELETE ===
