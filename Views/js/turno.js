@@ -311,6 +311,8 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			if (!$scope.view_codigo || $scope.view_codigo.trim() === '') {
 				console.log('Campo codigo vacío, mostrando popup y leyendas');
 				$scope.showValidationErrors = true;
+				console.log('showValidationErrors establecido a true para codigo');
+				$scope.$apply(); // Forzar actualización del scope
 				Swal.fire({
 					title: 'Completar campos requeridos',
 					icon: 'warning',
@@ -323,6 +325,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
 				console.log('Campo descripcion vacío, mostrando popup y leyendas');
 				$scope.showValidationErrors = true;
+				$scope.$apply(); // Forzar actualización del scope
 				Swal.fire({
 					title: 'Completar campos requeridos',
 					icon: 'warning',
@@ -335,6 +338,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			if (!$scope.view_horadesde || $scope.view_horadesde.trim() === '') {
 				console.log('Campo horadesde vacío, mostrando popup y leyendas');
 				$scope.showValidationErrors = true;
+				$scope.$apply(); // Forzar actualización del scope
 				Swal.fire({
 					title: 'Completar campos requeridos',
 					icon: 'warning',
@@ -347,6 +351,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			if (!$scope.view_horahasta || $scope.view_horahasta.trim() === '') {
 				console.log('Campo horahasta vacío, mostrando popup y leyendas');
 				$scope.showValidationErrors = true;
+				$scope.$apply(); // Forzar actualización del scope
 				Swal.fire({
 					title: 'Completar campos requeridos',
 					icon: 'warning',
