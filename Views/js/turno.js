@@ -130,40 +130,72 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 		});
 	};
 
-	$scope.ModelCreate = function (isValid) {
-		console.log('=== VALIDACIÓN CREATE TURNO === isValid:', isValid);
-		console.log('=== FUNCIÓN MODELCREATE EJECUTADA ===');
+	$scope.ModelCreate = function () {
+		console.log('=== CREATE TURNO ===');
+		console.log('Valores del scope:');
+		console.log('view_codigo:', $scope.view_codigo, 'tipo:', typeof $scope.view_codigo);
+		console.log('view_descripcion:', $scope.view_descripcion, 'tipo:', typeof $scope.view_descripcion);
+		console.log('view_horadesde:', $scope.view_horadesde, 'tipo:', typeof $scope.view_horadesde);
+		console.log('view_horahasta:', $scope.view_horahasta, 'tipo:', typeof $scope.view_horahasta);
 
-		// Tomo valores desde ng-model y respaldo desde el DOM
-		var codigo = ($scope.view_codigo || '').trim();
-		var descripcion = ($scope.view_descripcion || '').trim();
-		var horadesde = ($scope.view_horadesde || '').trim();
-		var horahasta = ($scope.view_horahasta || '').trim();
-
+		// Obtener valores directamente del DOM como respaldo
 		var codigoField = document.getElementById('view_codigo');
 		var descripcionField = document.getElementById('view_descripcion');
 		var horadesdeField = document.getElementById('view_horadesde');
 		var horahastaField = document.getElementById('view_horahasta');
 		
-		if (codigoField && typeof codigoField.value === 'string') codigo = codigoField.value.trim() || codigo;
-		if (descripcionField && typeof descripcionField.value === 'string') descripcion = descripcionField.value.trim() || descripcion;
-		if (horadesdeField && typeof horadesdeField.value === 'string') horadesde = horadesdeField.value.trim() || horadesde;
-		if (horahastaField && typeof horahastaField.value === 'string') horahasta = horahastaField.value.trim() || horahasta;
+		var codigo = codigoField ? codigoField.value.trim() : '';
+		var descripcion = descripcionField ? descripcionField.value.trim() : '';
+		var horadesde = horadesdeField ? horadesdeField.value.trim() : '';
+		var horahasta = horahastaField ? horahastaField.value.trim() : '';
+		
+		console.log('Valores desde DOM:');
+		console.log('codigo desde DOM:', codigo);
+		console.log('descripcion desde DOM:', descripcion);
+		console.log('horadesde desde DOM:', horadesde);
+		console.log('horahasta desde DOM:', horahasta);
 
+		console.log('Valores después de trim:');
+		console.log('codigo:', codigo, 'vacío?', !codigo);
+		console.log('descripcion:', descripcion, 'vacía?', !descripcion);
+		console.log('horadesde:', horadesde, 'vacía?', !horadesde);
+		console.log('horahasta:', horahasta, 'vacía?', !horahasta);
+
+		// Validación básica requerida
 		var errores = [];
-		if (!codigo) errores.push('Código');
-		if (!descripcion) errores.push('Descripción');
-		if (!horadesde) errores.push('Hora desde');
-		if (!horahasta) errores.push('Hora hasta');
+		
+		console.log('=== VALIDACIÓN DETALLADA ===');
+		console.log('codigo === ""?', codigo === "");
+		console.log('codigo === null?', codigo === null);
+		console.log('codigo === undefined?', codigo === undefined);
+		console.log('codigo.length:', codigo.length);
+		console.log('!codigo evalúa a:', !codigo);
+		
+		if (!codigo) {
+			console.log('Agregando Código a errores');
+			errores.push('Código');
+		}
+		if (!descripcion) {
+			console.log('Agregando Descripción a errores');
+			errores.push('Descripción');
+		}
+		if (!horadesde) {
+			console.log('Agregando Hora desde a errores');
+			errores.push('Hora desde');
+		}
+		if (!horahasta) {
+			console.log('Agregando Hora hasta a errores');
+			errores.push('Hora hasta');
+		}
 
-		if (!isValid || errores.length > 0) {
-			console.log('=== DEBUG VALIDACIÓN CREATE ===');
-			console.log('showValidationErrors antes:', $scope.showValidationErrors);
-			
-			// Mostrar leyendas rojas
+		console.log('Errores encontrados:', errores);
+
+		if (errores.length > 0) {
+			// Activo las leyendas rojas en el HTML
 			$scope.showValidationErrors = true;
-			console.log('showValidationErrors después:', $scope.showValidationErrors);
-			
+			console.log('showValidationErrors activado:', $scope.showValidationErrors);
+
+			// Popup
 			Swal.fire({
 				title: 'Completar campos requeridos',
 				icon: 'warning',
@@ -172,11 +204,18 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				allowOutsideClick: false,
 				allowEscapeKey: false
 			});
-			return;
+
+			return; // no sigo, no guardo
 		}
 
-		// Payload usando valores validados
-		var jsonForm = { codigo: codigo, descripcion: descripcion, horadesde: horadesde, horahasta: horahasta };
+		// Si está todo OK armo el payload
+		var jsonForm = {
+			codigo: codigo,
+			descripcion: descripcion,
+			horadesde: horadesde,
+			horahasta: horahasta
+		};
+
 		console.log('Payload Create:', jsonForm);
 
 		$http({
@@ -185,13 +224,26 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			url: $scope.base + 'Create',
 			data: jsonForm
 		}).then(function () {
-			$scope.showSuccess('Operación Correcta', 'Turno creado exitosamente');
+			Swal.fire({
+				title: 'Operación Correcta',
+				text: 'Turno creado exitosamente',
+				icon: 'success',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
 			$scope.ModelReadAll();
 		}).catch(function (err) {
 			var msg = (err && (err.data || err.statusText)) || 'Error desconocido';
-			$scope.showError('Operación Incorrecta', msg);
+			Swal.fire({
+				title: 'Operación Incorrecta',
+				text: msg,
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
 		});
 	};
+
 
 	$scope.ModelRead = function (view_id) {
 		$http.get($scope.base + 'get/' + view_id)
@@ -221,10 +273,6 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			});
 	};
 
-
-
-
-
 	$scope.ModelReadAll = function () {
 		$scope.dataset = [];
 		$scope.searchKeyword;
@@ -250,118 +298,76 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			});
 	};
 
-	$scope.ModelUpdate = function (isValid,view_id) {
-		console.log('ModelUpdate ejecutándose - isValid:', isValid, 'view_id:', view_id);
-		if (isValid) {
-			// debería ser automatico 
-			$scope.view_codigo = $window.document.getElementById('view_codigo').value;
-			$scope.view_descripcion = $window.document.getElementById('view_descripcion').value;
-			$scope.view_horadesde = $window.document.getElementById('view_horadesde').value;
-			$scope.view_horahasta = $window.document.getElementById('view_horahasta').value;
-			
-			// Asegurar formato HH:MM
-			$scope.ensureTimeFormat();
-			//
+	$scope.ModelUpdate = function (isValid, view_id) {
+		console.log('=== UPDATE TURNO ===', view_id);
 
-			// Validar campos vacíos
-			console.log('Validando campos - codigo:', $scope.view_codigo, 'descripcion:', $scope.view_descripcion, 'horadesde:', $scope.view_horadesde, 'horahasta:', $scope.view_horahasta);
-			
-			if (!$scope.view_codigo || $scope.view_codigo.trim() === '') {
-				console.log('Campo codigo vacío, mostrando popup y leyendas');
-				$scope.showValidationErrors = true;
-				console.log('showValidationErrors establecido a true para codigo');
-				Swal.fire({
-					title: 'Completar campos requeridos',
-					icon: 'warning',
-					confirmButtonText: 'Aceptar',
-					confirmButtonColor: '#5c636a'
-				});
-				return;
-			}
+		// Obtener valores directamente del DOM como respaldo
+		var codigoField = document.getElementById('view_codigo');
+		var descripcionField = document.getElementById('view_descripcion');
+		var horadesdeField = document.getElementById('view_horadesde');
+		var horahastaField = document.getElementById('view_horahasta');
+		
+		var codigo = codigoField ? codigoField.value.trim() : '';
+		var descripcion = descripcionField ? descripcionField.value.trim() : '';
+		var horadesde = horadesdeField ? horadesdeField.value.trim() : '';
+		var horahasta = horahastaField ? horahastaField.value.trim() : '';
 
-			if (!$scope.view_descripcion || $scope.view_descripcion.trim() === '') {
-				console.log('Campo descripcion vacío, mostrando popup y leyendas');
-				$scope.showValidationErrors = true;
-				Swal.fire({
-					title: 'Completar campos requeridos',
-					icon: 'warning',
-					confirmButtonText: 'Aceptar',
-					confirmButtonColor: '#5c636a'
-				});
-				return;
-			}
+		var errores = [];
+		if (!codigo) errores.push('Código');
+		if (!descripcion) errores.push('Descripción');
+		if (!horadesde) errores.push('Hora desde');
+		if (!horahasta) errores.push('Hora hasta');
 
-			if (!$scope.view_horadesde || $scope.view_horadesde.trim() === '') {
-				console.log('Campo horadesde vacío, mostrando popup y leyendas');
-				$scope.showValidationErrors = true;
-				Swal.fire({
-					title: 'Completar campos requeridos',
-					icon: 'warning',
-					confirmButtonText: 'Aceptar',
-					confirmButtonColor: '#5c636a'
-				});
-				return;
-			}
+		if (errores.length > 0) {
+			$scope.showValidationErrors = true;
 
-			if (!$scope.view_horahasta || $scope.view_horahasta.trim() === '') {
-				console.log('Campo horahasta vacío, mostrando popup y leyendas');
-				$scope.showValidationErrors = true;
-				Swal.fire({
-					title: 'Completar campos requeridos',
-					icon: 'warning',
-					confirmButtonText: 'Aceptar',
-					confirmButtonColor: '#5c636a'
-				});
-				return;
-			}
-
-			var jsonForm = { id: view_id, codigo: $scope.view_codigo, descripcion: $scope.view_descripcion, horadesde: $scope.view_horadesde, horahasta: $scope.view_horahasta };
-
-			$http({
-				method: 'post',
-				headers: {
-					"Content-Type": "application/json; charset=utf-8",
-					"Authorization": ""
-				},
-				url: $scope.base + 'Update',
-				data: jsonForm
-			}).then(function (success) {
-				if (success) {
-			Swal.fire({
-				title: 'Operación Correcta',
-				text: '',
-				icon: 'success',
-				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
-			});
-					$scope.ModelReadAll();
-				}
-			}, function (error) {
-			Swal.fire({
-				title: 'Operación Incorrecta',
-				text: error,
-				icon: 'error',
-				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
-			});
-			});
-		} else {
-			/*Swal.fire({
-				title: 'Error',
-				text: 'Atributo Invalido en los datos',
-				icon: 'error',
-				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
-			});*/
 			Swal.fire({
 				title: 'Completar campos requeridos',
-				text: '',
 				icon: 'warning',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a',
+				allowOutsideClick: false,
+				allowEscapeKey: false
+			});
+			return;
+		}
+
+		var jsonForm = {
+			id: view_id,
+			codigo: codigo,
+			descripcion: descripcion,
+			horadesde: horadesde,
+			horahasta: horahasta
+		};
+
+		console.log('Payload Update:', jsonForm);
+
+		$http({
+			method: 'post',
+			headers: { "Content-Type": "application/json; charset=utf-8" },
+			url: $scope.base + 'Update',
+			data: jsonForm
+		}).then(function () {
+			Swal.fire({
+				title: 'Operación Correcta',
+				text: 'Turno actualizado exitosamente',
+				icon: 'success',
 				confirmButtonText: 'Aceptar',
 				confirmButtonColor: '#5c636a'
 			});
-		}
+			$scope.ModelReadAll();
+		}).catch(function (err) {
+			var msg = (err && (err.data || err.statusText)) || 'Error desconocido';
+			Swal.fire({
+				title: 'Operación Incorrecta',
+				text: msg,
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#5c636a'
+			});
+		});
 	};
+
 
 	$scope.ModelDelete = function (view_id) {
 		var jsonForm = { id: view_id };
