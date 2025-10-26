@@ -207,17 +207,47 @@
              display: inline-block !important;
          }
 
-         /* Asegurar que los iconos en botones se vean */
-         .btn i, .btn-link i {
-             font-family: "Font Awesome 5 Free" !important;
-             font-weight: 900 !important;
-             display: inline-block !important;
-             font-style: normal !important;
-             font-variant: normal !important;
-             text-rendering: auto !important;
-             line-height: 1 !important;
-            color: white !important;
-        }
+        /* Asegurar que los iconos en botones se vean */
+        .btn i, .btn-link i {
+            font-family: "Font Awesome 5 Free" !important;
+            font-weight: 900 !important;
+            display: inline-block !important;
+            font-style: normal !important;
+            font-variant: normal !important;
+            text-rendering: auto !important;
+            line-height: 1 !important;
+           color: white !important;
+       }
+       
+       /* Asegurar que el texto de la tabla tenga peso normal */
+       .table tbody td {
+           font-weight: normal !important;
+       }
+       
+       /* Asegurar que el botón de editar tenga fondo gris oscuro */
+       .btn-link[title="Editar"] {
+           background-color: #5c636a !important;
+           border-color: #5c636a !important;
+           color: white !important;
+           border-radius: 4px !important;
+       }
+       
+       .btn-link[title="Editar"]:hover {
+           background-color: #5c636a !important;
+           border-color: #5c636a !important;
+           color: white !important;
+       }
+       
+       .btn-link[title="Editar"]:focus {
+           background-color: #5c636a !important;
+           border-color: #5c636a !important;
+           color: white !important;
+       }
+       
+       /* Asegurar que el icono de editar tenga el color correcto */
+       .btn-link[title="Editar"] i.fa-edit {
+           color: white !important;
+       }
         
          /* Estilos específicos para botones de acciones */
          .btn-link[title="Editar"] i {
@@ -474,7 +504,7 @@
                                         <td>{{item.planta}}</td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-link p-0 align-middle" ng-click="ViewUpdate(item.id)" title="Editar">
-                                            <i class="fas fa-edit" style="color:white; font-size:14px;"></i>
+                                            <i class="fa fa-edit" style="color:#5c636a; font-size:14px;"></i>
                                             </button>
                                         <button type="button" class="btn btn-link p-0 align-middle ml-2" ng-click="ViewDelete(item.id)" title="Eliminar">
                                             <i class="fas fa-trash" style="color:white; font-size:14px;"></i>
