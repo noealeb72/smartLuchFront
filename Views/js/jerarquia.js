@@ -57,34 +57,46 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			// Verificar si SweetAlert2 está disponible
 			if (typeof Swal !== 'undefined') {
 				Swal.fire({
-					title: '¡Campos Obligatorios!',
-					text: 'Debes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.',
+					title: 'Completar campos requeridos',
+					//text: 'Debes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.',
 					icon: 'warning',
-					confirmButtonText: 'Entendido'
+					confirmButtonText: 'Aceptar'
 				});
 			} else {
-				alert('¡Campos Obligatorios!\nDebes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.');
+				alert('Completar campos requeridos\nDebes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.');
 			}
 			return;
 		}
+		
+		// Obtener valores directamente del DOM para asegurar que sean los más actuales
+		var nombre = document.getElementById('view_nombre').value.trim();
+		var descripcion = document.getElementById('view_descripcion').value.trim();
+		var bonificacion = document.getElementById('view_bonificacion_nueva').value.trim();
+		
+		console.log('=== VALORES DESDE DOM EN CREAR ===');
+		console.log('Nombre desde DOM:', nombre);
+		console.log('Descripción desde DOM:', descripcion);
+		console.log('Bonificación desde DOM:', bonificacion);
+		
 		var payload = {
-			nombre: (($scope.view_nombre || '') + '').trim(),
-			descripcion: (($scope.view_descripcion || '') + '').trim(),
-			bonificacion: (($scope.view_bonificacion || '') + '').trim()
+			nombre: nombre,
+			descripcion: descripcion,
+			bonificacion: bonificacion
 		};
+		
 		if (!payload.nombre || !payload.descripcion || !payload.bonificacion) {
 			console.log('Campos vacíos después del trim');
 			touchAll(form);
 
 			if (typeof Swal !== 'undefined') {
 				Swal.fire({
-					title: '¡Campos Vacíos!',
-					text: 'Los campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.',
+					title: 'Completar campos requeridos',
+					//: 'Los campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.',
 					icon: 'error',
-					confirmButtonText: 'Entendido'
+					confirmButtonText: 'Aceptar'
 				});
 			} else {
-				alert('¡Campos Vacíos!\nLos campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.');
+				alert('Completar campos requeridos\nLos campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.');
 			}
 			return;
 		}
@@ -96,7 +108,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Valor inválido',
 				text: 'El porcentaje de bonificación debe ser un número entre 0 y 100. Valor ingresado: ' + payload.bonificacion,
 				icon: 'error',
-				confirmButtonText: 'Entendido'
+				confirmButtonText: 'Aceptar'
 			});
 			return;
 		}
@@ -119,7 +131,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Operación Correcta',
 				text: 'Jerarquía creada correctamente',
 				icon: 'success',
-				confirmButtonText: 'Entendido'
+				confirmButtonText: 'Aceptar'
 			}).then(function () {
 				$scope.ModelReadAll();
 			});
@@ -128,7 +140,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Error',
 				text: 'Error al crear la jerarquía: ' + error.data,
 				icon: 'error',
-				confirmButtonText: 'Entendido'
+				confirmButtonText: 'Aceptar'
 			});
 		});
 	};
@@ -244,21 +256,31 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			// Verificar si SweetAlert2 está disponible
 			if (typeof Swal !== 'undefined') {
 				Swal.fire({
-					title: '¡Campos Obligatorios!',
-					text: 'Debes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.',
+					title: 'Completar campos requeridos',
+					//text: 'Debes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.',
 					icon: 'warning',
-					confirmButtonText: 'Entendido'
+					confirmButtonText: 'Aceptar'
 				});
 			} else {
-				alert('¡Campos Obligatorios!\nDebes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.');
+				alert('Completar campos requeridos\nDebes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.');
 			}
 			return;
 		}
 
+		// Obtener valores directamente del DOM para asegurar que sean los más actuales
+		var nombre = document.getElementById('view_nombre').value.trim();
+		var descripcion = document.getElementById('view_descripcion').value.trim();
+		var bonificacion = document.getElementById('view_bonificacion').value.trim();
+		
+		console.log('=== VALORES DESDE DOM ===');
+		console.log('Nombre desde DOM:', nombre);
+		console.log('Descripción desde DOM:', descripcion);
+		console.log('Bonificación desde DOM:', bonificacion);
+		
 		var payload = {
-			nombre: (($scope.view_nombre || '') + '').trim(),
-			descripcion: (($scope.view_descripcion || '') + '').trim(),
-			bonificacion: (($scope.view_bonificacion || '') + '').trim()
+			nombre: nombre,
+			descripcion: descripcion,
+			bonificacion: bonificacion
 		};
 
 		if (!payload.nombre || !payload.descripcion || !payload.bonificacion) {
@@ -267,13 +289,13 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 
 			if (typeof Swal !== 'undefined') {
 				Swal.fire({
-					title: '¡Campos Vacíos!',
-					text: 'Los campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.',
+					title: 'Completar campos requeridos',
+					//text: 'Los campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.',
 					icon: 'error',
-					confirmButtonText: 'Entendido'
+					confirmButtonText: 'Aceptar'
 				});
 			} else {
-				alert('¡Campos Vacíos!\nLos campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.');
+				alert('Completar campos requeridos\nLos campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.');
 			}
 			return;
 		}
@@ -285,7 +307,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Valor inválido',
 				text: 'El porcentaje de bonificación debe ser un número entre 0 y 100. Valor ingresado: ' + payload.bonificacion,
 				icon: 'error',
-				confirmButtonText: 'Entendido'
+				confirmButtonText: 'Aceptar'
 			});
 			return;
 		}
@@ -309,7 +331,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Operación Correcta',
 				text: 'Jerarquía actualizada correctamente',
 				icon: 'success',
-				confirmButtonText: 'Entendido'
+				confirmButtonText: 'Aceptar'
 			}).then(function () {
 				$scope.ModelReadAll();
 			});
@@ -318,7 +340,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Error',
 				text: 'Error al actualizar la jerarquía: ' + error.data,
 				icon: 'error',
-				confirmButtonText: 'Entendido'
+				confirmButtonText: 'Aceptar'
 			});
 		});
 
@@ -339,7 +361,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Operación Correcta',
 				text: 'Jerarquía eliminada correctamente',
 				icon: 'success',
-				confirmButtonText: 'Entendido'
+				confirmButtonText: 'Aceptar'
 			}).then(function () {
 				$scope.ModelReadAll();
 			});
@@ -348,7 +370,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Operación Incorrecta',
 				text: 'Error al eliminar la jerarquía',
 				icon: 'error',
-				confirmButtonText: 'Entendido'
+				confirmButtonText: 'Aceptar'
 			});
 		});
 	}
