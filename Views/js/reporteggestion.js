@@ -295,13 +295,52 @@
         };
 
         // ===== Reporte (por ahora, sólo filtra por plato) =====
-        $scope.getReporte = function () {
+        /*$scope.getReporte = function () {
             $http.get($scope.baseReporte + 'getComandas', { params: { plato: $scope.filtro_plato || '' } })
                 .then(function (res) {
                     var data = Array.isArray(res.data) ? res.data : [];
                     data.sort(function (a, b) {
                         var da = a.createdate || '', db = b.createdate || '';
                         return da > db ? -1 : (da < db ? 1 : 0);
+                    });
+                    $scope.dataset = data;
+                    $scope.comandas = data;
+                    $scope.ViewAction = 'reporte';
+                    $scope.currentPage = 0;
+                })
+                .catch(function (e) {
+                    warn('Error al obtener comandas', e, true);
+                });
+        };*/
+
+        // helper para dd/MM/yyyy
+        function fmtFecha(d) {
+            if (!d) return '';
+            var x = new Date(d);
+            if (isNaN(x)) return '';
+            var dd = String(x.getDate()).padStart(2, '0');
+            var mm = String(x.getMonth() + 1).padStart(2, '0');
+            var yyyy = x.getFullYear();
+            return dd + '/' + mm + '/' + yyyy;
+        }
+
+        $scope.getReporte = function () {
+            var params = {
+                fechadesde: fmtFecha($scope.filtro_fechadesde),
+                fechahasta: fmtFecha($scope.filtro_fechahasta),
+                codplato: $scope.filtro_plato || '',
+                centrodecosto: ($scope.rep_centro && $scope.rep_centro.nombre) || '',
+                proyecto: ($scope.rep_proyecto && $scope.rep_proyecto.nombre) || '',
+                planta: ($scope.rep_planta && $scope.rep_planta.nombre) || ''
+            };
+
+            $http.get($scope.baseReporte + 'GetComandas', { params: params })
+                .then(function (res) {
+                    var data = Array.isArray(res.data) ? res.data : [];
+                    // ya vienen ordenadas desc por createdate desde la API,
+                    // pero si querés asegurarlo del lado del cliente:
+                    data.sort(function (a, b) {
+                        return (a.createdate > b.createdate ? -1 : (a.createdate < b.createdate ? 1 : 0));
                     });
                     $scope.dataset = data;
                     $scope.comandas = data;

@@ -302,7 +302,7 @@
         <div class="solid-background">
 
 
-            <!-- Menu -->
+                <!-- Menu -->
             <div ng-include="'navbar.html'" ng-controller="NavbarCtrl" onload="console.log('Navbar cargado')" onerror="console.error('Error cargando navbar')"></div>
             <script>
                 console.log('Página cargada, verificando navbar...');
@@ -402,39 +402,40 @@
                                     </div>
                                 </div>
 
-                                <!-- Turno -->
+                                <!-- Botón Buscar -->
                                 <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="rep_turno">Turno</label>
-                                        <select id="rep_turno" class="form-control"
-                                                ng-model="rep_turno"
-                                                ng-options="t as t.nombre for t in turnos track by t.id">
-                                            <option value="">-- Todos --</option>
-                                        </select>
+                                    <div style="margin-top: 30px;">
+                                        <button type="button" class="btn" ng-click="getReporte()" style="background-color: #5c636a; border-color: #5c636a; color: white; min-width:220px; border-radius: 4px;">
+                                            <i class="fa fa-search mr-1"></i>Buscar
+                                        </button>
                                     </div>
                                 </div>
 
-                                <!-- (Opcional) Perfil Nutricional -->
+                                <!-- Turno
+    <div class="col-md-3">
+        <div class="form-group">
+            <label for="rep_turno">Turno</label>
+            <select id="rep_turno" class="form-control"
+                    ng-model="rep_turno"
+                    ng-options="t as t.nombre for t in turnos track by t.id">
+                <option value="">-- Todos --</option>
+            </select>
+        </div>
+    </div>-->
+                                <!-- (Opcional) Perfil Nutricional
                                 <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="filtro_perfilnutricional">Perfil Nutricional</label>
-                                        <select id="filtro_perfilnutricional" class="form-control"
-                                                ng-model="filtro_perfilnutricional"
-                                                ng-options="pf as pf.nombre for pf in perfiles track by pf.id">
-                                            <option value="">-- Todos --</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
+            <div class="form-group">
+                <label for="filtro_perfilnutricional">Perfil Nutricional</label>
+                <select id="filtro_perfilnutricional" class="form-control"
+                        ng-model="filtro_perfilnutricional"
+                        ng-options="pf as pf.nombre for pf in perfiles track by pf.id">
+                    <option value="">-- Todos --</option>
+                </select>
+            </div>
+        </div>
+    </div>-->
 
-                            <div class="row mt-2">
-                                <div class="col-md-12">
-                                    <button type="button" class="btn btn-primary" ng-click="getReporte()" style="min-width:220px;">
-                                        <i class="fa fa-search mr-1"></i>Generar Reporte
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
+</form>
                     </div>
                 </div>
 
@@ -458,8 +459,8 @@
                                 <small class="text-muted">Cantidad devueltos</small>
                             </div>
                             <div class="col-6 col-md-3 mb-2">
-                                <h6 class="text-info mb-0">${{totales.costo}}</h6>
-                                <small class="text-muted">Costo total</small>
+                                        <h6 class="text-info mb-0">${{totales.costo}}</h6>
+                                        <small class="text-muted">Costo total</small>
                                 </div>
                             </div>
                         </div>
@@ -482,7 +483,7 @@
                                         <th>Proyecto</th>
                                         <th style="text-align:center;">Legajo</th>
                                         <th>Plato</th>
-                                        <th>Perfil Nutricional</th>
+                                       
                                         <th style="text-align:right;">Costo</th>
                                         <th style="text-align:center;">Invitado</th>
                                         </tr>
@@ -496,7 +497,7 @@
                                             <td>{{item.proyecto}}</td>
                                         <td style="text-align:center;">{{item.user_fileNumber}}</td>
                                             <td>{{item.cod_plato}}</td>
-                                        <td>{{item.perfilnutricional}}</td>
+                                       
                                         <td style="text-align:right;">${{item.monto}}</td>
                                         <td style="text-align:center;">
                                             <span class="badge" ng-class="{'badge-success': item.invitado, 'badge-secondary': !item.invitado}">
@@ -506,7 +507,7 @@
                                         </tr>
                                     <tr ng-if="(dataset||[]).length === 0">
                                         <td colspan="10" class="text-center text-muted py-3">Sin resultados</td>
-                                    </tr>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -631,6 +632,6 @@
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
         <script src="js/navbar.js"></script>
-        <script src="js/reporteggestion.js"></script>
+    <script src="js/reporteggestion.js"></script>
 </body>
 </html>
