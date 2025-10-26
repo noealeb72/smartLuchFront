@@ -303,13 +303,26 @@
 
 
                 <!-- Menu -->
-            <div ng-include="'navbar.html'" ng-controller="NavbarCtrl" onload="console.log('Navbar cargado')" onerror="console.error('Error cargando navbar')"></div>
+            <div ng-include="'navbar.html'"></div>
             <script>
                 console.log('Página cargada, verificando navbar...');
                 setTimeout(function() {
                     var navbar = document.querySelector('nav.navbar');
                     if (navbar) {
                         console.log('✅ Navbar encontrado:', navbar);
+                        
+                        // Verificar si el rol se está mostrando
+                        var roleElement = document.querySelector('.navbar .user-role');
+                        if (roleElement) {
+                            console.log('✅ Elemento de rol encontrado:', roleElement.textContent);
+                        } else {
+                            console.log('❌ Elemento de rol no encontrado');
+                        }
+                        
+                        // Verificar localStorage
+                        var role = localStorage.getItem('role');
+                        console.log('🔍 Rol en localStorage:', role);
+                        
                     } else {
                         console.error('❌ Navbar NO encontrado');
                     }
@@ -636,7 +649,7 @@
     <!-- Main JS -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-        <script src="js/navbar.js"></script>
+        <script src="js/navbar-direct.js"></script>
     <script src="js/reporteggestion.js"></script>
 </body>
 </html>
