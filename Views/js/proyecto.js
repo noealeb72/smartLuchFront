@@ -107,7 +107,7 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 			console.log('HTTP Success response:', success);
 			if (success) {
 				Swal.fire({
-					title: 'Éxito',
+					title: 'Operación  Correcta',
 					text: 'Proyecto creado correctamente',
 					icon: 'success',
 					confirmButtonText: 'Aceptar',
@@ -183,7 +183,7 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 				Swal.fire({
-					title: 'Éxito',
+					title: 'Operación  Correcta',
 					text: 'Proyecto creado correctamente',
 					icon: 'success',
 					confirmButtonText: 'Aceptar',
@@ -322,7 +322,7 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 			console.log('HTTP Success response:', success);
 			if (success) {
 				Swal.fire({
-					title: 'Éxito',
+					title: 'Operación  Correcta',
 					text: 'Proyecto actualizado correctamente',
 					icon: 'success',
 					confirmButtonText: 'Aceptar',
@@ -356,7 +356,7 @@ app.controller('Proyecto', function ($scope, $sce, $http, $window) {
 		}).then(function (success) {
 			if (success) {
 				Swal.fire({
-					title: 'Éxito',
+					title: 'Operación  Correcta',
 					text: 'Proyecto eliminado correctamente',
 					icon: 'success',
 					confirmButtonText: 'Aceptar',

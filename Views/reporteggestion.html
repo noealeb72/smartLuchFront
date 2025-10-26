@@ -482,25 +482,30 @@
                                         <th>CC</th>
                                         <th>Proyecto</th>
                                         <th style="text-align:center;">Legajo</th>
-                                        <th>Plato</th>
+                                        <th>Nombre</th>            <!-- NUEVO -->
+                                        <th>Apellido</th>          <!-- NUEVO -->
                                        
+                                        <th>Plato</th>
+
                                         <th style="text-align:right;">Costo</th>
                                         <th style="text-align:center;">Invitado</th>
-                                        </tr>
+                                    </tr>
                                     </thead>
                                     <tbody>
                                         <tr ng-repeat="item in dataset | startFrom:currentPage*pageSize | limitTo:pageSize">
-                                        <td>{{item.createdate | formatDate}}</td>
+                                            <td>{{item.createdate | formatDate}}</td>
                                             <td>{{item.createdate | formatHour}}</td>
                                             <td>{{item.planta}}</td>
                                             <td>{{item.centrodecosto}}</td>
                                             <td>{{item.proyecto}}</td>
-                                        <td style="text-align:center;">{{item.user_fileNumber}}</td>
-                                            <td>{{item.cod_plato}}</td>
-                                       
-                                        <td style="text-align:right;">${{item.monto}}</td>
-                                        <td style="text-align:center;">
-                                            <span class="badge" ng-class="{'badge-success': item.invitado, 'badge-secondary': !item.invitado}">
+                                            <td style="text-align:center;">{{item.legajo}}</td>
+                                            <td>{{item.nombre || '-'}}</td>      <!-- NUEVO -->
+                                            <td>{{item.apellido || '-'}}</td>    <!-- NUEVO -->
+                                            <td>{{item.cod_plato}}-{{item.platoNombre || '-'}}</td>
+
+                                            <td style="text-align:right;">${{item.monto}}</td>
+                                            <td style="text-align:center;">
+                                                <span class="badge" ng-class="{'badge-success': item.invitado, 'badge-secondary': !item.invitado}">
                                                     {{item.invitado | formatBool}}
                                                 </span>
                                             </td>
