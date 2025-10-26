@@ -122,16 +122,20 @@
         function toListIdDesc(arr) {
             if (!Array.isArray(arr)) return [];
             return arr.map(function (x) {
+                console.log('Procesando elemento:', x);
+                var id = x.id || x.Id || x.ID || x.codigo || x.code || x.value || null;
+                var nombre = x.nombre || x.Nombre || x.descripcion || x.Descripcion || x.detalle || x.text || 'Sin nombre';
+                console.log('ID mapeado:', id, 'Nombre mapeado:', nombre);
                 return {
-                    id: x.id || x.Id || x.ID || x.codigo || x.code || x.value || null,
-                    descripcion: x.descripcion || x.Descripcion || x.nombre || x.Nombre || x.detalle || x.text || String(x)
+                    id: id,
+                    nombre: nombre
                 };
             });
         }
 
         // ===== Cargas de combos =====
         function cargarPlantas() {
-            /*console.log('🔄 Cargando plantas...');
+            console.log('🔄 Cargando plantas...');
             $http.get($scope.basePlantas + 'getAll')
                 .then(function (response) {
                     $scope.plantas = toListIdDesc(response.data);
@@ -141,7 +145,7 @@
                     $scope.plantas = [];
                     console.error('❌ Error cargando plantas:', error.status, error.data);
                     warn('Error cargando plantas', {status: error.status, data: error.data});
-                });*/
+                });
         }
 
         function cargarCentros() {
@@ -151,6 +155,12 @@
                 .then(function (response) {
                     console.log('📥 Respuesta centros:', response);
                     console.log('📥 Datos centros:', response.data);
+                    console.log('📥 Tipo de datos:', typeof response.data);
+                    console.log('📥 Es array:', Array.isArray(response.data));
+                    if (Array.isArray(response.data) && response.data.length > 0) {
+                        console.log('📥 Primer elemento:', response.data[0]);
+                        console.log('📥 Campos del primer elemento:', Object.keys(response.data[0]));
+                    }
                     $scope.centrosdecosto = toListIdDesc(response.data);
                     console.log('✅ Centros cargados:', $scope.centrosdecosto.length, 'elementos');
                     console.log('✅ Lista centros:', $scope.centrosdecosto);
@@ -293,11 +303,16 @@
         // Cargar combos al iniciar
         (function init() {
             console.log('🔄 Iniciando carga de combos...');
-            /*cargarPlantas();
+            console.log('🔄 Llamando cargarPlantas...');
+            cargarPlantas();
+            console.log('🔄 Llamando cargarCentros...');
             cargarCentros();
+            console.log('🔄 Llamando cargarProyectos...');
             cargarProyectos();
+            console.log('🔄 Llamando cargarTurnos...');
             cargarTurnos();
-            cargarPerfiles();*/
+            console.log('🔄 Llamando cargarPerfiles...');
+            cargarPerfiles();
             
             // Verificar carga después de un tiempo
             setTimeout(function() {

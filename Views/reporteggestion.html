@@ -370,7 +370,7 @@
                                         <label for="rep_centro">Centro de Costo</label>
                                         <select id="rep_centro" class="form-control"
                                                 ng-model="rep_centro"
-                                                ng-options="c as c.descripcion for c in centrosdecosto track by c.id">
+                                                ng-options="c as c.nombre for c in centrosdecosto track by c.id">
                                             <option value="">-- Todos --</option>
                                         </select>
                         </div>
@@ -384,7 +384,7 @@
                                         <label for="rep_proyecto">Proyecto</label>
                                         <select id="rep_proyecto" class="form-control"
                                                 ng-model="rep_proyecto"
-                                                ng-options="p as p.descripcion for p in proyectos track by p.id">
+                                                ng-options="p as p.nombre for p in proyectos track by p.id">
                                             <option value="">-- Todos --</option>
                                         </select>
                                     </div>
@@ -396,7 +396,7 @@
                                         <label for="rep_planta">Planta</label>
                                         <select id="rep_planta" class="form-control"
                                                 ng-model="rep_planta"
-                                                ng-options="p as p.descripcion for p in plantas track by p.id">
+                                                ng-options="p as p.nombre for p in plantas track by p.id">
                                             <option value="">-- Todas --</option>
                                         </select>
                                     </div>
@@ -408,7 +408,7 @@
                                         <label for="rep_turno">Turno</label>
                                         <select id="rep_turno" class="form-control"
                                                 ng-model="rep_turno"
-                                                ng-options="t as t.descripcion for t in turnos track by t.id">
+                                                ng-options="t as t.nombre for t in turnos track by t.id">
                                             <option value="">-- Todos --</option>
                                         </select>
                                     </div>
