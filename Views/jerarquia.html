@@ -520,7 +520,6 @@
                                                 Ingresá solo números enteros.
                                             </small>
                                         </div>
-                                    </div>
 
                                     <!-- Botones alineados a la izquierda -->
                                     <div class="d-flex gap-2 mt-3">
@@ -543,22 +542,20 @@
                             </div>
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="jerarquiaForm" ng-submit="ModelUpdate(jerarquiaForm.$valid, view_id, jerarquiaForm)" novalidate>
-                                    <!-- Recuadro para los campos del formulario -->
-                                    <div class="form-container">
-                                        <div class="pb-3 form-group">
+                                    <div class="pb-3 form-group">
                                             <label for="view_nombre">* Nombre</label>
-                                            <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                            <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                             <span ng-show="jerarquiaForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_nombre.$error.required && jerarquiaForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
                                         </div>
                                         <div class="pb-3 form-group">
                                             <label for="view_descripcion">* Descripción</label>
-                                            <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese Descripción" required>
+                                            <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese Descripción" required>
                                             <span ng-show="jerarquiaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_descripcion.$error.required && jerarquiaForm.view_descripcion.$dirty" class="text-danger">Descripcion requerida.</span>
                                         </div>
                                         <!-- EDITAR JERARQUÍA -->
                                         <div class="pb-3 form-group">
                                             <label for="view_bonificacion">* Porcentaje de bonificación (%)</label>
-                                            <input class="form-control"
+                                            <input class="col-8 form-control"
                                                    type="number"
                                                    id="view_bonificacion"
                                                    name="view_bonificacion"
@@ -592,7 +589,6 @@
                                                 Ingresá solo números enteros.
                                             </small>
                                         </div>
-                                    </div>
 
                                     <!-- Botones alineados a la izquierda -->
                                     <div class="d-flex gap-2 mt-3">
