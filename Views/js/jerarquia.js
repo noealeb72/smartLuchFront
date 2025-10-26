@@ -10,7 +10,7 @@ app.filter('startFrom', function () {
 app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 
 	$scope.base = 'http://localhost:8000/api/jerarquia/';
-	
+
 	// Función touchAll copiada de plan-nutricional
 	function touchAll(form) {
 		if (!form) return;
@@ -34,7 +34,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 	$scope.user_DNI = localStorage.getItem('dni');
 
 	// Función para validar porcentaje en tiempo real
-	$scope.validatePercentage = function(value) {
+	$scope.validatePercentage = function (value) {
 		if (value && value !== '') {
 			var num = parseInt(value);
 			if (num > 100) {
@@ -49,40 +49,44 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 
 	$scope.ModelCreate = function (isValid, form) {
 		console.log('ModelCreate ejecutándose - isValid:', isValid, 'form:', form);
-		if (!isValid) { 
+		if (!isValid) {
 			console.log('Formulario no válido, mostrando popup');
 			console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
-			touchAll(form); 
-			
-			// Usar SweetAlert2 siempre
-			Swal.fire({ 
-				title: 'Completar campos requeridos', 
-				text: '', 
-				icon: 'warning',
-				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
-			});
-			return; 
+			touchAll(form);
+
+			// Verificar si SweetAlert2 está disponible
+			if (typeof Swal !== 'undefined') {
+				Swal.fire({
+					title: '¡Campos Obligatorios!',
+					text: 'Debes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+			} else {
+				alert('¡Campos Obligatorios!\nDebes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.');
+			}
+			return;
 		}
-		var payload = { 
-			nombre: (($scope.view_nombre || '') + '').trim(), 
+		var payload = {
+			nombre: (($scope.view_nombre || '') + '').trim(),
 			descripcion: (($scope.view_descripcion || '') + '').trim(),
 			bonificacion: (($scope.view_bonificacion || '') + '').trim()
 		};
-		if (!payload.nombre || !payload.descripcion || !payload.bonificacion) { 
+		if (!payload.nombre || !payload.descripcion || !payload.bonificacion) {
 			console.log('Campos vacíos después del trim');
-			touchAll(form); 
-			
+			touchAll(form);
+
 			if (typeof Swal !== 'undefined') {
-				Swal.fire({ 
-					title: 'Completar campos requeridos', 
-					text: '', 
+				Swal.fire({
+					title: '¡Campos Vacíos!',
+					text: 'Los campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.',
 					icon: 'error',
-					confirmButtonText: 'Aceptar',
-					confirmButtonColor: '#5c636a'
-				}); 
+					confirmButtonText: 'Entendido'
+				});
+			} else {
+				alert('¡Campos Vacíos!\nLos campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.');
 			}
-			return; 
+			return;
 		}
 
 		// Validar que la bonificación sea un número válido
@@ -92,8 +96,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Valor inválido',
 				text: 'El porcentaje de bonificación debe ser un número entre 0 y 100. Valor ingresado: ' + payload.bonificacion,
 				icon: 'error',
-				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonText: 'Entendido'
 			});
 			return;
 		}
@@ -113,10 +116,10 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (response) {
 			Swal.fire({
-				title: 'Éxito',
+				title: 'Operación Correcta',
 				text: 'Jerarquía creada correctamente',
 				icon: 'success',
-				confirmButtonText: 'Aceptar'
+				confirmButtonText: 'Entendido'
 			}).then(function () {
 				$scope.ModelReadAll();
 			});
@@ -125,8 +128,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Error',
 				text: 'Error al crear la jerarquía: ' + error.data,
 				icon: 'error',
-				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonText: 'Entendido'
 			});
 		});
 	};
@@ -135,7 +137,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 		console.log('=== INICIANDO ModelRead ===');
 		console.log('ID recibido:', view_id);
 		console.log('URL de la petición:', $scope.base + 'get/' + view_id);
-		
+
 		$http.get($scope.base + 'get/' + view_id)
 			.success(function (data) {
 				console.log('=== RESPUESTA DEL SERVIDOR ===');
@@ -143,7 +145,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				console.log('Tipo de datos:', typeof data);
 				console.log('Es array:', Array.isArray(data));
 				console.log('Longitud del array:', data ? data.length : 'No es array');
-				
+
 				if (data && data.length > 0) {
 					console.log('=== PRIMER ELEMENTO DEL ARRAY ===');
 					console.log('data[0]:', data[0]);
@@ -151,43 +153,43 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 					console.log('data[0].descripcion:', data[0].descripcion);
 					console.log('data[0].bonificacion:', data[0].bonificacion);
 					console.log('Tipo de bonificación:', typeof data[0].bonificacion);
-					
+
 					console.log('=== ANTES DE ASIGNAR ===');
 					console.log('view_nombre antes:', $scope.view_nombre);
 					console.log('view_descripcion antes:', $scope.view_descripcion);
 					console.log('view_bonificacion antes:', $scope.view_bonificacion);
 					console.log('view_bonificacion_editar antes:', $scope.view_bonificacion_editar);
-					
+
 					// Asignar valores
 					$scope.view_nombre = data[0].nombre;
 					$scope.view_descripcion = data[0].descripcion;
-					
+
 					// Convertir bonificación a número explícitamente
 					console.log('=== CONVERSIÓN DE BONIFICACIÓN ===');
 					console.log('Valor original del servidor:', data[0].bonificacion);
 					console.log('Tipo original:', typeof data[0].bonificacion);
-					
+
 					var bonificacionNum = parseFloat(data[0].bonificacion);
 					console.log('Después de parseFloat:', bonificacionNum);
 					console.log('Tipo después de parseFloat:', typeof bonificacionNum);
-					
+
 					if (isNaN(bonificacionNum)) {
 						console.log('Es NaN, asignando 0');
 						bonificacionNum = 0;
 					}
-					
+
 					console.log('Valor final a asignar:', bonificacionNum);
 					console.log('Tipo final:', typeof bonificacionNum);
-					
+
 					$scope.view_bonificacion = bonificacionNum;
 					$scope.view_bonificacion_editar = bonificacionNum;
-					
+
 					console.log('=== DESPUÉS DE ASIGNAR ===');
 					console.log('view_nombre después:', $scope.view_nombre);
 					console.log('view_descripcion después:', $scope.view_descripcion);
 					console.log('view_bonificacion después:', $scope.view_bonificacion);
 					console.log('view_bonificacion_editar después:', $scope.view_bonificacion_editar);
-					
+
 					// Verificar si los valores se asignaron correctamente
 					console.log('=== VERIFICACIÓN DE ASIGNACIÓN ===');
 					console.log('¿Nombre asignado correctamente?:', $scope.view_nombre === data[0].nombre);
@@ -202,13 +204,11 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				console.log('=== ERROR EN LA PETICIÓN ===');
 				console.log('Status:', status);
 				console.log('Data del error:', data);
-				Swal.fire({
-					title: 'Ha ocurrido un error',
-					text: 'Api no presente',
-					icon: 'error',
-					confirmButtonText: 'Aceptar',
-					confirmButtonColor: '#5c636a'
-				});
+				Swal.fire(
+					'Ha ocurrido un error',
+					'Api no presente',
+					'error'
+				);
 			});
 	};
 
@@ -226,54 +226,56 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				$scope.dataset = data;
 			})
 			.error(function (data, status) {
-				Swal.fire({
-					title: 'Ha ocurrido un error',
-					text: 'Api no presente',
-					icon: 'error',
-					confirmButtonText: 'Aceptar',
-					confirmButtonColor: '#5c636a'
-				});
+				Swal.fire(
+					'Ha ocurrido un error',
+					'Api no presente',
+					'error'
+				);
 			});
 	};
 
 	$scope.ModelUpdate = function (isValid, view_id, form) {
 		console.log('ModelUpdate ejecutándose - isValid:', isValid, 'view_id:', view_id, 'form:', form);
-		if (!isValid) { 
+		if (!isValid) {
 			console.log('Formulario no válido, mostrando popup');
 			console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
-			touchAll(form); 
-			
-			// Usar SweetAlert2 siempre
-			Swal.fire({ 
-				title: 'Completar campos requeridos', 
-				text: '', 
-				icon: 'warning',
-				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
-			});
-			return; 
+			touchAll(form);
+
+			// Verificar si SweetAlert2 está disponible
+			if (typeof Swal !== 'undefined') {
+				Swal.fire({
+					title: '¡Campos Obligatorios!',
+					text: 'Debes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.',
+					icon: 'warning',
+					confirmButtonText: 'Entendido'
+				});
+			} else {
+				alert('¡Campos Obligatorios!\nDebes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.');
+			}
+			return;
 		}
-		
-		var payload = { 
-			nombre: (($scope.view_nombre || '') + '').trim(), 
+
+		var payload = {
+			nombre: (($scope.view_nombre || '') + '').trim(),
 			descripcion: (($scope.view_descripcion || '') + '').trim(),
 			bonificacion: (($scope.view_bonificacion || '') + '').trim()
 		};
-		
-		if (!payload.nombre || !payload.descripcion || !payload.bonificacion) { 
+
+		if (!payload.nombre || !payload.descripcion || !payload.bonificacion) {
 			console.log('Campos vacíos después del trim');
-			touchAll(form); 
-			
+			touchAll(form);
+
 			if (typeof Swal !== 'undefined') {
-				Swal.fire({ 
-					title: 'Completar campos requeridos', 
-					text: '', 
+				Swal.fire({
+					title: '¡Campos Vacíos!',
+					text: 'Los campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.',
 					icon: 'error',
-					confirmButtonText: 'Aceptar',
-					confirmButtonColor: '#5c636a'
-				}); 
+					confirmButtonText: 'Entendido'
+				});
+			} else {
+				alert('¡Campos Vacíos!\nLos campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.');
 			}
-			return; 
+			return;
 		}
 
 		// Validar que la bonificación sea un número válido
@@ -283,8 +285,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Valor inválido',
 				text: 'El porcentaje de bonificación debe ser un número entre 0 y 100. Valor ingresado: ' + payload.bonificacion,
 				icon: 'error',
-				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonText: 'Entendido'
 			});
 			return;
 		}
@@ -305,10 +306,10 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (response) {
 			Swal.fire({
-				title: 'Éxito',
+				title: 'Operación Correcta',
 				text: 'Jerarquía actualizada correctamente',
 				icon: 'success',
-				confirmButtonText: 'Aceptar'
+				confirmButtonText: 'Entendido'
 			}).then(function () {
 				$scope.ModelReadAll();
 			});
@@ -317,8 +318,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Error',
 				text: 'Error al actualizar la jerarquía: ' + error.data,
 				icon: 'error',
-				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonText: 'Entendido'
 			});
 		});
 
@@ -336,10 +336,10 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (response) {
 			Swal.fire({
-				title: 'Éxito',
+				title: 'Operación Correcta',
 				text: 'Jerarquía eliminada correctamente',
 				icon: 'success',
-				confirmButtonText: 'Aceptar'
+				confirmButtonText: 'Entendido'
 			}).then(function () {
 				$scope.ModelReadAll();
 			});
@@ -348,8 +348,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				title: 'Operación Incorrecta',
 				text: 'Error al eliminar la jerarquía',
 				icon: 'error',
-				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonText: 'Entendido'
 			});
 		});
 	}
@@ -372,14 +371,14 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 		console.log('- view_descripcion:', $scope.view_descripcion);
 		console.log('- view_bonificacion:', $scope.view_bonificacion);
 		console.log('- view_bonificacion_editar:', $scope.view_bonificacion_editar);
-		
+
 		$scope.ViewAction = 'Editar Jerarquia';
 		$scope.view_id = view_id;
-		
+
 		console.log('Después de asignar ViewAction y view_id:');
 		console.log('- ViewAction:', $scope.ViewAction);
 		console.log('- view_id:', $scope.view_id);
-		
+
 		console.log('Llamando a ModelRead...');
 		$scope.ModelRead(view_id);
 	};
@@ -390,7 +389,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			text: 'Desea dar de baja la jerarquía?',
 			icon: 'warning',
 			showCancelButton: true,
-			confirmButtonColor: '#5c636a',
+			confirmButtonColor: '#3085d6',
 			cancelButtonColor: '#d33',
 			confirmButtonText: 'Aceptar',
 			cancelButtonText: 'Cancelar'
