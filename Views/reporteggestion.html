@@ -303,7 +303,7 @@
 
 
             <!-- Menu -->
-            <div ng-include="'navbar.html'" onload="console.log('Navbar cargado')" onerror="console.error('Error cargando navbar')"></div>
+            <div ng-include="'navbar.html'" ng-controller="NavbarCtrl" onload="console.log('Navbar cargado')" onerror="console.error('Error cargando navbar')"></div>
             <script>
                 console.log('Página cargada, verificando navbar...');
                 setTimeout(function() {
@@ -630,7 +630,7 @@
     <!-- Main JS -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-        <script src="js/navbar-direct.js"></script>
+        <script src="js/navbar.js"></script>
         <script src="js/reporteggestion.js"></script>
 </body>
 </html>
