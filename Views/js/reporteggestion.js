@@ -139,6 +139,12 @@
             $http.get($scope.basePlantas + 'getAll')
                 .then(function (response) {
                     $scope.plantas = toListIdDesc(response.data);
+                    // Ordenar alfabéticamente por nombre
+                    $scope.plantas.sort(function(a, b) {
+                        var nombreA = (a.nombre || '').toLowerCase();
+                        var nombreB = (b.nombre || '').toLowerCase();
+                        return nombreA.localeCompare(nombreB);
+                    });
                     console.log('✅ Plantas cargadas:', $scope.plantas.length, 'elementos');
                 })
                 .catch(function (error) {
@@ -162,6 +168,12 @@
                         console.log('📥 Campos del primer elemento:', Object.keys(response.data[0]));
                     }
                     $scope.centrosdecosto = toListIdDesc(response.data);
+                    // Ordenar alfabéticamente por nombre
+                    $scope.centrosdecosto.sort(function(a, b) {
+                        var nombreA = (a.nombre || '').toLowerCase();
+                        var nombreB = (b.nombre || '').toLowerCase();
+                        return nombreA.localeCompare(nombreB);
+                    });
                     console.log('✅ Centros cargados:', $scope.centrosdecosto.length, 'elementos');
                     console.log('✅ Lista centros:', $scope.centrosdecosto);
                 })
@@ -178,6 +190,12 @@
             $http.get($scope.baseProyectos + 'getAll')
                 .then(function (response) {
                     $scope.proyectos = toListIdDesc(response.data);
+                    // Ordenar alfabéticamente por nombre
+                    $scope.proyectos.sort(function(a, b) {
+                        var nombreA = (a.nombre || '').toLowerCase();
+                        var nombreB = (b.nombre || '').toLowerCase();
+                        return nombreA.localeCompare(nombreB);
+                    });
                     console.log('✅ Proyectos cargados:', $scope.proyectos.length, 'elementos');
                 })
                 .catch(function (error) {
@@ -192,6 +210,12 @@
             $http.get($scope.baseTurno + 'GetTurnosDisponibles')
                 .then(function (response) {
                     $scope.turnos = toListIdDesc(response.data);
+                    // Ordenar alfabéticamente por nombre
+                    $scope.turnos.sort(function(a, b) {
+                        var nombreA = (a.nombre || '').toLowerCase();
+                        var nombreB = (b.nombre || '').toLowerCase();
+                        return nombreA.localeCompare(nombreB);
+                    });
                     console.log('✅ Turnos cargados:', $scope.turnos.length, 'elementos');
                 })
                 .catch(function (error) {
@@ -207,9 +231,24 @@
                 .then(function (response) {
                     // normalizo a {id, nombre} para ng-options pf as pf.nombre for pf in perfiles track by pf.id
                     var list = Array.isArray(response.data) ? response.data : [];
+                    console.log('📥 Datos originales de perfiles:', response.data);
+                    console.log('📥 Lista procesada:', list);
                     $scope.perfiles = list.map(function (x) {
-                        return { id: x.id || x.codigo || x.value || null, nombre: x.nombre || x.descripcion || String(x) };
+                        var id = x.id || x.codigo || x.value || null;
+                        var nombre = x.nombre || x.descripcion || String(x);
+                        console.log('🔄 Mapeando perfil:', x, '-> ID:', id, 'Nombre:', nombre);
+                        return { id: id, nombre: nombre };
                     });
+                    // Ordenar alfabéticamente por nombre
+                    console.log('🔄 Ordenando perfiles alfabéticamente...');
+                    console.log('📋 Perfiles antes del ordenamiento:', $scope.perfiles);
+                    $scope.perfiles.sort(function(a, b) {
+                        var nombreA = (a.nombre || '').toLowerCase();
+                        var nombreB = (b.nombre || '').toLowerCase();
+                        console.log('🔄 Comparando:', nombreA, 'vs', nombreB);
+                        return nombreA.localeCompare(nombreB);
+                    });
+                    console.log('📋 Perfiles después del ordenamiento:', $scope.perfiles);
                     console.log('✅ Perfiles cargados:', $scope.perfiles.length, 'elementos');
                 })
                 .catch(function (error) {
