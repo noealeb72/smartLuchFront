@@ -131,75 +131,80 @@
 
         // ===== Cargas de combos =====
         function cargarPlantas() {
-            console.log('🔄 Cargando plantas...');
+            /*console.log('🔄 Cargando plantas...');
             $http.get($scope.basePlantas + 'getAll')
-                .success(function (data) {
-                    $scope.plantas = toListIdDesc(data);
+                .then(function (response) {
+                    $scope.plantas = toListIdDesc(response.data);
                     console.log('✅ Plantas cargadas:', $scope.plantas.length, 'elementos');
                 })
-                .error(function (data, status) {
+                .catch(function (error) {
                     $scope.plantas = [];
-                    console.error('❌ Error cargando plantas:', status, data);
-                    warn('Error cargando plantas', {status: status, data: data});
-                });
+                    console.error('❌ Error cargando plantas:', error.status, error.data);
+                    warn('Error cargando plantas', {status: error.status, data: error.data});
+                });*/
         }
 
         function cargarCentros() {
             console.log('🔄 Cargando centros de costo...');
+            console.log('URL:', $scope.baseCentrodecostos + 'getAll');
             $http.get($scope.baseCentrodecostos + 'getAll')
-                .success(function (data) {
-                    $scope.centrosdecosto = toListIdDesc(data);
+                .then(function (response) {
+                    console.log('📥 Respuesta centros:', response);
+                    console.log('📥 Datos centros:', response.data);
+                    $scope.centrosdecosto = toListIdDesc(response.data);
                     console.log('✅ Centros cargados:', $scope.centrosdecosto.length, 'elementos');
+                    console.log('✅ Lista centros:', $scope.centrosdecosto);
                 })
-                .error(function (data, status) {
+                .catch(function (error) {
                     $scope.centrosdecosto = [];
-                    console.error('❌ Error cargando centros:', status, data);
-                    warn('Error cargando centros de costo', {status: status, data: data});
+                    console.error('❌ Error cargando centros:', error.status, error.data);
+                    console.error('❌ Error completo:', error);
+                    warn('Error cargando centros de costo', {status: error.status, data: error.data});
                 });
         }
 
         function cargarProyectos() {
             console.log('🔄 Cargando proyectos...');
             $http.get($scope.baseProyectos + 'getAll')
-                .success(function (data) {
-                    $scope.proyectos = toListIdDesc(data);
+                .then(function (response) {
+                    $scope.proyectos = toListIdDesc(response.data);
                     console.log('✅ Proyectos cargados:', $scope.proyectos.length, 'elementos');
                 })
-                .error(function (data, status) {
+                .catch(function (error) {
                     $scope.proyectos = [];
-                    console.error('❌ Error cargando proyectos:', status, data);
-                    warn('Error cargando proyectos', {status: status, data: data});
+                    console.error('❌ Error cargando proyectos:', error.status, error.data);
+                    warn('Error cargando proyectos', {status: error.status, data: error.data});
                 });
         }
 
         function cargarTurnos() {
             console.log('🔄 Cargando turnos...');
             $http.get($scope.baseTurno + 'GetTurnosDisponibles')
-                .success(function (data) {
-                    $scope.turnos = toListIdDesc(data);
+                .then(function (response) {
+                    $scope.turnos = toListIdDesc(response.data);
                     console.log('✅ Turnos cargados:', $scope.turnos.length, 'elementos');
                 })
-                .error(function (data, status) {
+                .catch(function (error) {
                     $scope.turnos = [];
-                    console.error('❌ Error cargando turnos:', status, data);
-                    warn('Error cargando turnos', {status: status, data: data});
+                    console.error('❌ Error cargando turnos:', error.status, error.data);
+                    warn('Error cargando turnos', {status: error.status, data: error.data});
                 });
         }
 
         function cargarPerfiles() {
             console.log('🔄 Cargando perfiles nutricionales...');
             $http.get('http://localhost:8000/api/plannutricional/getAll')
-                .success(function (data) {
+                .then(function (response) {
                     // normalizo a {id, nombre} para ng-options pf as pf.nombre for pf in perfiles track by pf.id
-                    var list = Array.isArray(data) ? data : [];
+                    var list = Array.isArray(response.data) ? response.data : [];
                     $scope.perfiles = list.map(function (x) {
                         return { id: x.id || x.codigo || x.value || null, nombre: x.nombre || x.descripcion || String(x) };
                     });
                     console.log('✅ Perfiles cargados:', $scope.perfiles.length, 'elementos');
                 })
-                .error(function (data, status) {
+                .catch(function (error) {
                     $scope.perfiles = [];
-                    console.error('❌ Error cargando perfiles:', status, data);
+                    console.error('❌ Error cargando perfiles:', error.status, error.data);
                     // no es crítico
                 });
         }
@@ -288,11 +293,11 @@
         // Cargar combos al iniciar
         (function init() {
             console.log('🔄 Iniciando carga de combos...');
-            cargarPlantas();
+            /*cargarPlantas();
             cargarCentros();
             cargarProyectos();
             cargarTurnos();
-            cargarPerfiles();
+            cargarPerfiles();*/
             
             // Verificar carga después de un tiempo
             setTimeout(function() {

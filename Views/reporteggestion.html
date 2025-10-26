@@ -1,139 +1,362 @@
 ﻿<!DOCTYPE html>
-<html lang="es" ng-app="AngujarJS">
-<head>
-    <meta charset="utf-8" />
-    <title>SmartLunch - Reporte de Gestión</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<html lang="es" ng-app="AngujarJS" ng-controller="ReportegGestion">
 
-    <!-- CSS base -->
-    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" crossorigin="anonymous" />
-    <link rel="stylesheet" href="css/style.min.css" />
-    <link rel="stylesheet" href="css/smartstyle.css" />
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>SmartLunch</title>
+    <meta name="description" content="SmartLunch">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- CSS Externo -->
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/select2/select2.min.css">
+    <link rel="stylesheet" href="vendor/owlcarousel/owl.carousel.min.css">
+    <link rel="stylesheet" href="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/css/tempusdominus-bootstrap-4.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/brands.css">
+    <!-- Fuentes -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700|Josefin+Sans:300,400,700">
+    <link rel="stylesheet" href="https://cdn.linearicons.com/free/1.0.0/icon-font.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" crossorigin="anonymous">
+    <!-- CSS Personalizado -->
+    <link rel="stylesheet" href="css/style.min.css">
+    <link rel="stylesheet" href="css/smartstyle.css">
+
+    <!-- SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
+    <!-- Modernizr -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
 
     <style>
-        .btn-primary {
+        .breadcrumb {
+            border-radius: 0;
+        }
+
+        .breadcrumb-container {
+            margin-top: 0px;
+        }
+
+        /* Botón de confirmación/cancelación en Swal */
+        .swal2-confirm {
             background-color: #495057 !important;
             border-color: #495057 !important;
-            color: #fff !important;
+            color: white !important;
         }
 
-        .datatable-pagination {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: .75rem;
+            .swal2-confirm:hover {
+                background-color: #343a40 !important;
+                border-color: #343a40 !important;
+            }
+
+        .swal2-cancel {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            color: white !important;
         }
-        
-        .page-number-btn {
-            min-width: 30px;
-            height: 30px;
-            display: inline-flex;
+
+            .swal2-cancel:hover {
+                background-color: #c82333 !important;
+                border-color: #c82333 !important;
+            }
+        /* .swal2-container { z-index: 20000 !important; }  opcional si algo la tapa */
+
+        /* Estilos para botones de paginación personalizados */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .pagination-btn {
+            background-color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin: 0 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            color: #6c757d;
+            font-size: 14px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            font-size: .8rem;
-            font-weight: 500;
-        }
-        
-        .table-scroll {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-        }
-        
-        thead.sticky {
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            min-width: 40px;
+            height: 36px;
         }
 
-        /* Estilos para el acordeón de filtros */
-        .card-header:hover {
-            background-color: #5a6268 !important;
-        }
-        
-        .card-body {
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-        
-        .fa-chevron-down, .fa-chevron-up {
-            transition: transform 0.3s ease;
+            .pagination-btn:hover:not(:disabled) {
+                background-color: #e9ecef;
+                color: #495057;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            }
+
+            .pagination-btn:active:not(:disabled) {
+                transform: translateY(0);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+
+            .pagination-btn:disabled {
+                background-color: #f8f9fa;
+                color: #adb5bd;
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+
+            .pagination-btn i {
+                font-size: 12px;
+            }
+
+        /* Estilos para el botón de limpiar búsqueda */
+        .input-group-append .btn {
+            border-left: 0;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
         }
 
-        /* Estilos para que el footer se vea al final */
+            .input-group-append .btn:hover:not(:disabled) {
+                background-color: #5c636a !important;
+                border-color: #5c636a !important;
+                color: white !important;
+            }
+
+            .input-group-append .btn:focus {
+                background-color: #5c636a !important;
+                border-color: #5c636a !important;
+                color: white !important;
+                box-shadow: none !important;
+            }
+
+            .input-group-append .btn:disabled {
+                background-color: #f8f9fa;
+                border-color: #dee2e6;
+                color: #6c757d;
+                cursor: not-allowed;
+            }
+
+        /* Estilos para el botón Agregar */
+        .btn-primary[ng-click="ViewCreate()"] {
+            background-color: #5c636a !important;
+            border-color: #5c636a !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 6px !important;
+        }
+
+            .btn-primary[ng-click="ViewCreate()"]:hover {
+                background-color: #5c636a !important;
+                border-color: #5c636a !important;
+                color: white !important;
+            }
+
+            .btn-primary[ng-click="ViewCreate()"]:focus {
+                background-color: #5c636a !important;
+                border-color: #5c636a !important;
+                color: white !important;
+                box-shadow: none !important;
+            }
+
+        /* Estilos para botones de acciones */
+        .action-btn {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 6px !important;
+            border: none !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            margin: 0 2px !important;
+        }
+
+        .edit-btn {
+            background-color: #343a40 !important;
+            color: white !important;
+        }
+
+            .edit-btn:hover {
+                background-color: #343a40 !important;
+                color: white !important;
+            }
+
+            .edit-btn:focus {
+                background-color: #343a40 !important;
+                color: white !important;
+                box-shadow: none !important;
+            }
+
+        .delete-btn {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+
+            .delete-btn:hover {
+                background-color: #dc3545 !important;
+                color: white !important;
+            }
+
+            .delete-btn:focus {
+                background-color: #dc3545 !important;
+                color: white !important;
+                box-shadow: none !important;
+            }
+
+        /* Estilos para botones Guardar y Cancelar */
+        .save-btn {
+            background-color: #36393F !important;
+            border-color: #36393F !important;
+            color: white !important;
+            border-radius: 6px !important;
+            border: none !important;
+            padding: 8px 16px !important;
+            margin-right: 10px !important;
+        }
+
+            .save-btn:hover {
+                background-color: #36393F !important;
+                border-color: #36393F !important;
+                color: white !important;
+            }
+
+            .save-btn:focus {
+                background-color: #36393F !important;
+                border-color: #36393F !important;
+                color: white !important;
+                box-shadow: none !important;
+            }
+
+        .cancel-btn {
+            background-color: #F04747 !important;
+            border-color: #F04747 !important;
+            color: white !important;
+            border-radius: 6px !important;
+            border: none !important;
+            padding: 8px 16px !important;
+        }
+
+            .cancel-btn:hover {
+                background-color: #F04747 !important;
+                border-color: #F04747 !important;
+                color: white !important;
+            }
+
+            .cancel-btn:focus {
+                background-color: #F04747 !important;
+                border-color: #F04747 !important;
+                color: white !important;
+                box-shadow: none !important;
+            }
+
+        /* Estilos para breadcrumb */
+        .breadcrumb {
+            border-radius: 0;
+        }
+
+        .breadcrumb-container {
+            margin-top: 0px;
+        }
+
+        /* Estilos para que el fondo blanco llegue hasta el final */
         html, body {
             height: 100%;
         }
-        
+
         body {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
-        
+
         .container-fluid {
             flex: 1;
         }
-        
-        .smart-bg {
-            margin-top: auto;
-        }
-        
+
         .solid-background {
             min-height: calc(100vh - 60px);
             background-color: #ffffff;
         }
+
+        .smart-bg {
+            margin-top: auto;
+        }
     </style>
 </head>
 
-<body ng-controller="ReportegGestion">
-    <div class="container-fluid px-3" style="min-height: 100vh; display: flex; flex-direction: column;">
-        <!-- Navbar -->
-        <div ng-include="'navbar.html'"></div>
+<body class="d-flex flex-column min-vh-100">
+    <div class="container-fluid flex-grow-1">
+        <div class="solid-background">
 
-        <!-- Contenido principal -->
-        <div style="flex: 1;">
-            <div class="heading-section bg-dark text-white pt-2 pl-3 mb-3">
-            <h3 class="mb-2">Reporte de Gestión</h3>
-        </div>
 
-        <!-- Filtros -->
-        <div class="card mb-3">
-            <div class="card-header d-flex justify-content-between align-items-center" 
-                 style="background:#6c757d; color:#fff; cursor:pointer; user-select: none;"
-                 ng-click="toggleFiltros = !toggleFiltros">
-                <h6 class="mb-0"><i class="fa fa-filter mr-2"></i>Filtros de búsqueda</h6>
-                <i class="fa fa-chevron-down" ng-class="{'fa-chevron-down': !toggleFiltros, 'fa-chevron-up': toggleFiltros}" 
-                   style="transition: transform 0.3s ease;"></i>
-            </div>
+            <!-- Menu -->
+            <div ng-include="'navbar.html'" onload="console.log('Navbar cargado')" onerror="console.error('Error cargando navbar')"></div>
+            <script>
+                console.log('Página cargada, verificando navbar...');
+                setTimeout(function() {
+                    var navbar = document.querySelector('nav.navbar');
+                    if (navbar) {
+                        console.log('✅ Navbar encontrado:', navbar);
+                    } else {
+                        console.error('❌ Navbar NO encontrado');
+                    }
+                }, 1000);
+            </script>
 
-            <div class="card-body" ng-show="toggleFiltros" ng-init="toggleFiltros = true" style="transition: all 0.3s ease;">
-                <form novalidate>
-                    <div class="row">
-                        <!-- (Opcional) Fechas -->
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="filtro_fechadesde">Fecha desde</label>
-                                <input type="date" id="filtro_fechadesde" class="form-control" ng-model="filtro_fechadesde">
-                            </div>
+            <!-- Contenido principal -->
+            <div style="flex: 1;">
+                <div class="heading-section bg-dark text-white pt-2 pl-3 mb-3">
+                    <h3 class="mb-2">Reporte de Gestión</h3>
                         </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="filtro_fechahasta">Fecha hasta</label>
-                                <input type="date" id="filtro_fechahasta" class="form-control" ng-model="filtro_fechahasta">
+
+                <!-- Filtros -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center"
+                         style="background:#6c757d; color:#fff; cursor:pointer; user-select: none;"
+                         ng-click="toggleFiltros = !toggleFiltros">
+                        <h6 class="mb-0"><i class="fa fa-filter mr-2"></i>Filtros de búsqueda</h6>
+                        <i class="fa fa-chevron-down" ng-class="{'fa-chevron-down': !toggleFiltros, 'fa-chevron-up': toggleFiltros}"
+                           style="transition: transform 0.3s ease;"></i>
                     </div>
+
+                    <div class="card-body" ng-show="toggleFiltros" ng-init="toggleFiltros = true" style="transition: all 0.3s ease;">
+                        <form novalidate>
+                            <div class="row">
+                                <!-- (Opcional) Fechas -->
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="filtro_fechadesde">Fecha desde</label>
+                                        <input type="date" id="filtro_fechadesde" class="form-control" ng-model="filtro_fechadesde">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="filtro_fechahasta">Fecha hasta</label>
+                                        <input type="date" id="filtro_fechahasta" class="form-control" ng-model="filtro_fechahasta">
+                </div>
                 </div>
 
-                        <!-- Plato (código) + buscador -->
-                        <div class="col-md-3">
+                                <!-- Plato (código) + buscador -->
+                                <div class="col-md-3">
                                         <div class="form-group">
-                                <label for="filtro_plato">Plato</label>
+                                        <label for="filtro_plato">Plato</label>
                                             <div class="input-group">
-                                    <input id="filtro_plato" class="form-control" type="text" ng-model="filtro_plato" placeholder="Código de plato..." />
+                                            <input id="filtro_plato" class="form-control" type="text" ng-model="filtro_plato" placeholder="Código de plato..." />
                                                 <div class="input-group-append">
-                                        <button type="button" class="btn btn-primary" ng-click="buscarPlato()" title="Buscar plato">
+                                                <button type="button" class="btn btn-primary" ng-click="buscarPlato()" title="Buscar plato">
                                                         <i class="fa fa-search"></i>
                                                     </button>
                                                 </div>
@@ -141,177 +364,177 @@
                                         </div>
                                     </div>
 
-                        <!-- Centro de Costo -->
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="rep_centro">Centro de Costo</label>
-                                <select id="rep_centro" class="form-control"
-                                        ng-model="rep_centro"
-                                        ng-options="c as c.descripcion for c in centrosdecosto track by c.id">
-                                    <option value="">-- Todos --</option>
-                                </select>
-                            </div>
+                                <!-- Centro de Costo -->
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="rep_centro">Centro de Costo</label>
+                                        <select id="rep_centro" class="form-control"
+                                                ng-model="rep_centro"
+                                                ng-options="c as c.descripcion for c in centrosdecosto track by c.id">
+                                            <option value="">-- Todos --</option>
+                                        </select>
                         </div>
-                    </div>
-
-                    <div class="row">
-                        <!-- Proyecto -->
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="rep_proyecto">Proyecto</label>
-                                <select id="rep_proyecto" class="form-control"
-                                        ng-model="rep_proyecto"
-                                        ng-options="p as p.descripcion for p in proyectos track by p.id">
-                                    <option value="">-- Todos --</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Planta -->
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="rep_planta">Planta</label>
-                                <select id="rep_planta" class="form-control"
-                                        ng-model="rep_planta"
-                                        ng-options="p as p.descripcion for p in plantas track by p.id">
-                                    <option value="">-- Todas --</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Turno -->
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="rep_turno">Turno</label>
-                                <select id="rep_turno" class="form-control"
-                                        ng-model="rep_turno"
-                                        ng-options="t as t.descripcion for t in turnos track by t.id">
-                                    <option value="">-- Todos --</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- (Opcional) Perfil Nutricional -->
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="filtro_perfilnutricional">Perfil Nutricional</label>
-                                <select id="filtro_perfilnutricional" class="form-control"
-                                        ng-model="filtro_perfilnutricional"
-                                        ng-options="pf as pf.nombre for pf in perfiles track by pf.id">
-                                    <option value="">-- Todos --</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row mt-2">
-                        <div class="col-md-12">
-                            <button type="button" class="btn btn-primary" ng-click="getReporte()" style="min-width:220px;">
-                                            <i class="fa fa-search mr-1"></i>Generar Reporte
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
                     </div>
                 </div>
 
-        <!-- Resumen -->
-        <div ng-if="ViewAction == 'reporte'" class="card mb-2">
-            <div class="card-header" style="background:#6c757d; color:#fff;">
-                            <h6 class="mb-0"><i class="fa fa-chart-bar mr-2"></i>Resumen del Reporte</h6>
-                        </div>
-            <div class="card-body py-2">
-                <div class="row text-center">
-                    <div class="col-6 col-md-3 mb-2">
-                                        <h6 class="text-primary mb-0">{{totales.platos}}</h6>
-                                        <small class="text-muted">Cantidad de platos</small>
+                            <div class="row">
+                                <!-- Proyecto -->
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="rep_proyecto">Proyecto</label>
+                                        <select id="rep_proyecto" class="form-control"
+                                                ng-model="rep_proyecto"
+                                                ng-options="p as p.descripcion for p in proyectos track by p.id">
+                                            <option value="">-- Todos --</option>
+                                        </select>
                                     </div>
-                    <div class="col-6 col-md-3 mb-2">
-                                        <h6 class="text-success mb-0">{{totales.promedio}}</h6>
-                                        <small class="text-muted">Promedio de calificación</small>
+                                </div>
+
+                                <!-- Planta -->
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="rep_planta">Planta</label>
+                                        <select id="rep_planta" class="form-control"
+                                                ng-model="rep_planta"
+                                                ng-options="p as p.descripcion for p in plantas track by p.id">
+                                            <option value="">-- Todas --</option>
+                                        </select>
                                     </div>
-                    <div class="col-6 col-md-3 mb-2">
-                                        <h6 class="text-warning mb-0">{{totales.devueltos}}</h6>
-                                        <small class="text-muted">Cantidad devueltos</small>
+                                </div>
+
+                                <!-- Turno -->
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="rep_turno">Turno</label>
+                                        <select id="rep_turno" class="form-control"
+                                                ng-model="rep_turno"
+                                                ng-options="t as t.descripcion for t in turnos track by t.id">
+                                            <option value="">-- Todos --</option>
+                                        </select>
                                     </div>
-                    <div class="col-6 col-md-3 mb-2">
-                                        <h6 class="text-info mb-0">${{totales.costo}}</h6>
-                                        <small class="text-muted">Costo total</small>
+                                </div>
+
+                                <!-- (Opcional) Perfil Nutricional -->
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="filtro_perfilnutricional">Perfil Nutricional</label>
+                                        <select id="filtro_perfilnutricional" class="form-control"
+                                                ng-model="filtro_perfilnutricional"
+                                                ng-options="pf as pf.nombre for pf in perfiles track by pf.id">
+                                            <option value="">-- Todos --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-2">
+                                <div class="col-md-12">
+                                    <button type="button" class="btn btn-primary" ng-click="getReporte()" style="min-width:220px;">
+                                        <i class="fa fa-search mr-1"></i>Generar Reporte
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Resumen -->
+                <div ng-if="ViewAction == 'reporte'" class="card mb-2">
+                    <div class="card-header" style="background:#6c757d; color:#fff;">
+                        <h6 class="mb-0"><i class="fa fa-chart-bar mr-2"></i>Resumen del Reporte</h6>
+                    </div>
+                    <div class="card-body py-2">
+                        <div class="row text-center">
+                            <div class="col-6 col-md-3 mb-2">
+                                <h6 class="text-primary mb-0">{{totales.platos}}</h6>
+                                <small class="text-muted">Cantidad de platos</small>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2">
+                                <h6 class="text-success mb-0">{{totales.promedio}}</h6>
+                                <small class="text-muted">Promedio de calificación</small>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2">
+                                <h6 class="text-warning mb-0">{{totales.devueltos}}</h6>
+                                <small class="text-muted">Cantidad devueltos</small>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2">
+                                <h6 class="text-info mb-0">${{totales.costo}}</h6>
+                                <small class="text-muted">Costo total</small>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-        <!-- Tabla -->
-        <div ng-if="ViewAction == 'reporte'" class="card">
-            <div class="card-header" style="background:#6c757d; color:#fff;">
-                <h6 class="mb-0"><i class="fa fa-table mr-2"></i>Detalle del Reporte</h6>
+                <!-- Tabla -->
+                <div ng-if="ViewAction == 'reporte'" class="card">
+                    <div class="card-header" style="background:#6c757d; color:#fff;">
+                        <h6 class="mb-0"><i class="fa fa-table mr-2"></i>Detalle del Reporte</h6>
                         </div>
                         <div class="card-body">
-                <div class="table-responsive table-scroll">
+                        <div class="table-responsive table-scroll">
                                 <table class="table table-hover table-sm mb-0">
-                        <thead class="bg-dark text-white sticky">
-                            <tr>
-                                <th style="min-width:110px;">Fecha</th>
-                                <th>Hora</th>
-                                <th>Planta</th>
-                                <th>CC</th>
-                                <th>Proyecto</th>
-                                <th style="text-align:center;">Legajo</th>
-                                <th>Plato</th>
-                                <th>Perfil Nutricional</th>
-                                <th style="text-align:right;">Costo</th>
-                                <th style="text-align:center;">Invitado</th>
+                                <thead class="bg-dark text-white sticky">
+                                    <tr>
+                                        <th style="min-width:110px;">Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Planta</th>
+                                        <th>CC</th>
+                                        <th>Proyecto</th>
+                                        <th style="text-align:center;">Legajo</th>
+                                        <th>Plato</th>
+                                        <th>Perfil Nutricional</th>
+                                        <th style="text-align:right;">Costo</th>
+                                        <th style="text-align:center;">Invitado</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr ng-repeat="item in dataset | startFrom:currentPage*pageSize | limitTo:pageSize">
-                                <td>{{item.createdate | formatDate}}</td>
+                                        <td>{{item.createdate | formatDate}}</td>
                                             <td>{{item.createdate | formatHour}}</td>
                                             <td>{{item.planta}}</td>
                                             <td>{{item.centrodecosto}}</td>
                                             <td>{{item.proyecto}}</td>
-                                <td style="text-align:center;">{{item.user_fileNumber}}</td>
+                                        <td style="text-align:center;">{{item.user_fileNumber}}</td>
                                             <td>{{item.cod_plato}}</td>
-                                <td>{{item.perfilnutricional}}</td>
-                                <td style="text-align:right;">${{item.monto}}</td>
-                                <td style="text-align:center;">
-                                    <span class="badge" ng-class="{'badge-success': item.invitado, 'badge-secondary': !item.invitado}">
+                                        <td>{{item.perfilnutricional}}</td>
+                                        <td style="text-align:right;">${{item.monto}}</td>
+                                        <td style="text-align:center;">
+                                            <span class="badge" ng-class="{'badge-success': item.invitado, 'badge-secondary': !item.invitado}">
                                                     {{item.invitado | formatBool}}
                                                 </span>
                                             </td>
                                         </tr>
-                            <tr ng-if="(dataset||[]).length === 0">
-                                <td colspan="10" class="text-center text-muted py-3">Sin resultados</td>
-                            </tr>
+                                    <tr ng-if="(dataset||[]).length === 0">
+                                        <td colspan="10" class="text-center text-muted py-3">Sin resultados</td>
+                                    </tr>
                                     </tbody>
                                 </table>
                             </div>
                             
-                <!-- Paginación -->
+                        <!-- Paginación -->
                             <div class="datatable-pagination mt-3">
                                 <div class="row align-items-center">
                                     <div class="col-md-6">
-                            <div class="text-muted">
-                                Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, (dataset||[]).length)}} de {{(dataset||[]).length}} registros
-                                        </div>
+                                    <div class="text-muted">
+                                        Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, (dataset||[]).length)}} de {{(dataset||[]).length}} registros
                                     </div>
-                        <div class="col-md-6 d-flex justify-content-end align-items-center">
-                            <span class="mr-2">Filas:</span>
-                            <select class="form-control form-control-sm mr-3" style="width:80px"
-                                    ng-model="pageSize" ng-change="changePageSize(pageSize)">
+                                </div>
+                                <div class="col-md-6 d-flex justify-content-end align-items-center">
+                                    <span class="mr-2">Filas:</span>
+                                    <select class="form-control form-control-sm mr-3" style="width:80px"
+                                            ng-model="pageSize" ng-change="changePageSize(pageSize)">
                                                 <option value="10">10</option>
-                                <option value="20" selected>20</option>
+                                        <option value="20" selected>20</option>
                                                 <option value="50">50</option>
                                                 <option value="100">100</option>
                                             </select>
                                             
                                             <button class="btn btn-sm btn-outline-secondary page-number-btn" 
-                                    ng-disabled="currentPage==0" ng-click="goToPage(0)">
+                                            ng-disabled="currentPage==0" ng-click="goToPage(0)">
                                                 <i class="fa fa-angle-double-left"></i>
                                             </button>
-                            <button class="btn btn-sm btn-outline-secondary page-number-btn ml-1"
-                                    ng-disabled="currentPage==0" ng-click="goToPage(currentPage-1)">
+                                    <button class="btn btn-sm btn-outline-secondary page-number-btn ml-1"
+                                            ng-disabled="currentPage==0" ng-click="goToPage(currentPage-1)">
                                                 <i class="fa fa-angle-left"></i>
                                             </button>
                                             
@@ -325,16 +548,16 @@
                                                 <span ng-if="page === '...'" class="mx-1">...</span>
                                             </span>
                                             
-                            <button class="btn btn-sm btn-outline-secondary page-number-btn mr-1"
-                                    ng-disabled="currentPage >= numberOfPages()-1" ng-click="goToPage(currentPage+1)">
+                                    <button class="btn btn-sm btn-outline-secondary page-number-btn mr-1"
+                                            ng-disabled="currentPage >= numberOfPages()-1" ng-click="goToPage(currentPage+1)">
                                                 <i class="fa fa-angle-right"></i>
                                             </button>
                                             <button class="btn btn-sm btn-outline-secondary page-number-btn" 
-                                    ng-disabled="currentPage >= numberOfPages()-1" ng-click="goToPage(numberOfPages()-1)">
+                                            ng-disabled="currentPage >= numberOfPages()-1" ng-click="goToPage(numberOfPages()-1)">
                                                 <i class="fa fa-angle-double-right"></i>
                                             </button>
                                             
-                            <span class="ml-3 text-muted">Página {{currentPage + 1}} de {{numberOfPages()}}</span>
+                                    <span class="ml-3 text-muted">Página {{currentPage + 1}} de {{numberOfPages()}}</span>
                         </div>
                     </div>
                 </div>
@@ -342,19 +565,19 @@
         </div>
 
         <!-- Modal Buscar Plato -->
-        <div class="modal fade" id="modalBuscarPlato" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal fade" id="modalBuscarPlato" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
-                    <div class="modal-header" style="background:#F34949; color:#fff;">
+                            <div class="modal-header" style="background:#F34949; color:#fff;">
                         <h5 class="modal-title"><i class="fa fa-search mr-2"></i>Buscar Plato</h5>
-                        <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                     </div>
                     <div class="modal-body">
                         <div class="form-group">
-                            <label>Buscar plato (mín. 2 letras):</label>
-                            <input type="text" class="form-control" ng-model="busquedaPlato" ng-keyup="buscarPlatos()" placeholder="Nombre o código..." />
+                                    <label>Buscar plato (mín. 2 letras):</label>
+                                    <input type="text" class="form-control" ng-model="busquedaPlato" ng-keyup="buscarPlatos()" placeholder="Nombre o código..." />
                         </div>
-                        <div class="table-responsive" style="max-height:300px; overflow-y:auto;">
+                                <div class="table-responsive" style="max-height:300px; overflow-y:auto;">
                             <table class="table table-hover table-sm">
                                 <thead class="bg-light">
                                     <tr>
@@ -367,7 +590,7 @@
                                 <tbody>
                                     <tr ng-repeat="plato in platosFiltrados track by plato.codigo">
                                         <td>{{plato.codigo}}</td>
-                                        <td>{{plato.nombre || plato.descripcion}}</td>
+                                                <td>{{plato.nombre || plato.descripcion}}</td>
                                         <td>{{plato.descripcion}}</td>
                                         <td>
                                             <button class="btn btn-sm btn-primary" ng-click="seleccionarPlato(plato)">
@@ -375,32 +598,39 @@
                                             </button>
                                         </td>
                                     </tr>
-                                    <tr ng-if="platosFiltrados.length === 0 && (busquedaPlato||'').length >= 2">
-                                        <td colspan="4" class="text-center text-muted">No se encontraron platos</td>
+                                            <tr ng-if="platosFiltrados.length === 0 && (busquedaPlato||'').length >= 2">
+                                                <td colspan="4" class="text-center text-muted">No se encontraron platos</td>
                                     </tr>
-                                    <tr ng-if="(busquedaPlato||'').length < 2">
-                                        <td colspan="4" class="text-center text-muted">Ingrese al menos 2 caracteres para buscar</td>
+                                            <tr ng-if="(busquedaPlato||'').length < 2">
+                                                <td colspan="4" class="text-center text-muted">Ingrese al menos 2 caracteres para buscar</td>
                                     </tr>
                                 </tbody>
                             </table>
+                                </div>
+                            </div> <!-- /modal-body -->
                         </div>
-                    </div> <!-- /modal-body -->
+                    </div>
                 </div>
-            </div>
-        </div>
-        </div> <!-- Fin del contenido principal -->
-        
+            </div> <!-- Fin del contenido principal -->
+        </div> <!-- Fin de solid-background -->
         <!-- Footer -->
-        <div ng-include="'footer.html'"></div>
-    </div>
-
-    <!-- Scripts (orden recomendado) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <div ng-include="'footer.html'" class="footer-sticky" style="margin-top: auto;"></div>
+    <!-- External JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+    <script src="vendor/bootstrap/popper.min.js"></script>
     <script src="vendor/bootstrap/bootstrap.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.9/angular.min.js"></script>
-    <script src="js/angular-base64.js"></script>
-    <script src="js/navbar-direct.js"></script>
-    <script src="js/reporteggestion.js"></script>
+    <script src="vendor/select2/select2.min.js "></script>
+    <script src="vendor/owlcarousel/owl.carousel.min.js"></script>
+    <script src="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.js"></script>
+    <script src="vendor/stellar/jquery.stellar.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <!-- Main JS -->
+    <!-- Main JS -->
+    <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+        <script src="js/navbar-direct.js"></script>
+        <script src="js/reporteggestion.js"></script>
 </body>
 </html>
