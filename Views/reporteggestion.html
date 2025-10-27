@@ -303,7 +303,7 @@
 
 
                 <!-- Menu -->
-            <div ng-include="'navbar.html'"></div>
+            <div ng-include="'navbar-direct.html'"></div>
             <script>
                 console.log('Página cargada, verificando navbar...');
                 setTimeout(function() {
@@ -323,10 +323,26 @@
                         var role = localStorage.getItem('role');
                         console.log('🔍 Rol en localStorage:', role);
                         
+                        // Verificar contenedor del menú
+                        var menuContainer = document.getElementById('navbar-menu');
+                        if (menuContainer) {
+                            console.log('✅ Contenedor del menú encontrado:', menuContainer);
+                            console.log('📋 Número de elementos en el menú:', menuContainer.children.length);
+                            console.log('📋 Elementos del menú:', menuContainer.innerHTML);
+                        } else {
+                            console.log('❌ Contenedor del menú NO encontrado');
+                        }
+                        
+                        // Forzar recarga del navbar si es necesario
+                        if (window.reloadNavbar) {
+                            console.log('🔄 Forzando recarga del navbar...');
+                            window.reloadNavbar();
+                        }
+                        
                     } else {
                         console.error('❌ Navbar NO encontrado');
                     }
-                }, 1000);
+                }, 2000);
             </script>
 
             <!-- Contenido principal -->
