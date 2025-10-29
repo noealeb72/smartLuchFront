@@ -108,36 +108,23 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
 
     // --------- CRUD ---------
     $scope.ModelCreate = function (isValid) {
-        $scope.showValidationErrors = true;
-        console.log('ModelCreate - showValidationErrors:', $scope.showValidationErrors, 'isValid:', isValid);
+        console.log('ModelCreate - isValid:', isValid);
         
         if (!isValid) {
-            // Marcar todos los campos como tocados
-            if ($scope.platoForm) {
-                angular.forEach($scope.platoForm, function (field) {
-                    if (field && field.$setTouched) {
-                        field.$setTouched();
-                    }
-                });
-            }
-            
-            // Recopilar campos faltantes para el popup
-            var camposFaltantes = [];
-            if (!$scope.plato.codigo || $scope.plato.codigo.trim() === '') camposFaltantes.push('Código');
-            if (!$scope.plato.descripcion || $scope.plato.descripcion.trim() === '') camposFaltantes.push('Descripción');
-            if (!$scope.plato.ingredientes || $scope.plato.ingredientes.trim() === '') camposFaltantes.push('Ingredientes');
-            if (!$scope.plato.plannutricional || $scope.plato.plannutricional.trim() === '') camposFaltantes.push('Plan Nutricional');
-            
-            var mensaje = '';
-            
+            // Primero mostrar el popup
             Swal.fire({
                 title: 'Completar campos requeridos',
-                text: mensaje,
+                text: '',
                 icon: 'warning',
                 showCancelButton: false,
                 confirmButtonText: 'Aceptar',
                 confirmButtonColor: '#343A40',
                 buttonsStyling: true
+            }).then(() => {
+                // Después del popup, mostrar las leyendas rojas
+                $scope.showValidationErrors = true;
+                console.log('ModelCreate - showValidationErrors establecido en true después del popup');
+                $scope.$apply();
             });
             return;
         }
@@ -147,7 +134,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
             ingredientes: $scope.plato.ingredientes,
             plannutricional: $scope.plato.plannutricional,
             descripcion: $scope.plato.descripcion,
-            costo: $scope.plato.costo || 0.00,
+            costo: $scope.plato.costo || 0,
             presentacion: $scope.view_previewImage || ''
         };
 
@@ -197,36 +184,23 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     };
 
     $scope.ModelUpdate = function (isValid, view_id) {
-        $scope.showValidationErrors = true;
-        console.log('ModelUpdate - showValidationErrors:', $scope.showValidationErrors, 'isValid:', isValid);
+        console.log('ModelUpdate - isValid:', isValid);
         
         if (!isValid) {
-            // Marcar todos los campos como tocados
-            if ($scope.platoForm) {
-                angular.forEach($scope.platoForm, function (field) {
-                    if (field && field.$setTouched) {
-                        field.$setTouched();
-                    }
-                });
-            }
-            
-            // Recopilar campos faltantes para el popup
-            var camposFaltantes = [];
-            if (!$scope.plato.codigo || $scope.plato.codigo.trim() === '') camposFaltantes.push('Código');
-            if (!$scope.plato.descripcion || $scope.plato.descripcion.trim() === '') camposFaltantes.push('Descripción');
-            if (!$scope.plato.ingredientes || $scope.plato.ingredientes.trim() === '') camposFaltantes.push('Ingredientes');
-            if (!$scope.plato.plannutricional || $scope.plato.plannutricional.trim() === '') camposFaltantes.push('Plan Nutricional');
-            
-            var mensaje = '';
-            
+            // Primero mostrar el popup
             Swal.fire({
                 title: 'Completar campos requeridos',
-                text: mensaje,
+                text: '',
                 icon: 'warning',
                 showCancelButton: false,
                 confirmButtonText: 'Aceptar',
                 confirmButtonColor: '#343A40',
                 buttonsStyling: true
+            }).then(() => {
+                // Después del popup, mostrar las leyendas rojas
+                $scope.showValidationErrors = true;
+                console.log('ModelUpdate - showValidationErrors establecido en true después del popup');
+                $scope.$apply();
             });
             return;
         }
@@ -237,7 +211,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
             ingredientes: $scope.plato.ingredientes,
             plannutricional: $scope.plato.plannutricional,
             descripcion: $scope.plato.descripcion,
-            costo: $scope.plato.costo || 0.00,
+            costo: $scope.plato.costo || 0,
             presentacion: $scope.view_previewImage || ''
         };
 

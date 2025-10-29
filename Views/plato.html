@@ -446,6 +446,8 @@
                                                class="col-8 form-control" type="text" id="codigo" name="codigo"
                                                ng-model="plato.codigo" placeholder="Ingrese código" required>
                                         <span ng-show="(!plato.codigo || plato.codigo.trim() === '') && showValidationErrors" class="text-danger">Campo Código requerido</span>
+                                        <!-- Debug info -->
+                                        <small ng-show="showValidationErrors" class="text-muted">Debug: codigo='{{plato.codigo}}', showValidationErrors={{showValidationErrors}}</small>
                                     </div>
 
                                     <div class="pb-3 form-group">
@@ -467,7 +469,7 @@
                                     </div>
 
                                     <div class="pb-3 form-group">
-                                        <label for="plannutricional"><span class="text-danger">*</span> Plan Nutricional</label>
+                                        <label for="plannutricional">Plan Nutricional</label>
                                         <select class="col-8 form-control" id="plannutricional" name="plannutricional"
                                                 ng-model="plato.plannutricional" required>
                                             <option ng-repeat="x in planes | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
@@ -549,16 +551,20 @@
     <script>
         (function (w) {
             if (!w.Swal || typeof w.Swal.fire !== 'function') return;
+            
+            // Guardar la función original para evitar recursión
+            var originalSwalFire = w.Swal.fire;
+            
             w.Swal.fire = function () {
                 if (arguments.length === 1 && typeof arguments[0] === 'object') {
-                    return w.Swal.fire(arguments[0]);
+                    return originalSwalFire.call(w.Swal, arguments[0]);
                 }
                 var args = Array.prototype.slice.call(arguments);
                 var opt = {};
                 if (args[0]) opt.title = args[0];
                 if (args[1]) opt.text = args[1];
                 if (args[2]) opt.icon = args[2];
-                return w.Swal.fire(opt);
+                return originalSwalFire.call(w.Swal, opt);
             };
         })(window);
     </script>
