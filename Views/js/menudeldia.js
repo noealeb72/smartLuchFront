@@ -224,6 +224,44 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $('#modalSeleccionarPlato').modal('hide');
     };
     
+    // Función para verificar y corregir la fecha en modo edición
+    $scope.verificarYCorregirFecha = function() {
+        console.log('🔍 Verificando fecha en modo edición...');
+        
+        // Verificar si el campo de fecha está vacío o tiene un valor incorrecto
+        var fechaField = document.getElementById('view_fechadeldia');
+        if (fechaField) {
+            var valorActual = fechaField.value;
+            var valorScope = $scope.view_fechadeldia;
+            
+            console.log('Valor del campo DOM:', valorActual);
+            console.log('Valor del scope:', valorScope);
+            
+            // Si el campo está vacío pero el scope tiene valor, aplicar el valor del scope
+            if ((!valorActual || valorActual === '') && valorScope) {
+                fechaField.value = valorScope;
+                console.log('✅ Fecha aplicada desde scope al DOM:', valorScope);
+            }
+            // Si el scope está vacío pero el campo tiene valor, actualizar el scope
+            else if (valorActual && (!valorScope || valorScope === '')) {
+                $scope.view_fechadeldia = valorActual;
+                console.log('✅ Fecha aplicada desde DOM al scope:', valorActual);
+            }
+            // Si ambos están vacíos, usar fecha actual
+            else if ((!valorActual || valorActual === '') && (!valorScope || valorScope === '')) {
+                var hoy = new Date();
+                var year = hoy.getFullYear();
+                var month = String(hoy.getMonth() + 1).padStart(2, '0');
+                var day = String(hoy.getDate()).padStart(2, '0');
+                var fechaHoy = year + '-' + month + '-' + day;
+                
+                $scope.view_fechadeldia = fechaHoy;
+                fechaField.value = fechaHoy;
+                console.log('✅ Fecha actual aplicada:', fechaHoy);
+            }
+        }
+    };
+    
     // Función de filtro avanzado
     $scope.filtroAvanzado = function(item) {
         // Filtro de fecha desde
@@ -495,7 +533,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                     try {
                         // Intentar diferentes formatos de fecha
                         var fechaStr = data[0].fechadeldia;
-                        console.log('Fecha original:', fechaStr);
+                        console.log('Fecha original:', fechaStr, 'Tipo:', typeof fechaStr);
                         
                         // Si viene en formato YYYY-MM-DD
                         if (fechaStr.includes('-')) {
@@ -529,6 +567,16 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                     fecha = new Date();
                 }
 
+                // Convertir fecha a formato YYYY-MM-DD para el input de tipo date
+                var fechaFormateada = '';
+                if (fecha instanceof Date && !isNaN(fecha.getTime())) {
+                    var year = fecha.getFullYear();
+                    var month = String(fecha.getMonth() + 1).padStart(2, '0');
+                    var day = String(fecha.getDate()).padStart(2, '0');
+                    fechaFormateada = year + '-' + month + '-' + day;
+                    console.log('Fecha formateada para input:', fechaFormateada);
+                }
+
                 $scope.view_turno = data[0].turno || '';
                 $scope.view_planta = data[0].planta || '';
                 $scope.view_centrodecosto = data[0].centrodecosto || '';
@@ -538,13 +586,25 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                 $scope.view_cantidad = data[0].cantidad || 1;
                 $scope.view_comandas = data[0].comandas || '';
                 $scope.view_despachado = data[0].despachado || '';
-                $scope.view_fechadeldia = fecha;
+                $scope.view_fechadeldia = fechaFormateada;
                 
                 console.log('Variables asignadas:', {
                     turno: $scope.view_turno,
                     planta: $scope.view_planta,
                     fechadeldia: $scope.view_fechadeldia
                 });
+                
+                // Forzar actualización de la vista con timeout para asegurar que el DOM esté listo
+                $scope.$apply();
+                
+                // Aplicar la fecha al campo del DOM directamente como respaldo
+                setTimeout(function() {
+                    var fechaField = document.getElementById('view_fechadeldia');
+                    if (fechaField && fechaFormateada) {
+                        fechaField.value = fechaFormateada;
+                        console.log('Fecha aplicada directamente al DOM:', fechaFormateada);
+                    }
+                }, 100);
             })
             .error(function () {
                 $window.Swal && $window.Swal.fire({ title: 'Ha ocurrido un error', text: 'API no presente', icon: 'error' });
@@ -947,6 +1007,9 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         
         // Asegurar que todos los campos tengan valores por defecto si están vacíos
         setTimeout(function() {
+            // Verificar y corregir la fecha si es necesario
+            $scope.verificarYCorregirFecha();
+            
             // Turno - establecer el primero si está vacío
             if ($scope.turnos && $scope.turnos.length > 0 && (!$scope.view_turno || $scope.view_turno === '')) {
                 var sortedTurnos = $scope.turnos.slice().sort(function(a, b) {
@@ -975,6 +1038,11 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                     $scope.filtrarPlatosPorTurno($scope.view_turno);
                 }, 100);
             }
+            
+            // Verificación adicional de fecha después de un tiempo
+            setTimeout(function() {
+                $scope.verificarYCorregirFecha();
+            }, 200);
             // Plantas - establecer el primero si está vacío
             if ($scope.plantas && $scope.plantas.length > 0 && (!$scope.view_planta || $scope.view_planta === '')) {
                 var sortedPlantas = $scope.plantas.slice().sort(function(a, b) {
