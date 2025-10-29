@@ -326,8 +326,10 @@
                                 <label for="filtroPlato" class="form-label small">Plato</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control form-control-sm" id="filtroPlato" 
-                                           ng-model="filtroPlato" placeholder="Código de plato...">
-                                    <button class="btn btn-sm" type="button" style="background-color: #5c636a; color: white; border: none;">
+                                           ng-model="filtroPlato" placeholder="Seleccionar plato..." readonly
+                                           ng-click="abrirPopupPlatos()">
+                                    <button class="btn btn-sm" type="button" ng-click="abrirPopupPlatos()" 
+                                            style="background-color: #5c636a; color: white; border: none;">
                                         <i class="fa fa-search"></i>
                                     </button>
                                 </div>
@@ -661,6 +663,74 @@
 
     <!-- SweetAlert2 JS (antes de tus controladores) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+    <!-- Modal para seleccionar platos -->
+    <div class="modal fade" id="modalSeleccionarPlato" tabindex="-1" role="dialog" aria-labelledby="modalSeleccionarPlatoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #5c636a; color: white;">
+                    <h5 class="modal-title" id="modalSeleccionarPlatoLabel">
+                        <i class="fa fa-utensils"></i> Seleccionar Plato
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Buscador de platos -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="input-group">
+                                <input type="text" class="form-control" ng-model="busquedaPlato" 
+                                       placeholder="Buscar plato por código o descripción...">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary" type="button" ng-click="busquedaPlato = ''">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de platos -->
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover table-sm">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descripción</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="plato in platosDisponibles | filter:busquedaPlato" 
+                                    ng-click="seleccionarPlato(plato)" 
+                                    style="cursor: pointer;">
+                                    <td>{{plato.codigo}}</td>
+                                    <td>{{plato.descripcion}}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" ng-click="seleccionarPlato(plato)">
+                                            <i class="fa fa-check"></i> Seleccionar
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr ng-if="(platosDisponibles | filter:busquedaPlato).length === 0">
+                                    <td colspan="3" class="text-center text-muted">
+                                        <i class="fa fa-info-circle"></i> No se encontraron platos
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fa fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Controladores -->
     <script src="js/navbar-direct.js"></script>

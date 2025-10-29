@@ -182,9 +182,46 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     $scope.filtroJerarquia = '';
     $scope.filtroEstado = '';
     
+    // Variables para popup de platos
+    $scope.platosDisponibles = [];
+    $scope.busquedaPlato = '';
+    
     // Función para alternar la visibilidad de los filtros
     $scope.toggleFiltros = function() {
         $scope.filtrosExpandidos = !$scope.filtrosExpandidos;
+    };
+    
+    // Función para abrir popup de platos
+    $scope.abrirPopupPlatos = function() {
+        console.log('🔍 Abriendo popup de platos');
+        
+        // Cargar platos disponibles
+        $http.get($scope.basePlatos + 'getAll')
+            .success(function(data) {
+                console.log('✅ Platos cargados:', data);
+                $scope.platosDisponibles = data;
+                $scope.busquedaPlato = ''; // Limpiar búsqueda
+                
+                // Mostrar modal
+                $('#modalSeleccionarPlato').modal('show');
+            })
+            .error(function(data, status) {
+                console.error('❌ Error al cargar platos:', data, status);
+                $window.Swal && $window.Swal.fire({
+                    title: 'Error',
+                    text: 'Error al cargar la lista de platos: ' + (data || status),
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#343A40'
+                });
+            });
+    };
+    
+    // Función para seleccionar un plato
+    $scope.seleccionarPlato = function(plato) {
+        console.log('✅ Plato seleccionado:', plato);
+        $scope.filtroPlato = plato.descripcion; // Usar descripción como valor
+        $('#modalSeleccionarPlato').modal('hide');
     };
     
     // Función de filtro avanzado
