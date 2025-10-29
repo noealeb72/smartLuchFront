@@ -49,54 +49,116 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 
 	$scope.ModelCreate = function (isValid, form) {
 		console.log('ModelCreate ejecutándose - isValid:', isValid, 'form:', form);
-		if (!isValid) {
-			console.log('Formulario no válido, mostrando popup');
-			console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
-			touchAll(form);
+		console.log('IGNORANDO isValid del formulario - haciendo validación propia');
+		console.log('VERSIÓN ACTUALIZADA - Caché limpiado:', new Date().getTime());
 
-			// Verificar si SweetAlert2 está disponible
-			if (typeof Swal !== 'undefined') {
-				Swal.fire({
-					title: 'Completar campos requeridos',
-					//text: 'Debes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.',
-					icon: 'warning',
-					confirmButtonText: 'Aceptar'
-				});
-			} else {
-				alert('Completar campos requeridos\nDebes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.');
+		// Forzar sincronización de ng-model con DOM (solo si no hay digest en progreso)
+		if (!$scope.$$phase) {
+			$scope.$apply();
+		}
+
+		// ESTRATEGIA ROBUSTA: Usar ng-model como principal, DOM como fallback
+		var perfil = '';
+		var descripcion = '';
+		var bonificacion = '';
+
+		// Intentar obtener valores desde ng-model primero
+		if ($scope.view_perfil) {
+			perfil = $scope.view_perfil.toString().trim();
+		}
+		if ($scope.view_descripcion) {
+			descripcion = $scope.view_descripcion.toString().trim();
+		}
+		if ($scope.view_bonificacion) {
+			bonificacion = $scope.view_bonificacion.toString().trim();
+		}
+
+		// Si ng-model no tiene valores, intentar desde DOM
+		if (!perfil || !descripcion || !bonificacion) {
+			console.log('Valores desde ng-model incompletos, intentando DOM...');
+			console.log('Estado actual - perfil:', perfil, 'descripcion:', descripcion, 'bonificacion:', bonificacion);
+			
+			var perfilElement = document.getElementById('view_perfil');
+			var descripcionElement = document.getElementById('view_descripcion');
+			var bonificacionElement = document.getElementById('view_bonificacion_nueva');
+			
+			console.log('Elementos DOM encontrados en crear:');
+			console.log('perfilElement:', perfilElement);
+			console.log('descripcionElement:', descripcionElement);
+			console.log('bonificacionElement:', bonificacionElement);
+			
+			// Solo actualizar si el valor está vacío
+			if (perfilElement && !perfil) {
+				perfil = perfilElement.value.trim();
+				console.log('Perfil actualizado desde DOM:', perfil);
 			}
+			if (descripcionElement && !descripcion) {
+				descripcion = descripcionElement.value.trim();
+				console.log('Descripción actualizada desde DOM:', descripcion);
+			}
+			if (bonificacionElement && !bonificacion) {
+				bonificacion = bonificacionElement.value.trim();
+				console.log('Bonificación actualizada desde DOM:', bonificacion);
+			}
+		}
+		
+		console.log('=== VALORES FINALES EN CREAR ===');
+		console.log('Perfil:', perfil);
+		console.log('Descripción:', descripcion);
+		console.log('Bonificación:', bonificacion);
+		
+		// Validación final antes de continuar
+		if (!descripcion || !bonificacion) {
+			console.log('ERROR: Campos requeridos vacíos después de intentar obtener valores');
+			console.log('Descripción:', descripcion, 'Bonificación:', bonificacion);
+			
+			Swal.fire({
+				title: 'Campos requeridos',
+				text: 'Los campos Descripción y Porcentaje de bonificación son obligatorios',
+				icon: 'error',
+				confirmButtonText: 'Aceptar'
+			}).then(function () {
+				$scope.showValidationErrors = true;
+				if (!$scope.$$phase) {
+					$scope.$apply();
+				}
+			});
 			return;
 		}
 		
-		// Obtener valores directamente del DOM para asegurar que sean los más actuales
-		var nombre = document.getElementById('view_nombre').value.trim();
-		var descripcion = document.getElementById('view_descripcion').value.trim();
-		var bonificacion = document.getElementById('view_bonificacion_nueva').value.trim();
-		
-		console.log('=== VALORES DESDE DOM EN CREAR ===');
-		console.log('Nombre desde DOM:', nombre);
-		console.log('Descripción desde DOM:', descripcion);
-		console.log('Bonificación desde DOM:', bonificacion);
-		
 		var payload = {
-			nombre: nombre,
+			perfil: perfil || 'Admin', // Default si está vacío
 			descripcion: descripcion,
 			bonificacion: bonificacion
 		};
-		
-		if (!payload.nombre || !payload.descripcion || !payload.bonificacion) {
-			console.log('Campos vacíos después del trim');
-			touchAll(form);
 
+		// Validar SOLO descripción y bonificación - ignorar perfil
+		var camposFaltantes = [];
+		if (!payload.descripcion) camposFaltantes.push('Descripción');
+		if (!payload.bonificacion) camposFaltantes.push('Porcentaje de bonificación');
+		
+		if (camposFaltantes.length > 0) {
+			console.log('Campos faltantes:', camposFaltantes);
+			console.log('Descripción:', payload.descripcion, 'Bonificación:', payload.bonificacion);
+			
+			// Mostrar popup primero
 			if (typeof Swal !== 'undefined') {
 				Swal.fire({
 					title: 'Completar campos requeridos',
-					//: 'Los campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.',
-					icon: 'error',
+					text: 'Debe completar: ' + camposFaltantes.join(', '),
+					icon: 'warning',
 					confirmButtonText: 'Aceptar'
+				}).then(function() {
+					// Después del popup, mostrar leyendas rojas
+					$scope.showValidationErrors = true;
+					$scope.$apply();
 				});
 			} else {
-				alert('Completar campos requeridos\nLos campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.');
+				alert('Completar campos requeridos\nDebe completar: ' + camposFaltantes.join(', '));
+				$scope.showValidationErrors = true;
+				if (!$scope.$$phase) {
+					$scope.$apply();
+				}
 			}
 			return;
 		}
@@ -114,10 +176,14 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 		}
 
 		var jsonForm = {
-			nombre: payload.nombre,
+			perfil: payload.perfil,
 			descripcion: payload.descripcion,
 			bonificacion: bonificacionNum
 		};
+
+		console.log('=== ENVIANDO DATOS AL SERVIDOR ===');
+		console.log('jsonForm:', jsonForm);
+		console.log('URL:', $scope.base + 'create');
 
 		$http({
 			method: 'post',
@@ -127,6 +193,9 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			url: $scope.base + 'create',
 			data: jsonForm
 		}).then(function (response) {
+			console.log('=== RESPUESTA DEL SERVIDOR ===');
+			console.log('Response:', response);
+			$scope.showValidationErrors = false; // Limpiar leyendas de validación
 			Swal.fire({
 				title: 'Operación Correcta',
 				text: 'Jerarquía creada correctamente',
@@ -136,9 +205,13 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				$scope.ModelReadAll();
 			});
 		}, function (error) {
+			console.log('=== ERROR DEL SERVIDOR ===');
+			console.log('Error:', error);
+			console.log('Error data:', error.data);
+			console.log('Error status:', error.status);
 			Swal.fire({
 				title: 'Error',
-				text: 'Error al crear la jerarquía: ' + error.data,
+				text: 'Error al crear la jerarquía: ' + (error.data || error.statusText || 'Error desconocido'),
 				icon: 'error',
 				confirmButtonText: 'Aceptar'
 			});
@@ -173,8 +246,12 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 					console.log('view_bonificacion_editar antes:', $scope.view_bonificacion_editar);
 
 					// Asignar valores
-					$scope.view_nombre = data[0].nombre;
+					$scope.view_perfil = data[0].perfil || '';
 					$scope.view_descripcion = data[0].descripcion;
+					
+					console.log('=== ASIGNACIÓN DE PERFIL ===');
+					console.log('Perfil del servidor:', data[0].perfil);
+					console.log('$scope.view_perfil asignado:', $scope.view_perfil);
 
 					// Convertir bonificación a número explícitamente
 					console.log('=== CONVERSIÓN DE BONIFICACIÓN ===');
@@ -201,6 +278,24 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 					console.log('view_descripcion después:', $scope.view_descripcion);
 					console.log('view_bonificacion después:', $scope.view_bonificacion);
 					console.log('view_bonificacion_editar después:', $scope.view_bonificacion_editar);
+					console.log('view_perfil después:', $scope.view_perfil);
+					
+					// Forzar actualización del DOM para el perfil
+					$scope.$apply();
+					
+					// Actualizar el select del perfil en el DOM
+					setTimeout(function() {
+						var perfilSelect = document.getElementById('view_perfil');
+						if (perfilSelect) {
+							console.log('=== ACTUALIZANDO SELECT DE PERFIL ===');
+							console.log('Select encontrado:', perfilSelect);
+							console.log('Valor a establecer:', $scope.view_perfil);
+							perfilSelect.value = $scope.view_perfil;
+							console.log('Valor establecido en DOM:', perfilSelect.value);
+						} else {
+							console.log('ERROR: No se encontró el select view_perfil');
+						}
+					}, 100);
 
 					// Verificar si los valores se asignaron correctamente
 					console.log('=== VERIFICACIÓN DE ASIGNACIÓN ===');
@@ -229,9 +324,10 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 		$scope.searchKeyword;
 		$scope.ViewAction = 'Lista de Items';
 		$scope.view_id = -1;
-		$scope.view_nombre = '';
+		$scope.view_perfil = '';
 		$scope.view_descripcion = '';
 		$scope.view_bonificacion = '';
+		$scope.showValidationErrors = false;
 
 		$http.get($scope.base + 'getAll')
 			.success(function (data) {
@@ -246,56 +342,175 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			});
 	};
 
-	$scope.ModelUpdate = function (isValid, view_id, form) {
-		console.log('ModelUpdate ejecutándose - isValid:', isValid, 'view_id:', view_id, 'form:', form);
-		if (!isValid) {
-			console.log('Formulario no válido, mostrando popup');
-			console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
-			touchAll(form);
+	// Función de debug para bonificación
+	$scope.debugBonificacion = function() {
+		console.log('=== DEBUG BONIFICACIÓN DETALLADO ===');
+		console.log('$scope.view_bonificacion:', $scope.view_bonificacion);
+		console.log('Tipo:', typeof $scope.view_bonificacion);
+		console.log('¿Es undefined?:', $scope.view_bonificacion === undefined);
+		console.log('¿Es null?:', $scope.view_bonificacion === null);
+		console.log('¿Es string vacío?:', $scope.view_bonificacion === '');
+		console.log('¿Es 0?:', $scope.view_bonificacion === 0);
+		console.log('¿Es NaN?:', isNaN($scope.view_bonificacion));
+		
+		// Verificar elemento DOM
+		var bonificacionElement = document.getElementById('view_bonificacion');
+		console.log('Elemento DOM view_bonificacion:', bonificacionElement);
+		if (bonificacionElement) {
+			console.log('Valor del elemento DOM:', bonificacionElement.value);
+			console.log('Tipo del valor DOM:', typeof bonificacionElement.value);
+		}
+	};
 
-			// Verificar si SweetAlert2 está disponible
-			if (typeof Swal !== 'undefined') {
-				Swal.fire({
-					title: 'Completar campos requeridos',
-					//text: 'Debes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.',
-					icon: 'warning',
-					confirmButtonText: 'Aceptar'
-				});
-			} else {
-				alert('Completar campos requeridos\nDebes completar los campos Nombre, Descripción y Porcentaje de bonificación para continuar.');
+	// Función robusta para obtener valor de bonificación
+	$scope.obtenerValorBonificacion = function() {
+		console.log('=== OBTENIENDO VALOR DE BONIFICACIÓN ===');
+		
+		// Intentar desde ng-model primero
+		var valorNgModel = $scope.view_bonificacion;
+		console.log('Valor desde ng-model:', valorNgModel, 'tipo:', typeof valorNgModel);
+		
+		// Si ng-model tiene valor (incluso 0), usarlo
+		if (valorNgModel !== undefined && valorNgModel !== null && valorNgModel !== '') {
+			console.log('Usando valor de ng-model:', valorNgModel);
+			return valorNgModel.toString().trim();
+		} else if (valorNgModel === 0) {
+			console.log('Usando valor 0 de ng-model');
+			return '0';
+		}
+		
+		// Si ng-model no tiene valor, intentar desde DOM
+		var bonificacionElement = document.getElementById('view_bonificacion');
+		if (bonificacionElement) {
+			var valorDOM = bonificacionElement.value;
+			console.log('Valor desde DOM:', valorDOM, 'tipo:', typeof valorDOM);
+			if (valorDOM !== undefined && valorDOM !== null && valorDOM !== '') {
+				console.log('Usando valor de DOM:', valorDOM);
+				return valorDOM.toString().trim();
+			} else if (valorDOM === '0') {
+				console.log('Usando valor 0 de DOM');
+				return '0';
 			}
+		}
+		
+		console.log('No se pudo obtener valor de bonificación');
+		return '';
+	};
+
+	// Función para cargar perfil en el select
+	$scope.cargarPerfilEnSelect = function(perfil) {
+		console.log('=== CARGANDO PERFIL EN SELECT ===');
+		console.log('Perfil a cargar:', perfil);
+		
+		// Actualizar ng-model
+		$scope.view_perfil = perfil;
+		
+		// Actualizar DOM
+		setTimeout(function() {
+			var perfilSelect = document.getElementById('view_perfil');
+			if (perfilSelect) {
+				console.log('Select encontrado, estableciendo valor:', perfil);
+				perfilSelect.value = perfil;
+				console.log('Valor establecido en DOM:', perfilSelect.value);
+				
+				// Disparar evento change para asegurar que Angular detecte el cambio
+				var event = new Event('change', { bubbles: true });
+				perfilSelect.dispatchEvent(event);
+			} else {
+				console.log('ERROR: No se encontró el select view_perfil');
+			}
+		}, 50);
+	};
+
+	$scope.ModelUpdate = function (isValid, view_id, form) {
+		console.log('=== INICIANDO ModelUpdate ===');
+		console.log('isValid:', isValid, 'view_id:', view_id, 'form:', form);
+		console.log('VERSIÓN ACTUALIZADA - Caché limpiado:', new Date().getTime());
+		
+		// DEBUG ESPECÍFICO PARA BONIFICACIÓN
+		$scope.debugBonificacion();
+		
+		// OBTENER VALOR DE BONIFICACIÓN DE MANERA ROBUSTA
+		var bonificacion = $scope.obtenerValorBonificacion();
+		console.log('=== VALOR DE BONIFICACIÓN OBTENIDO ===');
+		console.log('Bonificación:', bonificacion);
+		
+		// Obtener perfil y descripción (siguiendo el patrón de Planta)
+		var perfil = ($scope.view_perfil || '').trim();
+		var descripcion = ($scope.view_descripcion || '').trim();
+		
+		// Obtener elementos del DOM como respaldo
+		var perfilField = document.getElementById('view_perfil');
+		var descripcionField = document.getElementById('view_descripcion');
+		var bonificacionField = document.getElementById('view_bonificacion');
+		
+		// Sobrescribir con valores del DOM si están disponibles (como en Planta)
+		if (perfilField && typeof perfilField.value === 'string') perfil = perfilField.value.trim() || perfil;
+		if (descripcionField && typeof descripcionField.value === 'string') descripcion = descripcionField.value.trim() || descripcion;
+		if (bonificacionField && typeof bonificacionField.value === 'string') bonificacion = bonificacionField.value.trim() || bonificacion;
+		
+		console.log('=== VALORES FINALES OBTENIDOS (PATRÓN PLANTA) ===');
+		console.log('Perfil:', perfil);
+		console.log('Descripción:', descripcion);
+		console.log('Bonificación:', bonificacion);
+		console.log('¿Bonificación está vacía?:', !bonificacion);
+
+		// LÓGICA DUPLICADA ELIMINADA - Ya se obtuvieron los valores arriba siguiendo el patrón de Planta
+
+		// LÓGICA DUPLICADA ELIMINADA - Los valores ya se obtuvieron correctamente arriba
+		
+		// Validación final antes de continuar
+		if (!descripcion || !bonificacion) {
+			console.log('ERROR: Campos requeridos vacíos después de intentar obtener valores');
+			console.log('Descripción:', descripcion, 'Bonificación:', bonificacion);
+			
+			Swal.fire({
+				title: 'Campos requeridos',
+				text: 'Los campos Descripción y Porcentaje de bonificación son obligatorios',
+				icon: 'error',
+				confirmButtonText: 'Aceptar'
+			}).then(function () {
+				$scope.showValidationErrors = true;
+				if (!$scope.$$phase) {
+					$scope.$apply();
+				}
+			});
 			return;
 		}
-
-		// Obtener valores directamente del DOM para asegurar que sean los más actuales
-		var nombre = document.getElementById('view_nombre').value.trim();
-		var descripcion = document.getElementById('view_descripcion').value.trim();
-		var bonificacion = document.getElementById('view_bonificacion').value.trim();
-		
-		console.log('=== VALORES DESDE DOM ===');
-		console.log('Nombre desde DOM:', nombre);
-		console.log('Descripción desde DOM:', descripcion);
-		console.log('Bonificación desde DOM:', bonificacion);
 		
 		var payload = {
-			nombre: nombre,
+			perfil: perfil || 'Admin', // Default si está vacío
 			descripcion: descripcion,
 			bonificacion: bonificacion
 		};
 
-		if (!payload.nombre || !payload.descripcion || !payload.bonificacion) {
-			console.log('Campos vacíos después del trim');
-			touchAll(form);
-
+		// Validar solo los campos que realmente necesitamos
+		var camposFaltantes = [];
+		if (!payload.descripcion) camposFaltantes.push('Descripción');
+		if (!payload.bonificacion) camposFaltantes.push('Porcentaje de bonificación');
+		
+		if (camposFaltantes.length > 0) {
+			console.log('Campos faltantes:', camposFaltantes);
+			console.log('Descripción:', payload.descripcion, 'Bonificación:', payload.bonificacion);
+			
+			// Mostrar popup primero
 			if (typeof Swal !== 'undefined') {
 				Swal.fire({
 					title: 'Completar campos requeridos',
-					//text: 'Los campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.',
-					icon: 'error',
+					text: 'Debe completar: ' + camposFaltantes.join(', '),
+					icon: 'warning',
 					confirmButtonText: 'Aceptar'
+				}).then(function() {
+					// Después del popup, mostrar leyendas rojas
+					$scope.showValidationErrors = true;
+					$scope.$apply();
 				});
 			} else {
-				alert('Completar campos requeridos\nLos campos Nombre, Descripción y Porcentaje de bonificación no pueden estar vacíos.');
+				alert('Completar campos requeridos\nDebe completar: ' + camposFaltantes.join(', '));
+				$scope.showValidationErrors = true;
+				if (!$scope.$$phase) {
+					$scope.$apply();
+				}
 			}
 			return;
 		}
@@ -314,10 +529,15 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 
 		var jsonForm = {
 			id: view_id,
-			nombre: payload.nombre,
+			perfil: payload.perfil,
 			descripcion: payload.descripcion,
 			bonificacion: bonificacionNum
 		};
+
+		console.log('=== ENVIANDO DATOS AL SERVIDOR PARA ACTUALIZAR ===');
+		console.log('jsonForm:', jsonForm);
+		console.log('URL:', $scope.base + 'update');
+		console.log('view_id:', view_id);
 
 		$http({
 			method: 'post',
@@ -327,6 +547,9 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 			url: $scope.base + 'update',
 			data: jsonForm
 		}).then(function (response) {
+			console.log('=== RESPUESTA DEL SERVIDOR EN ACTUALIZAR ===');
+			console.log('Response:', response);
+			$scope.showValidationErrors = false; // Limpiar leyendas de validación
 			Swal.fire({
 				title: 'Operación Correcta',
 				text: 'Jerarquía actualizada correctamente',
@@ -336,9 +559,13 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 				$scope.ModelReadAll();
 			});
 		}, function (error) {
+			console.log('=== ERROR DEL SERVIDOR EN ACTUALIZAR ===');
+			console.log('Error:', error);
+			console.log('Error data:', error.data);
+			console.log('Error status:', error.status);
 			Swal.fire({
 				title: 'Error',
-				text: 'Error al actualizar la jerarquía: ' + error.data,
+				text: 'Error al actualizar la jerarquía: ' + (error.data || error.statusText || 'Error desconocido'),
 				icon: 'error',
 				confirmButtonText: 'Aceptar'
 			});
@@ -378,9 +605,10 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window) {
 	$scope.ViewCreate = function () {
 		$scope.ViewAction = 'Nueva Jerarquia';
 		$scope.view_id = -1;
-		$scope.view_nombre = '';
+		$scope.view_perfil = 'Admin'; // Perfil seleccionado por defecto
 		$scope.view_descripcion = '';
 		$scope.view_bonificacion = '';
+		$scope.showValidationErrors = false; // Controlar leyendas de validación
 	};
 
 	$scope.ViewUpdate = function (view_id) {

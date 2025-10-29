@@ -396,7 +396,7 @@
             <div class="container-fluid" style="margin-top: 0 !important;">
 
                 <!-- Agregar -->
-                <div class="dishes-text row mb-2">
+                <div class="dishes-text row mb-2" style="display: none;">
                     <div class="col text-right" ng-show="ViewAction !== 'Nueva Jerarquia' && ViewAction !== 'Editar Jerarquia'">
                         <button type="button" class="btn btn-primary mb-2 mr-3"
                                 ng-click="ViewCreate()"
@@ -429,26 +429,28 @@
                             <table class="table table-hover table-sm">
                                 <thead style="font-size: 14px;">
                                     <tr class="bg-dark text-white">
-                                        <th class="col-2">Nombre</th>
-                                        <th class="col-6">Descripción</th>
+                                        <th class="col-3">Perfil</th>
+                                        <th class="col-5">Descripción</th>
                                         <th class="col-2">Bonificación (%)</th>
                                         <th class="text-center col-2">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr ng-repeat="item in (filteredData = (dataset | filter:searchText)) | startFrom:currentPage*pageSize | limitTo:pageSize">
-                                        <td class="col-2">{{item.nombre}}</td>
-                                        <td class="col-6">{{item.descripcion}}</td>
+                                        <td class="col-3">{{item.nombre}}</td>
+                                        <td class="col-5">{{item.descripcion}}</td>
                                         <td class="col-2">{{item.bonificacion}}</td>
                                         <td class="text-center col-2">
                                             <button type="button" class="btn btn-link p-0 align-middle"
                                                     ng-click="ViewUpdate(item.id)" title="Editar" style="cursor: pointer;">
                                                 <i class="fa fa-edit" style="color:white"></i>
                                             </button>
-                                            <button type="button" class="btn btn-link p-0 align-middle ml-2"
-                                                    ng-click="ViewDelete(item.id)" title="Eliminar" aria-label="Eliminar" style="cursor: pointer;">
-                                                <i class="fa fa-trash" style="color:white"></i>
-                                            </button>
+                                            <!-- Eliminar
+    <button type="button" class="btn btn-link p-0 align-middle ml-2"
+            ng-click="ViewDelete(item.id)" title="Eliminar" aria-label="Eliminar" style="cursor: pointer;">
+        <i class="fa fa-trash" style="color:white"></i>
+    </button>-->
+
                                         </td>
                                     </tr>
                                 </tbody>
@@ -475,14 +477,19 @@
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="jerarquiaForm" ng-submit="ModelCreate(jerarquiaForm.$valid, jerarquiaForm)" novalidate>
                                     <div class="pb-3 form-group">
-                                        <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
-                                        <span ng-show="jerarquiaForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.$submitted && jerarquiaForm.view_nombre.$error.required" class="text-danger">Nombre requerido.</span>
+                                        <label for="view_perfil">Perfil</label>
+                                        <select class="col-8 form-control" id="view_perfil" name="view_perfil" ng-model="view_perfil">
+                                            <option value="Admin">Admin</option>
+                                            <option value="Cocina">Cocina</option>
+                                            <option value="Comensal">Comensal</option>
+                                            <option value="Gerencia">Gerencia</option>
+                                        </select>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
                                         <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese Descripción" required>
-                                        <span ng-show="jerarquiaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.$submitted && jerarquiaForm.view_descripcion.$error.required" class="text-danger">Descripción requerida.</span>
+                                        <span ng-show="jerarquiaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span>
+                                        <span ng-show="showValidationErrors && (!view_descripcion || view_descripcion.trim() === '')" class="text-danger">Campo Descripción requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_bonificacion"><span class="text-danger">*</span> Porcentaje de bonificación (%)</label>
@@ -503,10 +510,7 @@
                                                required />
 
                                         <!-- Mensajes -->
-                                        <small class="text-danger"
-                                               ng-show="jerarquiaForm.$submitted && jerarquiaForm.view_bonificacion.$error.required">
-                                            Porcentaje de bonificación requerido.
-                                        </small>
+                                        <span ng-show="showValidationErrors && (!view_bonificacion || view_bonificacion === '' || view_bonificacion === null)" class="text-danger">Campo Porcentaje de bonificación requerido</span>
                                         <small class="text-danger"
                                                ng-show="jerarquiaForm.view_bonificacion.$submitted && (jerarquiaForm.view_bonificacion.$error.min || view_bonificacion < 0)">
                                             Debe ser un número entre 0 y 100.
@@ -543,18 +547,22 @@
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="jerarquiaForm" ng-submit="ModelUpdate(jerarquiaForm.$valid, view_id, jerarquiaForm)" novalidate>
                                     <div class="pb-3 form-group">
-                                        <label for="view_nombre">* Nombre</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
-                                        <span ng-show="jerarquiaForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_nombre.$error.required && jerarquiaForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
+                                        <label for="view_perfil">Perfil</label>
+                                        <select class="col-8 form-control" id="view_perfil" name="view_perfil" ng-model="view_perfil">
+                                            <option value="Admin">Admin</option>
+                                            <option value="Cocina">Cocina</option>
+                                            <option value="Comensal">Comensal</option>
+                                            <option value="Gerencia">Gerencia</option>
+                                        </select>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_descripcion">* Descripción</label>
+                                        <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
                                         <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese Descripción" required>
                                         <span ng-show="jerarquiaForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="jerarquiaForm.view_descripcion.$error.required && jerarquiaForm.view_descripcion.$dirty" class="text-danger">Descripcion requerida.</span>
                                     </div>
                                     <!-- EDITAR JERARQUÍA -->
                                     <div class="pb-3 form-group">
-                                        <label for="view_bonificacion">* Porcentaje de bonificación (%)</label>
+                                        <label for="view_bonificacion"><span class="text-danger">*</span> Porcentaje de bonificación (%)</label>
                                         <input class="col-8 form-control"
                                                type="number"
                                                id="view_bonificacion"
@@ -572,10 +580,7 @@
                                                required />
 
                                         <!-- Mensajes -->
-                                        <small class="text-danger"
-                                               ng-show="jerarquiaForm.$submitted && jerarquiaForm.view_bonificacion.$error.required">
-                                            Porcentaje de bonificación requerido.
-                                        </small>
+                                        <span ng-show="showValidationErrors && (!view_bonificacion || view_bonificacion === '' || view_bonificacion === null)" class="text-danger">Campo Porcentaje de bonificación requerido</span>
                                         <small class="text-danger"
                                                ng-show="jerarquiaForm.view_bonificacion.$submitted && (jerarquiaForm.view_bonificacion.$error.min || view_bonificacion < 0)">
                                             Debe ser un número entre 0 y 100.
@@ -596,32 +601,32 @@
                                             <i class="fa fa-save mr-1"></i>Guardar
                                         </button>
                                         <button type="button" class="btn-cancelar" ng-click="ViewCancel()">
-                                            <i class="fa fa-times mr-1"></i>Cancelar
-                                        </button>
+    <i class="fa fa-times mr-1"></i>Cancelar
+    </button>
                                     </div>
-                                </form>
-                            </div>
+                            </form>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-        <!-- Footer -->
-        <div class="footer-sticky">
-            <div class="smart-bg text-white">
-                <div class="container">
-                    <div class="row pt-3">
-                        <div class="col-md-12 d-flex align-items-center">
-                            <p class="mx-auto text-center mb-0 text-white">
-                                Copyright 2020. All Right Reserved. Grupo Datco SRL
-                            </p>
-                        </div>
-                    </div>
-                    <br />
                 </div>
             </div>
         </div>
     </div>
+    <!-- Footer -->
+                                        <div class="footer-sticky">
+                                            <div class="smart-bg text-white">
+                                                <div class="container">
+                                                    <div class="row pt-3">
+                                                        <div class="col-md-12 d-flex align-items-center">
+                                                            <p class="mx-auto text-center mb-0 text-white">
+                                                                Copyright 2020. All Right Reserved. Grupo Datco SRL
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <br />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
     <!-- External JS -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
