@@ -29,6 +29,20 @@ app.filter('startFrom', function () {
 	}
 });
 
+// Filtro personalizado para eliminar elementos vacíos
+app.filter('noEmpty', function () {
+	return function (input) {
+		if (!input) return [];
+		return input.filter(function(item) {
+			return item && 
+				   item.descripcion && 
+				   item.descripcion.trim() !== '' &&
+				   item.codigo && 
+				   item.codigo.trim() !== '';
+		});
+	}
+});
+
 app.controller('Turno', function ($scope, $sce, $http, $window) {
 
 	$scope.base = 'http://localhost:8000/api/turno/';
@@ -284,17 +298,28 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 		$scope.view_horahasta = '';
 
 		$http.get($scope.base + 'getAll')
-			.success(function (data) {
-				$scope.dataset = data;
+			.then(function (response) {
+				// Filtrar elementos vacíos o con campos vacíos
+				$scope.dataset = response.data.filter(function(item) {
+					return item && 
+						   item.descripcion && 
+						   item.descripcion.trim() !== '' &&
+						   item.codigo && 
+						   item.codigo.trim() !== '';
+				});
+				// Ordenar alfabéticamente por descripción
+				$scope.dataset.sort(function(a, b) {
+					return a.descripcion.localeCompare(b.descripcion);
+				});
 			})
-			.error(function (data, status) {
-			Swal.fire({
-				title: 'Ha ocurrido un error',
-				text: 'Api no presente',
-				icon: 'error',
-				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
-			});
+			.catch(function (error) {
+				Swal.fire({
+					title: 'Ha ocurrido un error',
+					text: 'Api no presente',
+					icon: 'error',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#5c636a'
+				});
 			});
 	};
 

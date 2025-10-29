@@ -641,7 +641,7 @@
                                              <span ng-show="(userForm.$submitted || userForm.view_proyecto.$dirty) && !view_proyecto" class="text-danger">Proyecto requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_bonificacion_invitado">Bonificación invitado</label>
+                                             <label for="view_bonificacion_invitado">Platos bonificados para invitados</label>
                                              <input class="col-8 form-control" type="number" id="view_bonificacion_invitado" name="view_bonificacion_invitado" ng-model="view_bonificacion_invitado" placeholder="Ingrese bonificación" min="0" value="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
                                              <span ng-show="userForm.$submitted && userForm.view_bonificacion_invitado.$error.required || userForm.view_bonificacion_invitado.$dirty && userForm.view_bonificacion_invitado.$error.required" class="text-danger">bonificación requerida, aclarar 0 si no tiene</span>
                                          </div>

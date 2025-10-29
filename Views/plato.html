@@ -446,8 +446,6 @@
                                                class="col-8 form-control" type="text" id="codigo" name="codigo"
                                                ng-model="plato.codigo" placeholder="Ingrese código" required>
                                         <span ng-show="(!plato.codigo || plato.codigo.trim() === '') && showValidationErrors" class="text-danger">Campo Código requerido</span>
-                                        <!-- Debug info -->
-                                        <small ng-show="showValidationErrors" class="text-muted">Debug: codigo='{{plato.codigo}}', showValidationErrors={{showValidationErrors}}</small>
                                     </div>
 
                                     <div class="pb-3 form-group">
