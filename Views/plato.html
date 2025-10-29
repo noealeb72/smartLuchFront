@@ -470,8 +470,7 @@
                                         <label for="plannutricional"><span class="text-danger">*</span> Plan Nutricional</label>
                                         <select class="col-8 form-control" id="plannutricional" name="plannutricional"
                                                 ng-model="plato.plannutricional" required>
-                                            <option value="" ng-if="ViewAction === 'Nuevo Plato'">-- Seleccionar --</option>
-                                            <option ng-repeat="x in planes" value="{{x.nombre}}">{{x.nombre}}</option>
+                                            <option ng-repeat="x in planes | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                         </select>
                                         <span ng-show="(!plato.plannutricional || plato.plannutricional.trim() === '') && showValidationErrors" class="text-danger">Campo Plan Nutricional requerido</span>
                                     </div>

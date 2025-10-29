@@ -269,6 +269,19 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
         $http.get($scope.basePlan + 'getAll')
             .then(function (resp) {
                 $scope.planes = Array.isArray(resp.data) ? resp.data : [];
+                
+                // Ordenar alfabéticamente
+                if ($scope.planes && $scope.planes.length > 0) {
+                    $scope.planes.sort(function(a, b) {
+                        return a.nombre.localeCompare(b.nombre);
+                    });
+                    
+                    // Si estamos en modo "Nuevo Plato" y no hay valor seleccionado, seleccionar el primero
+                    if ($scope.ViewAction === 'Nuevo Plato' && (!$scope.plato.plannutricional || $scope.plato.plannutricional === '')) {
+                        $scope.plato.plannutricional = $scope.planes[0].nombre;
+                        console.log('Plan Nutricional seleccionado por defecto:', $scope.plato.plannutricional);
+                    }
+                }
             })
             .catch(function () {
                 fireErr('Error', 'Error al obtener planes nutricionales.');
@@ -287,6 +300,15 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
         $scope.view_id = -1;
         $scope.view_previewImage = '';
         $scope.ModelReadPlanes();
+        
+        // Asegurar que se seleccione el primer plan nutricional después de cargar
+        setTimeout(function() {
+            if ($scope.planes && $scope.planes.length > 0 && (!$scope.plato.plannutricional || $scope.plato.plannutricional === '')) {
+                $scope.plato.plannutricional = $scope.planes[0].nombre;
+                console.log('Plan Nutricional establecido por defecto en ViewCreate:', $scope.plato.plannutricional);
+                $scope.$apply();
+            }
+        }, 300);
     };
 
     $scope.ViewUpdate = function (view_id) {
