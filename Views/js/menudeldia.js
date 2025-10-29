@@ -147,7 +147,8 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     // Función para recalcular totalPages
     function updateTotalPages() {
         var filteredData = $scope.dataset || [];
-        if ($scope.searchText) {
+        // Solo aplicar filtro de texto local, los filtros avanzados se manejan desde la API
+        if ($scope.searchText && $scope.searchText.trim() !== '') {
             filteredData = filteredData.filter(function(item) {
                 return JSON.stringify(item).toLowerCase().indexOf($scope.searchText.toLowerCase()) !== -1;
             });
@@ -169,10 +170,196 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         return filteredData;
     };
     
-    // Watcher para actualizar paginación cuando cambie el texto de búsqueda
+    // Variables para filtros avanzados
+    $scope.filtrosExpandidos = false;
+    $scope.filtrosActivos = false;
+    $scope.filtroFechaDesde = '';
+    $scope.filtroPlato = '';
+    $scope.filtroCentroCosto = '';
+    $scope.filtroProyecto = '';
+    $scope.filtroPlanta = '';
+    $scope.filtroTurno = '';
+    $scope.filtroJerarquia = '';
+    $scope.filtroEstado = '';
+    
+    // Función para alternar la visibilidad de los filtros
+    $scope.toggleFiltros = function() {
+        $scope.filtrosExpandidos = !$scope.filtrosExpandidos;
+    };
+    
+    // Función de filtro avanzado
+    $scope.filtroAvanzado = function(item) {
+        // Filtro de fecha desde
+        if ($scope.filtroFechaDesde && $scope.filtroFechaDesde.trim() !== '') {
+            var fechaItem = new Date(item.fechadeldia);
+            var fechaDesde = new Date($scope.filtroFechaDesde);
+            if (isNaN(fechaItem.getTime()) || fechaItem < fechaDesde) {
+                return false;
+            }
+        }
+        
+        // Filtro de fecha hasta
+        if ($scope.filtroFechaHasta && $scope.filtroFechaHasta.trim() !== '') {
+            var fechaItem = new Date(item.fechadeldia);
+            var fechaHasta = new Date($scope.filtroFechaHasta);
+            fechaHasta.setHours(23, 59, 59, 999);
+            if (isNaN(fechaItem.getTime()) || fechaItem > fechaHasta) {
+                return false;
+            }
+        }
+        
+        // Filtro de plato
+        if ($scope.filtroPlato && $scope.filtroPlato.trim() !== '') {
+            if (!item.plato || item.plato.toLowerCase().indexOf($scope.filtroPlato.toLowerCase()) === -1) {
+                return false;
+            }
+        }
+        
+        // Filtro de centro de costo
+        if ($scope.filtroCentroCosto && $scope.filtroCentroCosto.trim() !== '') {
+            if (!item.centrodecosto || item.centrodecosto !== $scope.filtroCentroCosto) {
+                return false;
+            }
+        }
+        
+        // Filtro de proyecto
+        if ($scope.filtroProyecto && $scope.filtroProyecto.trim() !== '') {
+            if (!item.proyecto || item.proyecto !== $scope.filtroProyecto) {
+                return false;
+            }
+        }
+        
+        // Filtro de planta
+        if ($scope.filtroPlanta && $scope.filtroPlanta.trim() !== '') {
+            if (!item.planta || item.planta !== $scope.filtroPlanta) {
+                return false;
+            }
+        }
+        
+        // Filtro de turno
+        if ($scope.filtroTurno && $scope.filtroTurno.trim() !== '') {
+            if (!item.turno || item.turno !== $scope.filtroTurno) {
+                return false;
+            }
+        }
+        
+        // Filtro de jerarquía
+        if ($scope.filtroJerarquia && $scope.filtroJerarquia.trim() !== '') {
+            if (!item.jerarquia || item.jerarquia !== $scope.filtroJerarquia) {
+                return false;
+            }
+        }
+        
+        // Filtro de estado
+        if ($scope.filtroEstado && $scope.filtroEstado.trim() !== '') {
+            var estadoItem = item.deletemark ? 'Baja' : 'Activo';
+            if (estadoItem !== $scope.filtroEstado) {
+                return false;
+            }
+        }
+        
+        return true;
+    };
+    
+    // Función para aplicar filtros avanzados
+    $scope.aplicarFiltrosAvanzados = function() {
+        console.log('🔍 Aplicando filtros avanzados:', {
+            fechaDesde: $scope.filtroFechaDesde,
+            plato: $scope.filtroPlato,
+            centroCosto: $scope.filtroCentroCosto,
+            proyecto: $scope.filtroProyecto,
+            planta: $scope.filtroPlanta,
+            turno: $scope.filtroTurno,
+            jerarquia: $scope.filtroJerarquia,
+            estado: $scope.filtroEstado
+        });
+        
+        // Construir parámetros para la API
+        var params = {};
+        
+        // Manejar fecha desde (puede ser Date object o string)
+        if ($scope.filtroFechaDesde) {
+            var fechaDesde = $scope.filtroFechaDesde;
+            if (fechaDesde instanceof Date) {
+                // Convertir Date a string YYYY-MM-DD
+                var year = fechaDesde.getFullYear();
+                var month = String(fechaDesde.getMonth() + 1).padStart(2, '0');
+                var day = String(fechaDesde.getDate()).padStart(2, '0');
+                params.desde = year + '-' + month + '-' + day;
+            } else if (typeof fechaDesde === 'string' && fechaDesde.trim() !== '') {
+                params.desde = fechaDesde;
+            }
+        }
+        
+        // Manejar campos de texto
+        if ($scope.filtroPlato && $scope.filtroPlato.trim() !== '') {
+            params.plato = $scope.filtroPlato;
+        }
+        if ($scope.filtroCentroCosto && $scope.filtroCentroCosto.trim() !== '') {
+            params.centrodecosto = $scope.filtroCentroCosto;
+        }
+        if ($scope.filtroProyecto && $scope.filtroProyecto.trim() !== '') {
+            params.proyecto = $scope.filtroProyecto;
+        }
+        if ($scope.filtroPlanta && $scope.filtroPlanta.trim() !== '') {
+            params.planta = $scope.filtroPlanta;
+        }
+        if ($scope.filtroTurno && $scope.filtroTurno.trim() !== '') {
+            params.turno = $scope.filtroTurno;
+        }
+        if ($scope.filtroJerarquia && $scope.filtroJerarquia.trim() !== '') {
+            params.jerarquia = $scope.filtroJerarquia;
+        }
+        if ($scope.filtroEstado && $scope.filtroEstado.trim() !== '') {
+            params.estado = $scope.filtroEstado;
+        }
+        
+        console.log('📡 Parámetros para API:', params);
+        
+        // Llamar a la API
+        $http.get($scope.base + 'BuscarAvanzado', { params: params })
+            .success(function(data) {
+                console.log('✅ Datos recibidos de la API:', data);
+                $scope.dataset = data;
+                $scope.currentPage = 0; // Resetear a la primera página
+                $scope.filtrosActivos = Object.keys(params).length > 0; // Marcar si hay filtros activos
+                updateTotalPages();
+            })
+            .error(function(data, status) {
+                console.error('❌ Error al buscar en la API:', data, status);
+                $window.Swal && $window.Swal.fire({
+                    title: 'Error',
+                    text: 'Error al buscar en la base de datos: ' + (data || status),
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#343A40'
+                });
+            });
+    };
+    
+    // Función para limpiar filtros avanzados
+    $scope.limpiarFiltrosAvanzados = function() {
+        $scope.filtroFechaDesde = '';
+        $scope.filtroPlato = '';
+        $scope.filtroCentroCosto = '';
+        $scope.filtroProyecto = '';
+        $scope.filtroPlanta = '';
+        $scope.filtroTurno = '';
+        $scope.filtroJerarquia = '';
+        $scope.filtroEstado = '';
+        $scope.filtrosActivos = false;
+        console.log('🧹 Filtros avanzados limpiados');
+        
+        // Recargar todos los datos originales
+        $scope.ModelReadAll();
+    };
+    
+    // Watcher solo para el buscador de texto (filtrado local)
     $scope.$watch('searchText', function() {
         updateTotalPages();
     });
+    
+    // Los filtros avanzados ahora se manejan desde la API, no necesitan watchers automáticos
     // La vista llama getNumber(totalPages): devolvemos un array con N elementos
     $scope.getNumber = function (n) {
         if (!n && n !== 0) {
@@ -344,7 +531,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $scope.view_despachado = '';
         $scope.view_fechadeldia = (new Date()).toISOString().split('T')[0];
 
-        $http.get($scope.base + 'getAll')
+        $http.get($scope.base + 'GetToday')
             // $http.get($scope.base + 'GetToday') // solo trae el menu del día
             .success(function (data) {
                 $scope.dataset = data;

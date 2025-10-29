@@ -305,21 +305,89 @@
                     </div>
                 </div>
 
-                <div class="row my-3">
-                    <div class="col-md-12">
-                        <label for="buscarPlato" ng-show="ViewAction !== 'Nuevo Menú' && ViewAction !== 'Editar Menú'">Buscar</label>
-                        <div class="input-group" ng-show="ViewAction !== 'Nuevo Menú' && ViewAction !== 'Editar Menú'">
-                            <input type="text" class="form-control" ng-model="searchText" 
-                                   title="Filtrar por plato, turno, jerarquía, proyecto, centro de costo, planta, estado..." 
-                                   placeholder="Filtrar por plato, turno, jerarquía, proyecto, centro de costo, planta, estado..." 
-                                   id="buscarPlato">
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-secondary" type="button" 
-                                        ng-click="searchText = ''; currentPage = 0;" 
-                                        ng-disabled="!searchText"
-                                        title="Limpiar búsqueda"
-                                        style="cursor: pointer;">
-                                    <i class="fa fa-times"></i>
+                <!-- Filtros de búsqueda avanzados -->
+                <div class="card mb-3" ng-show="ViewAction !== 'Nuevo Menú' && ViewAction !== 'Editar Menú'">
+                    <div class="card-header" style="background-color: #5c636a; color: white; cursor: pointer;" 
+                         ng-click="toggleFiltros()">
+                        <i class="fa fa-filter" style="margin-right: 8px;"></i>
+                        Filtros de búsqueda
+                        <i class="fa fa-chevron-up pull-right" ng-show="filtrosExpandidos"></i>
+                        <i class="fa fa-chevron-down pull-right" ng-show="!filtrosExpandidos"></i>
+                    </div>
+                    <div class="card-body" ng-show="filtrosExpandidos" style="background-color: #f8f9fa;">
+                        <div class="row">
+                            <!-- Primera fila -->
+                            <div class="col-md-3 mb-2">
+                                <label for="filtroFechaDesde" class="form-label small">Fecha</label>
+                                <input type="date" class="form-control form-control-sm" id="filtroFechaDesde" 
+                                       ng-model="filtroFechaDesde" placeholder="dd/mm/aaaa">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label for="filtroPlato" class="form-label small">Plato</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" id="filtroPlato" 
+                                           ng-model="filtroPlato" placeholder="Código de plato...">
+                                    <button class="btn btn-sm" type="button" style="background-color: #5c636a; color: white; border: none;">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label for="filtroCentroCosto" class="form-label small">Centro de Costo</label>
+                                <select class="form-control form-control-sm" id="filtroCentroCosto" ng-model="filtroCentroCosto">
+                                    <option value="">-- Todos --</option>
+                                    <option ng-repeat="centro in centros | orderBy:'nombre'" value="{{centro.nombre}}">{{centro.nombre}}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label for="filtroProyecto" class="form-label small">Proyecto</label>
+                                <select class="form-control form-control-sm" id="filtroProyecto" ng-model="filtroProyecto">
+                                    <option value="">-- Todos --</option>
+                                    <option ng-repeat="proyecto in proyectos | orderBy:'nombre'" value="{{proyecto.nombre}}">{{proyecto.nombre}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <!-- Segunda fila -->
+                            <div class="col-md-3 mb-2">
+                                <label for="filtroPlanta" class="form-label small">Planta</label>
+                                <select class="form-control form-control-sm" id="filtroPlanta" ng-model="filtroPlanta">
+                                    <option value="">-- Todas --</option>
+                                    <option ng-repeat="planta in plantas | orderBy:'nombre'" value="{{planta.nombre}}">{{planta.nombre}}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label for="filtroTurno" class="form-label small">Turno</label>
+                                <select class="form-control form-control-sm" id="filtroTurno" ng-model="filtroTurno">
+                                    <option value="">-- Todos --</option>
+                                    <option ng-repeat="turno in turnos | orderBy:'descripcion'" value="{{turno.descripcion}}">{{turno.descripcion}}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label for="filtroJerarquia" class="form-label small">Jerarquía</label>
+                                <select class="form-control form-control-sm" id="filtroJerarquia" ng-model="filtroJerarquia">
+                                    <option value="">-- Todas --</option>
+                                    <option ng-repeat="jerarquia in jerarquias | orderBy:'nombre'" value="{{jerarquia.nombre}}">{{jerarquia.nombre}}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label for="filtroEstado" class="form-label small">Estado</label>
+                                <select class="form-control form-control-sm" id="filtroEstado" ng-model="filtroEstado">
+                                    <option value="">-- Todos --</option>
+                                    <option value="Activo">Activo</option>
+                                    <option value="Baja">Baja</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <!-- Botones de acción -->
+                            <div class="col-md-12 mb-2 d-flex justify-content-end">
+                                <button class="btn btn-sm" type="button" ng-click="aplicarFiltrosAvanzados()" 
+                                        style="background-color: #5c636a; color: white; border: none; margin-right: 10px;">
+                                    <i class="fa fa-search"></i> Buscar
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" type="button" ng-click="limpiarFiltrosAvanzados()">
+                                    <i class="fa fa-times"></i> Limpiar
                                 </button>
                             </div>
                         </div>
@@ -329,6 +397,23 @@
                 <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;" ng-show="ViewAction !== 'Nuevo Menú' && ViewAction !== 'Editar Menú'">
 
                 <div ng-if="ViewAction==='Lista de Items'">
+                    <!-- Indicador de filtros activos -->
+                    <div class="alert alert-info" ng-show="filtrosActivos" style="margin-bottom: 15px;">
+                        <i class="fa fa-filter"></i> 
+                        <strong>Filtros aplicados:</strong> 
+                        <span ng-if="filtroFechaDesde">Desde: {{filtroFechaDesde}}</span>
+                        <span ng-if="filtroPlato">, Plato: {{filtroPlato}}</span>
+                        <span ng-if="filtroCentroCosto">, Centro: {{filtroCentroCosto}}</span>
+                        <span ng-if="filtroProyecto">, Proyecto: {{filtroProyecto}}</span>
+                        <span ng-if="filtroPlanta">, Planta: {{filtroPlanta}}</span>
+                        <span ng-if="filtroTurno">, Turno: {{filtroTurno}}</span>
+                        <span ng-if="filtroJerarquia">, Jerarquía: {{filtroJerarquia}}</span>
+                        <span ng-if="filtroEstado">, Estado: {{filtroEstado}}</span>
+                        <button class="btn btn-sm btn-outline-secondary pull-right" ng-click="limpiarFiltrosAvanzados()">
+                            <i class="fa fa-times"></i> Limpiar
+                        </button>
+                    </div>
+                    
                     <div class="table-responsive">
                         <table class="table table-hover table-sm">
                             <thead style="font-size: 14px;">
