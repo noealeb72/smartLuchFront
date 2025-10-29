@@ -88,7 +88,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 	$scope.pedidosGastados = '';
 	$scope.pedidosRestantes = '';
 	$scope.pedidosInvitadosRestantes = '';
-	$scope.selectedTurno = '';
+	$scope.selectedTurno = null;
 	$scope.mostrarModal = false;
 	$scope.turnoDisponible = true; 
 	//usuario SmarTime
@@ -101,22 +101,37 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 	// Llamada automática al iniciar
 	
 	$scope.changeTurno = function () {
-		console.log("Cambio de turno:", $scope.selectedTurno);
+		console.log("🔄 changeTurno ejecutado");
+		console.log("📋 selectedTurno:", $scope.selectedTurno);
+		console.log("📋 Tipo de selectedTurno:", typeof $scope.selectedTurno);
+		
+		$scope.dataset = [];
+		$scope.menuDatasetSeleccionado = [];
+
+		if (!$scope.selectedTurno) {
+			console.warn("⚠️ selectedTurno es null/undefined");
+			$scope.isLoading = false;
+			return;
+		}
+		
+		if (typeof $scope.selectedTurno === 'string') {
+			console.warn("⚠️ selectedTurno es string, no objeto:", $scope.selectedTurno);
+			$scope.isLoading = false;
+			return;
+		}
+		
+		if (!$scope.selectedTurno.descripcion) {
+			console.warn("⚠️ selectedTurno no tiene descripción:", $scope.selectedTurno);
+			$scope.isLoading = false;
+			return;
+		}
+
 		console.log("📦 Parámetros enviados a filtrarPorTurno:");
 		console.log("planta:", $scope.user_Planta);
 		console.log("centrodecosto:", $scope.user_Centrodecosto);
 		console.log("jerarquia:", $scope.user_Jerarquia);
 		console.log("proyecto:", $scope.user_Proyecto);
 		console.log("turno:", $scope.selectedTurno.descripcion);
-
-		$scope.dataset = [];
-		$scope.menuDatasetSeleccionado = [];
-
-		if (!$scope.selectedTurno || !$scope.selectedTurno.descripcion) {
-			console.warn("selectedTurno no tiene descripción");
-			$scope.isLoading = false;
-			return;
-		}
 
 		const ahora = new Date();
 		const hoy = ahora.getFullYear() + '-' +
@@ -200,6 +215,11 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 				showInfoToast('Sin turnos disponibles.');
 			}
 			$scope.getTurnoActual();
+			
+			// Configurar event listener después de cargar turnos
+			$timeout(function() {
+				$scope.setupTurnoSelectListener();
+			}, 100);
 		})
 		.then(() => {
 			const hoy = new Date().toISOString().split('T')[0];
@@ -268,14 +288,22 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			}
 		});
 
+		console.log("🔄 getTurnoActual ejecutado");
+		console.log("📋 turnoElegidoManual:", $scope.turnoElegidoManual);
+		console.log("📋 selectedTurno actual:", $scope.selectedTurno);
+		
 		if (!$scope.turnoElegidoManual) {
+			console.log("📋 Usuario no eligió manualmente, estableciendo turno automático");
 			if (turnoActual) {
+				console.log("📋 Estableciendo turno actual:", turnoActual.descripcion);
 				$scope.selectedTurno = turnoActual;
 				$scope.turnoDisponible = true;
 			} else if (proximoTurno) {
+				console.log("📋 Estableciendo próximo turno:", proximoTurno.descripcion);
 				$scope.selectedTurno = proximoTurno;
 				$scope.turnoDisponible = true;
 			} else {
+				console.log("📋 No hay turnos disponibles");
 				//$scope.selectedTurno = null;
 				//$scope.turnoDisponible = false;
 				//Swal.fire('Sin turnos disponibles', 'Ya no hay turnos activos para hoy.', 'info');
@@ -283,17 +311,84 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			}
 
 			if ($scope.selectedTurno) {
+				console.log("📋 Llamando changeTurno desde getTurnoActual");
 				$scope.changeTurno();
 			} else {
 				$scope.isLoading = false; // asegurá que no quede spinner
 			}
+		} else {
+			console.log("📋 Usuario eligió manualmente, NO sobrescribiendo selectedTurno");
 		}
 	};
 
 	$scope.onTurnoChanged = function () {
-		$scope.turnoElegidoManual = true;
-		console.log("Turno elegido manualmente:", $scope.selectedTurno.descripcion);
-		$scope.changeTurno();
+		console.log("🔄 === onTurnoChanged EJECUTADO ===");
+		
+		// FORZAR SINCRONIZACIÓN: Leer directamente del DOM
+		var selectElement = document.getElementById('turno');
+		var selectedIndex = selectElement ? selectElement.selectedIndex : -1;
+		var selectedValue = selectElement ? selectElement.value : null;
+		
+		console.log("📋 selectedIndex:", selectedIndex);
+		console.log("📋 selectedValue:", selectedValue);
+		console.log("📋 turnoDataset disponible:", $scope.turnoDataset ? $scope.turnoDataset.length : 'NO');
+		
+		// Obtener el objeto completo del turno seleccionado
+		if (selectedIndex >= 0 && $scope.turnoDataset && $scope.turnoDataset[selectedIndex]) {
+			var turnoSeleccionado = $scope.turnoDataset[selectedIndex];
+			console.log("📋 Turno seleccionado del DOM:", turnoSeleccionado);
+			
+			// FORZAR ACTUALIZACIÓN DEL SCOPE
+			$scope.$apply(function() {
+				$scope.selectedTurno = turnoSeleccionado;
+				$scope.turnoElegidoManual = true;
+			});
+			
+			console.log("📋 selectedTurno actualizado:", $scope.selectedTurno);
+			
+			// Procesar el cambio
+			if ($scope.selectedTurno && $scope.selectedTurno.descripcion) {
+				console.log("✅ Procesando turno:", $scope.selectedTurno.descripcion);
+				$scope.changeTurno();
+			}
+		} else {
+			console.warn("⚠️ No se pudo obtener el turno del DOM");
+		}
+		
+		console.log("🔄 === FIN onTurnoChanged ===");
+	};
+	
+	// Watch para detectar cambios en selectedTurno
+	$scope.$watch('selectedTurno', function(newVal, oldVal) {
+		console.log("🔄 $watch ejecutado");
+		console.log("📋 newVal:", newVal);
+		console.log("📋 oldVal:", oldVal);
+		console.log("📋 Son diferentes:", newVal !== oldVal);
+		
+		if (newVal && newVal !== oldVal) {
+			console.log("🔄 $watch detectó cambio en selectedTurno:", newVal);
+			$scope.onTurnoChanged();
+		}
+	}, true);
+
+	// EVENT LISTENER ADICIONAL como respaldo
+	$scope.setupTurnoSelectListener = function() {
+		var selectElement = document.getElementById('turno');
+		if (selectElement) {
+			// Remover listener anterior si existe
+			selectElement.removeEventListener('change', $scope.handleTurnoChange);
+			
+			// Agregar nuevo listener
+			$scope.handleTurnoChange = function(event) {
+				console.log("🎯 Event listener detectó cambio en select");
+				$scope.onTurnoChanged();
+			};
+			
+			selectElement.addEventListener('change', $scope.handleTurnoChange);
+			console.log("✅ Event listener configurado para select turno");
+		} else {
+			console.warn("⚠️ No se encontró el select con id 'turno'");
+		}
 	};
 
 	$scope.obtieneComandas = function () {
