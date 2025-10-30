@@ -65,6 +65,13 @@ function showInfoToast(msg) {
 app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 	////////////////////////////////////////////////HTTP////////////////////////////////////////////////
 	$scope.isLoading = true;
+
+	// Fecha y hora actual para navbar
+	$scope.currentDateTime = new Date().toLocaleString('es-AR');
+	setInterval(function() {
+		$scope.currentDateTime = new Date().toLocaleString('es-AR');
+		if (!$scope.$$phase) { $scope.$apply(); }
+	}, 1000);
 	$scope.baseMenu = 'http://localhost:8000/api/menudd/';
 	$scope.basePlatos = 'http://localhost:8000/api/plato/';
 	$scope.baseComanda = 'http://localhost:8000/api/comanda/';

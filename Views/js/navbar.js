@@ -27,6 +27,13 @@ app.controller('NavbarCtrl', function ($scope, $timeout) {
     // Cargar datos al inicializar
     $scope.loadUserData();
     
+    // Fecha y hora en navbar, independiente del controlador de la página
+    $scope.currentDateTime = new Date().toLocaleString('es-AR');
+    setInterval(function() {
+        $scope.currentDateTime = new Date().toLocaleString('es-AR');
+        if (!$scope.$$phase) { $scope.$apply(); }
+    }, 1000);
+
     // Recargar datos cada vez que se accede al navbar
     $scope.$on('$viewContentLoaded', function() {
         $scope.loadUserData();

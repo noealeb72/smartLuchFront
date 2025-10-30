@@ -60,6 +60,13 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 	$scope.pedidosGastados = '';
 	$scope.pedidosRestantes = '';
 
+	// Fecha y hora para el navbar en Despacho
+	$scope.currentDateTime = new Date().toLocaleString('es-AR');
+	setInterval(function() {
+		$scope.currentDateTime = new Date().toLocaleString('es-AR');
+		if (!$scope.$$phase) { $scope.$apply(); }
+	}, 1000);
+
 	$scope.filterPlanta = localStorage.getItem('planta');
 	$scope.filterCentrodecosto = localStorage.getItem('centrodecosto');
 	$scope.filterProyecto = localStorage.getItem('proyecto');
