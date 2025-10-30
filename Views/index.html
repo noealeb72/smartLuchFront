@@ -220,6 +220,123 @@
             border-color: #ffc107 !important;
             box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important;
         }
+
+        /* === ESTILOS PARA CHECKBOX DE BONIFICACIÓN === */
+        .bonificacion-container {
+            margin: 0.5rem 0;
+        }
+
+        .custom-checkbox-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .custom-checkbox {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .custom-checkbox-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 0.5rem 0.75rem;
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            min-width: 160px;
+        }
+
+        .custom-checkbox-label:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .custom-checkbox:checked + .custom-checkbox-label {
+            background: #f8f9fa;
+            border-color: #28a745;
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.15);
+        }
+
+        .custom-checkbox:checked + .custom-checkbox-label .discount-icon {
+            background: #28a745;
+            color: white;
+        }
+
+        .custom-checkbox:checked + .custom-checkbox-label .discount-percentage {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .checkbox-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .discount-icon {
+            width: 20px;
+            height: 20px;
+            background: #6c757d;
+            color: white;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.5rem;
+            transition: all 0.2s ease;
+            font-size: 0.7em;
+        }
+
+        .discount-text {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            gap: 0.25rem;
+        }
+
+        .discount-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            font-weight: 400;
+        }
+
+        .discount-percentage {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #495057;
+            transition: all 0.2s ease;
+        }
+
+        .discount-word {
+            font-size: 0.85em;
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        /* Responsive para móviles */
+        @media (max-width: 576px) {
+            .custom-checkbox-label {
+                min-width: 140px;
+                padding: 0.4rem 0.6rem;
+            }
+            
+            .discount-icon {
+                width: 18px;
+                height: 18px;
+                margin-right: 0.4rem;
+            }
+            
+            .discount-text {
+                gap: 0.2rem;
+            }
+        }
     </style>
 
 
@@ -247,11 +364,11 @@
                                         Bienvenido {{user_Nombre}} {{user_Apellido}}
 
                                     </h3>
-                                    <h5 style="color: #6c757d;">Te quedan {{pedidosRestantes}} {{pedidosRestantes | pluralize:'plato bonificado':'platos bonificados'}}</h5>
+                                    <h5 style="color: #6c757d;">Te quedan {{cantidadBonificacionesHoy}} {{cantidadBonificacionesHoy | pluralize:'plato bonificado':'platos bonificados'}}</h5>
                                     <!-- comenta pedidos de invitados
-                                        <h5 style="color: #6c757d;" ng-if="pedidosInvitadosRestantes > 0">
-                                            Te quedan {{pedidosInvitadosRestantes}} platos para invitar este mes
-                                        </h5>
+                                    <h5 style="color: #6c757d;" ng-if="pedidosInvitadosRestantes > 0">
+                                        Te quedan {{pedidosInvitadosRestantes}} platos para invitar este mes
+                                    </h5>
                                     -->
                                 </div>
 
@@ -280,7 +397,7 @@
                                         <i class="lnr lnr-user"></i> Bienvenido {{user_Nombre}} {{user_Apellido}}
                                         <span class="ml-2" ng-if="user_Rol" style="font-size: 0.75em; padding: 0.3em 0.6em; background-color: #e8f4fd; color: #007bff; border: 1px solid #b3d7ff; border-radius: 15px; font-weight: 500; display: inline-block;">{{user_Rol}}</span>
                                     </h3>
-                                    <h5 style="color: #6c757d;"><i class="lnr lnr-dinner"></i>&nbsp;&nbsp;Te quedan {{pedidosRestantes}} {{pedidosRestantes | pluralize:'plato bonificado':'platos bonificados'}} este mes</h5>
+                                    <h5 style="color: #6c757d;"><i class="lnr lnr-dinner"></i>&nbsp;&nbsp;Te quedan {{cantidadBonificacionesHoy}} {{cantidadBonificacionesHoy | pluralize:'plato bonificado':'platos bonificados'}} este mes</h5>
                                     <h5 style="color: #6c757d;" ng-if="pedidosInvitadosRestantes > 0">
                                         <i class="lnr lnr-gift"></i>&nbsp;&nbsp;Te quedan {{pedidosInvitadosRestantes}} platos para invitar este mes
                                     </h5>
@@ -313,7 +430,7 @@
                                         <i class="lnr lnr-user"></i> Bienvenido {{user_Nombre}} {{user_Apellido}}
                                         <span class="ml-2" ng-if="user_Rol" style="font-size: 0.75em; padding: 0.3em 0.6em; background-color: #e8f4fd; color: #007bff; border: 1px solid #b3d7ff; border-radius: 15px; font-weight: 500; display: inline-block;">{{user_Rol}}</span>
                                     </h3>
-                                    <h5 style="color: #6c757d;"><i class="lnr lnr-dinner"></i>&nbsp;&nbsp;Te quedan {{pedidosRestantes}} {{pedidosRestantes | pluralize:'plato bonificado':'platos bonificados'}} este mes</h5>
+                                    <h5 style="color: #6c757d;"><i class="lnr lnr-dinner"></i>&nbsp;&nbsp;Te quedan {{cantidadBonificacionesHoy}} {{cantidadBonificacionesHoy | pluralize:'plato bonificado':'platos bonificados'}} este mes</h5>
                                     <h5 style="color: #6c757d;" ng-if="pedidosInvitadosRestantes > 0">
                                         <i class="lnr lnr-gift"></i>&nbsp;&nbsp;Te quedan {{pedidosInvitadosRestantes}} platos para invitar este mes
                                     </h5>
@@ -419,7 +536,6 @@
                                                     <span ng-if="pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1">
                                                         <span style="text-decoration: line-through; color: #6c757d;">${{pedidoSeleccionado.costo | number:2}}</span>
                                                         <span class="text-success font-weight-bold">${{pedidoSeleccionado.precioFinal | number:2}}</span>
-                                                        <small class="text-success">(-{{pedidoSeleccionado.bonificado | number:2}})</small>
                                                     </span>
                                                 </div>
                                                 <div class="container row">
@@ -437,9 +553,11 @@
                                                 <div class="container row">
                                                     <span class="pr-2" style="color: black; font-weight: bold;">Perfil Nutricional</span><span>{{user_Perfilnutricional}}</span>
                                                 </div>
-                                                <div class="container row">
-                                                    <span class="pr-2" style="color: black; font-weight: bold;">Platos Bonif. restantes</span><span>{{pedidosRestantes}}</span>
-                                                </div>
+                                                <!-- === INFORMACIóN DE BONIFICACIóN ===
+    <div class="container row">
+        <span class="pr-2" style="color: black; font-weight: bold;">Platos Bonif. restantes</span><span>{{pedidosRestantes}}</span>
+    </div>-->
+
                                             </div>
                                             <div class="col-4 pl-0 mx-auto mt-5">
                                                 <img class="round-img mr-4" style="width:100%; border-radius: 50%; object-fit: cover; aspect-ratio: 1;" ng-src="{{pedidoPresentacion || defaultImage}}" />
@@ -447,33 +565,33 @@
                                             <!-- === INFORMACIóN DE BONIFICACIóN === -->
                                             <div class="col-12 mt-4 pl-4" ng-if="pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1">
                                                 <div class="alert alert-success" style="font-size: 0.9em; padding: 0.5rem;">
-                                                    <i class="fas fa-percentage"></i> 
+                                                    <i class="fas fa-percentage"></i>
                                                     Bonificación aplicada: {{porcentajeBonificacion}}% de descuento
                                                 </div>
                                             </div>
-                                            
+
                                             <!-- === MENSAJE SI YA SE USó LA BONIFICACIóN === -->
                                             <div class="col-12 mt-4 pl-4" ng-if="cantidadBonificacionesHoy >= 1 && bonificacionDisponible">
                                                 <div class="alert alert-info" style="font-size: 14px; margin: 0;">
-                                                    <i class="fas fa-info-circle"></i> 
+                                                    <i class="fas fa-info-circle"></i>
                                                     Ya utilizaste tu bonificación del dóa. El resto de platos se cobran al 100%.
                                                 </div>
                                             </div>
-                                            
+
                                             <!-- === MENSAJE SI NO HAY BONIFICACIóN DISPONIBLE === -->
                                             <div class="col-12 mt-4 pl-4" ng-if="!bonificacionDisponible">
                                                 <div class="alert alert-warning" style="font-size: 14px; margin: 0;">
-                                                    <i class="fas fa-exclamation-triangle"></i> 
+                                                    <i class="fas fa-exclamation-triangle"></i>
                                                     Tu perfil no tiene bonificación disponible.
                                                 </div>
                                             </div>
-                                            
-                                            <div class="col-12 mt-4 pl-4">
-                                                <div class="form-check d-flex align-items-center">
-                                                    <input class="form-check-input mr-2" type="checkbox" ng-model="pedidoInvitado" id="pedidoInvitado">
-                                                    <label class="form-check-label" for="pedidoInvitado" style="font-weight: normal; font-size: 14px; margin: 0;">Plato reservado para invitado</label>
-                                                </div>
-                                            </div>
+                                            <!-- === Invitado
+    <div class="col-12 mt-4 pl-4">
+        <div class="form-check d-flex align-items-center">
+            <input class="form-check-input mr-2" type="checkbox" ng-model="pedidoInvitado" id="pedidoInvitado">
+            <label class="form-check-label" for="pedidoInvitado" style="font-weight: normal; font-size: 14px; margin: 0;">Plato reservado para invitado</label>
+        </div>
+    </div>=== -->
                                             <div class="col-12 mt-4 pl-4">
                                                 <div class="form-group">
                                                     <label for="pedidoComentario">Comentario</label>
@@ -514,7 +632,7 @@
                                             <div class="card-body row">
                                                 <div class="col-sm-6">
                                                     <h5 class="card-title">
-                                                        <span class="badge badge-dark mr-2">Nó {{pedido.user_npedido || (pedido.user_Pedido && pedido.user_Pedido.id) || 'N/A'}}</span><br /><br />{{pedido.descripcion}}
+                                                        <span class="badge badge-dark mr-2">Nª {{pedido.user_npedido || (pedido.user_Pedido && pedido.user_Pedido.id) || 'N/A'}}</span><br /><br />{{pedido.descripcion}}
                                                     </h5>
                                                     <p class="card-text">{{pedido.ingredientes}}</p>
                                                     <p>
@@ -573,27 +691,41 @@
                                                         <span ng-if="item.costo > 0 && item.aplicarBonificacion">
                                                             <span style="text-decoration: line-through; color: #6c757d;">${{ item.costo | number:2 }}</span>
                                                             <span class="text-success font-weight-bold">${{ item.precioFinal | number:2 }}</span>
-                                                            <small class="text-success">(-{{ item.bonificado | number:2 }})</small>
                                                         </span>
                                                     </p>
                                                     
                                                     <!-- === CHECKBOX DE BONIFICACIóN === -->
-                                                    <div ng-if="bonificacionDisponible && cantidadBonificacionesHoy < 1 && item.costo > 0" class="form-check mt-2">
-                                                        <input class="form-check-input" 
+                                                    <div ng-if="bonificacionDisponible 
+                                                                 && cantidadBonificacionesHoy === 0 
+                                                                 && item.costo > 0 
+                                                                 && (!bonificacionPreSeleccionada 
+                                                                     || (selectedTurno && selectedTurno.descripcion === turnoBonificacionSeleccionada))" 
+                                                         class="bonificacion-container mt-3">
+                                                        <div class="custom-checkbox-wrapper">
+                                                            <input class="custom-checkbox" 
                                                                type="checkbox" 
                                                                ng-model="item.aplicarBonificacion"
                                                                ng-change="aplicarBonificacion(item, item.aplicarBonificacion)"
                                                                id="bonificacion_{{ $index }}">
-                                                        <label class="form-check-label" for="bonificacion_{{ $index }}" style="font-size: 0.9em;">
-                                                            <i class="fas fa-percentage text-success"></i> 
-                                                            Aplicar {{ porcentajeBonificacion }}% de descuento
+                                                            <label class="custom-checkbox-label" for="bonificacion_{{ $index }}">
+                                                                <div class="checkbox-content">
+                                                                    <div class="discount-icon">
+                                                                        <i class="fas fa-percentage"></i>
+                                                                    </div>
+                                                                    <div class="discount-text">
+                                                                        <span class="discount-label">Aplicar</span>
+                                                                        <span class="discount-percentage">{{ porcentajeBonificacion }}%</span>
+                                                                        <span class="discount-word">descuento</span>
+                                                                    </div>
+                                                                </div>
                                                         </label>
+                                                        </div>
                                                     </div>
                                                     
                                                     <!-- === MENSAJE SI YA SE USó LA BONIFICACIóN === -->
                                                     <div ng-if="cantidadBonificacionesHoy >= 1 && bonificacionDisponible && item.costo > 0" class="alert alert-info mt-2" style="font-size: 0.8em; padding: 0.5rem;">
                                                         <i class="fas fa-info-circle"></i> 
-                                                        Ya utilizaste tu bonificación del dóa
+                                                        Ya utilizaste tu bonificación del día
                                                     </div>
                                                     
                                                     <!-- === MENSAJE SI NO HAY BONIFICACIóN DISPONIBLE === -->

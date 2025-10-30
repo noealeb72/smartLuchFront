@@ -110,6 +110,9 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 	$scope.yaBonificadoHoy = false;
 	$scope.cantidadBonificacionesHoy = 0;
 	$scope.precioOriginal = 0;
+	// Control de preselección por turno: si se marcó descuento en un turno, no permitir en otro
+	$scope.bonificacionPreSeleccionada = false;
+	$scope.turnoBonificacionSeleccionada = null;
 	$scope.precioConBonificacion = 0;
 	$scope.descuentoAplicado = 0;
 	
@@ -182,12 +185,12 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 		// Intentar conectar con el servidor real
 		$http.get($scope.baseMenu + 'filtrarPorTurno', {
 			params: {
-				planta: $scope.user_Planta,
-				centro: $scope.user_Centrodecosto,
-				jerarquia: $scope.user_Jerarquia,
-				proyecto: $scope.user_Proyecto,
-				turno: $scope.selectedTurno.descripcion,
-				fecha: hoy
+				planta: $scope.user_Planta || '',
+				centro: $scope.user_Centrodecosto || '',
+				jerarquia: $scope.user_Jerarquia || '',
+				proyecto: $scope.user_Proyecto || '',
+				turno: ($scope.selectedTurno && $scope.selectedTurno.descripcion) ? $scope.selectedTurno.descripcion : '',
+				fecha: hoy || ''
 			}
 		}).then(function (response) {
 			console.log('=== 📊 DATOS DE API FILTRAR POR TURNO ===');
@@ -794,42 +797,58 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 		return resultado;
 	};
 	
-	// Aplicar bonificación a un plato
+	// Aplicar bonificación a un plato (solo preview, no consume bonificación)
 	$scope.aplicarBonificacion = function(item, aplicarBonificacion) {
-		console.log('=== APLICANDO BONIFICACIÓN ===');
-		console.log('pedidosRestantes ANTES APLICAR:', $scope.pedidosRestantes);
+		console.log('=== PREVIEW BONIFICACIÓN ===');
 		console.log('aplicarBonificacion:', aplicarBonificacion);
 		console.log('bonificacionDisponible:', $scope.bonificacionDisponible);
-		console.log('yaBonificadoHoy:', $scope.yaBonificadoHoy);
 		console.log('cantidadBonificacionesHoy:', $scope.cantidadBonificacionesHoy);
 		
-		$scope.precioOriginal = parseFloat(item.costo) || 0;
-		var calculo = $scope.calcularPrecioConBonificacion($scope.precioOriginal, aplicarBonificacion);
-		
-		$scope.precioConBonificacion = calculo.precioFinal;
-		$scope.descuentoAplicado = calculo.bonificado;
-		
-		// Actualizar el costo del plato para el pedido
-		item.precioFinal = $scope.precioConBonificacion;
-		item.bonificado = $scope.descuentoAplicado;
-		item.aplicarBonificacion = aplicarBonificacion;
-		
-		// Actualizar pedidos restantes si se aplica bonificación
-		if (aplicarBonificacion && $scope.bonificacionDisponible && $scope.cantidadBonificacionesHoy < 1) {
-			$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'APLICAR_BONIFICACION_CONSUMIR');
-			$scope.yaBonificadoHoy = true; // Marcar como ya bonificado
-			$scope.cantidadBonificacionesHoy = 1; // Simular que se va a aplicar
-			console.log('pedidosRestantes ACTUALIZADO A 0 (se va a consumir):', $scope.pedidosRestantes);
+		// === LÓGICA DE RADIO BUTTON: SOLO UN PLATO PUEDE TENER DESCUENTO ===
+		if (aplicarBonificacion) {
+			// Si se está marcando este plato, desmarcar todos los demás
+			$scope.dataset.forEach(function(plato) {
+				if (plato !== item) {
+					plato.aplicarBonificacion = false;
+					// Restaurar precio original de los demás platos
+					plato.precioFinal = parseFloat(plato.costo) || 0;
+					plato.bonificado = 0;
+				}
+			});
+			console.log('✅ Desmarcando otros platos, solo este tendrá descuento');
 		}
 		
-		console.log('Bonificación aplicada:', {
+		// Actualizar el estado del plato actual
+		item.aplicarBonificacion = aplicarBonificacion;
+
+		// Registrar/limpiar preselección ligada al turno actual
+		if (aplicarBonificacion) {
+			$scope.bonificacionPreSeleccionada = true;
+			$scope.turnoBonificacionSeleccionada = ($scope.selectedTurno && $scope.selectedTurno.descripcion) ? $scope.selectedTurno.descripcion : null;
+		} else {
+			$scope.bonificacionPreSeleccionada = false;
+			$scope.turnoBonificacionSeleccionada = null;
+		}
+		
+		if (aplicarBonificacion && $scope.bonificacionDisponible && $scope.cantidadBonificacionesHoy < 1) {
+			// Calcular precio con descuento para preview
+			var calculo = $scope.calcularPrecioConBonificacion(parseFloat(item.costo) || 0, true);
+			item.precioFinal = calculo.precioFinal;
+			item.bonificado = calculo.bonificado;
+		} else {
+			// Restaurar precio original
+			item.precioFinal = parseFloat(item.costo) || 0;
+			item.bonificado = 0;
+		}
+		
+		console.log('Preview bonificación:', {
 			plato: item.descripcion,
-			precioOriginal: $scope.precioOriginal,
-			precioFinal: $scope.precioConBonificacion,
-			descuento: $scope.descuentoAplicado,
+			precioOriginal: item.costo,
+			precioFinal: item.precioFinal,
+			descuento: item.bonificado,
 			aplicarBonificacion: aplicarBonificacion,
-			pedidosRestantes: $scope.pedidosRestantes,
-			cantidadBonificacionesHoy: $scope.cantidadBonificacionesHoy
+			bonificacionPreSeleccionada: $scope.bonificacionPreSeleccionada,
+			turnoBonificacionSeleccionada: $scope.turnoBonificacionSeleccionada
 		});
 	};
 
@@ -837,6 +856,9 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 	
 	$scope.hacerPedido = function (item) {
 		console.log("Se hizo clic en Ordenar", item);
+
+		// Asegurar que el pedido seleccionado quede seteado para el modal/confirmación
+		$scope.pedidoSeleccionado = item;
 
 		const cuil = localStorage.getItem("cuil");
 		const legajo = localStorage.getItem("legajo");
@@ -896,6 +918,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 		
 		console.log('item.aplicarBonificacion FINAL:', item.aplicarBonificacion);
 		
+		// Solo actualizar el preview, NO consumir bonificación aún
 		$scope.aplicarBonificacion(item, item.aplicarBonificacion);
 
 		// Seteo valores del pedido en el scope
@@ -1022,6 +1045,8 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			esInvitado = false;
 		}
 
+		// Blindar acceso a pedidoSeleccionado por si fuese null
+		var sel = $scope.pedidoSeleccionado || {};
 		var jsonForm = {
 			cod_plato: $scope.pedidoCodigo,
 			monto: $scope.pedidoCosto,
@@ -1038,10 +1063,10 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			comentario: $scope.pedidoComentario,
 			fecha_hora: fecha,
 			// === CAMPOS DE BONIFICACIÓN ===
-			precio_original: $scope.pedidoSeleccionado.costo || $scope.precioOriginal,
-			bonificado: $scope.pedidoSeleccionado.bonificado || $scope.descuentoAplicado,
+			precio_original: (sel.costo != null ? sel.costo : ($scope.precioOriginal != null ? $scope.precioOriginal : $scope.pedidoCosto)),
+			bonificado: (sel.bonificado != null ? sel.bonificado : ($scope.descuentoAplicado != null ? $scope.descuentoAplicado : 0)),
 			porcentaje_bonificacion: $scope.porcentajeBonificacion,
-			aplicar_bonificacion: $scope.pedidoSeleccionado.aplicarBonificacion || false
+			aplicar_bonificacion: !!(sel.aplicarBonificacion)
 		};
 		
 		console.log('=== 📤 DATOS ENVIADOS A API CREATE PEDIDO ===');
@@ -1080,6 +1105,29 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			
 			if (success) {
 				console.log('✅ Pedido creado exitosamente');
+				
+				// === CONSUMIR BONIFICACIÓN SOLO SI EL PEDIDO SE CREÓ EXITOSAMENTE ===
+				if ($scope.pedidoSeleccionado && $scope.pedidoSeleccionado.aplicarBonificacion && 
+					$scope.bonificacionDisponible && $scope.cantidadBonificacionesHoy < 1) {
+					
+					console.log('=== CONSUMIENDO BONIFICACIÓN ===');
+					console.log('ANTES - pedidosRestantes:', $scope.pedidosRestantes);
+					console.log('ANTES - cantidadBonificacionesHoy:', $scope.cantidadBonificacionesHoy);
+					
+					// Consumir la bonificación
+					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'CONFIRMAR_PEDIDO_CONSUMIR');
+					$scope.cantidadBonificacionesHoy = 1;
+					$scope.yaBonificadoHoy = true;
+					
+					console.log('DESPUÉS - pedidosRestantes:', $scope.pedidosRestantes);
+					console.log('DESPUÉS - cantidadBonificacionesHoy:', $scope.cantidadBonificacionesHoy);
+					console.log('✅ Bonificación consumida exitosamente');
+				}
+
+				// Limpiar preselección porque ya se consumió o se finalizó el flujo
+				$scope.bonificacionPreSeleccionada = false;
+				$scope.turnoBonificacionSeleccionada = null;
+				
 				Swal.fire({
 					title: '¡Pedido Enviado!',
 					text: '',

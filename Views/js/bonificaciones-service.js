@@ -132,10 +132,33 @@ var BonificacionesService = {
                                 // También verificar por fecha si está disponible
                                 var esDelDia = true;
                                 if (pedido.fecha) {
-                                    esDelDia = pedido.fecha === fecha;
-                                    console.log('Fecha del pedido (fecha):', pedido.fecha);
+                                    // Normalizar a YYYY-MM-DD si viene con tiempo
+                                    try {
+                                        var f = pedido.fecha;
+                                        var fIso = (new Date(f)).toISOString().split('T')[0];
+                                        esDelDia = fIso === fecha || f === fecha;
+                                        console.log('Fecha del pedido (fecha):', pedido.fecha, '→ normalizada:', fIso);
+                                    } catch (e) {
+                                        console.log('No se pudo normalizar fecha (fecha):', pedido.fecha);
+                                        esDelDia = pedido.fecha === fecha;
+                                    }
                                 } else if (pedido.fecha_hora) {
-                                    var fechaPedido = new Date(pedido.fecha_hora).toISOString().split('T')[0];
+                                    var fechaPedido;
+                                    try {
+                                        fechaPedido = new Date(pedido.fecha_hora).toISOString().split('T')[0];
+                                    } catch (e) {
+                                        fechaPedido = null;
+                                    }
+                                    // Si el Date nativo falla (formato dd/mm/yyyy hh:mm), intentar parseo manual
+                                    if (!fechaPedido || fechaPedido === 'Invalid Date') {
+                                        var m = String(pedido.fecha_hora).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                                        if (m) {
+                                            var dd = m[1].padStart(2, '0');
+                                            var mm = m[2].padStart(2, '0');
+                                            var yyyy = m[3];
+                                            fechaPedido = yyyy + '-' + mm + '-' + dd;
+                                        }
+                                    }
                                     esDelDia = fechaPedido === fecha;
                                     console.log('Fecha del pedido (fecha_hora):', pedido.fecha_hora);
                                     console.log('Fecha extraída:', fechaPedido);
@@ -143,7 +166,12 @@ var BonificacionesService = {
                                 console.log('¿Es del día?', esDelDia);
                                 console.log('Fecha de búsqueda:', fecha);
                                 
-                                var cumpleCriterios = esDelDia && tieneBonificacion;
+                                // Validar estado: no contar C (Cancelado) ni D (Devuelto)
+                                var estado = (pedido.estado || '').toString().trim().toUpperCase();
+                                var estadoValido = estado && estado !== 'C' && estado !== 'D';
+                                console.log('Estado:', estado, '¿Cuenta para bonificación?', estadoValido);
+
+                                var cumpleCriterios = esDelDia && tieneBonificacion && estadoValido;
                                 console.log('¿Cumple criterios?', cumpleCriterios);
                                 console.log('--- FIN PEDIDO ---');
                                 
