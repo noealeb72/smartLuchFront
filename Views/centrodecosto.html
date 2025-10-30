@@ -1,8 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html ng-app="AngujarJS" lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>SmartLunch · Centro de Costo</title>
+    <title>SmartLunch - Centro de Costo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- CSS vendors -->
@@ -78,7 +78,7 @@
              border-radius: 4px !important;
          }
 
-         /* Botón Agregar específico */
+         /* Bot�n Agregar espec�fico */
          .btn-primary[ng-click="ViewCreate()"] {
              background-color: #5c636a !important;
              border-color: #5c636a !important;
@@ -224,7 +224,7 @@
            font-weight: normal !important;
        }
        
-       /* Asegurar que el botón de editar tenga fondo gris oscuro */
+       /* Asegurar que el bot�n de editar tenga fondo gris oscuro */
        .btn-link[title="Editar"] {
            background-color: #5c636a !important;
            border-color: #5c636a !important;
@@ -249,7 +249,7 @@
            color: white !important;
        }
         
-         /* Estilos específicos para botones de acciones */
+         /* Estilos espec�ficos para botones de acciones */
          .btn-link[title="Editar"] i {
              font-family: "Font Awesome 5 Free" !important;
              font-weight: 900 !important;
@@ -270,7 +270,7 @@
              opacity: 1 !important;
          }
 
-         /* Forzar iconos específicos */
+         /* Forzar iconos espec�ficos */
          .fa-pencil, .fa-edit {
              font-family: "Font Awesome 5 Free" !important;
              font-weight: 900 !important;
@@ -298,7 +298,7 @@
              opacity: 1 !important;
          }
 
-         /* Estilos específicos para botones de acciones en la tabla */
+         /* Estilos espec�ficos para botones de acciones en la tabla */
          .btn-link[title="Editar"] {
              background-color: #5c636a !important;
              border: 1px solid #5c636a !important;
@@ -328,7 +328,7 @@
              opacity: 0.8 !important;
          }
 
-         /* Botón de borrar en el buscador */
+         /* Bot�n de borrar en el buscador */
          .input-group-append .btn {
              background-color: #5c636a !important;
              border-color: #5c636a !important;
@@ -366,28 +366,28 @@
                     <i class="fa fa-utensils mr-2"></i>SmartLunch
                 </h4>
 
-                <!-- Información del usuario y fecha/hora -->
+                <!-- Informaci�n del usuario y fecha/hora -->
                 <div class="d-flex align-items-center ml-5" style="font-size: 0.8em; font-weight: normal; opacity: 0.9;">
-                    <!-- Información del usuario primero -->
+                    <!-- Informaci�n del usuario primero -->
                     <span id="user-info-navbar" class="mr-3 d-flex align-items-center" style="display: none;">
                         <i class="fa fa-user mr-1" style="font-size: 1.1em;"></i>
                         <span id="user-role-navbar" class="badge badge-light text-dark" style="font-size: 0.9em; padding: 0.3em 0.6em;"></span>
                     </span>
-                    <!-- Fecha y hora después -->
+                    <!-- Fecha y hora despu�s -->
                     <span id="datetime-navbar" class="d-flex align-items-center">
                         <i class="fa fa-clock mr-1" style="font-size: 1.1em;"></i>
                         <span id="current-datetime" style="font-size: 1em;"></span>
                     </span>
                 </div>
 
-                <!-- Botón toggle para móvil -->
+                <!-- Bot�n toggle para m�vil -->
                 <button class="navbar-toggler" type="button" data-toggle="collapse"
                         data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <!-- Menú de navegación -->
+                <!-- Men� de navegaci�n -->
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav ml-auto text-right">
                         <li class="nav-item active">
@@ -396,7 +396,7 @@
                             </a>
                         </li>
 
-                        <!-- Reportes de Gestión -->
+                        <!-- Reportes de Gesti�n -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle active" href="#" id="ddReportes" role="button"
                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -408,7 +408,7 @@
                             </div>
                         </li>
 
-                        <!-- Configuración -->
+                        <!-- Configuraci�n -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle active" href="#" id="ddConfig" role="button"
                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -458,7 +458,7 @@
                 </div>
 
             <div class="container-fluid" style="margin-top:0!important;">
-                <!-- Botón Agregar -->
+                <!-- Bot�n Agregar -->
                 <div class="row my-3" ng-show="ViewAction!=='Nuevo' && ViewAction!=='Editar'">
                     <div class="col text-right">
                         <button type="button" class="btn btn-primary mb-2 mr-3" ng-click="ViewCreate()"
@@ -532,19 +532,19 @@
                                     <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
                                     <input id="view_nombre" name="view_nombre" class="form-control w-100" type="text"
                                                ng-model="view_nombre"
-                                           ng-pattern="/^[a-zA-ZñÑáéíóúÁÉÍÓÚ ]*$/"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]*$/"
                                            ng-minlength="2" ng-maxlength="20"
                                            placeholder="Ingrese nombre" required />
                                     <span class="text-danger" ng-show="centroForm.view_nombre.$error.pattern">Caracteres inválidos.</span>
                                     <span class="text-danger" ng-show="(centroForm.$submitted || centroForm.view_nombre.$touched) && centroForm.view_nombre.$error.required">Nombre requerido.</span>
                                     </div>
 
-                                <!-- Descripción -->
+                                <!-- Descripci�n -->
                                     <div class="pb-3 form-group">
                                     <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
                                     <input id="view_descripcion" name="view_descripcion" class="form-control w-100" type="text"
                                                ng-model="view_descripcion"
-                                           ng-pattern="/^[a-zA-Z0-9ñÑáéíóúÁÉÍÓÚ.,:()\- ]*$/"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9._%+\-\s]*$/"
                                            ng-minlength="4" ng-maxlength="140"
                                            placeholder="Ingrese descripción" required />
                                     <span class="text-danger" ng-show="centroForm.view_descripcion.$error.pattern">Caracteres inválidos.</span>
@@ -589,19 +589,19 @@
                                     <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
                                     <input id="view_nombre" name="view_nombre" class="form-control" type="text"
                                            ng-model="view_nombre"
-                                           ng-pattern="/^[a-zA-ZñÑáéíóúÁÉÍÓÚ ]*$/"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]*$/"
                                            ng-minlength="2" ng-maxlength="20"
                                            placeholder="Ingrese nombre" required />
                                     <span class="text-danger" ng-show="centroForm.view_nombre.$error.pattern">Caracteres inválidos.</span>
                                     <span class="text-danger" ng-show="(centroForm.$submitted || centroForm.view_nombre.$touched) && centroForm.view_nombre.$error.required">Nombre requerido.</span>
                                     </div>
 
-                                <!-- Descripción -->
+                                <!-- Descripci�n -->
                                     <div class="pb-3 form-group">
                                     <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
                                     <input id="view_descripcion" name="view_descripcion" class="form-control" type="text"
                                                ng-model="view_descripcion"
-                                           ng-pattern="/^[a-zA-Z0-9ñÑáéíóúÁÉÍÓÚ.,:()\- ]*$/"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9._%+\-\s]*$/"
                                            ng-minlength="4" ng-maxlength="140"
                                            placeholder="Ingrese descripción" required />
                                     <span class="text-danger" ng-show="centroForm.view_descripcion.$error.pattern">Caracteres inválidos.</span>
@@ -660,7 +660,7 @@
     
     <!-- Script para navbar -->
     <script>
-        // Función para actualizar fecha y hora
+        // Funci�n para actualizar fecha y hora
         function updateDateTime() {
             var now = new Date();
             var options = {
@@ -679,7 +679,7 @@
             }
         }
 
-        // Función para mostrar información del usuario
+        // Funci�n para mostrar informaci�n del usuario
         function showUserInfo() {
             var userInfo = document.getElementById('user-info-navbar');
             var userRole = document.getElementById('user-role-navbar');
@@ -695,7 +695,7 @@
             }
         }
 
-        // Verificar que FontAwesome esté cargado
+        // Verificar que FontAwesome est� cargado
         function checkFontAwesome() {
             try {
                 var testIcon = document.createElement('i');
@@ -713,7 +713,7 @@
                     console.log('FontAwesome cargado correctamente');
                     return true;
                 } else {
-                    console.log('FontAwesome no está cargado');
+                    console.log('FontAwesome no est� cargado');
                     return false;
                 }
             } catch (e) {
@@ -722,7 +722,7 @@
             }
         }
 
-        // Inicializar cuando el DOM esté listo
+        // Inicializar cuando el DOM est� listo
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Centro de Costo - DOM cargado');
             
@@ -731,7 +731,7 @@
                 if (!checkFontAwesome()) {
                     console.log('FontAwesome no disponible, los iconos pueden no mostrarse');
                 } else {
-                    // Forzar estilos de iconos si FontAwesome está cargado
+                    // Forzar estilos de iconos si FontAwesome est� cargado
                     var icons = document.querySelectorAll('.fa, .fas, .far, .fab');
                     icons.forEach(function(icon) {
                         icon.style.fontFamily = '"Font Awesome 5 Free"';
@@ -742,7 +742,7 @@
                     });
                     console.log('Iconos forzados:', icons.length);
                     
-                    // Forzar específicamente los iconos de botones de acciones
+                    // Forzar espec�ficamente los iconos de botones de acciones
                     var actionIcons = document.querySelectorAll('.btn-link[title="Editar"] i, .btn-link[title="Eliminar"] i');
                     actionIcons.forEach(function(icon) {
                         icon.style.fontFamily = '"Font Awesome 5 Free"';

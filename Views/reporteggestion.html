@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es" ng-app="AngujarJS" ng-controller="ReportegGestion">
 
 <head>
@@ -38,7 +38,7 @@
             margin-top: 0px;
         }
 
-        /* Botón de confirmación/cancelación en Swal */
+        /* Bot�n de confirmaci�n/cancelaci�n en Swal */
         .swal2-confirm {
             background-color: #495057 !important;
             border-color: #495057 !important;
@@ -62,7 +62,7 @@
             }
         /* .swal2-container { z-index: 20000 !important; }  opcional si algo la tapa */
 
-        /* Estilos para botones de paginación personalizados */
+        /* Estilos para botones de paginaci�n personalizados */
         .pagination-container {
             display: flex;
             justify-content: center;
@@ -119,7 +119,7 @@
                 font-size: 12px;
             }
 
-        /* Estilos para el botón de limpiar búsqueda */
+        /* Estilos para el bot�n de limpiar b�squeda */
         .input-group-append .btn {
             border-left: 0;
             border-top-left-radius: 0;
@@ -149,7 +149,7 @@
                 cursor: not-allowed;
             }
 
-        /* Estilos para el botón Agregar */
+        /* Estilos para el bot�n Agregar */
         .btn-primary[ng-click="ViewCreate()"] {
             background-color: #5c636a !important;
             border-color: #5c636a !important;
@@ -303,44 +303,44 @@
 
 
                 <!-- Menu -->
-            <div ng-include="'navbar-direct.html'"></div>
+            <div ng-include="'navbar.html'"></div>
             <script>
                 console.log('Página cargada, verificando navbar...');
                 setTimeout(function() {
                     var navbar = document.querySelector('nav.navbar');
                     if (navbar) {
-                        console.log('✅ Navbar encontrado:', navbar);
+                        console.log('? Navbar encontrado:', navbar);
                         
-                        // Verificar si el rol se está mostrando
+                        // Verificar si el rol se est� mostrando
                         var roleElement = document.querySelector('.navbar .user-role');
                         if (roleElement) {
-                            console.log('✅ Elemento de rol encontrado:', roleElement.textContent);
+                            console.log('? Elemento de rol encontrado:', roleElement.textContent);
                         } else {
-                            console.log('❌ Elemento de rol no encontrado');
+                            console.log('? Elemento de rol no encontrado');
                         }
                         
                         // Verificar localStorage
                         var role = localStorage.getItem('role');
-                        console.log('🔍 Rol en localStorage:', role);
+                        console.log('?? Rol en localStorage:', role);
                         
-                        // Verificar contenedor del menú
+                        // Verificar contenedor del men�
                         var menuContainer = document.getElementById('navbar-menu');
                         if (menuContainer) {
-                            console.log('✅ Contenedor del menú encontrado:', menuContainer);
-                            console.log('📋 Número de elementos en el menú:', menuContainer.children.length);
-                            console.log('📋 Elementos del menú:', menuContainer.innerHTML);
+                            console.log('? Contenedor del men� encontrado:', menuContainer);
+                            console.log('?? N�mero de elementos en el men�:', menuContainer.children.length);
+                            console.log('?? Elementos del men�:', menuContainer.innerHTML);
                         } else {
-                            console.log('❌ Contenedor del menú NO encontrado');
+                            console.log('? Contenedor del men� NO encontrado');
                         }
                         
                         // Forzar recarga del navbar si es necesario
                         if (window.reloadNavbar) {
-                            console.log('🔄 Forzando recarga del navbar...');
+                            console.log('?? Forzando recarga del navbar...');
                             window.reloadNavbar();
                         }
                         
                     } else {
-                        console.error('❌ Navbar NO encontrado');
+                        console.error('? Navbar NO encontrado');
                     }
                 }, 2000);
             </script>
@@ -378,7 +378,7 @@
                 </div>
                 </div>
 
-                                <!-- Plato (código) + buscador -->
+                                <!-- Plato (c�digo) + buscador -->
                                 <div class="col-md-3">
                                         <div class="form-group">
                                         <label for="filtro_plato">Plato</label>
@@ -431,7 +431,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Botón Buscar -->
+                                <!-- Bot�n Buscar -->
                                 <div class="col-md-3">
                                     <div style="margin-top: 30px;">
                                         <button type="button" class="btn" ng-click="getReporte()" style="background-color: #5c636a; border-color: #5c636a; color: white; min-width:220px; border-radius: 4px;">
@@ -488,7 +488,7 @@
                                 <small class="text-muted">Cantidad devueltos</small>
                             </div>
                             <div class="col-6 col-md-3 mb-2">
-                                        <h6 class="text-info mb-0">${{totales.costo}}</h6>
+                                        <h6 class="text-info mb-0">${{totales.costo | number:2}}</h6>
                                         <small class="text-muted">Costo total</small>
                                 </div>
                             </div>
@@ -505,48 +505,45 @@
                                 <table class="table table-hover table-sm mb-0">
                                 <thead class="bg-dark text-white sticky">
                                     <tr>
-                                        <th style="min-width:110px;">Fecha</th>
-                                        <th>Hora</th>
-                                        <th>Planta</th>
-                                        <th>CC</th>
-                                        <th>Proyecto</th>
+                                        <th style="text-align:center;">Fecha</th>
+                                        <th style="text-align:center;">Planta</th>
+                                        <th style="text-align:center;">CC</th>
+                                        <th style="text-align:center;">Proyecto</th>
+                                        <th style="text-align:center;">Perfil</th>
                                         <th style="text-align:center;">Legajo</th>
-                                        <th>Nombre</th>            <!-- NUEVO -->
-                                        <th>Apellido</th>          <!-- NUEVO -->
-                                       
-                                        <th>Plato</th>
-
-                                        <th style="text-align:right;">Costo</th>
-                                        <th style="text-align:center;">Invitado</th>
+                                        <th style="text-align:left;">Nombre completo</th>
+                                        <th style="text-align:left;">Plato</th>
+                                        <th style="text-align:center;">Estado</th>
+                                        <th style="text-align: right;">Bonificación</th>
+                                        <th style="text-align: right;">Costo</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                         <tr ng-repeat="item in dataset | startFrom:currentPage*pageSize | limitTo:pageSize">
-                                            <td>{{item.createdate | formatDate}}</td>
-                                            <td>{{item.createdate | formatHour}}</td>
-                                            <td>{{item.planta}}</td>
-                                            <td>{{item.centrodecosto}}</td>
-                                            <td>{{item.proyecto}}</td>
+                                            <td>{{item.createdate | formatDate}} - {{item.createdate | formatHour}}</td>
+                                            <td style="text-align:center;">{{item.planta}}</td>
+                                            <td style="text-align:center;">{{item.centrodecosto}}</td>
+                                            <td style="text-align:center;">{{item.proyecto}}</td>
+                                            <td style="text-align:center;">{{item.perfil}}</td>
                                             <td style="text-align:center;">{{item.legajo}}</td>
-                                            <td>{{item.nombre || '-'}}</td>      <!-- NUEVO -->
-                                            <td>{{item.apellido || '-'}}</td>    <!-- NUEVO -->
-                                            <td>{{item.cod_plato}}-{{item.platoNombre || '-'}}</td>
-
-                                            <td style="text-align:right;">${{item.monto}}</td>
-                                            <td style="text-align:center;">
-                                                <span class="badge" ng-class="{'badge-success': item.invitado, 'badge-secondary': !item.invitado}">
-                                                    {{item.invitado | formatBool}}
+                                            <td style="text-align:left;">{{item.nombre || '-'}} {{item.apellido || '-'}}</td>
+                                            <td style="text-align:left;">{{item.cod_plato}}-{{item.platoNombre || '-'}}</td>
+                                             <td style="text-align:center;">{{item.estado | formatEstados}}</td>
+                                            <td style="text-align:center; ">
+                                                <span ng-if="item.bonificado && item.bonificado > 0">
+                                                    ${{item.bonificado | number:2}}
                                                 </span>
                                             </td>
+                                            <td style="text-align:right;">${{item.monto | number:2}}</td>
                                         </tr>
                                     <tr ng-if="(dataset||[]).length === 0">
-                                        <td colspan="10" class="text-center text-muted py-3">Sin resultados</td>
+                                        <td colspan="9" class="text-center text-muted py-3">Sin resultados</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                             
-                        <!-- Paginación -->
+                        <!-- Paginaci�n -->
                             <div class="datatable-pagination mt-3">
                                 <div class="row align-items-center">
                                     <div class="col-md-6">
@@ -665,7 +662,7 @@
     <!-- Main JS -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-        <script src="js/navbar-direct.js"></script>
+
     <script src="js/reporteggestion.js"></script>
 </body>
 </html>

@@ -22,6 +22,17 @@
 
 
 var app = angular.module('AngujarJS', ['ja.qr']);
+
+// Filtro para pluralización
+app.filter('pluralize', function() {
+	return function(count, singular, plural) {
+		if (count === 1) {
+			return singular;
+		}
+		return plural || singular + 's';
+	};
+});
+
 function normalizar(str) {
 	return (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
@@ -58,6 +69,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 	$scope.basePlatos = 'http://localhost:8000/api/plato/';
 	$scope.baseComanda = 'http://localhost:8000/api/comanda/';
 	$scope.baseTurno = 'http://localhost:8000/api/turno/';
+	$scope.base = 'http://localhost:8000/api/jerarquia/';
 	$scope.platos = [];
 	$scope.menudeldia = [];
 	$scope.comanda = '';
@@ -90,7 +102,34 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 	$scope.pedidosInvitadosRestantes = '';
 	$scope.selectedTurno = null;
 	$scope.mostrarModal = false;
-	$scope.turnoDisponible = true; 
+	$scope.turnoDisponible = true;
+	
+	// === Variables para sistema de bonificaciones ===
+	$scope.bonificacionDisponible = false;
+	$scope.porcentajeBonificacion = 0;
+	$scope.yaBonificadoHoy = false;
+	$scope.cantidadBonificacionesHoy = 0;
+	$scope.precioOriginal = 0;
+	$scope.precioConBonificacion = 0;
+	$scope.descuentoAplicado = 0;
+	
+	// === FUNCIÓN DE MONITOREO PARA PEDIDOS RESTANTES ===
+	$scope.monitorearPedidosRestantes = function(nuevoValor, contexto) {
+		console.log('🔍 MONITOREO pedidosRestantes:', {
+			valorAnterior: $scope.pedidosRestantes,
+			valorNuevo: nuevoValor,
+			contexto: contexto,
+			stackTrace: new Error().stack
+		});
+		
+		if (nuevoValor < 0) {
+			console.error('❌ ERROR: pedidosRestantes NEGATIVO DETECTADO:', nuevoValor, 'en contexto:', contexto);
+			console.error('Stack trace:', new Error().stack);
+			return 0; // Corregir a 0
+		}
+		
+		return nuevoValor;
+	}; 
 	//usuario SmarTime
 	$scope.smarTime = localStorage.getItem('SmarTime');
 	$scope.usuarioSmatTime = localStorage.getItem('usuarioSmatTime');
@@ -151,6 +190,25 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 				fecha: hoy
 			}
 		}).then(function (response) {
+			console.log('=== 📊 DATOS DE API FILTRAR POR TURNO ===');
+			console.log('URL llamada:', $scope.baseMenu + 'filtrarPorTurno');
+			console.log('Parámetros:', {
+				planta: $scope.user_Planta,
+				centro: $scope.user_Centrodecosto,
+				jerarquia: $scope.user_Jerarquia,
+				proyecto: $scope.user_Proyecto,
+				turno: $scope.selectedTurno.descripcion,
+				fecha: hoy
+			});
+			console.log('Status:', response.status);
+			console.log('Datos recibidos:', response.data);
+			console.log('Tipo de datos:', Array.isArray(response.data) ? 'Array' : typeof response.data);
+			console.log('Cantidad de menús filtrados:', Array.isArray(response.data) ? response.data.length : 'No es array');
+			if (Array.isArray(response.data) && response.data.length > 0) {
+				console.log('Primer menú filtrado:', response.data[0]);
+				console.log('Campos del primer menú filtrado:', Object.keys(response.data[0]));
+			}
+			
 			if (Array.isArray(response.data)) {
 				console.log("✅ Datos recibidos de filtrarPorTurno:", response.data); 
 				$scope.menuDatasetSeleccionado = response.data;
@@ -205,10 +263,31 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 
 	$http.get($scope.basePlatos + 'getAll')
 		.then(function (response) {
+			console.log('=== 📊 DATOS DE API PLATOS ===');
+			console.log('URL llamada:', $scope.basePlatos + 'getAll');
+			console.log('Status:', response.status);
+			console.log('Datos recibidos:', response.data);
+			console.log('Tipo de datos:', Array.isArray(response.data) ? 'Array' : typeof response.data);
+			console.log('Cantidad de platos:', Array.isArray(response.data) ? response.data.length : 'No es array');
+			if (Array.isArray(response.data) && response.data.length > 0) {
+				console.log('Primer plato:', response.data[0]);
+				console.log('Campos del primer plato:', Object.keys(response.data[0]));
+			}
 			$scope.platos = response.data;
 			return $http.get($scope.baseTurno + 'GetTurnosDisponibles');
 		})
 		.then(function (response) {
+			console.log('=== 📊 DATOS DE API TURNOS ===');
+			console.log('URL llamada:', $scope.baseTurno + 'GetTurnosDisponibles');
+			console.log('Status:', response.status);
+			console.log('Datos recibidos:', response.data);
+			console.log('Tipo de datos:', Array.isArray(response.data) ? 'Array' : typeof response.data);
+			console.log('Cantidad de turnos:', Array.isArray(response.data) ? response.data.length : 'No es array');
+			if (Array.isArray(response.data) && response.data.length > 0) {
+				console.log('Primer turno:', response.data[0]);
+				console.log('Campos del primer turno:', Object.keys(response.data[0]));
+			}
+			
 			$scope.turnoDataset = Array.isArray(response.data) ? response.data : [];
 			if ($scope.turnoDataset.length === 0) {
 				$scope.turnoDisponible = false;
@@ -235,6 +314,25 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			});
 		})
 		.then(function (response) {
+			console.log('=== 📊 DATOS DE API MENÚ DEL DÍA ===');
+			console.log('URL llamada:', $scope.baseMenu + 'filtrar');
+			console.log('Parámetros:', {
+				planta: $scope.user_Planta,
+				centro: $scope.user_Centrodecosto,
+				jerarquia: $scope.user_Jerarquia,
+				proyecto: $scope.user_Proyecto,
+				desde: hoy,
+				hasta: hoy
+			});
+			console.log('Status:', response.status);
+			console.log('Datos recibidos:', response.data);
+			console.log('Tipo de datos:', Array.isArray(response.data) ? 'Array' : typeof response.data);
+			console.log('Cantidad de menús:', Array.isArray(response.data) ? response.data.length : 'No es array');
+			if (Array.isArray(response.data) && response.data.length > 0) {
+				console.log('Primer menú:', response.data[0]);
+				console.log('Campos del primer menú:', Object.keys(response.data[0]));
+			}
+			
 			if (Array.isArray(response.data)) {
 				$scope.menudeldia = response.data;
 
@@ -393,16 +491,43 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 
 	$scope.obtieneComandas = function () {
 		var id = $scope.user_DNI;
+		var url = $scope.baseComanda + 'getPedido/' + id;
 
-		$http.get($scope.baseComanda + 'getPedido/' + id)
+		console.log('=== 📊 DATOS DE API COMANDAS (obtieneComandas) ===');
+		console.log('URL llamada:', url);
+		console.log('DNI del usuario:', id);
+
+		$http.get(url)
 			.success(function (data) {
+				console.log('=== 📊 RESPUESTA DE API COMANDAS ===');
+				console.log('Datos recibidos:', data);
+				console.log('Tipo de datos:', Array.isArray(data) ? 'Array' : typeof data);
+				console.log('Cantidad de comandas:', Array.isArray(data) ? data.length : 'No es array');
+				if (Array.isArray(data) && data.length > 0) {
+					console.log('Primera comanda:', data[0]);
+					console.log('Campos de la primera comanda:', Object.keys(data[0]));
+					console.log('=== 🔍 ANÁLISIS DETALLADO DE COMANDAS ===');
+					data.forEach(function(comanda, index) {
+						console.log(`--- COMANDA ${index + 1} ---`);
+						console.log('ID:', comanda.id);
+						console.log('Código plato:', comanda.cod_plato);
+						console.log('Monto:', comanda.monto);
+						console.log('Bonificado:', comanda.bonificado);
+						console.log('Estado:', comanda.estado);
+						console.log('Fecha:', comanda.fecha);
+						console.log('Fecha_hora:', comanda.fecha_hora);
+						console.log('Invitado:', comanda.invitado);
+						console.log('Todos los campos:', Object.keys(comanda));
+						console.log('--- FIN COMANDA ---');
+					});
+				}
 				$timeout(function () {
 					var pedidosNoC = data.filter(function (elemento) {
 						return elemento.estado !== 'C';
 					});
 
 					$scope.pedidosGastados = pedidosNoC.length;
-					$scope.pedidosRestantes = $scope.user_Bonificacion - $scope.pedidosGastados;
+					// NO modificar pedidosRestantes aquí, se maneja en el sistema de bonificaciones
 
 					var pedidosInvitados = 0;
 					$scope.pedidoVigente = []; // reinicio para evitar duplicados
@@ -434,7 +559,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 						}
 					});
 
-					$scope.pedidosRestantes = $scope.user_Bonificacion - $scope.pedidosGastados + pedidosInvitados;
+					// NO modificar pedidosRestantes aquí, se maneja en el sistema de bonificaciones
 					$scope.pedidosInvitadosRestantes = $scope.user_BonificacionInvitado - pedidosInvitados;
 
 					// Generar los códigos de barra (espera que DOM esté renderizado)
@@ -460,6 +585,10 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 					}, 1000); // Espera tras procesar pedidos
 
 				}, 1000); // Espera para render Angular
+				
+				// === INICIALIZAR SISTEMA DE BONIFICACIONES ===
+				$scope.inicializarBonificaciones();
+				
 			})
 		.error(function (data, status) {
 			Swal.fire({
@@ -484,7 +613,11 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 				});
 
 				$scope.pedidosGastados = pedidosNoC.length;
-				$scope.pedidosRestantes = $scope.user_Bonificacion - $scope.pedidosGastados;
+				// NO modificar pedidosRestantes aquí, se maneja en el sistema de bonificaciones
+				console.log('=== LOG PEDIDOS GASTADOS ===');
+				console.log('pedidosGastados:', $scope.pedidosGastados);
+				console.log('user_Bonificacion:', $scope.user_Bonificacion);
+				console.log('pedidosRestantes ANTES:', $scope.pedidosRestantes);
 
 				var pedidosInvitados = 0;
 				$scope.pedidoVigente = [];
@@ -516,7 +649,10 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 					}
 				});
 
-				$scope.pedidosRestantes = $scope.user_Bonificacion - $scope.pedidosGastados + pedidosInvitados;
+				// NO modificar pedidosRestantes aquí, se maneja en el sistema de bonificaciones
+				console.log('=== LOG PEDIDOS INVITADOS ===');
+				console.log('pedidosInvitados:', pedidosInvitados);
+				console.log('pedidosRestantes DESPUÉS:', $scope.pedidosRestantes);
 				$scope.pedidosInvitadosRestantes = $scope.user_BonificacionInvitado - pedidosInvitados;
 
 			})
@@ -532,6 +668,170 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 	};*/
 
 
+
+	////////////////////////////////////////////////SISTEMA DE BONIFICACIONES////////////////////////////////////////////////
+	
+	// Inicializar sistema de bonificaciones al cargar la página
+	$scope.inicializarBonificaciones = function() {
+		console.log('=== INICIALIZANDO SISTEMA DE BONIFICACIONES ===');
+		console.log('Perfil del usuario:', $scope.user_Rol);
+		console.log('pedidosRestantes INICIAL:', $scope.pedidosRestantes);
+		
+		if (!window.BonificacionesService) {
+			console.error('BonificacionesService no está disponible');
+			$scope.pedidosRestantes = 0;
+			console.log('pedidosRestantes ERROR:', $scope.pedidosRestantes);
+			return;
+		}
+		
+		// Obtener bonificación para el perfil del usuario
+		window.BonificacionesService.obtenerBonificacion($scope.user_Rol)
+			.then(function(bonificacion) {
+				console.log('Bonificación obtenida:', bonificacion);
+				$scope.porcentajeBonificacion = bonificacion.porcentaje;
+				$scope.bonificacionDisponible = bonificacion.porcentaje > 0;
+				
+				// Inicializar pedidos restantes solo si NO hay bonificación disponible
+				if (!$scope.bonificacionDisponible) {
+					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'INICIALIZAR_SIN_BONIFICACION');
+					console.log('pedidosRestantes SIN BONIFICACIÓN:', $scope.pedidosRestantes);
+				}
+				
+				// Verificar si ya se usó la bonificación hoy (esto actualizará pedidosRestantes correctamente)
+				return $scope.verificarBonificacionHoy();
+			})
+			.catch(function(error) {
+				console.error('Error obteniendo bonificación:', error);
+				$scope.bonificacionDisponible = false;
+				$scope.porcentajeBonificacion = 0;
+				$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'ERROR_CATCH_INICIALIZAR');
+				console.log('pedidosRestantes ERROR CATCH:', $scope.pedidosRestantes);
+			});
+	};
+	
+	// Verificar si ya se usó la bonificación hoy
+	$scope.verificarBonificacionHoy = function() {
+		var fechaHoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+		
+		console.log('=== VERIFICANDO BONIFICACIÓN HOY ===');
+		console.log('fechaHoy:', fechaHoy);
+		console.log('user_DNI:', $scope.user_DNI);
+		console.log('pedidosRestantes ANTES VERIFICAR:', $scope.pedidosRestantes);
+		console.log('bonificacionDisponible ANTES VERIFICAR:', $scope.bonificacionDisponible);
+		console.log('yaBonificadoHoy ANTES VERIFICAR:', $scope.yaBonificadoHoy);
+		
+		return window.BonificacionesService.verificarBonificacionHoy($scope.user_DNI, fechaHoy)
+			.then(function(resultado) {
+				console.log('Verificación de bonificación hoy:', resultado);
+				$scope.yaBonificadoHoy = resultado.yaBonificado;
+				$scope.cantidadBonificacionesHoy = resultado.cantidadBonificados;
+				
+				// === LÓGICA MEJORADA DE "TE QUEDAN PLATOS BONIFICADOS" ===
+				// Si hay bonificación disponible:
+				// - Si ya se usó hoy (cantidad >= 1): mostrar 0
+				// - Si no se ha usado hoy (cantidad = 0): mostrar 1
+				if ($scope.bonificacionDisponible) {
+					var nuevoValor = $scope.cantidadBonificacionesHoy >= 1 ? 0 : 1;
+					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(nuevoValor, 'VERIFICAR_BONIFICACION_CON_BONIFICACION');
+					console.log('pedidosRestantes CON BONIFICACIÓN:', $scope.pedidosRestantes, '(cantidadBonificacionesHoy:', $scope.cantidadBonificacionesHoy, ')');
+				} else {
+					// Si no hay bonificación disponible, mantener en 0
+					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'VERIFICAR_BONIFICACION_SIN_BONIFICACION');
+					console.log('pedidosRestantes SIN BONIFICACIÓN:', $scope.pedidosRestantes);
+				}
+				
+				// === VALIDACIÓN: NUNCA NEGATIVO ===
+				if ($scope.pedidosRestantes < 0) {
+					console.warn('⚠️ pedidosRestantes NEGATIVO DETECTADO:', $scope.pedidosRestantes, '→ CORRIGIENDO A 0');
+					$scope.pedidosRestantes = 0;
+				}
+				
+				console.log('Pedidos restantes actualizados:', $scope.pedidosRestantes);
+				console.log('yaBonificadoHoy DESPUÉS VERIFICAR:', $scope.yaBonificadoHoy);
+				console.log('cantidadBonificacionesHoy DESPUÉS VERIFICAR:', $scope.cantidadBonificacionesHoy);
+				console.log('bonificacionDisponible DESPUÉS VERIFICAR:', $scope.bonificacionDisponible);
+				$scope.$apply();
+			})
+			.catch(function(error) {
+				console.error('Error verificando bonificación:', error);
+				$scope.yaBonificadoHoy = false;
+				$scope.cantidadBonificacionesHoy = 0;
+				$scope.pedidosRestantes = $scope.monitorearPedidosRestantes($scope.bonificacionDisponible ? 1 : 0, 'ERROR_CATCH_VERIFICAR');
+				
+				// === VALIDACIÓN: NUNCA NEGATIVO ===
+				if ($scope.pedidosRestantes < 0) {
+					console.warn('⚠️ pedidosRestantes NEGATIVO DETECTADO EN CATCH:', $scope.pedidosRestantes, '→ CORRIGIENDO A 0');
+					$scope.pedidosRestantes = 0;
+				}
+				
+				console.log('pedidosRestantes ERROR CATCH:', $scope.pedidosRestantes);
+				$scope.$apply();
+			});
+	};
+	
+	// Calcular precio con bonificación
+	$scope.calcularPrecioConBonificacion = function(precioOriginal, aplicarBonificacion) {
+		if (!aplicarBonificacion || $scope.cantidadBonificacionesHoy >= 1 || !$scope.bonificacionDisponible) {
+			return {
+				precioFinal: precioOriginal,
+				bonificado: 0,
+				descuento: 0
+			};
+		}
+		
+		var resultado = window.BonificacionesService.calcularPrecioConBonificacion(
+			precioOriginal, 
+			$scope.porcentajeBonificacion
+		);
+		
+		console.log('Cálculo de bonificación:', {
+			precioOriginal: precioOriginal,
+			porcentaje: $scope.porcentajeBonificacion,
+			cantidadBonificacionesHoy: $scope.cantidadBonificacionesHoy,
+			resultado: resultado
+		});
+		
+		return resultado;
+	};
+	
+	// Aplicar bonificación a un plato
+	$scope.aplicarBonificacion = function(item, aplicarBonificacion) {
+		console.log('=== APLICANDO BONIFICACIÓN ===');
+		console.log('pedidosRestantes ANTES APLICAR:', $scope.pedidosRestantes);
+		console.log('aplicarBonificacion:', aplicarBonificacion);
+		console.log('bonificacionDisponible:', $scope.bonificacionDisponible);
+		console.log('yaBonificadoHoy:', $scope.yaBonificadoHoy);
+		console.log('cantidadBonificacionesHoy:', $scope.cantidadBonificacionesHoy);
+		
+		$scope.precioOriginal = parseFloat(item.costo) || 0;
+		var calculo = $scope.calcularPrecioConBonificacion($scope.precioOriginal, aplicarBonificacion);
+		
+		$scope.precioConBonificacion = calculo.precioFinal;
+		$scope.descuentoAplicado = calculo.bonificado;
+		
+		// Actualizar el costo del plato para el pedido
+		item.precioFinal = $scope.precioConBonificacion;
+		item.bonificado = $scope.descuentoAplicado;
+		item.aplicarBonificacion = aplicarBonificacion;
+		
+		// Actualizar pedidos restantes si se aplica bonificación
+		if (aplicarBonificacion && $scope.bonificacionDisponible && $scope.cantidadBonificacionesHoy < 1) {
+			$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'APLICAR_BONIFICACION_CONSUMIR');
+			$scope.yaBonificadoHoy = true; // Marcar como ya bonificado
+			$scope.cantidadBonificacionesHoy = 1; // Simular que se va a aplicar
+			console.log('pedidosRestantes ACTUALIZADO A 0 (se va a consumir):', $scope.pedidosRestantes);
+		}
+		
+		console.log('Bonificación aplicada:', {
+			plato: item.descripcion,
+			precioOriginal: $scope.precioOriginal,
+			precioFinal: $scope.precioConBonificacion,
+			descuento: $scope.descuentoAplicado,
+			aplicarBonificacion: aplicarBonificacion,
+			pedidosRestantes: $scope.pedidosRestantes,
+			cantidadBonificacionesHoy: $scope.cantidadBonificacionesHoy
+		});
+	};
 
 	////////////////////////////////////////////////ACCIONES SMARTIME////////////////////////////////////////////////
 	
@@ -561,10 +861,47 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			return;
 		}
 
+		// === LÓGICA DE BONIFICACIÓN MEJORADA ===
+		console.log('=== HACER PEDIDO - ESTADO BONIFICACIÓN ===');
+		console.log('bonificacionDisponible:', $scope.bonificacionDisponible);
+		console.log('yaBonificadoHoy:', $scope.yaBonificadoHoy);
+		console.log('cantidadBonificacionesHoy:', $scope.cantidadBonificacionesHoy);
+		console.log('pedidosRestantes:', $scope.pedidosRestantes);
+		console.log('item.aplicarBonificacion ANTES:', item.aplicarBonificacion);
+		
+		// Inicializar bonificaciones si no se ha hecho
+		if (!$scope.bonificacionDisponible && !$scope.yaBonificadoHoy) {
+			console.log('Inicializando bonificaciones...');
+			$scope.inicializarBonificaciones();
+		}
+		
+		// === LÓGICA MEJORADA PARA DETERMINAR SI APLICAR BONIFICACIÓN ===
+		// Solo permitir bonificación si:
+		// 1. Hay bonificación disponible
+		// 2. No se ha usado hoy (cantidadBonificacionesHoy < 1)
+		var puedeAplicarBonificacion = $scope.bonificacionDisponible && $scope.cantidadBonificacionesHoy < 1;
+		
+		// Aplicar bonificación según la selección del usuario en el checkbox
+		// Si no se ha inicializado el campo, usar el valor por defecto
+		if (item.aplicarBonificacion === undefined) {
+			item.aplicarBonificacion = puedeAplicarBonificacion;
+			console.log('item.aplicarBonificacion INICIALIZADO A:', item.aplicarBonificacion, '(puedeAplicarBonificacion:', puedeAplicarBonificacion, ')');
+		}
+		
+		// Si no puede aplicar bonificación, forzar a false
+		if (!puedeAplicarBonificacion) {
+			console.log('No puede aplicar bonificación, forzando a false');
+			item.aplicarBonificacion = false;
+		}
+		
+		console.log('item.aplicarBonificacion FINAL:', item.aplicarBonificacion);
+		
+		$scope.aplicarBonificacion(item, item.aplicarBonificacion);
+
 		// Seteo valores del pedido en el scope
 		$scope.pedidoPlato = item.descripcion;
 		$scope.pedidoCodigo = item.codigo;
-		$scope.pedidoCosto = item.costo;
+		$scope.pedidoCosto = item.precioFinal || item.costo; // Usar precio con bonificación si aplica
 		$scope.pedidoPresentacion = item.presentacion || $scope.defaultImage;
 		$scope.pedidoEstado = 'P';
 		$scope.pedidoCalificacion = 1;
@@ -699,9 +1036,33 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			user_fileNumber: $scope.user_legajo,
 			invitado: esInvitado,
 			comentario: $scope.pedidoComentario,
-			fecha_hora: fecha
+			fecha_hora: fecha,
+			// === CAMPOS DE BONIFICACIÓN ===
+			precio_original: $scope.pedidoSeleccionado.costo || $scope.precioOriginal,
+			bonificado: $scope.pedidoSeleccionado.bonificado || $scope.descuentoAplicado,
+			porcentaje_bonificacion: $scope.porcentajeBonificacion,
+			aplicar_bonificacion: $scope.pedidoSeleccionado.aplicarBonificacion || false
 		};
-		console.log("📦 jsonForm confirmaPedido:", jsonForm);
+		
+		console.log('=== 📤 DATOS ENVIADOS A API CREATE PEDIDO ===');
+		console.log('URL:', $scope.baseComanda + 'Create');
+		console.log('Método:', 'POST');
+		console.log('Headers:', {
+			"Content-Type": "application/json; charset=utf-8",
+			"Authorization": ""
+		});
+		console.log('Datos del formulario:', jsonForm);
+		console.log('=== 🔍 ANÁLISIS DETALLADO DE CAMPOS ===');
+		console.log('Código plato:', jsonForm.cod_plato);
+		console.log('Monto final:', jsonForm.monto);
+		console.log('Precio original:', jsonForm.precio_original);
+		console.log('Bonificado:', jsonForm.bonificado);
+		console.log('Porcentaje bonificación:', jsonForm.porcentaje_bonificacion);
+		console.log('Aplicar bonificación:', jsonForm.aplicar_bonificacion);
+		console.log('Estado:', jsonForm.estado);
+		console.log('Usuario ID:', jsonForm.user_id);
+		console.log('Invitado:', jsonForm.invitado);
+		console.log('Fecha:', jsonForm.fecha_hora);
 		$http({
 			method: 'post',
 			headers: {
@@ -711,7 +1072,14 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			url: $scope.baseComanda + 'Create',
 			data: jsonForm
 		}).then(function (success) {
+			console.log('=== 📥 RESPUESTA DE API CREATE PEDIDO ===');
+			console.log('Status de éxito:', success.status);
+			console.log('Datos de respuesta:', success.data);
+			console.log('Headers de respuesta:', success.headers);
+			console.log('Configuración de la petición:', success.config);
+			
 			if (success) {
+				console.log('✅ Pedido creado exitosamente');
 				Swal.fire({
 					title: '¡Pedido Enviado!',
 					text: '',
@@ -727,6 +1095,12 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 				});
 			}
 		}, function (error) {
+			console.log('=== ❌ ERROR EN API CREATE PEDIDO ===');
+			console.log('Status de error:', error.status);
+			console.log('Datos de error:', error.data);
+			console.log('Headers de error:', error.headers);
+			console.log('Configuración de la petición:', error.config);
+			console.log('Mensaje de error:', error.statusText);
 			Swal.fire({
 				title: 'Operación Incorrecta',
 				text: JSON.stringify(error),

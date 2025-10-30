@@ -1,4 +1,4 @@
-﻿<nav class="navbar navbar-expand-lg navbar-dark smart-bg d-flex align-items-center">
+<nav class="navbar navbar-expand-lg navbar-dark smart-bg d-flex align-items-center">
     <!-- Logo -->
     <h4 class="navbar-brand smart-title mb-0">
         <i class="fa fa-utensils mr-2"></i>SmartLunch
@@ -7,29 +7,29 @@
     <!-- Información del usuario y fecha/hora -->
     <div class="d-flex align-items-center ml-5" style="font-size: 0.8em; font-weight: normal; opacity: 0.9;">
         <!-- Información del usuario primero -->
-        <span id="user-info-navbar" class="mr-3 d-flex align-items-center" style="display: none;">
+        <span class="mr-3 d-flex align-items-center" ng-show="user_Rol">
             <i class="fa fa-user mr-1" style="font-size: 1.1em;"></i>
-            <span id="user-role-navbar" class="badge badge-light text-dark" style="font-size: 0.9em; padding: 0.3em 0.6em;"></span>
+            <span class="badge badge-light text-dark" style="font-size: 0.9em; padding: 0.3em 0.6em;">{{user_Rol}}</span>
         </span>
         <!-- Fecha y hora después -->
-        <span id="datetime-navbar" class="d-flex align-items-center">
+        <span class="d-flex align-items-center">
             <i class="fa fa-clock mr-1" style="font-size: 1.1em;"></i>
-            <span id="current-datetime" style="font-size: 1em;"></span>
+            <span style="font-size: 1em;">{{currentDateTime}}</span>
         </span>
     </div>
 
     <!-- Debug info (solo para desarrollo) -->
 
-    <!-- Botón toggle para móvil -->
+    <!-- Bot�n toggle para m�vil -->
     <button class="navbar-toggler" type="button" data-toggle="collapse"
             data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
             aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
 
-    <!-- Menú de navegación -->
+    <!-- Men� de navegaci�n -->
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav ml-auto text-right">
+        <ul class="navbar-nav ml-auto text-right" id="navbar-menu">
             <li class="nav-item active">
                 <a class="nav-link" href="index.html" ng-if="user_Rol !== 'Comensal'">
                     <i class="fa fa-home mr-1"></i> Inicio
@@ -50,7 +50,7 @@
                 </a>
                 <div class="dropdown-menu" aria-labelledby="ddCocina">
                     <a class="dropdown-item" href="plato.html">Platos</a>
-                    <a class="dropdown-item" href="menudeldia.html">Menu del Día</a>
+                    <a class="dropdown-item" href="menudeldia.html">Menú del día�a</a>
                 </div>
             </li>
 
@@ -93,7 +93,7 @@
 </nav>
 
 <script>
-// Función para actualizar fecha y hora
+// Funci�n para actualizar fecha y hora
 function updateDateTime() {
     var now = new Date();
     var options = {
@@ -115,6 +115,6 @@ function updateDateTime() {
 // Actualizar cada segundo
 setInterval(updateDateTime, 1000);
 
-// Actualizar inmediatamente cuando se carga la página
+// Actualizar inmediatamente cuando se carga la p�gina
 document.addEventListener('DOMContentLoaded', updateDateTime);
 </script>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es" ng-app="AngujarJS">
 <head>
     <meta charset="utf-8" />
@@ -239,11 +239,11 @@
                         <!-- Paginación -->
                         <div class="pagination-container" ng-if="numberOfPages() > 1">
                             <div class="pagination-buttons">
-                                <button class="pagination-btn" ng-disabled="currentPage == 0" ng-click="currentPage=currentPage-1" title="Página anterior">
+                                <button class="pagination-btn" ng-disabled="currentPage == 0" ng-click="currentPage=currentPage-1" title="Pógina anterior">
                                     <i class="fas fa-angle-double-left"></i>
                                 </button>
                                 <div style="width:1px; background:#dee2e6; margin:4px 0;"></div>
-                                <button class="pagination-btn" ng-disabled="currentPage+1 >= numberOfPages()" ng-click="currentPage=currentPage+1" title="Página siguiente">
+                                <button class="pagination-btn" ng-disabled="currentPage+1 >= numberOfPages()" ng-click="currentPage=currentPage+1" title="Pógina siguiente">
                                     <i class="fas fa-angle-double-right"></i>
                                 </button>
                             </div>
@@ -269,7 +269,7 @@
                                            id="view_nombre"
                                            name="view_nombre"
                                            ng-model="view_nombre"
-                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/"
+                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/"
                                            ng-minlength="2"
                                            ng-maxlength="20"
                                            required />
@@ -283,7 +283,7 @@
                                            id="view_descripcion"
                                            name="view_descripcion"
                                            ng-model="view_descripcion"
-                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/"
+                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/"
                                            ng-minlength="4"
                                            ng-maxlength="140"
                                            required />
@@ -320,7 +320,7 @@
                                            id="view_nombre"
                                            name="view_nombre"
                                            ng-model="view_nombre"
-                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/"
+                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/"
                                            ng-minlength="2"
                                            ng-maxlength="20"
                                            required />
@@ -334,7 +334,7 @@
                                            id="view_descripcion"
                                            name="view_descripcion"
                                            ng-model="view_descripcion"
-                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/"
+                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/"
                                            ng-minlength="4"
                                            ng-maxlength="140"
                                            required />
@@ -389,7 +389,7 @@
     <!-- Angular + SweetAlert2 + App -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <script src="js/navbar-direct.js"></script>
+
     <script src="js/planta.js?v=7.1"></script>
 </body>
 </html>

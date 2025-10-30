@@ -205,7 +205,7 @@ app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
             headers: { "Content-Type": "application/json; charset=utf-8" }
         })
             .then(function () {
-                swalOk('Operación Correcta', 'Centro de costo eliminado', { confirmButtonColor: '#343A40' });
+                swalOk('Operación Correcta', 'Centro de costo eliminado', { confirmButtonColor: '#1F2326' });
                 $scope.ModelReadAll();
             })
             .catch(function () { swalErr('Operación Incorrecta', 'No se pudo eliminar el centro de costo', { confirmButtonColor: '#343A40' }); });

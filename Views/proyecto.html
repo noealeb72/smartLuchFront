@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html class="h-100">
 
 <head>
@@ -53,12 +53,12 @@
             background-color: #F34949 !important;
         }
         
-        /* Agregar padding al contenido para que no se oculte detrás del footer */
+        /* Agregar padding al contenido para que no se oculte detrós del footer */
         body {
             padding-bottom: 80px;
         }
         
-        /* Asegurar que todos los botones tengan el mismo tamaño */
+        /* Asegurar que todos los botones tengan el mismo tamaóo */
         .btn-primary,
         .btn-cancelar,
         .btn-link[title="Editar"],
@@ -184,14 +184,14 @@
             color: white !important;
         }
         
-        /* Íconos de los botones en color blanco */
+        /* óconos de los botones en color blanco */
         .btn-primary i.fa-save,
         .btn-cancelar i.fa-times,
         .btn-primary[ng-click="ViewCreate()"] i.fa-plus {
             color: white !important;
         }
         
-        /* Botón de búsqueda (limpiar) - Gris oscuro */
+        /* Botón de bósqueda (limpiar) - Gris oscuro */
         .input-group-append .btn {
             background-color: #5c636a !important;
             border-color: #5c636a !important;
@@ -385,14 +385,14 @@
                                     <form class="form-group" name="proyectoForm" ng-submit="ModelCreate(proyectoForm)" novalidate>
                                         <div class="pb-3 form-group">
                                             <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                            <input ng-pattern="/^[a-zA-Zñ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
-                                            <span ng-show="proyectoForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="proyectoForm.view_nombre.$error.required && proyectoForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
+                                            <input ng-pattern="/^[a-zA-Zó ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                            <span ng-show="proyectoForm.view_nombre.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="proyectoForm.view_nombre.$error.required && proyectoForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
                                             <span ng-show="showValidationErrors && (!view_nombre || view_nombre.trim() === '')" class="text-danger">Nombre requerido.</span>
                                         </div>
                                         <div class="pb-3 form-group">
                                             <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
-                                            <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripción" required>
-                                            <span ng-show="proyectoForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="proyectoForm.view_descripcion.$error.required && proyectoForm.view_descripcion.$dirty" class="text-danger">Descripción requerida.</span>
+                                            <input ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripción" required>
+                                            <span ng-show="proyectoForm.view_descripcion.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="proyectoForm.view_descripcion.$error.required && proyectoForm.view_descripcion.$dirty" class="text-danger">Descripción requerida.</span>
                                             <span ng-show="showValidationErrors && (!view_descripcion || view_descripcion.trim() === '')" class="text-danger">Descripción requerida.</span>
                                         </div>
                                         <div class="pb-3 form-group">
@@ -429,14 +429,14 @@
                                     <form class="form-group" name="proyectoForm" ng-submit="ModelUpdate(proyectoForm,view_id)" novalidate>
                                         <div class="pb-3 form-group">
                                             <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                            <input ng-pattern="/^[a-zA-Zñ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
-                                            <span ng-show="proyectoForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="proyectoForm.view_nombre.$error.required && proyectoForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
+                                            <input ng-pattern="/^[a-zA-Zó ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                            <span ng-show="proyectoForm.view_nombre.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="proyectoForm.view_nombre.$error.required && proyectoForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
                                             <span ng-show="showValidationErrors && (!view_nombre || view_nombre.trim() === '')" class="text-danger">Nombre requerido.</span>
                                         </div>
                                         <div class="pb-3 form-group">
                                             <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
-                                            <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripción" required>
-                                            <span ng-show="proyectoForm.view_descripcion.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="proyectoForm.view_descripcion.$error.required && proyectoForm.view_descripcion.$dirty" class="text-danger">Descripción requerida.</span>
+                                            <input ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/" ng-minlength="4" ng-maxlength="140" class="col-8 form-control" type="text" id="view_descripcion" name="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripción" required>
+                                            <span ng-show="proyectoForm.view_descripcion.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="proyectoForm.view_descripcion.$error.required && proyectoForm.view_descripcion.$dirty" class="text-danger">Descripción requerida.</span>
                                             <span ng-show="showValidationErrors && (!view_descripcion || view_descripcion.trim() === '')" class="text-danger">Descripción requerida.</span>
                                         </div>
                                         <div class="pb-3 form-group">
@@ -495,7 +495,7 @@
     <!-- Main JS -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <script src="js/navbar-direct.js"></script>
+
     <script src="js/proyecto.js"></script>
 </body>
 </html>

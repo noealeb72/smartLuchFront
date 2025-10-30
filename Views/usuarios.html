@@ -1,4 +1,4 @@
-﻿ <!DOCTYPE html>
+ <!DOCTYPE html>
  <html lang="es" ng-app="AngujarJS">
 
  <head>
@@ -169,7 +169,7 @@
             color: white !important;
         }
         
-        /* Botón de editar con ícono del lápiz */
+        /* Botón de editar con ócono del lópiz */
         .btn-link[title="Editar"] {
             background-color: #495057 !important;
             border-color: #495057 !important;
@@ -196,7 +196,7 @@
             color: white !important;
         }
         
-        /* Ícono del lápiz en color blanco */
+        /* ócono del lópiz en color blanco */
         .btn-link[title="Editar"] i.fa-edit {
             color: white !important;
         }
@@ -228,12 +228,12 @@
             color: white !important;
         }
         
-        /* Ícono de la basura en color blanco */
+        /* ócono de la basura en color blanco */
         .btn-link[title="Eliminar"] i.fa-trash {
             color: white !important;
         }
         
-        /* Asegurar que todos los botones tengan el mismo tamaño */
+        /* Asegurar que todos los botones tengan el mismo tamaóo */
         .btn-primary,
         .btn-cancelar,
         .btn-link[title="Editar"],
@@ -248,7 +248,7 @@
             justify-content: center !important;
         }
         
-        /* Íconos de los botones en color blanco */
+        /* óconos de los botones en color blanco */
         .btn-primary i.fa-save,
         .btn-cancelar i.fa-times,
         .btn-primary[ng-click="ViewCreate()"] i.fa-plus {
@@ -334,7 +334,7 @@
              }
 
              .btn {
-                 width: 100%; /* Botones más grandes y fáciles de tocar */
+                 width: 100%; /* Botones mós grandes y fóciles de tocar */
                  font-size: 1rem;
              }
 
@@ -348,7 +348,7 @@
                  margin-bottom: 10px;
              }
          }
-        /* Mostrar mensajes de error en envío o al tocar el campo */
+        /* Mostrar mensajes de error en envóo o al tocar el campo */
         .text-danger { display: inline; }
         
         /* Estilos para el paginador personalizado */
@@ -402,7 +402,7 @@
         <div class="solid-background" style="flex: 1;">
              <!-- Menu -->
              <div ng-include="'navbar.html'"> </div>
-             <!-- Título y Breadcrumbs -->
+             <!-- Tótulo y Breadcrumbs -->
              <div class="heading-section bg-dark text-white pt-2 pl-3">
                  <div class="row">
                      <div class="col-md-8">
@@ -514,7 +514,7 @@
                                         ng-disabled="currentPage == 0" 
                                         ng-click="currentPage=currentPage-1"
                                         style="background: transparent; border: none; padding: 8px 12px; cursor: pointer; color: #6c757d; font-size: 16px; display: flex; align-items: center; justify-content: center;"
-                                        title="Página anterior">
+                                        title="Pógina anterior">
                                     <i class="fas fa-angle-double-left" style="font-size: 14px;"></i>
                                 </button>
                                 <div style="width: 1px; background-color: #dee2e6; margin: 4px 0;"></div>
@@ -522,7 +522,7 @@
                                         ng-disabled="currentPage+1 >= totalPages" 
                                         ng-click="currentPage=currentPage+1"
                                         style="background: transparent; border: none; padding: 8px 12px; cursor: pointer; color: #6c757d; font-size: 16px; display: flex; align-items: center; justify-content: center;"
-                                        title="Página siguiente">
+                                        title="Pógina siguiente">
                                     <i class="fas fa-angle-double-right" style="font-size: 14px;"></i>
                                 </button>
                             </div>
@@ -541,23 +541,23 @@
                                      <div class="col-6">
                                          <div class="pb-3 form-group">
                                              <label for="view_user"><span class="text-danger">*</span> Usuario</label>
-                                             <input ng-pattern="/^[a-zA-Z0-9ñ]*$/" ng-minlength="4" ng-maxlength="20" class="col-8 form-control" type="text" id="view_user" name="view_user" ng-model="view_user" placeholder="Ingrese usuario" required>
-                                             <span ng-show="userForm.view_user.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_user.$error.required || userForm.view_user.$dirty && userForm.view_user.$error.required" class="text-danger">Usuario requerido.</span>
+                                             <input ng-pattern="/^[a-zA-Z0-9ó]*$/" ng-minlength="4" ng-maxlength="20" class="col-8 form-control" type="text" id="view_user" name="view_user" ng-model="view_user" placeholder="Ingrese usuario" required>
+                                             <span ng-show="userForm.view_user.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_user.$error.required || userForm.view_user.$dirty && userForm.view_user.$error.required" class="text-danger">Usuario requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_pass"><span class="text-danger">*</span> Contraseña</label>
-                                             <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="8" ng-maxlength="20" class="col-8 form-control" type="password" id="view_pass" name="view_pass" ng-model="view_pass" placeholder="Ingrese contraseña" required>
-                                             <span ng-show="userForm.view_pass.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_pass.$error.required || userForm.view_pass.$dirty && userForm.view_pass.$error.required" class="text-danger">Contraseña requerida.</span>
+                                             <label for="view_pass"><span class="text-danger">*</span> Contraseóa</label>
+                                             <input ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/" ng-minlength="8" ng-maxlength="20" class="col-8 form-control" type="password" id="view_pass" name="view_pass" ng-model="view_pass" placeholder="Ingrese contraseóa" required>
+                                             <span ng-show="userForm.view_pass.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_pass.$error.required || userForm.view_pass.$dirty && userForm.view_pass.$error.required" class="text-danger">Contraseóa requerida.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                             <input ng-pattern="/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
-                                             <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_nombre.$error.required || userForm.view_nombre.$dirty && userForm.view_nombre.$error.required" class="text-danger">Nombre requerido.</span>
+                                             <input ng-pattern="/^[a-zA-Zóóóóóóóóóóóó ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                             <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_nombre.$error.required || userForm.view_nombre.$dirty && userForm.view_nombre.$error.required" class="text-danger">Nombre requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_apellido"><span class="text-danger">*</span> Apellido</label>
-                                             <input ng-pattern="/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
-                                             <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_apellido.$error.required || userForm.view_apellido.$dirty && userForm.view_apellido.$error.required" class="text-danger">Apellido requerido.</span>
+                                             <input ng-pattern="/^[a-zA-Zóóóóóóóóóóóó ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
+                                             <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_apellido.$error.required || userForm.view_apellido.$dirty && userForm.view_apellido.$error.required" class="text-danger">Apellido requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_legajo"><span class="text-danger">*</span> Legajo</label>
@@ -588,8 +588,8 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_contrato">Contrato</label>
-                                             <input ng-pattern="/^[a-zA-Z0-9ñ. ]*$/" ng-maxlength="20" class="col-8 form-control" type="text" id="view_contrato" name="view_contrato" ng-model="view_contrato" placeholder="Ingrese tipo de contrato" required>
-                                             <span ng-show="userForm.view_contrato.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_contrato.$error.required || userForm.view_contrato.$dirty && userForm.view_contrato.$error.required" class="text-danger">Contrato requerido.</span>
+                                             <input ng-pattern="/^[a-zA-Z0-9ó. ]*$/" ng-maxlength="20" class="col-8 form-control" type="text" id="view_contrato" name="view_contrato" ng-model="view_contrato" placeholder="Ingrese tipo de contrato" required>
+                                             <span ng-show="userForm.view_contrato.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_contrato.$error.required || userForm.view_contrato.$dirty && userForm.view_contrato.$error.required" class="text-danger">Contrato requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_bonificacion">Bonificacion</label>
@@ -625,8 +625,8 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_domicilio"><span class="text-danger">*</span> Domicilio</label>
-                                             <input ng-pattern="/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ \.]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
-                                             <span ng-show="userForm.view_domicilio.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_domicilio.$error.required || userForm.view_domicilio.$dirty && userForm.view_domicilio.$error.required" class="text-danger">Domicilio requerido.</span>
+                                             <input ng-pattern="/^[a-zA-Z0-9óóóóóóóóóóóó \.]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
+                                             <span ng-show="userForm.view_domicilio.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_domicilio.$error.required || userForm.view_domicilio.$dirty && userForm.view_domicilio.$error.required" class="text-danger">Domicilio requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_fechaingreso"><span class="text-danger">*</span> Fecha de ingreso</label>
@@ -671,23 +671,23 @@
                                      <div class="col-6">
                                          <div class="pb-3 form-group">
                                              <label for="view_user"><span class="text-danger">*</span> Usuario</label>
-                                             <input ng-pattern="/^[a-zA-Z0-9ñ]*$/" ng-minlength="4" ng-maxlength="20" class="col-8 form-control" type="text" id="view_user" name="view_user" ng-model="view_user" placeholder="Ingrese usuario" required>
-                                             <span ng-show="userForm.view_user.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_user.$error.required || userForm.view_user.$dirty && userForm.view_user.$error.required" class="text-danger">Usuario requerido.</span>
+                                             <input ng-pattern="/^[a-zA-Z0-9ó]*$/" ng-minlength="4" ng-maxlength="20" class="col-8 form-control" type="text" id="view_user" name="view_user" ng-model="view_user" placeholder="Ingrese usuario" required>
+                                             <span ng-show="userForm.view_user.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_user.$error.required || userForm.view_user.$dirty && userForm.view_user.$error.required" class="text-danger">Usuario requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_pass"><span class="text-danger">*</span> Contraseña</label>
-                                             <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="8" ng-maxlength="20" class="col-8 form-control" type="password" id="view_pass" name="view_pass" ng-model="view_pass" placeholder="Ingrese contraseña" required>
-                                             <span ng-show="userForm.view_pass.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_pass.$error.required || userForm.view_pass.$dirty && userForm.view_pass.$error.required" class="text-danger">Contraseña requerida.</span>
+                                             <label for="view_pass"><span class="text-danger">*</span> Contraseóa</label>
+                                             <input ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/" ng-minlength="8" ng-maxlength="20" class="col-8 form-control" type="password" id="view_pass" name="view_pass" ng-model="view_pass" placeholder="Ingrese contraseóa" required>
+                                             <span ng-show="userForm.view_pass.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_pass.$error.required || userForm.view_pass.$dirty && userForm.view_pass.$error.required" class="text-danger">Contraseóa requerida.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                             <input ng-pattern="/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
-                                             <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_nombre.$error.required || userForm.view_nombre.$dirty && userForm.view_nombre.$error.required" class="text-danger">Nombre requerido.</span>
+                                             <input ng-pattern="/^[a-zA-Zóóóóóóóóóóóó ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                             <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_nombre.$error.required || userForm.view_nombre.$dirty && userForm.view_nombre.$error.required" class="text-danger">Nombre requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_apellido"><span class="text-danger">*</span> Apellido</label>
-                                             <input ng-pattern="/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
-                                             <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_apellido.$error.required || userForm.view_apellido.$dirty && userForm.view_apellido.$error.required" class="text-danger">Apellido requerido.</span>
+                                             <input ng-pattern="/^[a-zA-Zóóóóóóóóóóóó ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
+                                             <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_apellido.$error.required || userForm.view_apellido.$dirty && userForm.view_apellido.$error.required" class="text-danger">Apellido requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_legajo"><span class="text-danger">*</span> Legajo</label>
@@ -716,8 +716,8 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_contrato">Contrato</label>
-                                             <input ng-pattern="/^[a-zA-Z0-9ñ. ]*$/" ng-maxlength="20" class="col-8 form-control" type="text" id="view_contrato" name="view_contrato" ng-model="view_contrato" placeholder="Ingrese tipo de contrato" required>
-                                             <span ng-show="userForm.view_contrato.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_contrato.$error.required || userForm.view_contrato.$dirty && userForm.view_contrato.$error.required" class="text-danger">Contrato requerido.</span>
+                                             <input ng-pattern="/^[a-zA-Z0-9ó. ]*$/" ng-maxlength="20" class="col-8 form-control" type="text" id="view_contrato" name="view_contrato" ng-model="view_contrato" placeholder="Ingrese tipo de contrato" required>
+                                             <span ng-show="userForm.view_contrato.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_contrato.$error.required || userForm.view_contrato.$dirty && userForm.view_contrato.$error.required" class="text-danger">Contrato requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_bonificacion">Bonificados consumo propio</label>
@@ -751,8 +751,8 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_domicilio"><span class="text-danger">*</span> Domicilio</label>
-                                             <input ng-pattern="/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ \.]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
-                                             <span ng-show="userForm.view_domicilio.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.$submitted && userForm.view_domicilio.$error.required || userForm.view_domicilio.$dirty && userForm.view_domicilio.$error.required" class="text-danger">Domicilio requerido.</span>
+                                             <input ng-pattern="/^[a-zA-Z0-9óóóóóóóóóóóó \.]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
+                                             <span ng-show="userForm.view_domicilio.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_domicilio.$error.required || userForm.view_domicilio.$dirty && userForm.view_domicilio.$error.required" class="text-danger">Domicilio requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_fechaingreso"><span class="text-danger">*</span> Fecha de ingreso</label>
@@ -806,7 +806,7 @@
      <script src="js/angular.min.js"></script>
      <!-- SweetAlert2 v11 -->
      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-     <script src="js/navbar-direct.js"></script>
+
      <script src="js/usuario.js?v=3.5"></script>
  </body>
  </html>

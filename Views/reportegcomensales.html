@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es" ng-app="AngujarJS" ng-controller="ReportegComensales">
 
 <head>
@@ -94,7 +94,7 @@
             box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         }
         
-        /* Campos obligatorios vacíos en rojo */
+        /* Campos obligatorios vac�os en rojo */
         .form-control.ng-invalid.ng-touched,
         .form-control.ng-invalid.ng-dirty {
             border-color: #dc3545 !important;
@@ -171,7 +171,7 @@
             background: #5a6268;
         }
         
-        /* Estilos para paginación */
+        /* Estilos para paginaci�n */
         .pagination-info {
             font-size: 0.875rem;
             color: #6c757d;
@@ -191,7 +191,7 @@
             border-bottom-right-radius: 0.25rem;
         }
         
-        /* Estilos para paginación tipo DataTable */
+        /* Estilos para paginaci�n tipo DataTable */
         .datatable-pagination {
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
@@ -349,9 +349,9 @@
                 </h3>
             </div>
 
-            <!-- Pantalla Principal de Búsqueda -->
+            <!-- Pantalla Principal de B�squeda -->
             <div class="container-fluid mr-3 dishes-text" style="min-height: 370px">
-                <!-- Filtros de Búsqueda en la parte superior -->
+                <!-- Filtros de B�squeda en la parte superior -->
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-md-3">
@@ -394,7 +394,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- Modal de Búsqueda de Usuarios -->
+                <!-- Modal de B�squeda de Usuarios -->
                 <div class="modal fade" id="userSearch" tabindex="-1" role="dialog" aria-labelledby="userModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-lg" role="document">
                         <div class="modal-content">
@@ -455,7 +455,7 @@
                 
                 <!-- Resultados del Historial en la misma pantalla -->
                 <div ng-if="ViewAction == 'pedidos'" class="mt-4">
-                <!-- Información del Comensal -->
+                <!-- Informaci�n del Comensal -->
                 <div class="card mb-3">
                     <div class="card-header" style="background-color: #6c757d; color: white;">
                         <h5 class="mb-0"><i class="fa fa-user mr-2"></i>Información del Comensal</h5>
@@ -493,11 +493,16 @@
                                         </div>
                                         <div class="row mt-2">
                                             <div class="col-6">
-                                                <strong>Costo total:</strong> ${{reportes.monto}}
+                                                <strong>Costo total:</strong> ${{reportes.monto | number:2}}
                                             </div>
                                             <div class="col-6">
-                                                <strong>Platos invitados:</strong> {{reportes.bonificadosInvitados}}
+                                                <strong>Perfil:</strong> {{reportes.perfil}}
                                             </div>
+
+                                            <!-- muestra valor invitado
+    <div class="col-6">
+        <strong>Platos invitados:</strong> {{reportes.bonificadosInvitados}}
+    </div>-->
                                         </div>
                                     </div>
                                 </div>
@@ -529,18 +534,19 @@
                                 <thead style="font-size: 14px; position: sticky; top: 0; z-index: 10;" class="bg-dark">
                                     <tr class="text-white">
                                         <th style="width: 15%; min-width: 100px; text-align: left;">Fecha</th>
-                                        <th style="width: 12%; text-align: left;">Hora</th>
+
                                         <th style="width: 40%; text-align: left;">Plato</th>
                                         <th style="width: 15%; text-align: center;">Estado</th>
-                                        <th style="width: 18%; text-align: center;">Invitado</th>
+                                        <th style="text-align: center;">Bonificación</th>
+                                        <th style="text-align: center;">Costo</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr class="planitem" ng-repeat="item in dataset.consumidos | startFrom:currentPage*pageSize | limitTo:pageSize">
-                                        <td style="font-weight: 500; white-space: nowrap; text-align: left;">{{item.createdate | formatDate}}</td>
-                                        <td style="text-align: left;">{{item.createdate | formatHour}}</td>
+                                        <td style="font-weight: 500; white-space: nowrap; text-align: left;">{{item.createdate | formatDate}}-{{item.createdate | formatHour}}</td>
+
                                         <td style="text-align: left;">
-                                            <div style="font-weight: 500; color: #495057;">{{item.cod_plato}} - {{item.ultimoPlato}}</div>
+                                            <div style="font-weight: 500; color: #495057;">{{item.cod_plato}} - {{item.descripcionPlato}}</div>
                                         </td>
                                         <td style="text-align: center;">
                                             <span class="badge" ng-class="{
@@ -551,16 +557,21 @@
                                                 'badge-secondary': item.estado === 'D'
                                             }">{{item.estado | formatEstados}}</span>
                                         </td>
-                                        <td style="text-align: center;">{{item.invitado | formatBool}}</td>
+                                        <td style="text-align: center;">
+                                            <span ng-if="item.bonificado && item.bonificado > 0">
+                                                ${{item.bonificado | number:2}}
+                                            </span>
+                                        </td>
+                                        <td style="text-align:right;">${{item.monto | number:2}}</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                         
-                        <!-- Paginación tipo DataTable -->
+                        <!-- Paginaci�n tipo DataTable -->
                         <div class="datatable-pagination mt-3">
                             <div class="d-flex justify-content-between align-items-center">
-                                <!-- Información de registros -->
+                                <!-- Informaci�n de registros -->
                                 <div class="d-flex align-items-center">
                                     <div class="pagination-info mr-3">
                                         Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, dataset.consumidos.length)}} de {{dataset.consumidos.length}} registros
@@ -576,9 +587,9 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Navegación de páginas -->
+                                <!-- Navegaci�n de p�ginas -->
                                 <div class="pagination-controls">
-                                    <!-- Botones de navegación -->
+                                    <!-- Botones de navegaci�n -->
                                     <div class="btn-group mr-3" role="group">
                                         <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="currentPage=0" title="Primera página">
                                             <i class="fa fa-angle-double-left"></i>
@@ -587,7 +598,7 @@
                                             <i class="fa fa-angle-left"></i>
                                         </button>
                                         
-                                        <!-- Números de página -->
+                                        <!-- N�meros de p�gina -->
                                         <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
                                             <button class="btn page-number-btn" 
                                                     ng-repeat="page in getPageNumbers() track by $index"
@@ -606,7 +617,7 @@
                                         </button>
                                     </div>
                                     
-                                    <!-- Información de página -->
+                                    <!-- Informaci�n de p�gina -->
                                     <div class="pagination-info">
                                         Página {{currentPage+1}} de {{numberOfPages()}}
                                     </div>
@@ -696,7 +707,7 @@
     <!-- Main JS -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <script src="js/navbar-direct.js"></script>
+
     <script src="js/reportegcomensales.js"></script>
 </body>
 </html>

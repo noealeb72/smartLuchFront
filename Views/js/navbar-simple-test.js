@@ -116,7 +116,7 @@
                 var cocina = createMenuItem('Cocina', '#', 'fa-boxes', true);
                 var cocinaDropdown = cocina.querySelector('.dropdown-menu');
                 addDropdownItem(cocinaDropdown, 'Platos', 'plato.html');
-                addDropdownItem(cocinaDropdown, 'Menu del Día', 'menudeldia.html');
+                addDropdownItem(cocinaDropdown, 'Menú del día', 'menudeldia.html');
                 menuContainer.appendChild(cocina);
                 break;
                 
@@ -207,5 +207,6 @@
     setTimeout(initNavbar, 1000);
     
 })();
+
 
 

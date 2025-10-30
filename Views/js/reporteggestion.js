@@ -42,8 +42,39 @@
         return function (input) { return input ? 'Si' : 'No'; };
     });
 
+    app.filter('formatEstados', function () {
+        return function (input) {
+            switch (input) {
+                case 'C':
+                    return 'Cancelado';
+                case 'P':
+                    return 'Pendiente';
+                case 'R':
+                    return 'Recibido';
+                case 'E':
+                    return 'Entregado';
+                case 'D':
+                    return 'Devuelto';
+                default:
+                    return input || '-';
+            }
+        };
+    });
+
     // ====== Controlador principal ======
     app.controller('ReportegGestion', function ($scope, $http, $timeout, $q, $window) {
+
+        // ---- Configuración del usuario ----
+        $scope.user_Rol = localStorage.getItem('user_Rol') || 'Gerencia';
+        $scope.user_Name = localStorage.getItem('user_Name') || '';
+        $scope.user_LastName = localStorage.getItem('user_LastName') || '';
+        
+        // ---- Fecha y hora actual ----
+        $scope.currentDateTime = new Date().toLocaleString('es-ES');
+        setInterval(function() {
+            $scope.currentDateTime = new Date().toLocaleString('es-ES');
+            $scope.$apply();
+        }, 1000);
 
         // ---- Endpoints ----
         $scope.basePlantas = 'http://localhost:8000/api/planta/';
@@ -325,6 +356,9 @@
         }
 
         $scope.getReporte = function () {
+            console.log('🔍 Ejecutando getReporte()');
+            console.log('📊 ViewAction actual:', $scope.ViewAction);
+            
             var params = {
                 fechadesde: fmtFecha($scope.filtro_fechadesde),
                 fechahasta: fmtFecha($scope.filtro_fechahasta),
@@ -334,9 +368,14 @@
                 planta: ($scope.rep_planta && $scope.rep_planta.nombre) || ''
             };
 
+            console.log('📋 Parámetros de búsqueda:', params);
+
             $http.get($scope.baseReporte + 'GetComandas', { params: params })
                 .then(function (res) {
+                    console.log('✅ Respuesta de la API:', res.data);
                     var data = Array.isArray(res.data) ? res.data : [];
+                    console.log('📊 Datos procesados:', data.length, 'registros');
+                    
                     // ya vienen ordenadas desc por createdate desde la API,
                     // pero si querés asegurarlo del lado del cliente:
                     data.sort(function (a, b) {
@@ -346,8 +385,12 @@
                     $scope.comandas = data;
                     $scope.ViewAction = 'reporte';
                     $scope.currentPage = 0;
+                    
+                    console.log('🎯 ViewAction establecido a:', $scope.ViewAction);
+                    console.log('📊 Dataset establecido con', $scope.dataset.length, 'elementos');
                 })
                 .catch(function (e) {
+                    console.error('❌ Error en getReporte:', e);
                     warn('Error al obtener comandas', e, true);
                 });
         };

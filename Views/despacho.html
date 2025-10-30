@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html ng-app="AngujarJS" ng-controller="Despacho">
 
 <head>
@@ -34,7 +34,7 @@
         }
 
         .breadcrumb-container {
-            margin-top: 0px; /* Ajusta según sea necesario */
+            margin-top: 0px; /* Ajusta seg�n sea necesario */
         }
 
         /* Estilos para que el footer se vea al final */
@@ -61,7 +61,7 @@
             background-color: #ffffff;
         }
 
-        /* Estilos para botones de paginación personalizados */
+        /* Estilos para botones de paginaci�n personalizados */
         .pagination-container {
             display: flex;
             justify-content: center;
@@ -189,7 +189,7 @@
             color: white !important;
         }
 
-        /* Estilos para el modal de información del pedido */
+        /* Estilos para el modal de informaci�n del pedido */
         #pedidoModal .modal-header {
             width: 100% !important;
             margin: 0 !important;
@@ -215,7 +215,7 @@
             }
         }
 
-        /* Estilos para el botón de limpiar búsqueda */
+        /* Estilos para el bot�n de limpiar b�squeda */
         .input-group-append .btn {
             border-left: 0 !important;
             border-top-left-radius: 0 !important;
@@ -223,12 +223,20 @@
             background-color: #4A5568 !important;
             border-color: #4A5568 !important;
             color: white !important;
-            border: 1px solid #4A5568 !important;
-            width: 40px;
-            height: 38px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        }
+
+        /* Forzar que los dropdowns se abran hacia la derecha */
+        .dropdown-menu {
+            right: 0 !important;
+            left: auto !important;
+            transform: none !important;
+        }
+
+        /* Asegurar que los dropdowns se posicionen correctamente */
+        .navbar-nav .dropdown-menu {
+            position: absolute !important;
+            right: 0 !important;
+            left: auto !important;
         }
 
         .input-group-append .btn:hover:not(:disabled) {
@@ -277,7 +285,7 @@
                                    placeholder="Buscar pedidos...">
                             <div class="input-group-append">
                                 <button class="btn" type="button" ng-click="searchText = ''" 
-                                        title="Limpiar búsqueda">
+                                        title="Limpiar b�squeda">
                                     <i class="fa fa-times"></i>
                                 </button>
                             </div>
@@ -299,7 +307,7 @@
                                     <th class="col-2">Importe</th>
                                     <th class="col-2">Fecha</th>
                                     <th class="col-1">Estado</th>
-                                    <th class="text-center col-2">Acción</th>
+                                    <th class="text-center col-2">Acci�n</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -338,19 +346,19 @@
                             </tbody>
                         </table>
                     </div>
-                    <!-- Paginación -->
+                    <!-- Paginaci�n -->
                     <div class="pagination-container mt-3" ng-if="totalPages > 1">
                         <div class="pagination-buttons">
                             <button class="pagination-btn prev-btn" 
                                     ng-disabled="currentPage == 0" 
                                     ng-click="currentPage = currentPage - 1" 
-                                    title="Página anterior">
+                                    title="P�gina anterior">
                                 <i class="fa fa-angle-double-left"></i>
                             </button>
                             <button class="pagination-btn next-btn" 
                                     ng-disabled="currentPage + 1 >= totalPages" 
                                     ng-click="currentPage = currentPage + 1" 
-                                    title="Página siguiente">
+                                    title="P�gina siguiente">
                                 <i class="fa fa-angle-double-right"></i>
                             </button>
                         </div>
@@ -360,7 +368,7 @@
                     <div class="modal-dialog modal-lg" role="document" style="max-width: 30%; width: 30%;">
                         <div class="modal-content">
                             <div class="modal-header" style="background-color: #343a40; color: white; padding: 10px 15px; width: 100%; margin: 0;">
-                                <h5 class="modal-title" id="pedidoModalLabel" style="color: white; font-size: 16px; margin: 0; font-weight: 500;">Información del pedido</h5>
+                                <h5 class="modal-title" id="pedidoModalLabel" style="color: white; font-size: 16px; margin: 0; font-weight: 500;">Informaci�n del pedido</h5>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
                                     <span aria-hidden="true" style="color: white;">&times;</span>
                                 </button>
@@ -381,7 +389,7 @@
                                             <span style="color: #333; font-size: 16px;">{{view_id}}</span>
                                         </div>
                                         <div class="mb-3 d-flex align-items-center">
-                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">Código de plato:</label>
+                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">C�digo de plato:</label>
                                             <span style="color: #333; font-size: 16px;">{{view_codplato}}</span>
                                         </div>
                                         <div class="mb-3 d-flex align-items-center">
@@ -432,7 +440,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="js/angular-base64.js"></script>
     <!-- Controlador AngularJS -->
-    <script src="js/navbar-direct.js"></script>
+
     <script src="js/despacho.js"></script>
 </body>
 

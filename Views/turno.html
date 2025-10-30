@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -43,7 +43,7 @@
             background-color: #F34949 !important;
         }
         
-        /* Agregar padding al contenido para que no se oculte detrás del footer */
+        /* Agregar padding al contenido para que no se oculte detr�s del footer */
         body {
             padding-bottom: 80px;
         }
@@ -97,7 +97,7 @@
             color: white !important;
         }
         
-        /* Ícono del lápiz en color blanco */
+        /* �cono del l�piz en color blanco */
         .btn-link[title="Editar"] i.fas.fa-edit {
             color: white !important;
         }
@@ -137,12 +137,12 @@
             color: white !important;
         }
         
-        /* Ícono de la basura en color blanco */
+        /* �cono de la basura en color blanco */
         .btn-link[title="Eliminar"] i.fa-trash {
             color: white !important;
         }
         
-        /* Botones de acción en la tabla */
+        /* Botones de acci�n en la tabla */
         .btn-link[title="Editar"] {
             background-color: #6c757d !important;
             border: none !important;
@@ -166,7 +166,7 @@
             background-color: #c82333 !important;
         }
         
-        /* Botón de búsqueda (limpiar) */
+        /* Bot�n de b�squeda (limpiar) */
         .input-group-append .btn {
             background-color: #5c636a !important;
             border-color: #5c636a !important;
@@ -204,7 +204,7 @@
             box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
         }
         
-        /* Mostrar el ícono del reloj en navegadores WebKit */
+        /* Mostrar el �cono del reloj en navegadores WebKit */
         input[type="time"]::-webkit-calendar-picker-indicator {
             background: transparent !important;
             bottom: 0 !important;
@@ -242,7 +242,7 @@
             padding-right: 35px !important;
         }
         
-        /* Paginación */
+        /* Paginaci�n */
         .pagination-container {
             display: flex;
             justify-content: center;
@@ -282,7 +282,7 @@
                 cursor: not-allowed;
             }
         
-        /* Ícono del botón Agregar */
+        /* �cono del bot�n Agregar */
         .btn-primary i.fa-plus {
             color: white !important;
             font-size: 16px !important;
@@ -298,7 +298,7 @@
             line-height: 1 !important;
         }
         
-        /* Iconos específicos */
+        /* Iconos espec�ficos */
         .fas.fa-home:before { content: "\f015" !important; }
         .fas.fa-plus:before { content: "\f067" !important; }
         .fas.fa-edit:before { content: "\f044" !important; }
@@ -307,7 +307,7 @@
         .fas.fa-times:before { content: "\f00d" !important; }
         .fas.fa-info-circle:before { content: "\f05a" !important; }
         
-        /* Botón Agregar específico */
+        /* Bot�n Agregar espec�fico */
         .btn-primary {
             background-color: #007bff !important;
             border-color: #007bff !important;
@@ -320,7 +320,7 @@
             color: white !important;
         }
         
-        /* Asegurar que todos los botones tengan el mismo tamaño */
+        /* Asegurar que todos los botones tengan el mismo tama�o */
         .btn-primary,
         .btn-cancelar,
         .btn-link[title="Editar"],
@@ -335,7 +335,7 @@
             justify-content: center !important;
         }
         
-        /* Botón Guardar con estilo gris sin borde negro */
+        /* Bot�n Guardar con estilo gris sin borde negro */
         .btn-primary {
             background-color: #6c757d !important;
             border: none !important;
@@ -377,7 +377,7 @@
             color: white !important;
         }
         
-        /* Botón Cancelar con estilo de fondo sólido */
+        /* Bot�n Cancelar con estilo de fondo s�lido */
         .btn-cancelar {
             background-color: #F34949 !important;
             border-color: #F34949 !important;
@@ -418,7 +418,7 @@
             color: white !important;
         }
         
-        /* Asegurar que todos los botones tengan el mismo tamaño */
+        /* Asegurar que todos los botones tengan el mismo tama�o */
         .btn-primary,
         .btn-cancelar {
             min-height: 32px !important;
@@ -536,7 +536,7 @@
                                     </tr>
                                 </tbody>
                             </table>
-                            <!-- Paginación -->
+                            <!-- Paginaci�n -->
                             <div class="pagination-container" ng-if="numberOfPages() > 1">
                                 <div class="pagination-buttons">
                                     <button class="pagination-btn" ng-disabled="currentPage == 0" ng-click="currentPage=currentPage-1" title="Página anterior">
@@ -560,7 +560,7 @@
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="turnoForm" ng-submit="ModelCreate(turnoForm.$valid)" novalidate>
 
-                                    <!-- CÓDIGO -->
+                                    <!-- C�DIGO -->
                                     <div class="pb-3 form-group">
                                         <label for="view_codigo"><span class="text-danger">*</span> Código</label>
                                         <input ng-pattern="/^[a-zA-Z0-9._%+-]*$/"
@@ -588,10 +588,10 @@
                                         </span>
                                     </div>
 
-                                    <!-- DESCRIPCIÓN -->
+                                    <!-- DESCRIPCI�N -->
                                     <div class="pb-3 form-group">
                                         <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9._%+-ñáéíóúÁÉÍÓÚ\s]*$/"
+                                        <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9._%+\-\s]*$/"
                                                ng-minlength="4"
                                                ng-maxlength="500"
                                                class="col-8 form-control"
@@ -679,7 +679,7 @@
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="turnoForm" ng-submit="ModelUpdate(turnoForm.$valid,view_id)" novalidate>
 
-                                    <!-- CÓDIGO -->
+                                    <!-- C�DIGO -->
                                     <div class="pb-3 form-group">
                                         <label for="view_codigo"><span class="text-danger">*</span> Código</label>
                                         <input ng-pattern="/^[a-zA-Z0-9._%+-]*$/"
@@ -707,10 +707,10 @@
                                         </span>
                                     </div>
 
-                                    <!-- DESCRIPCIÓN -->
+                                    <!-- DESCRIPCI�N -->
                                     <div class="pb-3 form-group">
                                         <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9._%+-ñáéíóúÁÉÍÓÚ\s]*$/"
+                                        <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9._%+\-\s]*$/"
                                                ng-minlength="4"
                                                ng-maxlength="140"
                                                class="col-8 form-control"
@@ -806,7 +806,7 @@
                     <!-- Main JS -->
                     <script src="js/angular.min.js"></script>
                     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-                    <script src="js/navbar-direct.js"></script>
+
                     <script src="js/turno.js"></script>
 </body>
 </html>

@@ -615,6 +615,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $scope.dataset = [];
         $scope.searchKeyword;
         $scope.ViewAction = 'Lista de Items';
+        console.log('ViewAction inicializado a:', $scope.ViewAction);
         $scope.view_id = -1;
         $scope.view_turno = '';
         $scope.view_planta = '';
@@ -744,11 +745,12 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     // -------------- Acciones de Vista --------------
 
     $scope.ViewCreate = function () {
-        $scope.ViewAction = 'Nuevo Menú';
+        $scope.ViewAction = 'Nuevo Menó';
         $scope.view_id = -1;
         $scope.showValidationErrors = false;
         $scope.isEditMode = false;
-        // Inicializar todos los campos como vacíos para permitir selección automática
+        
+        // Inicializar campos básicos
         $scope.view_turno = '';
         $scope.view_planta = '';
         $scope.view_centrodecosto = '';
@@ -758,13 +760,11 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $scope.view_estado = '';
         $scope.view_cantidad = 1;
         $scope.view_fechadeldia = new Date();
-
-        $scope.ModelReadPlatos();
-        $scope.ModelReadPlantas();
-        $scope.ModelReadCentros();
-        $scope.ModelReadProyectos();
-        $scope.ModelReadJerarquias();
-        $scope.ModelReadTurnos();
+        
+        // Forzar actualización de la vista
+        if (!$scope.$$phase) {
+            $scope.$apply();
+        }
         
         // Asegurar que todos los campos se establezcan después de cargar los datos
         setTimeout(function() {
@@ -991,9 +991,15 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     });
 
     $scope.ViewUpdate = function (view_id) {
-        $scope.ViewAction = 'Editar Menú';
+        $scope.ViewAction = 'Editar Menó';
         $scope.view_id = view_id;
         $scope.showValidationErrors = false;
+        
+        // Forzar actualización de la vista
+        if (!$scope.$$phase) {
+            $scope.$apply();
+        }
+        
         $scope.ModelRead(view_id);
         $scope.ModelReadPlatos();
         $scope.ModelReadPlantas();

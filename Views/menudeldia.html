@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html ng-app="AngujarJS" ng-controller="Menudeldia">
 
 <head>
@@ -7,7 +7,7 @@
     <title>SmartLunch</title>
     <meta name="description" content="SmartLunch">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <!-- deja SweetAlert2 v11 una sola vez en la página -->
+    <!-- deja SweetAlert2 v11 una sola vez en la pógina -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
     <!-- CSS Externo -->
@@ -52,7 +52,7 @@
         }
 
         .solid-background {
-            min-height: calc(100vh - 60px); /* Ajustar según la altura del navbar */
+            min-height: calc(100vh - 60px); /* Ajustar segón la altura del navbar */
             background-color: #ffffff;
         }
 
@@ -131,7 +131,7 @@
             font-size: 12px;
         }
 
-        /* Estilos para el botón de limpiar búsqueda */
+        /* Estilos para el botón de limpiar bósqueda */
         .input-group-append .btn {
             border-left: 0 !important;
             border-top-left-radius: 0 !important;
@@ -162,7 +162,7 @@
             cursor: not-allowed;
         }
 
-        /* Estilos más específicos para el botón de limpiar */
+        /* Estilos mós especóficos para el botón de limpiar */
         .input-group .input-group-append .btn {
             background-color: #343a40 !important;
             border-color: #343a40 !important;
@@ -202,7 +202,7 @@
                 color: white !important;
             }
 
-            /* Ícono del botón en color blanco */
+            /* ócono del botón en color blanco */
             .btn-primary[ng-click="ViewCreate()"] i.fa-plus {
                 color: white !important;
             }
@@ -281,10 +281,10 @@
                                      </a>
                                  </li>
                                  <li class="breadcrumb-item active text-white" aria-current="page">
-                                     <span ng-if="ViewAction === 'Nuevo Menú'">
+                                     <span ng-if="ViewAction === 'Nuevo Menó'">
                                          <i class="fa fa-plus mr-1"></i>Nuevo
                                      </span>
-                                     <span ng-if="ViewAction === 'Editar Menú'">
+                                     <span ng-if="ViewAction === 'Editar Menó'">
                                          <i class="fa fa-edit mr-1"></i>Editar
                                      </span>
                                  </li>
@@ -296,17 +296,17 @@
 
             <!-- Contenido principal -->
             <div class="container-fluid" style="margin-top: 0 !important;">
-                <!-- Barra de búsqueda y botón de agregar -->
+                <!-- Barra de bósqueda y botón de agregar -->
                 <div class="row my-3">
-                    <div class="col-md-12 text-right" ng-show="ViewAction !== 'Nuevo Menú' && ViewAction !== 'Editar Menú'">
+                    <div class="col-md-12 text-right" ng-show="ViewAction !== 'Nuevo Menó' && ViewAction !== 'Editar Menó'">
                         <button type="button" class="btn btn-primary mb-2 mr-3" ng-click="ViewCreate()" style="cursor: pointer;">
                             <i class="fa fa-plus text-white" style="font-size:16px; font-weight:800;"></i> Agregar
                         </button>
                     </div>
                 </div>
 
-                <!-- Filtros de búsqueda avanzados -->
-                <div class="card mb-3" ng-show="ViewAction !== 'Nuevo Menú' && ViewAction !== 'Editar Menú'">
+                <!-- Filtros de bósqueda avanzados -->
+                <div class="card mb-3" ng-show="ViewAction !== 'Nuevo Menó' && ViewAction !== 'Editar Menó'">
                     <div class="card-header" style="background-color: #5c636a; color: white; cursor: pointer;" 
                          ng-click="toggleFiltros()">
                         <i class="fa fa-filter" style="margin-right: 8px;"></i>
@@ -396,7 +396,7 @@
                     </div>
                 </div>
 
-                <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;" ng-show="ViewAction !== 'Nuevo Menú' && ViewAction !== 'Editar Menú'">
+                <hr style="border-top: 2px solid rgba(0,0,0,.1); margin-top: 0px !important;" ng-show="ViewAction !== 'Nuevo Menó' && ViewAction !== 'Editar Menó'">
 
                 <div ng-if="ViewAction==='Lista de Items'">
                     <!-- Indicador de filtros activos -->
@@ -464,13 +464,13 @@
                                 <button class="pagination-btn prev-btn" 
                                         ng-disabled="currentPage == 0" 
                                         ng-click="currentPage = currentPage - 1" 
-                                        title="Página anterior">
+                                        title="Pógina anterior">
                                     <i class="fa fa-angle-double-left"></i>
                                 </button>
                                 <button class="pagination-btn next-btn" 
                                         ng-disabled="currentPage + 1 >= totalPages" 
                                         ng-click="currentPage = currentPage + 1" 
-                                        title="Página siguiente">
+                                        title="Pógina siguiente">
                                     <i class="fa fa-angle-double-right"></i>
                                 </button>
                             </div>
@@ -478,13 +478,13 @@
                     </div>
                 </div>
 
-                 <!-- Formulario de Nuevo Menú -->
-                 <div ng-if="ViewAction==='Nuevo Menú'">
+                 <!-- Formulario de Nuevo Menó -->
+                 <div ng-if="ViewAction==='Nuevo Menó'">
                      <div class="container-fluid">
-                         <div class="alert alert-info mb-3" role="alert">
-                             <i class="fa fa-info-circle mr-2"></i>
-                             <strong>Creando nuevo menú</strong> - Complete los campos obligatorios para guardar.
-                         </div>
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="fa fa-info-circle mr-2"></i>
+                            <strong>Creando nuevo menú</strong> - Complete los campos obligatorios para guardar.
+                        </div>
                          <div class="dishes-text col-12" style="margin-top: -20px !important;">
                             <form class="form-group row" name="menuddForm" ng-submit="ModelCreate(menuddForm.$valid, menuddForm)" novalidate>
                                 <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
@@ -533,10 +533,10 @@
                                         <label for="view_cantidad"><span class="text-danger">*</span> Cantidad</label>
                                         <input class="col-8 form-control" type="number" id="view_cantidad" name="view_cantidad" ng-model="view_cantidad" placeholder="Ingrese cantidad" min="1" value="1" ng-pattern="/^[1-9][0-9]*$/" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) && (event.target.value.length > 0 || event.charCode >= 49)" required>
                                         <span ng-show="(!view_cantidad || view_cantidad === '' || view_cantidad === null || view_cantidad < 1) && showValidationErrors" class="text-danger">Campo Cantidad requerido</span>
-                                        <span ng-show="menuddForm.view_cantidad.$error.pattern && showValidationErrors" class="text-danger">Solo se permiten números positivos (no puede empezar con 0)</span>
+                                        <span ng-show="menuddForm.view_cantidad.$error.pattern && showValidationErrors" class="text-danger">Solo se permiten nómeros positivos (no puede empezar con 0)</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del día</label>
+                                        <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del dóa</label>
                                         <input class="col-8 form-control" type="date" id="view_fechadeldia" name="view_fechadeldia" ng-model="view_fechadeldia" placeholder="Fecha automatica" required>
                                         <span ng-show="(!view_fechadeldia || view_fechadeldia.trim() === '') && showValidationErrors" class="text-danger">Campo Fecha del día requerido</span>
                                     </div>
@@ -560,8 +560,8 @@
                      </div>
                  </div>
  
-                 <!-- Editar Menú -->
-                <div ng-if="ViewAction==='Editar Menú'">
+                 <!-- Editar Menó -->
+                <div ng-if="ViewAction==='Editar Menó'">
                     <div class="container-fluid">
                         <div class="alert alert-info mb-3" role="alert">
                             <i class="fa fa-edit mr-2"></i>
@@ -612,10 +612,10 @@
                                         <label for="view_cantidad"><span class="text-danger">*</span> Cantidad</label>
                                         <input class="col-8 form-control" type="number" id="view_cantidad" name="view_cantidad" ng-model="view_cantidad" placeholder="Ingrese cantidad" min="1" value="1" ng-pattern="/^[1-9][0-9]*$/" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) && (event.target.value.length > 0 || event.charCode >= 49)" required>
                                         <span ng-show="(!view_cantidad || view_cantidad === '' || view_cantidad === null || view_cantidad < 1) && showValidationErrors" class="text-danger">Campo Cantidad requerido</span>
-                                        <span ng-show="menuddForm.view_cantidad.$error.pattern && showValidationErrors" class="text-danger">Solo se permiten números positivos (no puede empezar con 0)</span>
+                                        <span ng-show="menuddForm.view_cantidad.$error.pattern && showValidationErrors" class="text-danger">Solo se permiten nómeros positivos (no puede empezar con 0)</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del día</label>
+                                        <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del dóa</label>
                                         <input class="col-8 form-control" type="date" id="view_fechadeldia" name="view_fechadeldia" ng-model="view_fechadeldia" placeholder="Fecha automatica" required>
                                         <span ng-show="(!view_fechadeldia || view_fechadeldia.trim() === '') && showValidationErrors" class="text-danger">Campo Fecha del día requerido</span>
                                     </div>
@@ -733,7 +733,7 @@
     </div>
 
     <!-- Controladores -->
-    <script src="js/navbar-direct.js"></script>
+
     <script src="js/menudeldia.js"></script>
 </body>
 

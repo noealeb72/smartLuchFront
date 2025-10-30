@@ -1,4 +1,4 @@
-﻿ <html>
+ <html>
 
 <head>
     <meta charset="utf-8">
@@ -28,7 +28,7 @@
     <div class="container-fluid " ng-app="AngujarJS" ng-controller="Usuario">
         <div class="solid-background">
             <div id="side-nav" class="sidenav">
-                <a href="javascript:void(0)" id="side-nav-close">×</a>
+                <a href="javascript:void(0)" id="side-nav-close">�</a>
             </div>
             <div id="canvas-overlay"></div>
             <div>
@@ -50,7 +50,7 @@
                             </li>
                             <li ng-if="user_Rol == 'Cocina'" class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fa fa-dollar-sign mr-1"></i>Venta y Expedición
+                                    <i class="fa fa-dollar-sign mr-1"></i>Venta y Expedici�n
                                 </a>
                                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                                     <a class="dropdown-item" href="despacho.html">Despacho de plato</a>
@@ -58,11 +58,11 @@
                             </li>
                             <li ng-if="user_Rol == 'Gerencia'" class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fa fa-chart-bar mr-1"></i>Reportes de Gestión
+                                    <i class="fa fa-chart-bar mr-1"></i>Reportes de Gesti�n
                                 </a>
                                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                                     <a class="dropdown-item" href="reportegcomensales.html">Reporte por Comensal</a>
-                                    <a class="dropdown-item" href="reporteggestion.html">Reporte de Gestión</a>
+                                    <a class="dropdown-item" href="reporteggestion.html">Reporte de Gesti�n</a>
                                 </div>
                             </li>
                             <li ng-if="user_Rol == 'Cocina'" class="nav-item dropdown">
@@ -71,12 +71,12 @@
                                 </a>
                                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                                     <a class="dropdown-item" href="plato.html">Platos</a>
-                                    <a class="dropdown-item" href="menudeldia.html">Menu del Día</a>
+                                    <a class="dropdown-item" href="menudeldia.html">Menú del día�a</a>
                                 </div>
                             </li>
                             <li ng-if="user_Rol == 'Admin' || user_Rol == 'Gerencia'" class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fa fa-cog mr-1"></i>Configuración
+                                    <i class="fa fa-cog mr-1"></i>Configuraci�n
                                 </a>
                                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                                     <a class="dropdown-item" href="usuarios.html">Usuarios</a>
@@ -129,23 +129,23 @@
                                 <div class="col-6">
                                     <div class="pb-3 form-group">
                                         <label for="view_user">Usuario</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9ñ]*$/" ng-minlength="4" ng-maxlength="20" class="col-8 form-control" type="text" id="view_user" name="view_user" ng-model="view_user" placeholder="Ingrese usuario" required>
-                                        <span ng-show="userForm.view_user.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_user.$error.required && userForm.view_user.$dirty" class="text-danger">Usuario requerido.</span>
+                                        <input ng-pattern="/^[a-zA-Z0-9�]*$/" ng-minlength="4" ng-maxlength="20" class="col-8 form-control" type="text" id="view_user" name="view_user" ng-model="view_user" placeholder="Ingrese usuario" required>
+                                        <span ng-show="userForm.view_user.$error.pattern" class="text-danger">Caracteres inv�lidos.</span><span ng-show="userForm.view_user.$error.required && userForm.view_user.$dirty" class="text-danger">Usuario requerido.</span>
                                     </div>
                                     <div class="pb-3 form-group">
-                                        <label for="view_pass">Contraseña</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\sñÑáéíóúÁÉÍÓÚüÜ]*$/" ng-minlength="8" ng-maxlength="20" class="col-8 form-control" type="password" id="view_pass" name="view_pass" ng-model="view_pass" placeholder="Ingrese contraseña" required>
-                                        <span ng-show="userForm.view_pass.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_pass.$error.required && userForm.view_pass.$dirty" class="text-danger">Contraseña requerida.</span>
+                                        <label for="view_pass">Contrase�a</label>
+                                        <input ng-pattern="/^[a-zA-Z0-9._%+\-\s��������������]*$/" ng-minlength="8" ng-maxlength="20" class="col-8 form-control" type="password" id="view_pass" name="view_pass" ng-model="view_pass" placeholder="Ingrese contrase�a" required>
+                                        <span ng-show="userForm.view_pass.$error.pattern" class="text-danger">Caracteres inv�lidos.</span><span ng-show="userForm.view_pass.$error.required && userForm.view_pass.$dirty" class="text-danger">Contrase�a requerida.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_nombre">Nombre</label>
-                                        <input ng-pattern="/^[a-zA-Zñ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
-                                        <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_nombre.$error.required && userForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
+                                        <input ng-pattern="/^[a-zA-Z� ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                        <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres inv�lidos.</span><span ng-show="userForm.view_nombre.$error.required && userForm.view_nombre.$dirty" class="text-danger">Nombre requerido.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_apellido">Apellido</label>
-                                        <input ng-pattern="/^[a-zA-Zñ ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
-                                        <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_apellido.$error.required && userForm.view_apellido.$dirty" class="text-danger">Apellido requerido.</span>
+                                        <input ng-pattern="/^[a-zA-Z� ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
+                                        <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres inv�lidos.</span><span ng-show="userForm.view_apellido.$error.required && userForm.view_apellido.$dirty" class="text-danger">Apellido requerido.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_legajo">Legajo</label>
@@ -174,8 +174,8 @@
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_contrato">Contrato</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9ñ. ]*$/" ng-maxlength="20" class="col-8 form-control" type="text" id="view_contrato" name="view_contrato" ng-model="view_contrato" placeholder="Ingrese tipo de contrato" required>
-                                        <span ng-show="userForm.view_contrato.$error.pattern" class="text-danger">Caracteres inválidos.</span><span ng-show="userForm.view_contrato.$error.required && userForm.view_contrato.$dirty" class="text-danger">Contrato requerido.</span>
+                                        <input ng-pattern="/^[a-zA-Z0-9�. ]*$/" ng-maxlength="20" class="col-8 form-control" type="text" id="view_contrato" name="view_contrato" ng-model="view_contrato" placeholder="Ingrese tipo de contrato" required>
+                                        <span ng-show="userForm.view_contrato.$error.pattern" class="text-danger">Caracteres inv�lidos.</span><span ng-show="userForm.view_contrato.$error.required && userForm.view_contrato.$dirty" class="text-danger">Contrato requerido.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_bonificacion">Bonificados consumo propio</label>
