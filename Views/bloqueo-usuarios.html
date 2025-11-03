@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Bloqueo de Usuarios - SmartLunch</title>
+    <meta name="description" content="SmartLunch">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- External CSS -->
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/select2/select2.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/brands.css">
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700|Josefin+Sans:300,400,700">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.min.css">
+    <link rel="stylesheet" href="css/smartstyle.css">
+
+    <style>
+        /* Estilos para mantener el footer en la parte inferior */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .footer-sticky {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .footer-sticky .smart-bg {
+            background-color: #F34949 !important;
+        }
+
+        body {
+            padding-bottom: 80px;
+        }
+
+        /* Estilos para las tarjetas de bloqueo */
+        .bloqueo-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .bloqueo-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .bloqueo-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .bloqueo-card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #343a40;
+            margin: 0;
+        }
+
+        .bloqueo-card-description {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        /* Estilos para el switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #28a745;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        input:disabled + .slider {
+            background-color: #dc3545;
+            cursor: not-allowed;
+        }
+
+        .estado-bloqueado {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .estado-activo {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .info-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-left: 10px;
+        }
+
+        .badge-bloqueado {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .badge-activo {
+            background-color: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+
+<body ng-app="AngujarJS" ng-controller="BloqueoUsuarios">
+    <!-- Navbar -->
+    <div ng-include="'navbar.html'"></div>
+
+    <!-- Contenido principal -->
+    <div class="container-fluid" style="margin-top: 20px; padding: 20px;">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="index.html">Inicio</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Bloqueo de Usuarios</li>
+            </ol>
+        </nav>
+
+        <!-- Título -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3 class="mb-3">
+                    <i class="fa fa-user-lock mr-2"></i>Bloqueo de Usuarios por Tipo
+                </h3>
+                <p class="text-muted">Configure el bloqueo de acceso para cada tipo de usuario del sistema.</p>
+            </div>
+        </div>
+
+        <!-- Mensaje de información -->
+        <div class="alert alert-info" role="alert">
+            <i class="fa fa-info-circle mr-2"></i>
+            <strong>Información:</strong> Al bloquear un tipo de usuario, todos los usuarios de ese tipo no podrán acceder al sistema hasta que se desbloquee.
+        </div>
+
+        <!-- Tarjetas de bloqueo por tipo de usuario -->
+        <div class="row">
+            <div class="col-md-6 col-lg-3" ng-repeat="tipoUsuario in tiposUsuarios">
+                <div class="bloqueo-card">
+                    <div class="bloqueo-card-header">
+                        <h5 class="bloqueo-card-title">
+                            <i class="fa mr-2" ng-class="{
+                                'fa-user-shield': tipoUsuario.tipo === 'Admin',
+                                'fa-utensils': tipoUsuario.tipo === 'Cocina',
+                                'fa-user': tipoUsuario.tipo === 'Comensal',
+                                'fa-user-tie': tipoUsuario.tipo === 'Gerencia'
+                            }"></i>
+                            {{tipoUsuario.tipo}}
+                        </h5>
+                        <span class="info-badge" ng-class="{
+                            'badge-bloqueado': tipoUsuario.bloqueado,
+                            'badge-activo': !tipoUsuario.bloqueado
+                        }">
+                            {{tipoUsuario.bloqueado ? 'Bloqueado' : 'Activo'}}
+                        </span>
+                    </div>
+                    <div class="bloqueo-card-description">
+                        {{tipoUsuario.descripcion}}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label class="switch">
+                            <input type="checkbox" 
+                                   ng-model="tipoUsuario.bloqueado" 
+                                   ng-change="cambiarEstadoBloqueo(tipoUsuario)"
+                                   ng-disabled="isLoading">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="estado-texto" ng-class="{
+                            'estado-bloqueado': tipoUsuario.bloqueado,
+                            'estado-activo': !tipoUsuario.bloqueado
+                        }">
+                            {{tipoUsuario.bloqueado ? 'Bloqueado' : 'Desbloqueado'}}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading spinner -->
+        <div ng-if="isLoading" class="text-center mt-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Cargando...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div ng-include="'footer.html'"></div>
+
+    <!-- Scripts -->
+    <!-- Configuración centralizada -->
+    <script src="js/config.js"></script>
+    <!-- Servicio de bloqueo de usuarios -->
+    <script src="js/bloqueo-usuarios-service.js"></script>
+    <!-- AngularJS -->
+    <script src="Scripts/angular/angular.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- jQuery -->
+    <script src="Scripts/jquery-3.4.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="Scripts/bootstrap.min.js"></script>
+    <!-- Controlador de bloqueo de usuarios -->
+    <script src="js/bloqueo-usuarios.js"></script>
+</body>
+
+</html>
+

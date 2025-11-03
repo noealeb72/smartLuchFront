@@ -159,6 +159,111 @@ app.controller('Login', function ($scope, $http, $window, $location) {
                 var smarTime = response.data.smarTime;
                 var usuarioSmatTime = response.data.usuarioSmatTime;
 
+                // Verificar si el tipo de usuario está bloqueado
+                var tipoUsuario = usuario.perfil || '';
+                var estaBloqueado = false;
+                
+                // Verificar bloqueo usando el servicio
+                if (typeof BloqueoUsuariosService !== 'undefined') {
+                    estaBloqueado = BloqueoUsuariosService.estaBloqueado(tipoUsuario);
+                } else {
+                    // Fallback: verificar en localStorage primero, luego en config.js
+                    try {
+                        var bloqueos = localStorage.getItem('bloqueo_usuarios');
+                        if (bloqueos) {
+                            var bloqueosObj = JSON.parse(bloqueos);
+                            if (bloqueosObj.hasOwnProperty(tipoUsuario)) {
+                                estaBloqueado = bloqueosObj[tipoUsuario] === true;
+                            } else if (typeof BLOQUEO_USUARIOS !== 'undefined' && BLOQUEO_USUARIOS) {
+                                // Si no está en localStorage, usar config.js
+                                estaBloqueado = BLOQUEO_USUARIOS[tipoUsuario] === true;
+                            }
+                        } else if (typeof BLOQUEO_USUARIOS !== 'undefined' && BLOQUEO_USUARIOS) {
+                            // Si no hay localStorage, usar config.js directamente
+                            estaBloqueado = BLOQUEO_USUARIOS[tipoUsuario] === true;
+                        }
+                    } catch (e) {
+                        console.error('Error al verificar bloqueo:', e);
+                    }
+                }
+
+                // Si el tipo de usuario está bloqueado, no permitir el login
+                if (estaBloqueado) {
+                    $scope.isLoading = false;
+                    
+                    var messageError = 'El acceso para usuarios de tipo "' + tipoUsuario + '" está bloqueado. Por favor, contacte al administrador.';
+                    showError(messageError);
+                    
+                    // Mostrar SweetAlert
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        window.Swal.fire({
+                            title: '🚫 Acceso Bloqueado',
+                            text: messageError,
+                            icon: 'error',
+                            iconHtml: '<i class="fas fa-ban" style="color: #dc3545; font-size: 3rem;"></i>',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#343A40',
+                            width: '450px',
+                            padding: '1.5rem',
+                            allowOutsideClick: true,
+                            allowEscapeKey: true,
+                            allowEnterKey: true,
+                            showCloseButton: false,
+                            focusConfirm: true,
+                            backdrop: true,
+                            timerProgressBar: false,
+                            didOpen: function() {
+                                var html = document.documentElement;
+                                var body = document.body;
+                                
+                                html.classList.remove('swal2-shown', 'swal2-height-auto');
+                                body.classList.remove('swal2-shown', 'swal2-height-auto');
+                                
+                                body.style.overflow = 'auto';
+                                body.style.position = 'static';
+                                html.style.overflow = 'auto';
+                                
+                                var backdrop = document.querySelector('.swal2-backdrop-show');
+                                if (backdrop) {
+                                    backdrop.style.cursor = 'pointer';
+                                    backdrop.addEventListener('click', function(e) {
+                                        if (e.target === backdrop) {
+                                            window.Swal.close();
+                                        }
+                                    });
+                                }
+                                
+                                var escapeHandler = function(e) {
+                                    if (e.key === 'Escape' || e.keyCode === 27) {
+                                        window.Swal.close();
+                                        document.removeEventListener('keydown', escapeHandler);
+                                    }
+                                };
+                                document.addEventListener('keydown', escapeHandler);
+                            },
+                            willClose: function() {
+                                var html = document.documentElement;
+                                var body = document.body;
+                                
+                                html.classList.remove('swal2-shown', 'swal2-height-auto');
+                                body.classList.remove('swal2-shown', 'swal2-height-auto');
+                                body.style.overflow = '';
+                                body.style.position = '';
+                                html.style.overflow = '';
+                            }
+                        }).then(function(result) {
+                            var html = document.documentElement;
+                            var body = document.body;
+                            html.classList.remove('swal2-shown', 'swal2-height-auto');
+                            body.classList.remove('swal2-shown', 'swal2-height-auto');
+                            body.style.overflow = '';
+                            body.style.position = '';
+                            html.style.overflow = '';
+                        });
+                    }
+                    return;
+                }
+
                 setItemSafe('id', usuario.id);
                 setItemSafe('nombre', usuario.nombre);
                 setItemSafe('apellido', usuario.apellido);
