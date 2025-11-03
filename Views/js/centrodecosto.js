@@ -16,9 +16,11 @@ app.filter('startFrom', function () {
 app.controller('CentroDeCosto', function ($scope, $sce, $http, $window) {
     console.log('CentroDeCosto controller initialized');
 
+    // Usar la variable de configuración global API_BASE_URL
+    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
     $scope.titulo = 'Centro de costo';
-    $scope.base = 'http://localhost:8000/api/centrodecosto/';
-    $scope.basePlanta = 'http://localhost:8000/api/planta/';
+    $scope.base = apiBaseUrl + '/api/centrodecosto/';
+    $scope.basePlanta = apiBaseUrl + '/api/planta/';
     $scope.searchText = '';
     $scope.showValidationErrors = false;
     

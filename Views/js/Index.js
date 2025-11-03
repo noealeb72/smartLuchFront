@@ -23,6 +23,228 @@
 
 var app = angular.module('AngujarJS', ['ja.qr']);
 
+// === Capturar errores de CORS a nivel global ===
+(function() {
+	var mensajeCORSMostrado = false;
+	
+	// Capturar errores no capturados que mencionen CORS
+	window.addEventListener('error', function(event) {
+		var mensaje = event.message || '';
+		if (mensaje.toLowerCase().indexOf('cors') !== -1 || 
+			mensaje.toLowerCase().indexOf('cross-origin') !== -1 ||
+			mensaje.toLowerCase().indexOf('origen cruzado') !== -1) {
+			
+			if (!mensajeCORSMostrado && window.Swal && typeof window.Swal.fire === 'function') {
+				mensajeCORSMostrado = true;
+				setTimeout(function() {
+					window.Swal.fire({
+						title: '⚠️ Error de CORS',
+						html: '<div style="text-align: left;">' +
+							  '<p><strong>No se puede conectar con el backend por restricciones CORS.</strong></p>' +
+							  '<p style="color: #d33; font-weight: bold;">El backend debe configurar CORS para permitir solicitudes desde el frontend.</p>' +
+							  '<hr style="margin: 15px 0;">' +
+							  '<p><strong>Por favor verifica en el backend (C#/ASP.NET):</strong></p>' +
+							  '<ul style="margin-left: 20px; text-align: left;">' +
+							  '<li>Que CORS esté habilitado en <code>WebApiConfig.cs</code></li>' +
+							  '<li>Que permita el origen del frontend:<br>' +
+							  '<code style="display: block; margin: 5px 0; padding: 5px; background: #f5f5f5;">http://localhost:4200</code></li>' +
+							  '<li>Que los métodos HTTP necesarios estén permitidos</li>' +
+							  '<li>Que los headers necesarios estén permitidos</li>' +
+							  '</ul>' +
+							  '<p style="margin-top: 15px; color: #666; font-size: 0.9em;">' +
+							  '<strong>Error detectado:</strong> Solicitud de origen cruzado bloqueada</p>' +
+							  '</div>',
+						icon: 'error',
+						confirmButtonText: 'Aceptar',
+						confirmButtonColor: '#343A40',
+						width: '650px',
+						allowOutsideClick: false,
+						allowEscapeKey: true
+					}).then(function() {
+						mensajeCORSMostrado = false;
+					});
+				}, 500);
+				
+				// Resetear el flag después de 5 segundos
+				setTimeout(function() {
+					mensajeCORSMostrado = false;
+				}, 5000);
+			}
+		}
+	}, true);
+	
+	// También capturar errores de promesas no manejadas
+	window.addEventListener('unhandledrejection', function(event) {
+		var mensaje = (event.reason && event.reason.message) || (event.reason && event.reason.toString()) || '';
+		if (mensaje.toLowerCase().indexOf('cors') !== -1 || 
+			mensaje.toLowerCase().indexOf('cross-origin') !== -1 ||
+			mensaje.toLowerCase().indexOf('origen cruzado') !== -1) {
+			
+			if (!mensajeCORSMostrado && window.Swal && typeof window.Swal.fire === 'function') {
+				mensajeCORSMostrado = true;
+				setTimeout(function() {
+					window.Swal.fire({
+						title: '⚠️ Error de CORS',
+						html: '<div style="text-align: left;">' +
+							  '<p><strong>No se puede conectar con el backend por restricciones CORS.</strong></p>' +
+							  '<p style="color: #d33; font-weight: bold;">El backend debe configurar CORS para permitir solicitudes desde el frontend.</p>' +
+							  '<hr style="margin: 15px 0;">' +
+							  '<p><strong>Por favor verifica en el backend (C#/ASP.NET):</strong></p>' +
+							  '<ul style="margin-left: 20px; text-align: left;">' +
+							  '<li>Que CORS esté habilitado en <code>WebApiConfig.cs</code></li>' +
+							  '<li>Que permita el origen del frontend:<br>' +
+							  '<code style="display: block; margin: 5px 0; padding: 5px; background: #f5f5f5;">http://localhost:4200</code></li>' +
+							  '<li>Que los métodos HTTP necesarios estén permitidos</li>' +
+							  '<li>Que los headers necesarios estén permitidos</li>' +
+							  '</ul>' +
+							  '</div>',
+						icon: 'error',
+						confirmButtonText: 'Aceptar',
+						confirmButtonColor: '#343A40',
+						width: '650px',
+						allowOutsideClick: false,
+						allowEscapeKey: true
+					}).then(function() {
+						mensajeCORSMostrado = false;
+					});
+				}, 500);
+				
+				setTimeout(function() {
+					mensajeCORSMostrado = false;
+				}, 5000);
+			}
+		}
+	});
+})();
+
+// === Interceptor HTTP para detectar errores de conexión y CORS ===
+app.config(function($httpProvider) {
+	$httpProvider.interceptors.push(function($q, $window, $timeout) {
+		// Variable para evitar mostrar múltiples mensajes al mismo tiempo
+		var mensajeMostrandose = false;
+		
+		return {
+			'responseError': function(rejection) {
+				// Detectar errores de conexión o CORS
+				var esErrorConexion = !rejection.status || rejection.status === 0 || rejection.status === -1;
+				var urlTarget = (rejection.config && rejection.config.url) || '';
+				var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+				// Extraer el dominio y puerto de la URL base
+				var apiDomain = apiBaseUrl.replace(/^https?:\/\//, '').split('/')[0];
+				var esPeticionBackend = urlTarget.indexOf(apiDomain) !== -1 || urlTarget.indexOf('localhost:8000') !== -1 || urlTarget.indexOf('127.0.0.1:8000') !== -1;
+				
+				// Detectar CORS desde el mensaje del error
+				var mensajeError = rejection.message || rejection.statusText || '';
+				var mensajeErrorLower = mensajeError.toLowerCase();
+				var esErrorCORS = mensajeErrorLower.indexOf('cors') !== -1 || 
+								  mensajeErrorLower.indexOf('cross-origin') !== -1 ||
+								  mensajeErrorLower.indexOf('origen cruzado') !== -1 ||
+								  mensajeErrorLower.indexOf('solicitud de origen cruzado') !== -1;
+				
+				// Si el status es 0 y es una petición al backend, probablemente es CORS
+				// CORS típicamente devuelve status 0, mientras que backend no corriendo puede dar timeout
+				if (esErrorConexion && esPeticionBackend && (rejection.status === 0 || rejection.status === -1)) {
+					// Cuando status es 0/-1 desde backend, casi siempre es CORS
+					esErrorCORS = true;
+				}
+				
+				if (esErrorConexion && !mensajeMostrandose) {
+					mensajeMostrandose = true;
+					
+					// Mensaje específico para CORS (si es backend y status 0, es CORS)
+					if (esErrorCORS || (esPeticionBackend && (rejection.status === 0 || rejection.status === -1))) {
+						if ($window.Swal && typeof $window.Swal.fire === 'function') {
+							$window.Swal.fire({
+								title: '⚠️ Error de CORS',
+								html: '<div style="text-align: left;">' +
+									  '<p><strong>No se puede conectar con el backend por restricciones CORS.</strong></p>' +
+									  '<p style="color: #d33; font-weight: bold;">El backend debe configurar CORS para permitir solicitudes desde el frontend.</p>' +
+									  '<hr style="margin: 15px 0;">' +
+									  '<p><strong>Por favor verifica en el backend:</strong></p>' +
+									  '<ul style="margin-left: 20px; text-align: left;">' +
+									  '<li>Que CORS esté habilitado</li>' +
+									  '<li>Que permita el origen del frontend (ej: <code>http://localhost:4200</code>)</li>' +
+									  '<li>Que los headers necesarios estén permitidos</li>' +
+									  '<li>Que el método HTTP esté permitido</li>' +
+									  '</ul>' +
+									  '<p style="margin-top: 15px; color: #666; font-size: 0.9em;">' +
+									  '<strong>URL que falló:</strong><br>' +
+									  '<code style="font-size: 0.85em; word-break: break-all;">' + 
+									  (rejection.config ? rejection.config.url : 'N/A') + 
+									  '</code></p>' +
+									  '</div>',
+								icon: 'error',
+								confirmButtonText: 'Aceptar',
+								confirmButtonColor: '#343A40',
+								width: '600px',
+								allowOutsideClick: false,
+								allowEscapeKey: true
+							}).then(function() {
+								mensajeMostrandose = false;
+							});
+						} else {
+							alert('⚠️ Error de CORS\n\nNo se puede conectar con el backend por restricciones CORS.\n\nEl backend debe configurar CORS para permitir solicitudes desde el frontend.\n\nURL: ' + (rejection.config ? rejection.config.url : 'N/A'));
+							mensajeMostrandose = false;
+						}
+					} else {
+						// Mensaje específico: backend no está corriendo
+						if ($window.Swal && typeof $window.Swal.fire === 'function') {
+							$window.Swal.fire({
+								title: '⚠️ Backend No Está Corriendo',
+								html: '<div style="text-align: left;">' +
+									  '<p><strong style="color: #d33; font-size: 1.1em;">El backend NO está corriendo o no es accesible.</strong></p>' +
+									  '<hr style="margin: 15px 0;">' +
+									  '<p><strong>Por favor verifica:</strong></p>' +
+									  '<ul style="margin-left: 20px; text-align: left;">' +
+									  '<li>Que el backend esté iniciado</li>' +
+									  '<li>Que esté corriendo en <code style="background: #f5f5f5; padding: 2px 5px;">' + 
+									  (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:8000') + 
+									  '</code></li>' +
+									  '<li>Que el puerto esté disponible y no esté ocupado por otro proceso</li>' +
+									  '<li>Que no haya errores al iniciar el backend</li>' +
+									  '</ul>' +
+									  '<p style="margin-top: 15px; color: #666; font-size: 0.9em;">' +
+									  '<strong>URL que falló:</strong><br>' +
+									  '<code style="font-size: 0.85em; word-break: break-all; background: #f5f5f5; padding: 3px;">' + 
+									  (rejection.config ? rejection.config.url : 'N/A') + 
+									  '</code></p>' +
+									  '<p style="margin-top: 10px; color: #666; font-size: 0.9em;">' +
+									  '<strong>💡 Consejo:</strong> Revisa la consola del backend para ver si hay errores al iniciar.</p>' +
+									  '</div>',
+								icon: 'error',
+								confirmButtonText: 'Aceptar',
+								confirmButtonColor: '#343A40',
+								width: '650px',
+								allowOutsideClick: false,
+								allowEscapeKey: true
+							}).then(function() {
+								mensajeMostrandose = false;
+							});
+						} else {
+							var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+							alert('⚠️ Backend No Está Corriendo\n\nNo se puede conectar al servidor backend en ' + apiBaseUrl + '\n\nPor favor verifica que el backend esté iniciado y corriendo.\n\nURL que falló: ' + (rejection.config ? rejection.config.url : 'N/A'));
+							mensajeMostrandose = false;
+						}
+					}
+					
+					// Resetear el flag después de 3 segundos como respaldo
+					$timeout(function() {
+						mensajeMostrandose = false;
+					}, 3000);
+				} else if (rejection.status === 404) {
+					// Endpoint no encontrado
+					console.error('❌ Endpoint no encontrado:', rejection.config ? rejection.config.url : 'N/A');
+				} else if (rejection.status >= 500) {
+					// Error del servidor
+					console.error('❌ Error del servidor:', rejection.status, rejection.config ? rejection.config.url : 'N/A');
+				}
+				
+				return $q.reject(rejection);
+			}
+		};
+	});
+});
+
 // Filtro para pluralización
 app.filter('pluralize', function() {
 	return function(count, singular, plural) {
@@ -72,11 +294,235 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 		$scope.currentDateTime = new Date().toLocaleString('es-AR');
 		if (!$scope.$$phase) { $scope.$apply(); }
 	}, 1000);
-	$scope.baseMenu = 'http://localhost:8000/api/menudd/';
-	$scope.basePlatos = 'http://localhost:8000/api/plato/';
-	$scope.baseComanda = 'http://localhost:8000/api/comanda/';
-	$scope.baseTurno = 'http://localhost:8000/api/turno/';
-	$scope.base = 'http://localhost:8000/api/jerarquia/';
+
+	// === Verificación de conectividad con la API al inicio ===
+	(function verificarConectividadAPI() {
+		var mensajeMostrado = false;
+		var verificacionCompletada = false;
+		var tiempoEspera = 1000; // Esperar 1 segundo antes de verificar
+		
+		var mostrarErrorBackend = function(esCORS) {
+			if (mensajeMostrado) return; // Evitar múltiples mensajes
+			
+			mensajeMostrado = true;
+			verificacionCompletada = true;
+			
+			$timeout(function() {
+				if (window.Swal && typeof window.Swal.fire === 'function') {
+					var titulo = esCORS ? '⚠️ Error de CORS' : '⚠️ Backend No Está Corriendo';
+					var contenido = esCORS ? 
+						'<div style="text-align: left;">' +
+						  '<p><strong>No se puede conectar con el backend por restricciones CORS.</strong></p>' +
+						  '<p style="color: #d33; font-weight: bold;">El backend debe configurar CORS para permitir solicitudes desde el frontend.</p>' +
+						  '<hr style="margin: 15px 0;">' +
+						  '<p><strong>Por favor verifica en el backend (C#/ASP.NET):</strong></p>' +
+						  '<ul style="margin-left: 20px; text-align: left;">' +
+						  '<li>Que CORS esté habilitado en <code>WebApiConfig.cs</code></li>' +
+						  '<li>Que permita el origen del frontend:<br>' +
+						  '<code style="display: block; margin: 5px 0; padding: 5px; background: #f5f5f5; color: #333;">http://localhost:4200</code></li>' +
+						  '<li>Que los métodos HTTP necesarios estén permitidos (GET, POST, etc.)</li>' +
+						  '<li>Que los headers necesarios estén permitidos</li>' +
+						  '</ul>' +
+						  '<p style="margin-top: 15px; color: #666; font-size: 0.9em;">' +
+						  'Revisa la consola del navegador (F12) para ver el error: "Solicitud de origen cruzado bloqueada"</p>' +
+						  '</div>' :
+						'<div style="text-align: left;">' +
+						  '<p><strong style="color: #d33; font-size: 1.1em;">El backend NO está corriendo o no es accesible.</strong></p>' +
+						  '<hr style="margin: 15px 0;">' +
+						  '<p><strong>Por favor verifica:</strong></p>' +
+						  '<ul style="margin-left: 20px; text-align: left;">' +
+						  '<li>Que el backend esté iniciado</li>' +
+						  '<li>Que esté corriendo en <code style="background: #f5f5f5; padding: 2px 5px;">' + 
+						  (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:8000') + 
+						  '</code></li>' +
+						  '<li>Que el puerto esté disponible y no esté ocupado por otro proceso</li>' +
+						  '<li>Que no haya errores al iniciar el backend</li>' +
+						  '</ul>' +
+						  '<p style="margin-top: 15px; color: #666; font-size: 0.9em;">' +
+						  '<strong>💡 Consejo:</strong> Revisa la consola del backend para ver si hay errores al iniciar.</p>' +
+						  '</div>';
+					
+					window.Swal.fire({
+						title: titulo,
+						html: contenido,
+						icon: 'error',
+						confirmButtonText: 'Aceptar',
+						confirmButtonColor: '#343A40',
+						width: '650px',
+						allowOutsideClick: false,
+						allowEscapeKey: true
+					}).then(function() {
+						mensajeMostrado = false;
+					});
+					} else {
+						// Fallback si SweetAlert2 no está disponible
+						var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+						var mensaje = esCORS ? 
+							'⚠️ Error de CORS\n\nNo se puede conectar con el backend por restricciones CORS.\n\nEl backend debe configurar CORS para permitir solicitudes desde el frontend.' :
+							'⚠️ Backend No Está Corriendo\n\nNo se puede conectar al servidor backend en ' + apiBaseUrl + '\n\nPor favor verifica que el backend esté iniciado y corriendo.';
+						alert(mensaje);
+						mensajeMostrado = false;
+					}
+			}, 500);
+		};
+		
+		// Usar XMLHttpRequest directamente para mejor detección de errores CORS
+		var verificarConXMLHttpRequest = function() {
+			var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+			var xhr = new XMLHttpRequest();
+			var urlPrueba = apiBaseUrl + '/api/jerarquia/GetName?name=Test';
+			var timeoutID = null;
+			var errorTimeoutID = null;
+			var inicioTiempo = Date.now();
+			var esCORS = false;
+			
+			// Timeout para detectar si es backend no corriendo (más largo)
+			timeoutID = setTimeout(function() {
+				if (xhr.readyState !== 4) {
+					xhr.abort();
+					var tiempoTranscurrido = Date.now() - inicioTiempo;
+					// Si pasa mucho tiempo sin respuesta, backend no está corriendo
+					// Si el error fue rápido (< 500ms), probablemente es CORS
+					if (tiempoTranscurrido < 1000) {
+						esCORS = true;
+						mostrarErrorBackend(true);
+					} else {
+						mostrarErrorBackend(false);
+					}
+				}
+			}, 5000);
+			
+			// Detectar errores rápidos (probablemente CORS)
+			errorTimeoutID = setTimeout(function() {
+				if (xhr.readyState === 0 || (xhr.readyState < 4 && xhr.status === 0)) {
+					var tiempoTranscurrido = Date.now() - inicioTiempo;
+					// Si el error ocurre muy rápido (< 200ms), es casi seguro CORS
+					if (tiempoTranscurrido < 500) {
+						esCORS = true;
+						clearTimeout(timeoutID);
+						xhr.abort();
+						mostrarErrorBackend(true);
+					}
+				}
+			}, 300);
+			
+			xhr.onerror = function(e) {
+				clearTimeout(timeoutID);
+				clearTimeout(errorTimeoutID);
+				var tiempoTranscurrido = Date.now() - inicioTiempo;
+				// Si el error ocurre muy rápido (< 500ms), probablemente es CORS
+				// CORS se bloquea casi inmediatamente por el navegador
+				// Backend no corriendo tarda más (timeout de conexión puede tardar varios segundos)
+				if (tiempoTranscurrido < 500) {
+					esCORS = true;
+					console.log('🔍 Error detectado rápidamente (< 500ms) - Probable CORS');
+					mostrarErrorBackend(true);
+				} else if (tiempoTranscurrido < 2000) {
+					// Entre 500ms y 2 segundos, puede ser CORS o conexión rechazada
+					// Como el usuario está viendo el error de CORS en la consola, asumimos CORS
+					esCORS = true;
+					console.log('🔍 Error detectado en tiempo intermedio - Probable CORS');
+					mostrarErrorBackend(true);
+				} else {
+					// Error después de mucho tiempo sugiere que el backend no está corriendo
+					console.log('🔍 Error detectado después de tiempo (> 2s) - Backend no corriendo');
+					mostrarErrorBackend(false);
+				}
+			};
+			
+			xhr.onload = function() {
+				clearTimeout(timeoutID);
+				clearTimeout(errorTimeoutID);
+				// Si hay respuesta (incluso si es error), el backend está corriendo
+				if (xhr.status >= 200 && xhr.status < 500) {
+					verificacionCompletada = true;
+					console.log('✅ Backend está corriendo correctamente (status: ' + xhr.status + ')');
+				} else {
+					// Error del servidor, pero backend está corriendo
+					verificacionCompletada = true;
+					console.log('✅ Backend está corriendo (status: ' + xhr.status + ')');
+				}
+			};
+			
+			xhr.ontimeout = function() {
+				clearTimeout(timeoutID);
+				clearTimeout(errorTimeoutID);
+				// Timeout sugiere que el backend no está respondiendo
+				mostrarErrorBackend(false);
+			};
+			
+			try {
+				xhr.open('GET', urlPrueba, true);
+				xhr.timeout = 5000;
+				xhr.send();
+			} catch(e) {
+				clearTimeout(timeoutID);
+				clearTimeout(errorTimeoutID);
+				// Error al abrir la petición - podría ser CORS
+				mostrarErrorBackend(true);
+			}
+		};
+		
+		// También usar $http como respaldo
+		var verificarConAngularHttp = function() {
+			var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+			var peticionPrueba = $http.get(apiBaseUrl + '/api/jerarquia/GetName?name=Test', {
+				timeout: 4000
+			});
+			
+			peticionPrueba.then(function(response) {
+				verificacionCompletada = true;
+				console.log('✅ Backend está corriendo correctamente');
+			}).catch(function(rejection) {
+				if (verificacionCompletada) return; // Ya se mostró el mensaje
+				
+				var status = rejection.status;
+				var esCORS = false;
+				
+				if (!status || status === 0 || status === -1) {
+					var mensajeError = rejection.message || rejection.statusText || '';
+					var mensajeErrorLower = mensajeError.toLowerCase();
+					
+					esCORS = mensajeErrorLower.indexOf('cors') !== -1 || 
+							 mensajeErrorLower.indexOf('cross-origin') !== -1 ||
+							 mensajeErrorLower.indexOf('origen cruzado') !== -1;
+					
+					if (!esCORS) {
+						// Si no es claramente CORS y el status es 0, probablemente backend no está corriendo
+						mostrarErrorBackend(false);
+					} else {
+						mostrarErrorBackend(true);
+					}
+				} else if (status === 404) {
+					verificacionCompletada = true;
+					console.log('✅ Backend está corriendo (404 es normal para endpoint de prueba)');
+				} else {
+					verificacionCompletada = true;
+					console.log('✅ Backend está corriendo (status: ' + status + ')');
+				}
+			});
+		};
+		
+		// Iniciar verificación después de un breve delay
+		$timeout(function() {
+			// Intentar primero con XMLHttpRequest (más directo para detectar CORS)
+			verificarConXMLHttpRequest();
+			
+			// También intentar con $http como respaldo
+			setTimeout(function() {
+				if (!verificacionCompletada) {
+					verificarConAngularHttp();
+				}
+			}, 500);
+	}, tiempoEspera);
+})();
+// Usar la variable de configuración global API_BASE_URL
+var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+$scope.baseMenu = apiBaseUrl + '/api/menudd/';
+$scope.basePlatos = apiBaseUrl + '/api/plato/';
+$scope.baseComanda = apiBaseUrl + '/api/comanda/';
+$scope.baseTurno = apiBaseUrl + '/api/turno/';
+$scope.base = apiBaseUrl + '/api/jerarquia/';
 	$scope.platos = [];
 	$scope.menudeldia = [];
 	$scope.comanda = '';
@@ -827,7 +1273,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 		
 		// Actualizar el estado del plato actual
 		item.aplicarBonificacion = aplicarBonificacion;
-
+		
 		// Registrar/limpiar preselección ligada al turno actual
 		if (aplicarBonificacion) {
 			$scope.bonificacionPreSeleccionada = true;

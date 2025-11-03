@@ -44,8 +44,9 @@ app.filter('noEmpty', function () {
 });
 
 app.controller('Turno', function ($scope, $sce, $http, $window) {
-
-	$scope.base = 'http://localhost:8000/api/turno/';
+	// Usar la variable de configuración global API_BASE_URL
+	var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+	$scope.base = apiBaseUrl + '/api/turno/';
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
 	$scope.user_Nombre = localStorage.getItem('nombre');

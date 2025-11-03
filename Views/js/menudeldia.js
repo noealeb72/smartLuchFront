@@ -94,8 +94,11 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         });
     });
 
+    // Usar la variable de configuración global API_BASE_URL
+    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+    
     $scope.titulo = 'Menú del día';  // Título inicial
-    $scope.base = 'http://localhost:8000/api/menudd/';
+    $scope.base = apiBaseUrl + '/api/menudd/';
 
     //////////////// USER ////////////////
     $scope.user_Rol = localStorage.getItem('role');
@@ -120,13 +123,13 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     $scope.filtroTurno = '';
 
     // Bases para combos
-    $scope.basePlatos = 'http://localhost:8000/api/plato/';
-    $scope.basePlantas = 'http://localhost:8000/api/planta/';
-    $scope.baseCentros = 'http://localhost:8000/api/centrodecosto/';
-    $scope.baseProyectos = 'http://localhost:8000/api/proyecto/';
-    $scope.baseJerarquias = 'http://localhost:8000/api/jerarquia/';
-    $scope.baseTurnos = 'http://localhost:8000/api/turno/';
-    $scope.baseMenu = 'http://localhost:8000/api/menudd/';
+    $scope.basePlatos = apiBaseUrl + '/api/plato/';
+    $scope.basePlantas = apiBaseUrl + '/api/planta/';
+    $scope.baseCentros = apiBaseUrl + '/api/centrodecosto/';
+    $scope.baseProyectos = apiBaseUrl + '/api/proyecto/';
+    $scope.baseJerarquias = apiBaseUrl + '/api/jerarquia/';
+    $scope.baseTurnos = apiBaseUrl + '/api/turno/';
+    $scope.baseMenu = apiBaseUrl + '/api/menudd/';
 
     $scope.platos = '';
     $scope.plantas = '';

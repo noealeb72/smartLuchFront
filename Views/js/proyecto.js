@@ -24,11 +24,13 @@ app.filter('formatDateArg', function () {
 });
 
 app.controller('Proyecto', function ($scope, $sce, $http, $window) {
+	// Usar la variable de configuración global API_BASE_URL
+	var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
 	$scope.titulo = 'Proyecto';  // Título inicial
-	$scope.base = 'http://localhost:8000/api/proyecto/';
-	$scope.baseCentrodecostos = 'http://localhost:8000/api/centrodecosto/';
+	$scope.base = apiBaseUrl + '/api/proyecto/';
+	$scope.baseCentrodecostos = apiBaseUrl + '/api/centrodecosto/';
 	$scope.centros = '';
-	$scope.basePlanta = 'http://localhost:8000/api/planta/';
+	$scope.basePlanta = apiBaseUrl + '/api/planta/';
 	$scope.plantas = '';
 	$scope.searchText = ''; // Modelo de búsqueda vacío al inicio
 	$scope.showValidationErrors = false; // Variable para mostrar leyendas de validación

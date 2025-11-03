@@ -16,8 +16,10 @@ app.filter('startFrom', function () {
 
 app.controller('PlanNutricional', function ($scope, $http) {
     // -------- Config ----------
+    // Usar la variable de configuración global API_BASE_URL
+    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
     $scope.user_Rol = localStorage.getItem('role') || '';
-    $scope.base = 'http://localhost:8000/api/plannutricional/';
+    $scope.base = apiBaseUrl + '/api/plannutricional/';
     
     // -------- Paginación ----------
     $scope.currentPage = 0;

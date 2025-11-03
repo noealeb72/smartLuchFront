@@ -8,8 +8,9 @@ app.filter('startFrom', function () {
 });
 
 app.controller('Calificacion', function ($scope, $sce, $http, $window) {
-
-	$scope.base = 'http://localhost:8000/api/plannutricional/';
+	// Usar la variable de configuración global API_BASE_URL
+	var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+	$scope.base = apiBaseUrl + '/api/plannutricional/';
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
 	$scope.user_Nombre = localStorage.getItem('nombre');

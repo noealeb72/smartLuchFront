@@ -35,8 +35,9 @@ app.filter('startFrom', function () {
 });
 
 app.controller('Planta', function ($scope, $sce, $http, $window) {
-
-    $scope.base = 'http://localhost:8000/api/planta/';
+    // Usar la variable de configuración global API_BASE_URL
+    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+    $scope.base = apiBaseUrl + '/api/planta/';
 
     // USER (por si lo usas en headers o UI)
     $scope.user_Rol = localStorage.getItem('role');

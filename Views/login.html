@@ -128,22 +128,89 @@
             position: relative !important;
             z-index: 100000 !important;
             margin: 0 !important;
-            max-width: 500px !important;
-            width: 90% !important;
+            max-width: 450px !important;
+            width: 400px !important;
+            padding: 1.5rem !important;
         }
 
         .swal2-backdrop {
             background-color: rgba(0, 0, 0, 0.4) !important;
         }
 
-        /* Prevenir scroll del body cuando aparece el popup */
-        body.swal2-shown {
-            overflow: hidden !important;
-            position: fixed !important;
-            width: 100% !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
+        /* Permitir que el body siga scrollable y no bloquee la pestaña */
+        body.swal2-shown,
+        html.swal2-shown {
+            overflow: auto !important;
+            position: static !important;
+            width: auto !important;
+            height: auto !important;
+        }
+        
+        /* Ocultar completamente el botón de cerrar */
+        .swal2-close {
+            display: none !important;
+        }
+        
+        /* Asegurar que clic fuera funcione */
+        .swal2-backdrop-show {
+            cursor: pointer !important;
+        }
+        
+        /* Asegurar que el modal pueda cerrarse */
+        .swal2-popup {
+            pointer-events: auto !important;
+        }
+        
+        .swal2-container {
+            pointer-events: auto !important;
+        }
+        
+        .swal2-container .swal2-popup {
+            pointer-events: auto !important;
+        }
+        
+        /* Hacer el modal más compacto y estético */
+        .swal2-popup .swal2-title {
+            font-size: 1.3rem !important;
+            line-height: 1.4 !important;
+            margin-bottom: 0.8rem !important;
+        }
+        
+        .swal2-popup .swal2-content {
+            font-size: 0.95rem !important;
+            line-height: 1.5 !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 1rem !important;
+        }
+        
+        .swal2-popup .swal2-actions {
+            margin-top: 1rem !important;
+        }
+        
+        .swal2-popup .swal2-confirm {
+            font-size: 0.95rem !important;
+            padding: 0.6rem 1.5rem !important;
+        }
+        
+        .swal2-popup .swal2-icon {
+            width: 4rem !important;
+            height: 4rem !important;
+            margin: 0.5rem auto 1rem auto !important;
+            border: none !important;
+            background: transparent !important;
+        }
+        
+        .swal2-popup .swal2-icon .swal2-icon-content {
+            font-size: 3rem !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        /* Estilos para iconos personalizados con Font Awesome */
+        .swal2-icon i.fas {
+            margin: 0 !important;
+            display: block !important;
         }
 
         /* Prevenir que SweetAlert2 mueva la p�gina */
@@ -227,10 +294,25 @@
                 align-items: center;
             }
         }
+        
+        /* Loading spinner - mismo estilo que el sistema */
+        .se-pre-con {
+            position: fixed;
+            left: 0px;
+            top: 0px;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            background: url('img/loading.gif') center no-repeat #ffffffa8;
+            background-size: 150px;
+        }
     </style>
 </head>
 
 <body ng-controller="Login">
+    <!-- Loading spinner -->
+    <div ng-show="isLoading" class="se-pre-con"></div>
+    
     <div class="container">
         <div class="d-flex justify-content-center h-100">
             <div class="user_card">
@@ -303,6 +385,9 @@
 
     <!-- Si us�s toasts propios -->
     <script src="js/custom-toast.js"></script>
+    
+    <!-- Configuración centralizada -->
+    <script src="js/config.js"></script>
 
     <!-- Tu l�gica de login (usa ng-submit y muestra errores) -->
     <script src="js/login.js"></script>

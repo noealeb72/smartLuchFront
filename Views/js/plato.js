@@ -34,9 +34,11 @@ app.filter('startFrom', function () {
 
 app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     // --------- Estado base ---------
+    // Usar la variable de configuración global API_BASE_URL
+    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
     $scope.titulo = 'Gestión de Platos';
-    $scope.base = 'http://localhost:8000/api/plato/';
-    $scope.basePlan = 'http://localhost:8000/api/plannutricional/';
+    $scope.base = apiBaseUrl + '/api/plato/';
+    $scope.basePlan = apiBaseUrl + '/api/plannutricional/';
 
     $scope.dataset = [];
     $scope.filteredData = null;

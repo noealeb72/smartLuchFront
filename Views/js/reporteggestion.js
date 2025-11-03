@@ -77,12 +77,14 @@
         }, 1000);
 
         // ---- Endpoints ----
-        $scope.basePlantas = 'http://localhost:8000/api/planta/';
-        $scope.baseCentrodecostos = 'http://localhost:8000/api/centrodecosto/';
-        $scope.baseProyectos = 'http://localhost:8000/api/proyecto/';
-        $scope.baseTurno = 'http://localhost:8000/api/turno/';
-        $scope.baseReporte = 'http://localhost:8000/api/reporte/';
-        var basePlatos = 'http://localhost:8000/api/plato/';
+        // Usar la variable de configuración global API_BASE_URL
+        var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+        $scope.basePlantas = apiBaseUrl + '/api/planta/';
+        $scope.baseCentrodecostos = apiBaseUrl + '/api/centrodecosto/';
+        $scope.baseProyectos = apiBaseUrl + '/api/proyecto/';
+        $scope.baseTurno = apiBaseUrl + '/api/turno/';
+        $scope.baseReporte = apiBaseUrl + '/api/reporte/';
+        var basePlatos = apiBaseUrl + '/api/plato/';
 
         // ---- Modelos UI ----
         $scope.plantas = [];
@@ -258,7 +260,8 @@
 
         function cargarPerfiles() {
             console.log('🔄 Cargando perfiles nutricionales...');
-            $http.get('http://localhost:8000/api/plannutricional/getAll')
+            var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+            $http.get(apiBaseUrl + '/api/plannutricional/getAll')
                 .then(function (response) {
                     // normalizo a {id, nombre} para ng-options pf as pf.nombre for pf in perfiles track by pf.id
                     var list = Array.isArray(response.data) ? response.data : [];

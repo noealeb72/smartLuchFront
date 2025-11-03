@@ -62,19 +62,21 @@ app.filter('formatEstados', function () {
 });
 
 app.controller('ReportegComensales', function ($scope, $sce, $http, $window, $timeout) {
+	// Usar la variable de configuración global API_BASE_URL
+	var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
 
-	$scope.basePlantas = 'http://localhost:8000/api/planta/';
+	$scope.basePlantas = apiBaseUrl + '/api/planta/';
 	$scope.plantas = '';
-	$scope.baseCentrodecostos = 'http://localhost:8000/api/centrodecosto/';
+	$scope.baseCentrodecostos = apiBaseUrl + '/api/centrodecosto/';
 	$scope.centrosdecosto = '';
-	$scope.baseProyectos = 'http://localhost:8000/api/proyecto/';
+	$scope.baseProyectos = apiBaseUrl + '/api/proyecto/';
 	$scope.proyectos = '';
-	$scope.baseTurno = 'http://localhost:8000/api/turno/';
+	$scope.baseTurno = apiBaseUrl + '/api/turno/';
 	$scope.turnos = '';
-	$scope.baseComanda = 'http://localhost:8000/api/comanda/';
-	$scope.baseReporte = 'http://localhost:8000/api/reporte/';
+	$scope.baseComanda = apiBaseUrl + '/api/comanda/';
+	$scope.baseReporte = apiBaseUrl + '/api/reporte/';
 	$scope.usuarios = '';
-	$scope.baseUsuario = 'http://localhost:8000/api/usuario/';
+	$scope.baseUsuario = apiBaseUrl + '/api/usuario/';
 	$scope.reportes = '';
 	$scope.comandas = '';
 	$scope.filtro_comensal = '';

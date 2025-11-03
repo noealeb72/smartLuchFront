@@ -2,8 +2,8 @@
 // Maneja la lógica de bonificaciones basada en sl_jerarquia
 
 var BonificacionesService = {
-    // Configuración de la API
-    baseUrl: 'http://localhost:8000/api/jerarquia/',
+    // Configuración de la API - usar variable de configuración global
+    baseUrl: (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:8000') + '/api/jerarquia/',
     
     // Cache de bonificaciones por perfil
     bonificacionesCache: {},

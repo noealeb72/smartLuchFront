@@ -8,8 +8,9 @@ app.filter('startFrom', function () {
 });
 
 app.controller('Jerarquia', function ($scope, $sce, $http, $window, $timeout) {
-
-    $scope.base = 'http://localhost:8000/api/jerarquia/';
+    // Usar la variable de configuración global API_BASE_URL
+    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+    $scope.base = apiBaseUrl + '/api/jerarquia/';
 
     // ============================================================
     // Datos de usuario (los dejé porque los tenías, aunque acá no se usan)

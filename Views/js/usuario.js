@@ -19,9 +19,11 @@ app.filter('formatDateArg', function () {
 });
 
 app.controller('Usuario', function ($scope, $sce, $http, $window) {
+	// Usar la variable de configuración global API_BASE_URL
+	var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
 
-	$scope.base = 'http://localhost:8000/api/usuario/';
-	$scope.basePlan = 'http://localhost:8000/api/plannutricional/';
+	$scope.base = apiBaseUrl + '/api/usuario/';
+	$scope.basePlan = apiBaseUrl + '/api/plannutricional/';
 	$scope.planes = '';
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
@@ -36,11 +38,11 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	$scope.user_Bonificacion_Invitado = localStorage.getItem('bonificacion_invitado');
 	$scope.user_DNI = localStorage.getItem('dni');
 
-	$scope.basePlantas = 'http://localhost:8000/api/planta/';
+	$scope.basePlantas = apiBaseUrl + '/api/planta/';
 	$scope.plantas = '';
-	$scope.baseCentrodecostos = 'http://localhost:8000/api/centrodecosto/';
+	$scope.baseCentrodecostos = apiBaseUrl + '/api/centrodecosto/';
 	$scope.centros = '';
-	$scope.baseProyectos = 'http://localhost:8000/api/proyecto/';
+	$scope.baseProyectos = apiBaseUrl + '/api/proyecto/';
 	$scope.proyectos = '';
 
 	// Función helper para mostrar popup

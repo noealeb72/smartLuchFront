@@ -2,7 +2,9 @@
 
 app.controller('DatosPersonales', function ($scope, $http, $window) {
     alert("paso datos personales")
-    $scope.base = 'http://localhost:8000/api/usuario/'; // URL base para la API de usuarios
+    // Usar la variable de configuración global API_BASE_URL
+    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+    $scope.base = apiBaseUrl + '/api/usuario/'; // URL base para la API de usuarios
     $scope.user_DNI = localStorage.getItem('dni'); // Obtener el DNI del usuario logueado desde localStorage
 
     // Inicializar las variables del formulario

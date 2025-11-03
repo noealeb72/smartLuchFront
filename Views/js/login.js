@@ -4,11 +4,14 @@ var app = angular.module('AngujarJS', []);
 
 app.controller('Login', function ($scope, $http, $window, $location) {
     // --- Config ---
-    $scope.base = 'http://localhost:8000/api/login/';
+    // Usar la variable de configuración global API_BASE_URL
+    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+    $scope.base = apiBaseUrl + '/api/login/';
 
     // --- Estado UI ---
     $scope.showError = false;
     $scope.errorMsg = '';
+    $scope.isLoading = false;
 
     // --- Helpers ---
     function showError(msg) {
@@ -53,6 +56,10 @@ app.controller('Login', function ($scope, $http, $window, $location) {
             return;
         }
 
+        // Activar loading
+        $scope.isLoading = true;
+        $scope.showError = false; // Ocultar error previo
+
         $http({
             url: $scope.base + 'Authorize',
             method: 'GET',
@@ -65,7 +72,85 @@ app.controller('Login', function ($scope, $http, $window, $location) {
                     response.data.Usuario.length > 0;
 
                 if (!ok) {
-                    showError('Usuario o contraseña incorrectos');
+                    // Desactivar loading
+                    $scope.isLoading = false;
+                    
+                    var messageError = 'Usuario o contraseña incorrectos';
+                    showError(messageError);
+                    
+                    // Mostrar también SweetAlert (modal completamente cerrable)
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        window.Swal.fire({
+                            title: '⚠️ Error en el Login',
+                            text: messageError,
+                            icon: 'error',
+                            iconHtml: '<i class="fas fa-times-circle" style="color: #dc3545; font-size: 3rem;"></i>',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#343A40',
+                            width: '400px',
+                            padding: '1.5rem',
+                            allowOutsideClick: true,
+                            allowEscapeKey: true,
+                            allowEnterKey: true,
+                            showCloseButton: false,
+                            focusConfirm: true,
+                            backdrop: true,
+                            timerProgressBar: false,
+                            didOpen: function() {
+                                // Forzar remover clases bloqueantes
+                                var html = document.documentElement;
+                                var body = document.body;
+                                
+                                html.classList.remove('swal2-shown', 'swal2-height-auto');
+                                body.classList.remove('swal2-shown', 'swal2-height-auto');
+                                
+                                // Forzar estilos no bloqueantes
+                                body.style.overflow = 'auto';
+                                body.style.position = 'static';
+                                html.style.overflow = 'auto';
+                                
+                                // Asegurar que clic fuera funcione
+                                var backdrop = document.querySelector('.swal2-backdrop-show');
+                                if (backdrop) {
+                                    backdrop.style.cursor = 'pointer';
+                                    backdrop.addEventListener('click', function(e) {
+                                        if (e.target === backdrop) {
+                                            window.Swal.close();
+                                        }
+                                    });
+                                }
+                                
+                                // Listener adicional para Escape
+                                var escapeHandler = function(e) {
+                                    if (e.key === 'Escape' || e.keyCode === 27) {
+                                        window.Swal.close();
+                                        document.removeEventListener('keydown', escapeHandler);
+                                    }
+                                };
+                                document.addEventListener('keydown', escapeHandler);
+                            },
+                            willClose: function() {
+                                // Limpiar todo al cerrar
+                                var html = document.documentElement;
+                                var body = document.body;
+                                
+                                html.classList.remove('swal2-shown', 'swal2-height-auto');
+                                body.classList.remove('swal2-shown', 'swal2-height-auto');
+                                body.style.overflow = '';
+                                body.style.position = '';
+                                html.style.overflow = '';
+                            }
+                        }).then(function(result) {
+                            // Limpiar después de cerrar
+                            var html = document.documentElement;
+                            var body = document.body;
+                            html.classList.remove('swal2-shown', 'swal2-height-auto');
+                            body.classList.remove('swal2-shown', 'swal2-height-auto');
+                            body.style.overflow = '';
+                            body.style.position = '';
+                            html.style.overflow = '';
+                        });
+                    }
                     return;
                 }
 
@@ -100,6 +185,10 @@ app.controller('Login', function ($scope, $http, $window, $location) {
                 } catch (e) { }
 
                 // Redirección por rol
+                // El loading se mantiene hasta que se complete la redirección
+                // pero lo desactivamos aquí para que si hay algún delay se vea que terminó
+                $scope.isLoading = false;
+                
                 if (usuario.perfil === 'Cocina') {
                     $window.location.href = 'http://localhost:4200/Views/despacho.html';
                 } else {
@@ -107,16 +196,113 @@ app.controller('Login', function ($scope, $http, $window, $location) {
                 }
             })
             .catch(function (error) {
+                // Desactivar loading en caso de error
+                $scope.isLoading = false;
+                
                 // Mensaje por status
-                var message = 'Credenciales incorrectas';
+                var message = 'Error de comunicación con el servidor';
+                var icon = 'error';
+                
                 if (error) {
-                    if (error.status === 400) message = 'Usuario o contraseña incorrectos';
-                    else if (error.status === 401) message = 'Acceso no autorizado';
-                    else if (error.status === 500) message = 'Error del servidor';
-                    else if (error.data && error.data.Message) message = error.data.Message;
-                    else if (error.statusText) message = error.statusText;
+                    if (error.status === 400) {
+                        message = 'Usuario o contraseña incorrectos';
+                        icon = 'warning';
+                    } else if (error.status === 401) {
+                        message = 'Acceso no autorizado';
+                        icon = 'warning';
+                    } else if (error.status === 500) {
+                        message = 'Error del servidor';
+                        icon = 'error';
+                    } else if (error.status === 0 || error.status === -1) {
+                        // CORS o backend no corriendo
+                        message = 'No se puede conectar con el servidor. Verifica que el backend esté corriendo.';
+                        icon = 'error';
+                    } else if (error.data && error.data.Message) {
+                        message = error.data.Message;
+                    } else if (error.statusText) {
+                        message = error.statusText;
+                    }
                 }
+                
+                // Mostrar el error en el formulario
                 showError(message);
+                
+                // Mostrar también SweetAlert (modal completamente cerrable)
+                if (window.Swal && typeof window.Swal.fire === 'function') {
+                    window.Swal.fire({
+                        title: '⚠️ Error en el Login',
+                        text: message,
+                        icon: icon,
+                        iconHtml: '<i class="fas fa-times-circle" style="color: #dc3545; font-size: 3rem;"></i>',
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#343A40',
+                        width: '400px',
+                        padding: '1.5rem',
+                        allowOutsideClick: true,
+                        allowEscapeKey: true,
+                        allowEnterKey: true,
+                        showCloseButton: false,
+                        focusConfirm: true,
+                        backdrop: true,
+                        timerProgressBar: false,
+                        didOpen: function() {
+                            // Forzar remover clases bloqueantes
+                            var html = document.documentElement;
+                            var body = document.body;
+                            
+                            html.classList.remove('swal2-shown', 'swal2-height-auto');
+                            body.classList.remove('swal2-shown', 'swal2-height-auto');
+                            
+                            // Forzar estilos no bloqueantes
+                            body.style.overflow = 'auto';
+                            body.style.position = 'static';
+                            html.style.overflow = 'auto';
+                            
+                            // Asegurar que clic fuera funcione
+                            var backdrop = document.querySelector('.swal2-backdrop-show');
+                            if (backdrop) {
+                                backdrop.style.cursor = 'pointer';
+                                backdrop.addEventListener('click', function(e) {
+                                    if (e.target === backdrop) {
+                                        window.Swal.close();
+                                    }
+                                });
+                            }
+                            
+                            // Listener adicional para Escape
+                            var escapeHandler = function(e) {
+                                if (e.key === 'Escape' || e.keyCode === 27) {
+                                    window.Swal.close();
+                                    document.removeEventListener('keydown', escapeHandler);
+                                }
+                            };
+                            document.addEventListener('keydown', escapeHandler);
+                        },
+                        willClose: function() {
+                            // Limpiar todo al cerrar
+                            var html = document.documentElement;
+                            var body = document.body;
+                            
+                            html.classList.remove('swal2-shown', 'swal2-height-auto');
+                            body.classList.remove('swal2-shown', 'swal2-height-auto');
+                            body.style.overflow = '';
+                            body.style.position = '';
+                            html.style.overflow = '';
+                        }
+                    }).then(function(result) {
+                        // Limpiar después de cerrar
+                        var html = document.documentElement;
+                        var body = document.body;
+                        html.classList.remove('swal2-shown', 'swal2-height-auto');
+                        body.classList.remove('swal2-shown', 'swal2-height-auto');
+                        body.style.overflow = '';
+                        body.style.position = '';
+                        html.style.overflow = '';
+                    });
+                } else {
+                    // Fallback si SweetAlert2 no está disponible
+                    alert('Error: ' + message);
+                }
             });
     };
 });

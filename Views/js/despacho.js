@@ -41,10 +41,12 @@ app.filter('formatEstados', function () {
 });
 
 app.controller('Despacho', function ($scope, $sce, $http, $window) {
+	// Usar la variable de configuración global API_BASE_URL
+	var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
 	$scope.titulo = 'Despacho de platos';  // Título inicial
-	$scope.base = 'http://localhost:8000/api/comanda/';
+	$scope.base = apiBaseUrl + '/api/comanda/';
 	$scope.pedidos = '';
-	$scope.baseUser = 'http://localhost:8000/api/usuario/';
+	$scope.baseUser = apiBaseUrl + '/api/usuario/';
 	$scope.Pic = '';
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
