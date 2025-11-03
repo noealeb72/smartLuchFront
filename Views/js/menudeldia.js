@@ -188,16 +188,29 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     // Variables para popup de platos
     $scope.platosDisponibles = [];
     $scope.busquedaPlato = '';
+    $scope.modoSeleccionPlato = 'filtro'; // 'filtro' o 'formulario'
     
     // Función para alternar la visibilidad de los filtros
     $scope.toggleFiltros = function() {
         $scope.filtrosExpandidos = !$scope.filtrosExpandidos;
     };
     
-    // Función para abrir popup de platos
+    // Función para abrir popup de platos (para filtro)
     $scope.abrirPopupPlatos = function() {
-        console.log('🔍 Abriendo popup de platos');
-        
+        console.log('🔍 Abriendo popup de platos para filtro');
+        $scope.modoSeleccionPlato = 'filtro';
+        cargarPlatosYMostrarModal();
+    };
+    
+    // Función para abrir popup de platos (para formulario)
+    $scope.abrirPopupPlatosFormulario = function() {
+        console.log('🔍 Abriendo popup de platos para formulario');
+        $scope.modoSeleccionPlato = 'formulario';
+        cargarPlatosYMostrarModal();
+    };
+    
+    // Función auxiliar para cargar platos y mostrar modal
+    var cargarPlatosYMostrarModal = function() {
         // Cargar platos disponibles
         $http.get($scope.basePlatos + 'getAll')
             .success(function(data) {
@@ -220,10 +233,37 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
             });
     };
     
+    // Función de filtro personalizada para buscar platos por descripción o código
+    $scope.filtrarPlatos = function(plato) {
+        if (!$scope.busquedaPlato || $scope.busquedaPlato.trim() === '') {
+            return true;
+        }
+        var busqueda = $scope.busquedaPlato.toLowerCase().trim();
+        var descripcion = (plato.descripcion || '').toLowerCase();
+        var codigo = (plato.codigo || '').toLowerCase();
+        return descripcion.indexOf(busqueda) !== -1 || codigo.indexOf(busqueda) !== -1;
+    };
+    
     // Función para seleccionar un plato
     $scope.seleccionarPlato = function(plato) {
         console.log('✅ Plato seleccionado:', plato);
-        $scope.filtroPlato = plato.descripcion; // Usar descripción como valor
+        console.log('📍 Modo selección:', $scope.modoSeleccionPlato);
+        
+        if ($scope.modoSeleccionPlato === 'formulario') {
+            // Si estamos en modo formulario, actualizar el campo view_plato
+            $scope.view_plato = plato.descripcion;
+            console.log('✅ Plato asignado al formulario:', plato.descripcion);
+            
+            // Forzar actualización del select si es necesario
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
+        } else {
+            // Si estamos en modo filtro, actualizar el filtro
+            $scope.filtroPlato = plato.descripcion;
+            console.log('✅ Plato asignado al filtro:', plato.descripcion);
+        }
+        
         $('#modalSeleccionarPlato').modal('hide');
     };
     

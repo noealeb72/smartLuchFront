@@ -542,9 +542,16 @@
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_plato"> Plato</label>
-                                        <select class="col-8 form-control" id="view_plato" name="view_plato" ng-model="view_plato" required>
-                                            <option ng-repeat="x in platos | orderBy:'descripcion'" value="{{x.descripcion}}">{{x.descripcion}}</option>
-                                        </select>
+                                        <div class="input-group col-8" style="padding: 0;">
+                                            <input type="text" class="form-control" id="view_plato" name="view_plato" 
+                                                   ng-model="view_plato" required readonly
+                                                   placeholder="Buscar plato...">
+                                            <div class="input-group-append">
+                                                <button class="btn btn-outline-secondary" type="button" ng-click="abrirPopupPlatosFormulario()" title="Buscar plato">
+                                                    <i class="fa fa-search"></i>
+                                                </button>
+                                            </div>
+                                        </div>
                                         <span ng-show="(!view_plato || view_plato.trim() === '') && showValidationErrors" class="text-danger">Campo Plato requerido</span>
                                     </div>
                                 </div>
@@ -621,9 +628,16 @@
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_plato">Plato</label>
-                                        <select class="col-8 form-control" id="view_plato" name="view_plato" ng-model="view_plato" required>
-                                            <option ng-repeat="x in platos | orderBy:'descripcion'" value="{{x.descripcion}}">{{x.descripcion}}</option>
-                                        </select>
+                                        <div class="input-group col-8" style="padding: 0;">
+                                            <input type="text" class="form-control" id="view_plato" name="view_plato" 
+                                                   ng-model="view_plato" required readonly
+                                                   placeholder="Buscar plato...">
+                                            <div class="input-group-append">
+                                                <button class="btn btn-outline-secondary" type="button" ng-click="abrirPopupPlatosFormulario()" title="Buscar plato">
+                                                    <i class="fa fa-search"></i>
+                                                </button>
+                                            </div>
+                                        </div>
                                         <span ng-show="(!view_plato || view_plato.trim() === '') && showValidationErrors" class="text-danger">Campo Plato requerido</span>
                                     </div>
                                 </div>
@@ -682,7 +696,7 @@
                         <div class="col-md-12">
                             <div class="input-group">
                                 <input type="text" class="form-control" ng-model="busquedaPlato" 
-                                       placeholder="Buscar plato por código o descripción...">
+                                       placeholder="Buscar plato por nombre (descripción) o código...">
                                 <div class="input-group-append">
                                     <button class="btn btn-outline-secondary" type="button" ng-click="busquedaPlato = ''">
                                         <i class="fa fa-times"></i>
@@ -707,7 +721,7 @@
                                     ng-click="seleccionarPlato(plato)" 
                                     style="cursor: pointer;">
                                     <td>{{plato.codigo}}</td>
-                                    <td>{{plato.descripcion}}</td>
+                                    <td><strong>{{plato.descripcion}}</strong></td>
                                     <td>
                                         <button class="btn btn-sm btn-outline-primary" ng-click="seleccionarPlato(plato)">
                                             <i class="fa fa-check"></i> Seleccionar
