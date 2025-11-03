@@ -48,8 +48,13 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 	$scope.pedidos = '';
 	$scope.baseUser = apiBaseUrl + '/api/usuario/';
 	$scope.basePlatos = apiBaseUrl + '/api/plato/';
+	$scope.baseMenu = apiBaseUrl + '/api/menudd/';
+	$scope.baseTurnos = apiBaseUrl + '/api/turno/';
 	$scope.Pic = '';
 	$scope.view_plato_descripcion = '';
+	$scope.allPlatos = [];
+	$scope.allTurnos = [];
+	$scope.allMenus = [];
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
 	$scope.user_Nombre = localStorage.getItem('nombre');
@@ -123,6 +128,92 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 		});
 	};
 
+	// Función auxiliar para obtener descripción del plato y turno
+	$scope.enriquecerDatosPedido = function(item) {
+		// Buscar descripción del plato
+		var platoEncontrado = null;
+		if (item.cod_plato && $scope.allPlatos.length > 0) {
+			platoEncontrado = $scope.allPlatos.find(function(p) {
+				return p.codigo === item.cod_plato || p.codigo === item.cod_plato.toString();
+			});
+			if (platoEncontrado) {
+				item.plato_descripcion = platoEncontrado.descripcion || '';
+			} else {
+				item.plato_descripcion = '';
+			}
+		} else {
+			item.plato_descripcion = '';
+		}
+
+		// Buscar turno en el menú del día usando descripción del plato y fecha
+		item.turno_descripcion = '';
+		if (platoEncontrado && platoEncontrado.descripcion && $scope.allMenus.length > 0) {
+			// Convertir fecha_hora o createdate a formato de fecha para buscar en menú
+			var fechaPedido = null;
+			if (item.fecha_hora) {
+				try {
+					fechaPedido = new Date(item.fecha_hora);
+				} catch(e) {
+					// Si fecha_hora viene en formato "dd/mm/yyyy hh:mm", parsearlo manualmente
+					var parts = item.fecha_hora.split(' ');
+					if (parts.length >= 1) {
+						var dateParts = parts[0].split('/');
+						if (dateParts.length === 3) {
+							fechaPedido = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+						}
+					}
+				}
+			} else if (item.createdate) {
+				fechaPedido = new Date(item.createdate);
+			}
+			
+			if (fechaPedido && !isNaN(fechaPedido.getTime())) {
+				var fechaPedidoStr = fechaPedido.toISOString().split('T')[0]; // YYYY-MM-DD
+				
+				// Buscar en el menú del día por descripción del plato y fecha
+				var menuEncontrado = $scope.allMenus.find(function(m) {
+					var fechaMenu = '';
+					if (m.fecha) {
+						try {
+							var fechaMenuObj = new Date(m.fecha);
+							if (!isNaN(fechaMenuObj.getTime())) {
+								fechaMenu = fechaMenuObj.toISOString().split('T')[0];
+							} else if (typeof m.fecha === 'string') {
+								// Intentar parsear formato diferente
+								fechaMenu = m.fecha.split('T')[0] || m.fecha.split(' ')[0];
+							}
+						} catch(e) {
+							fechaMenu = m.fecha.split('T')[0] || m.fecha.split(' ')[0];
+						}
+					}
+					
+					// Comparar descripción del plato y fecha
+					var platoCoincide = false;
+					if (m.plato === platoEncontrado.descripcion) {
+						platoCoincide = true;
+					} else if (m.cod_plato === item.cod_plato) {
+						platoCoincide = true;
+					}
+					
+					return platoCoincide && fechaMenu === fechaPedidoStr;
+				});
+				
+				if (menuEncontrado && menuEncontrado.turno) {
+					// Buscar descripción del turno
+					var turnoEncontrado = $scope.allTurnos.find(function(t) {
+						return t.descripcion === menuEncontrado.turno || t.id === menuEncontrado.turno || t.id === menuEncontrado.turno.toString();
+					});
+					if (turnoEncontrado && turnoEncontrado.descripcion) {
+						item.turno_descripcion = turnoEncontrado.descripcion;
+					} else {
+						// Si no se encuentra el turno en la lista, usar directamente el valor del menú
+						item.turno_descripcion = menuEncontrado.turno || '';
+					}
+				}
+			}
+		}
+	};
+
 	$scope.ModelReadAll = function () {
 		$scope.dataset = [];
 		$scope.searchKeyword;
@@ -136,37 +227,72 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 		$scope.view_estado = '';
 		$scope.view_comentario = '';
 
-		$http.get($scope.base + 'getAll')
-			.success(function (data) {
-				if ($scope.filterSearch === '') {
-					$scope.dataset = data;
-				} else {
-					var dato = data;
-					$scope.dataset = [];
-					dato.forEach(x => {
-						id = x.id.toString();
-						if (id === $scope.filterSearch) {
-							$scope.dataset.push(x);
-						}
+		// Cargar platos, turnos y menús en paralelo
+		var promesas = [];
+		
+		// Cargar platos
+		promesas.push($http.get($scope.basePlatos + 'getAll').then(function(response) {
+			$scope.allPlatos = Array.isArray(response.data) ? response.data : [];
+		}));
+		
+		// Cargar turnos
+		promesas.push($http.get($scope.baseTurnos + 'getAll').then(function(response) {
+			$scope.allTurnos = Array.isArray(response.data) ? response.data : [];
+		}));
+		
+		// Cargar menús del día
+		promesas.push($http.get($scope.baseMenu + 'getAll').then(function(response) {
+			$scope.allMenus = Array.isArray(response.data) ? response.data : [];
+		}));
+
+		// Cuando todas las promesas se resuelvan, cargar comandas
+		Promise.all(promesas).then(function() {
+			$http.get($scope.base + 'getAll')
+				.success(function (data) {
+					if ($scope.filterSearch === '') {
+						$scope.dataset = data;
+					} else {
+						var dato = data;
+						$scope.dataset = [];
+						dato.forEach(x => {
+							id = x.id.toString();
+							if (id === $scope.filterSearch) {
+								$scope.dataset.push(x);
+							}
+						});
+					}
+					
+					// Enriquecer cada item con descripción de plato y turno
+					$scope.dataset.forEach(function(item) {
+						$scope.enriquecerDatosPedido(item);
 					});
-				}
-				
-				// Ordenar por fecha de creación (más nuevos primero)
-				$scope.dataset.sort(function(a, b) {
-					var dateA = new Date(a.createdate);
-					var dateB = new Date(b.createdate);
-					return dateB - dateA; // Orden descendente (más nuevos primero)
+					
+					// Ordenar por fecha de creación (más nuevos primero)
+					$scope.dataset.sort(function(a, b) {
+						var dateA = new Date(a.createdate);
+						var dateB = new Date(b.createdate);
+						return dateB - dateA; // Orden descendente (más nuevos primero)
+					});
+				})
+				.error(function (data, status) {
+				Swal.fire({
+					title: 'Ha ocurrido un error',
+					text: 'No hay comunicación con la Api del sistema',
+					icon: 'error',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#343A40'
 				});
-			})
-			.error(function (data, status) {
+				});
+		}).catch(function(error) {
+			console.error('Error al cargar datos auxiliares:', error);
 			Swal.fire({
 				title: 'Ha ocurrido un error',
-				text: 'No hay comunicación con la Api del sistema',
+				text: 'Error al cargar información de platos y turnos',
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
 				confirmButtonColor: '#343A40'
 			});
-			});
+		});
 	};
 
 	/*$scope.entregarPedido = function (item) {
@@ -355,6 +481,16 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 		
 		// Código de plato
 		if (item.cod_plato && item.cod_plato.toLowerCase().indexOf(searchTerm) !== -1) {
+			matches = true;
+		}
+		
+		// Descripción del plato
+		if (item.plato_descripcion && item.plato_descripcion.toLowerCase().indexOf(searchTerm) !== -1) {
+			matches = true;
+		}
+		
+		// Turno
+		if (item.turno_descripcion && item.turno_descripcion.toLowerCase().indexOf(searchTerm) !== -1) {
 			matches = true;
 		}
 		
