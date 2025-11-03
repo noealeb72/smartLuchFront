@@ -47,7 +47,9 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 	$scope.base = apiBaseUrl + '/api/comanda/';
 	$scope.pedidos = '';
 	$scope.baseUser = apiBaseUrl + '/api/usuario/';
+	$scope.basePlatos = apiBaseUrl + '/api/plato/';
 	$scope.Pic = '';
+	$scope.view_plato_descripcion = '';
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
 	$scope.user_Nombre = localStorage.getItem('nombre');
@@ -202,8 +204,10 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 		$scope.view_centrodecosto = item.centrodecosto;
 		$scope.view_bonificado = item.bonificado
 		$scope.view_fechahora = item.fecha_hora;
-		$scope.view_comentario = item.comentario
+		$scope.view_comentario = item.comentario;
+		$scope.view_plato_descripcion = ''; // Limpiar descripción anterior
 
+		// Obtener foto del usuario
 		$http.get($scope.baseUser + 'getPic/' + $scope.view_userid)
 			.success(function (data) {
 				$scope.Pic = data[0];
@@ -220,6 +224,30 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 		.catch (function(response) {
 			console.log("ERROR:", response);
 		});
+		
+		// Obtener descripción del plato por código
+		if ($scope.view_codplato) {
+			$http.get($scope.basePlatos + 'getAll')
+				.success(function (data) {
+					// Buscar el plato por código
+					var platoEncontrado = null;
+					if (Array.isArray(data)) {
+						platoEncontrado = data.find(function(p) {
+							return p.codigo === $scope.view_codplato || p.codigo === $scope.view_codplato.toString();
+						});
+					}
+					
+					if (platoEncontrado && platoEncontrado.descripcion) {
+						$scope.view_plato_descripcion = platoEncontrado.descripcion;
+					} else {
+						$scope.view_plato_descripcion = '';
+					}
+				})
+				.error(function (data, status) {
+					console.error('Error al obtener descripción del plato:', data, status);
+					$scope.view_plato_descripcion = '';
+				});
+		}
 	}
 
 	$scope.confirmarEntrega = function () {

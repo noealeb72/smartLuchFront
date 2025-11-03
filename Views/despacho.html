@@ -148,10 +148,26 @@
         .action-btn i {
             color: white !important;
             font-size: 12px !important;
-            line-height: 1 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            display: block !important;
+        }
+        
+        /* Estilos para el modal de pedido - asegurar que nombre y apellido no se corten */
+        #pedidoModal .modal-body .d-flex {
+            flex-wrap: nowrap !important;
+        }
+        
+        #pedidoModal .modal-body label {
+            white-space: nowrap !important;
+            min-width: fit-content !important;
+        }
+        
+        #pedidoModal .modal-body span {
+            white-space: nowrap !important;
+            word-break: keep-all !important;
+        }
+        
+        /* Estilo específico para el campo Plato */
+        #pedidoModal .modal-body .flex-wrap {
+            flex-wrap: wrap !important;
         }
         
         /* Estilos para los estados */
@@ -381,22 +397,25 @@
                                             <span style="color: #333; font-size: 16px;">{{view_userid}}</span>
                                         </div>
                                         <div class="mb-3 d-flex align-items-center">
-                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">Nombre y Apellido:</label>
-                                            <span style="color: #333; font-size: 16px;">{{view_user_name}} {{view_user_lastName}}</span>
+                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0; white-space: nowrap;">Nombre y Apellido:</label>
+                                            <span style="color: #333; font-size: 16px; white-space: nowrap;">{{view_user_name}} {{view_user_lastName}}</span>
                                         </div>
                                         <div class="mb-3 d-flex align-items-center">
                                             <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">Nª de pedido:</label>
                                             <span style="color: #333; font-size: 16px;">{{view_id}}</span>
                                         </div>
                                         <div class="mb-3 d-flex align-items-center">
-                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">Plato:</label>
-                                            <span style="color: #333; font-size: 16px;">{{view_codplato}}</span>
+                                            <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0; white-space: nowrap;">Plato:</label>
+                                            <div style="color: #333; font-size: 16px;">
+                                                <span ng-if="view_codplato">{{view_codplato}}</span>
+                                                <span ng-if="view_plato_descripcion" style="margin-left: 5px;">- {{view_plato_descripcion}}</span>
+                                            </div>
                                         </div>
                                         <div class="mb-3 d-flex align-items-center">
                                             <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">Importe:</label>
                                             <span style="color: #333; font-size: 16px;">${{view_monto | number:2}}</span>
                                         </div>
-                                        <div class="mb-3 d-flex align-items-center">
+                                        <div class="mb-3 d-flex align-items-center" ng-if="view_comentario && view_comentario.trim() !== ''">
                                             <label style="color: black; font-weight: bold; margin-right: 10px; margin-bottom: 0;">Comentario:</label>
                                             <span style="color: #333; font-size: 16px;">{{view_comentario}}</span>
                                         </div>
