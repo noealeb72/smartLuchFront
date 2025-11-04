@@ -197,7 +197,7 @@ app.controller('Login', function ($scope, $http, $window, $location) {
                     // Mostrar SweetAlert
                     if (window.Swal && typeof window.Swal.fire === 'function') {
                         window.Swal.fire({
-                            title: '🚫 Acceso Bloqueado',
+                            title: 'Acceso Bloqueado',
                             text: messageError,
                             icon: 'error',
                             iconHtml: '<i class="fas fa-ban" style="color: #dc3545; font-size: 3rem;"></i>',

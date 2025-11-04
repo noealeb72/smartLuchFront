@@ -11,7 +11,7 @@ var API_BASE = API_BASE_URL + '/api/';
 var BLOQUEO_USUARIOS = {
     'Admin': false,      // Administradores
     'Cocina': false,     // Personal de cocina
-    'Comensal': true,    // Usuarios comensales ← BLOQUEADO
+    'Comensal': false,    // Usuarios comensales ← BLOQUEADO
     'Gerencia': false    // Personal de gerencia
 };
 
