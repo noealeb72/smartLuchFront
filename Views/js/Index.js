@@ -551,7 +551,7 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 	$scope.user_cuil = localStorage.getItem('cuil');
 	$scope.user_Pedido = '';
 	$scope.pedidosGastados = '';
-	$scope.pedidosRestantes = '';
+	$scope.pedidosRestantes = 0; // Inicializar como número, no como cadena vacía
 	$scope.pedidosInvitadosRestantes = '';
 	$scope.selectedTurno = null;
 	$scope.mostrarModal = false;
@@ -562,6 +562,7 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 	$scope.porcentajeBonificacion = 0;
 	$scope.yaBonificadoHoy = false;
 	$scope.cantidadBonificacionesHoy = 0;
+	$scope.pedidosBonificadosArray = []; // Array de pedidos con bonificado > 0 y estado 'R' (Recibido)
 	$scope.precioOriginal = 0;
 	// Control de preselección por turno: si se marcó descuento en un turno, no permitir en otro
 	$scope.bonificacionPreSeleccionada = false;
@@ -1166,21 +1167,106 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 	};
 	
 	// Verificar si ya se usó la bonificación hoy
+	// Consulta directamente usando $scope.baseComanda
 	$scope.verificarBonificacionHoy = function() {
 		var fechaHoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+		var url = $scope.baseComanda + 'getPedido/' + $scope.user_DNI;
 		
-		console.log('=== VERIFICANDO BONIFICACIÓN HOY ===');
-		console.log('fechaHoy:', fechaHoy);
-		console.log('user_DNI:', $scope.user_DNI);
-		console.log('pedidosRestantes ANTES VERIFICAR:', $scope.pedidosRestantes);
-		console.log('bonificacionDisponible ANTES VERIFICAR:', $scope.bonificacionDisponible);
-		console.log('yaBonificadoHoy ANTES VERIFICAR:', $scope.yaBonificadoHoy);
 		
-		return window.BonificacionesService.verificarBonificacionHoy($scope.user_DNI, fechaHoy)
-			.then(function(resultado) {
-				console.log('Verificación de bonificación hoy:', resultado);
-				$scope.yaBonificadoHoy = resultado.yaBonificado;
-				$scope.cantidadBonificacionesHoy = resultado.cantidadBonificados;
+		return $http.get(url)
+			.then(function(response) {
+				var data = response.data || [];
+				
+				// Filtrar pedidos del día que tengan bonificado > 0
+				var pedidosBonificados = data.filter(function(pedido, index) {
+					// Verificar si tiene campo bonificado con valor > 0
+					// Si bonificado tiene cualquier valor positivo (distinto de vacío, null, 0), ya se aplicó la bonificación
+					var bonificadoOriginal = pedido.bonificado;
+					var bonificadoValue = 0;
+					var tieneBonificacion = false;
+					
+					// Verificar si bonificado tiene valor (distinto de vacío, null, undefined)
+					if (bonificadoOriginal !== null && bonificadoOriginal !== undefined && bonificadoOriginal !== '') {
+						bonificadoValue = parseFloat(bonificadoOriginal) || 0;
+						// Si el valor parseado es > 0, tiene bonificación
+						tieneBonificacion = bonificadoValue > 0;
+					}
+					
+					// Log principal: mostrar el campo bonificado
+					console.log('Campo bonificado (original):', bonificadoOriginal);
+					
+					// Verificar por fecha si está disponible
+					var esDelDia = true;
+					if (pedido.fecha) {
+						try {
+							var f = pedido.fecha;
+							var fIso = (new Date(f)).toISOString().split('T')[0];
+							esDelDia = fIso === fechaHoy || f === fechaHoy;
+						} catch (e) {
+							esDelDia = pedido.fecha === fechaHoy;
+						}
+					} else if (pedido.fecha_hora) {
+						var fechaPedido = null;
+						var fechaHoraStr = String(pedido.fecha_hora);
+						
+						// Intentar parseo con Date nativo primero
+						try {
+							fechaPedido = new Date(fechaHoraStr).toISOString().split('T')[0];
+							if (fechaPedido === 'Invalid Date') {
+								fechaPedido = null;
+							}
+						} catch (e) {
+							fechaPedido = null;
+						}
+						
+						// Si el Date nativo falla, intentar parseo manual de diferentes formatos
+						if (!fechaPedido || fechaPedido === 'Invalid Date') {
+							// Formato 1: "h:mm dd/mm/yyyy" (ejemplo: "1:10 2/10/2025")
+							var m1 = fechaHoraStr.match(/(\d{1,2}):(\d{1,2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+							if (m1) {
+								var dd = m1[3].padStart(2, '0');
+								var mm = m1[4].padStart(2, '0');
+								var yyyy = m1[5];
+								fechaPedido = yyyy + '-' + mm + '-' + dd;
+							} else {
+								// Formato 2: "dd/mm/yyyy hh:mm" (formato estándar)
+								var m2 = fechaHoraStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+								if (m2) {
+									var dd = m2[1].padStart(2, '0');
+									var mm = m2[2].padStart(2, '0');
+									var yyyy = m2[3];
+									fechaPedido = yyyy + '-' + mm + '-' + dd;
+								}
+							}
+						}
+						
+						esDelDia = fechaPedido === fechaHoy;
+					}
+					
+					// Validar estado: solo contar si el estado es 'R' (Recibido)
+					var estado = (pedido.estado || '').toString().trim().toUpperCase();
+					var estadoValido = estado === 'R'; // Solo contar si estado es 'R' (Recibido)
+
+					// Solo cuenta si: es del día, tiene bonificado > 0, y tiene estado 'R' (Recibido)
+					var cumpleCriterios = esDelDia && tieneBonificacion && estadoValido;
+					
+					return cumpleCriterios;
+				});
+				
+				// === LÓGICA CORRECTA ===
+				// Solo cuenta las comandas con bonificado > 0 y estado 'R' (Recibido)
+				// Guardar el array de pedidos bonificados con estado 'R' en el scope
+				$scope.pedidosBonificadosArray = pedidosBonificados; // Array de pedidos con bonificado > 0 y estado 'R'
+				
+				var yaBonificado = pedidosBonificados.length >= 1;
+				var cantidadBonificados = pedidosBonificados.length;
+				
+				console.log('Cantidad de bonificaciones (usado para bloquear):', cantidadBonificados);
+				console.log('Array de pedidos bonificados (estado R):', $scope.pedidosBonificadosArray);
+				
+				// Actualizar variables del scope
+				$scope.yaBonificadoHoy = yaBonificado;
+				$scope.cantidadBonificacionesHoy = cantidadBonificados;
 				
 				// === LÓGICA MEJORADA DE "TE QUEDAN PLATOS BONIFICADOS" ===
 				// Si hay bonificación disponible:
@@ -1189,38 +1275,30 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				if ($scope.bonificacionDisponible) {
 					var nuevoValor = $scope.cantidadBonificacionesHoy >= 1 ? 0 : 1;
 					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(nuevoValor, 'VERIFICAR_BONIFICACION_CON_BONIFICACION');
-					console.log('pedidosRestantes CON BONIFICACIÓN:', $scope.pedidosRestantes, '(cantidadBonificacionesHoy:', $scope.cantidadBonificacionesHoy, ')');
 				} else {
 					// Si no hay bonificación disponible, mantener en 0
 					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'VERIFICAR_BONIFICACION_SIN_BONIFICACION');
-					console.log('pedidosRestantes SIN BONIFICACIÓN:', $scope.pedidosRestantes);
 				}
 				
 				// === VALIDACIÓN: NUNCA NEGATIVO ===
 				if ($scope.pedidosRestantes < 0) {
-					console.warn('⚠️ pedidosRestantes NEGATIVO DETECTADO:', $scope.pedidosRestantes, '→ CORRIGIENDO A 0');
 					$scope.pedidosRestantes = 0;
 				}
 				
-				console.log('Pedidos restantes actualizados:', $scope.pedidosRestantes);
-				console.log('yaBonificadoHoy DESPUÉS VERIFICAR:', $scope.yaBonificadoHoy);
-				console.log('cantidadBonificacionesHoy DESPUÉS VERIFICAR:', $scope.cantidadBonificacionesHoy);
-				console.log('bonificacionDisponible DESPUÉS VERIFICAR:', $scope.bonificacionDisponible);
-				$scope.$apply();
+				if (!$scope.$$phase) {
+					$scope.$apply();
+				}
 			})
 			.catch(function(error) {
-				console.error('Error verificando bonificación:', error);
 				$scope.yaBonificadoHoy = false;
 				$scope.cantidadBonificacionesHoy = 0;
+				$scope.pedidosBonificadosArray = []; // Inicializar array vacío en caso de error
 				$scope.pedidosRestantes = $scope.monitorearPedidosRestantes($scope.bonificacionDisponible ? 1 : 0, 'ERROR_CATCH_VERIFICAR');
 				
 				// === VALIDACIÓN: NUNCA NEGATIVO ===
 				if ($scope.pedidosRestantes < 0) {
-					console.warn('⚠️ pedidosRestantes NEGATIVO DETECTADO EN CATCH:', $scope.pedidosRestantes, '→ CORRIGIENDO A 0');
 					$scope.pedidosRestantes = 0;
 				}
-				
-				console.log('pedidosRestantes ERROR CATCH:', $scope.pedidosRestantes);
 				$scope.$apply();
 			});
 	};

@@ -31,6 +31,97 @@
     <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
     <style>
+        /* Footer siempre abajo */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        body > .container-fluid {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        body > .container-fluid > .solid-background {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        section#gtco-welcome {
+            flex: 1;
+            padding-bottom: 2rem;
+            margin-bottom: 0;
+        }
+        
+        .smart-bg {
+            margin-top: auto;
+            padding-top: 1rem;
+            padding-bottom: 0.75rem;
+            margin-bottom: 0;
+        }
+        
+        /* Footer más compacto */
+        .smart-bg .container {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+        
+        .smart-bg .row.pt-4 {
+            padding-top: 1rem !important;
+            margin-top: 0.5rem !important;
+        }
+        
+        .smart-bg h4 {
+            font-size: 1.1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .smart-bg p {
+            font-size: 0.85rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .smart-bg .nav-link {
+            font-size: 0.9rem !important;
+            padding: 0.25rem 0.5rem !important;
+        }
+        
+        .smart-bg .row.pt-3 {
+            padding-top: 0.75rem !important;
+        }
+        
+        .smart-bg .row.pt-3 p {
+            font-size: 0.8rem !important;
+        }
+        
+        .smart-bg ul.list-unstyled li {
+            font-size: 0.85rem !important;
+            margin-bottom: 0.25rem !important;
+        }
+        
+        /* Eliminar espacio extra debajo del footer */
+        .smart-bg:last-child {
+            margin-bottom: 0 !important;
+        }
+        
+        body > .container-fluid:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
 
         /* Ajustar el ancho del contenido en pantallas grandes */
         @media (min-width: 992px) {
@@ -364,7 +455,7 @@
                                         Bienvenido {{user_Nombre}} {{user_Apellido}}
 
                                     </h3>
-                                    <h5 style="color: #6c757d;">Te quedan {{cantidadBonificacionesHoy}} {{cantidadBonificacionesHoy | pluralize:'plato bonificado':'platos bonificados'}}</h5>
+                                    <h5 style="color: #6c757d;" ng-if="bonificacionDisponible && turnoDisponible && dataset.length > 0">Te quedan {{pedidosRestantes}} {{pedidosRestantes | pluralize:'plato bonificado':'platos bonificados'}}</h5>
                                     <!-- comenta pedidos de invitados
                                     <h5 style="color: #6c757d;" ng-if="pedidosInvitadosRestantes > 0">
                                         Te quedan {{pedidosInvitadosRestantes}} platos para invitar este mes
@@ -397,7 +488,7 @@
                                         <i class="lnr lnr-user"></i> Bienvenido {{user_Nombre}} {{user_Apellido}}
                                         <span class="ml-2" ng-if="user_Rol" style="font-size: 0.75em; padding: 0.3em 0.6em; background-color: #e8f4fd; color: #007bff; border: 1px solid #b3d7ff; border-radius: 15px; font-weight: 500; display: inline-block;">{{user_Rol}}</span>
                                     </h3>
-                                    <h5 style="color: #6c757d;"><i class="lnr lnr-dinner"></i>&nbsp;&nbsp;Te quedan {{cantidadBonificacionesHoy}} {{cantidadBonificacionesHoy | pluralize:'plato bonificado':'platos bonificados'}} este mes</h5>
+                                    <h5 style="color: #6c757d;" ng-if="bonificacionDisponible && turnoDisponible && dataset.length > 0"><i class="lnr lnr-dinner"></i>&nbsp;&nbsp;Te quedan {{pedidosRestantes}} {{pedidosRestantes | pluralize:'plato bonificado':'platos bonificados'}}</h5>
                                     <h5 style="color: #6c757d;" ng-if="pedidosInvitadosRestantes > 0">
                                         <i class="lnr lnr-gift"></i>&nbsp;&nbsp;Te quedan {{pedidosInvitadosRestantes}} platos para invitar este mes
                                     </h5>
@@ -430,7 +521,7 @@
                                         <i class="lnr lnr-user"></i> Bienvenido {{user_Nombre}} {{user_Apellido}}
                                         <span class="ml-2" ng-if="user_Rol" style="font-size: 0.75em; padding: 0.3em 0.6em; background-color: #e8f4fd; color: #007bff; border: 1px solid #b3d7ff; border-radius: 15px; font-weight: 500; display: inline-block;">{{user_Rol}}</span>
                                     </h3>
-                                    <h5 style="color: #6c757d;"><i class="lnr lnr-dinner"></i>&nbsp;&nbsp;Te quedan {{cantidadBonificacionesHoy}} {{cantidadBonificacionesHoy | pluralize:'plato bonificado':'platos bonificados'}} este mes</h5>
+                                    <h5 style="color: #6c757d;" ng-if="bonificacionDisponible && turnoDisponible && dataset.length > 0"><i class="lnr lnr-dinner"></i>&nbsp;&nbsp;Te quedan {{pedidosRestantes}} {{pedidosRestantes | pluralize:'plato bonificado':'platos bonificados'}}</h5>
                                     <h5 style="color: #6c757d;" ng-if="pedidosInvitadosRestantes > 0">
                                         <i class="lnr lnr-gift"></i>&nbsp;&nbsp;Te quedan {{pedidosInvitadosRestantes}} platos para invitar este mes
                                     </h5>
@@ -696,7 +787,7 @@
                                                     
                                                     <!-- === CHECKBOX DE BONIFICACIóN === -->
                                                     <div ng-if="bonificacionDisponible 
-                                                                 && cantidadBonificacionesHoy === 0 
+                                                                 && cantidadBonificacionesHoy < 1 
                                                                  && item.costo > 0 
                                                                  && (!bonificacionPreSeleccionada 
                                                                      || (selectedTurno && selectedTurno.descripcion === turnoBonificacionSeleccionada))" 
@@ -764,7 +855,7 @@
                         <div class="col-6">
                             <div class="footer-widget pr-lg-5 pr-0">
                                 <h4 class="text-white">SmartLunch</h4>
-                                <p>Sistema de Gestión de concesiones y servicios de comedores in door de compaóias.</p>
+                                <p>Sistema de Gestión de concesiones y servicios de comedores indoor de compañías.</p>
                                 <nav class="nav nav-mastfoot justify-content-start">
                                     <a class="nav-link text-white" href="#">
                                         <i class="fab fa-facebook-f"></i>

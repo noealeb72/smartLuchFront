@@ -333,10 +333,9 @@
                                     <td class="col-2">{{item.user_name}} {{item.user_lastName}}</td>
                                     <td class="col-2">
                                         <div ng-if="item.plato_descripcion">
-                                           
-                                                             <small style="color: #666;">{{item.cod_plato}} - {{item.plato_descripcion}}</small>
+                                            <span style="color: #333; font-size: 14px;">{{item.cod_plato}} - {{item.plato_descripcion}}</span>
                                         </div>
-                                        <span ng-if="!item.plato_descripcion">{{item.cod_plato}}</span>
+                                        <span ng-if="!item.plato_descripcion" style="font-size: 14px;">{{item.cod_plato}}</span>
                                     </td>
                                  
                                     <td class="col-2">${{item.monto | number:2}}</td>

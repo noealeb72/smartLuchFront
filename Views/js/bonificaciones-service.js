@@ -116,7 +116,7 @@ var BonificacionesService = {
                             console.log('Tipo de datos:', Array.isArray(data) ? 'Array' : typeof data);
                             console.log('Cantidad de registros:', Array.isArray(data) ? data.length : 'No es array');
                             
-                            // Filtrar pedidos del día que tengan bonificación
+                            // Filtrar pedidos del día que tengan bonificación (campo bonificado > 0)
                             console.log('=== 🔍 ANÁLISIS DETALLADO DE CADA PEDIDO ===');
                             var pedidosBonificados = data.filter(function(pedido, index) {
                                 console.log(`--- PEDIDO ${index + 1} ---`);
@@ -124,10 +124,12 @@ var BonificacionesService = {
                                 console.log('Campos disponibles:', Object.keys(pedido));
                                 
                                 // Verificar si tiene campo bonificado con valor > 0
-                                var tieneBonificacion = pedido.bonificado && parseFloat(pedido.bonificado) > 0;
+                                // Este es el criterio principal: solo cuenta si bonificado > 0
+                                var bonificadoValue = pedido.bonificado ? parseFloat(pedido.bonificado) : 0;
+                                var tieneBonificacion = bonificadoValue > 0;
                                 console.log('Campo bonificado:', pedido.bonificado);
-                                console.log('Valor parseado:', parseFloat(pedido.bonificado));
-                                console.log('¿Tiene bonificación?', tieneBonificacion);
+                                console.log('Valor parseado:', bonificadoValue);
+                                console.log('¿Tiene bonificación? (bonificado > 0):', tieneBonificacion);
                                 
                                 // También verificar por fecha si está disponible
                                 var esDelDia = true;
@@ -171,26 +173,28 @@ var BonificacionesService = {
                                 var estadoValido = estado && estado !== 'C' && estado !== 'D';
                                 console.log('Estado:', estado, '¿Cuenta para bonificación?', estadoValido);
 
+                                // Solo cuenta si: es del día, tiene bonificado > 0, y tiene estado válido
                                 var cumpleCriterios = esDelDia && tieneBonificacion && estadoValido;
-                                console.log('¿Cumple criterios?', cumpleCriterios);
+                                console.log('¿Cumple criterios? (esDelDia && bonificado > 0 && estadoValido):', cumpleCriterios);
                                 console.log('--- FIN PEDIDO ---');
                                 
                                 return cumpleCriterios;
                             });
                             
-                            // === LÓGICA MEJORADA ===
-                            // Si hay al menos 1 bonificación del día, ya se usó
+                            // === LÓGICA CORRECTA ===
+                            // Solo cuenta las comandas con bonificado > 0
+                            // Si hay al menos 1 comanda con bonificado > 0, ya se usó la bonificación
                             var yaBonificado = pedidosBonificados.length >= 1;
                             var cantidadBonificados = pedidosBonificados.length;
                             
                             console.log('=== 📋 RESUMEN DE VERIFICACIÓN ===');
                             console.log('Fecha de búsqueda:', fecha);
                             console.log('Total de pedidos encontrados:', data.length);
-                            console.log('Pedidos con bonificación del día:', pedidosBonificados.length);
-                            console.log('Lista de pedidos bonificados:', pedidosBonificados);
-                            console.log('¿Ya se bonificó hoy?', yaBonificado);
-                            console.log('Cantidad de bonificaciones:', cantidadBonificados);
-                            console.log('Mensaje:', yaBonificado ? 'Ya se aplicó bonificación hoy' : 'Puede aplicar bonificación');
+                            console.log('Pedidos con bonificado > 0 del día:', pedidosBonificados.length);
+                            console.log('Lista de pedidos bonificados (bonificado > 0):', pedidosBonificados);
+                            console.log('¿Ya se bonificó hoy? (cantidad >= 1):', yaBonificado);
+                            console.log('Cantidad de bonificaciones (usado para bloquear):', cantidadBonificados);
+                            console.log('Mensaje:', yaBonificado ? 'Ya se aplicó bonificación hoy (bonificado > 0)' : 'Puede aplicar bonificación');
                             
                             resolve({
                                 yaBonificado: yaBonificado,
