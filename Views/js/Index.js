@@ -1128,11 +1128,68 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 
 	////////////////////////////////////////////////SISTEMA DE BONIFICACIONES////////////////////////////////////////////////
 	
+	// Funciones auxiliares para persistir el estado de bonificaciones en localStorage
+	$scope.guardarEstadoBonificacion = function() {
+		try {
+			var fechaHoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+			var clave = 'bonificacion_' + $scope.user_DNI + '_' + fechaHoy;
+			var estado = {
+				cantidadBonificacionesHoy: $scope.cantidadBonificacionesHoy,
+				yaBonificadoHoy: $scope.yaBonificadoHoy,
+				pedidosRestantes: $scope.pedidosRestantes,
+				fecha: fechaHoy
+			};
+			localStorage.setItem(clave, JSON.stringify(estado));
+		} catch (e) {
+			// Si hay error al guardar, continuar sin localStorage
+		}
+	};
+	
+	$scope.cargarEstadoBonificacion = function() {
+		try {
+			var fechaHoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+			var clave = 'bonificacion_' + $scope.user_DNI + '_' + fechaHoy;
+			var estadoGuardado = localStorage.getItem(clave);
+			if (estadoGuardado) {
+				var estado = JSON.parse(estadoGuardado);
+				// Solo usar el estado guardado si es del mismo día
+				if (estado.fecha === fechaHoy) {
+					return estado;
+				} else {
+					// Si es de otro día, limpiar el localStorage
+					localStorage.removeItem(clave);
+				}
+			}
+		} catch (e) {
+			// Si hay error al cargar, continuar sin localStorage
+		}
+		return null;
+	};
+	
+	$scope.limpiarEstadoBonificacion = function() {
+		try {
+			var fechaHoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+			var clave = 'bonificacion_' + $scope.user_DNI + '_' + fechaHoy;
+			localStorage.removeItem(clave);
+		} catch (e) {
+			// Si hay error al limpiar, continuar sin localStorage
+		}
+	};
+	
 	// Inicializar sistema de bonificaciones al cargar la página
 	$scope.inicializarBonificaciones = function() {
 		if (!window.BonificacionesService) {
 			$scope.pedidosRestantes = 0;
 			return;
+		}
+		
+		// Cargar estado guardado desde localStorage
+		var estadoGuardado = $scope.cargarEstadoBonificacion();
+		if (estadoGuardado && estadoGuardado.cantidadBonificacionesHoy >= 1) {
+			// Si hay un estado guardado que indica que ya se usó la bonificación, usarlo
+			$scope.cantidadBonificacionesHoy = estadoGuardado.cantidadBonificacionesHoy;
+			$scope.yaBonificadoHoy = estadoGuardado.yaBonificadoHoy;
+			$scope.pedidosRestantes = estadoGuardado.pedidosRestantes;
 		}
 		
 		// Obtener bonificación para el perfil del usuario
@@ -1147,6 +1204,7 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				}
 				
 				// Verificar si ya se usó la bonificación hoy (esto actualizará pedidosRestantes correctamente)
+				// Pero si hay un estado guardado, mantenerlo hasta que el servidor confirme
 				return $scope.verificarBonificacionHoy();
 			})
 			.catch(function(error) {
@@ -1255,9 +1313,19 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 					// El pedido recién creado puede tener estado 'P' (Pendiente) y no 'R' (Recibido)
 					// Mantener el estado local hasta que el servidor confirme
 					// No actualizar cantidadBonificacionesHoy ni pedidosRestantes
+					// Pero guardar el estado en localStorage para persistir
+					$scope.guardarEstadoBonificacion();
 				} else {
 					$scope.yaBonificadoHoy = yaBonificado;
 					$scope.cantidadBonificacionesHoy = cantidadBonificados;
+					
+					// Si el servidor confirma que hay bonificaciones, guardar el estado
+					if (cantidadBonificados >= 1) {
+						$scope.guardarEstadoBonificacion();
+					} else {
+						// Si no hay bonificaciones confirmadas por el servidor, limpiar el estado guardado
+						$scope.limpiarEstadoBonificacion();
+					}
 				}
 				
 				// === LÓGICA MEJORADA DE "TE QUEDAN PLATOS BONIFICADOS" ===
@@ -1497,6 +1565,16 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 		//let calif = $window.document.getElementById('pedidoCalificacion').value;
 		$scope.pedidoCalificacion = parseInt($window.document.getElementById('pedidoCalificacion').value) || 0;
 	
+		// Verificar si el pedido que se está cancelando tenía bonificación
+		var pedidoTeniaBonificacion = false;
+		if ($scope.pedidoSeleccionado && $scope.pedidoSeleccionado.user_Pedido) {
+			var bonificadoValue = $scope.pedidoSeleccionado.user_Pedido.bonificado;
+			if (bonificadoValue !== null && bonificadoValue !== undefined && bonificadoValue !== '') {
+				var bonificado = parseFloat(bonificadoValue) || 0;
+				pedidoTeniaBonificacion = bonificado > 0;
+			}
+		}
+	
 		var jsonForm = {
 			id: $scope.pedidoSeleccionado.user_Pedido.id,
 			cod_plato: $scope.pedidoSeleccionado.codigo,
@@ -1512,7 +1590,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			user_fileNumber: $scope.user_legajo,
 			fecha_hora: $scope.pedidoSeleccionado.fecha_hora ?? new Date().toISOString()
 		};
-		console.log("📦 jsonForm enviado actualizaPedido:", jsonForm);
 		$http({
 			method: 'POST',
 			headers: {
@@ -1523,6 +1600,32 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			data: jsonForm
 		}).then(function (success) {
 		if (success) {
+			// Si se canceló un pedido con bonificación, restaurar el descuento
+			if (nuevoEstado === 'C' && pedidoTeniaBonificacion) {
+				// Verificar si ese era el único pedido bonificado del día
+				if ($scope.cantidadBonificacionesHoy >= 1) {
+					// Restaurar el descuento
+					$scope.cantidadBonificacionesHoy = 0;
+					$scope.yaBonificadoHoy = false;
+					if ($scope.bonificacionDisponible) {
+						$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(1, 'CANCELAR_PEDIDO_CON_BONIFICACION');
+					}
+					
+					// Limpiar el estado guardado en localStorage
+					$scope.limpiarEstadoBonificacion();
+					
+					// Forzar actualización de la vista
+					if (!$scope.$$phase) {
+						$scope.$apply();
+					}
+				}
+				
+				// Verificar nuevamente el estado de bonificaciones desde el servidor
+				$timeout(function() {
+					$scope.verificarBonificacionHoy();
+				}, 500);
+			}
+			
 			Swal.fire({
 				title: 'Operación correcta',
 				text: '',
@@ -1532,7 +1635,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			}).then(() => {
 					cerrarModales();
 					recargar();
-					//$scope.recargaPagina();
 				});
 			}
 		}, function (error) {
@@ -1609,6 +1711,9 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'CONFIRMAR_PEDIDO_CONSUMIR');
 					$scope.cantidadBonificacionesHoy = 1;
 					$scope.yaBonificadoHoy = true;
+					
+					// Guardar el estado en localStorage para persistir después de recargar
+					$scope.guardarEstadoBonificacion();
 					
 					// Forzar actualización de la vista
 					if (!$scope.$$phase) {
