@@ -1130,39 +1130,29 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 	
 	// Inicializar sistema de bonificaciones al cargar la página
 	$scope.inicializarBonificaciones = function() {
-		console.log('=== INICIALIZANDO SISTEMA DE BONIFICACIONES ===');
-		console.log('Perfil del usuario:', $scope.user_Rol);
-		console.log('pedidosRestantes INICIAL:', $scope.pedidosRestantes);
-		
 		if (!window.BonificacionesService) {
-			console.error('BonificacionesService no está disponible');
 			$scope.pedidosRestantes = 0;
-			console.log('pedidosRestantes ERROR:', $scope.pedidosRestantes);
 			return;
 		}
 		
 		// Obtener bonificación para el perfil del usuario
 		window.BonificacionesService.obtenerBonificacion($scope.user_Rol)
 			.then(function(bonificacion) {
-				console.log('Bonificación obtenida:', bonificacion);
 				$scope.porcentajeBonificacion = bonificacion.porcentaje;
 				$scope.bonificacionDisponible = bonificacion.porcentaje > 0;
 				
 				// Inicializar pedidos restantes solo si NO hay bonificación disponible
 				if (!$scope.bonificacionDisponible) {
 					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'INICIALIZAR_SIN_BONIFICACION');
-					console.log('pedidosRestantes SIN BONIFICACIÓN:', $scope.pedidosRestantes);
 				}
 				
 				// Verificar si ya se usó la bonificación hoy (esto actualizará pedidosRestantes correctamente)
 				return $scope.verificarBonificacionHoy();
 			})
 			.catch(function(error) {
-				console.error('Error obteniendo bonificación:', error);
 				$scope.bonificacionDisponible = false;
 				$scope.porcentajeBonificacion = 0;
 				$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'ERROR_CATCH_INICIALIZAR');
-				console.log('pedidosRestantes ERROR CATCH:', $scope.pedidosRestantes);
 			});
 	};
 	
@@ -1191,9 +1181,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 						// Si el valor parseado es > 0, tiene bonificación
 						tieneBonificacion = bonificadoValue > 0;
 					}
-					
-					// Log principal: mostrar el campo bonificado
-					console.log('Campo bonificado (original):', bonificadoOriginal);
 					
 					// Verificar por fecha si está disponible
 					var esDelDia = true;
@@ -1261,12 +1248,17 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				var yaBonificado = pedidosBonificados.length >= 1;
 				var cantidadBonificados = pedidosBonificados.length;
 				
-				console.log('Cantidad de bonificaciones (usado para bloquear):', cantidadBonificados);
-				console.log('Array de pedidos bonificados (estado R):', $scope.pedidosBonificadosArray);
-				
 				// Actualizar variables del scope
-				$scope.yaBonificadoHoy = yaBonificado;
-				$scope.cantidadBonificacionesHoy = cantidadBonificados;
+				// Si ya se consumió la bonificación localmente (cantidadBonificacionesHoy = 1), mantener ese estado
+				// a menos que el servidor confirme que hay más de 1 bonificación
+				if ($scope.cantidadBonificacionesHoy === 1 && cantidadBonificados === 0) {
+					// El pedido recién creado puede tener estado 'P' (Pendiente) y no 'R' (Recibido)
+					// Mantener el estado local hasta que el servidor confirme
+					// No actualizar cantidadBonificacionesHoy ni pedidosRestantes
+				} else {
+					$scope.yaBonificadoHoy = yaBonificado;
+					$scope.cantidadBonificacionesHoy = cantidadBonificados;
+				}
 				
 				// === LÓGICA MEJORADA DE "TE QUEDAN PLATOS BONIFICADOS" ===
 				// Si hay bonificación disponible:
@@ -1599,26 +1591,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			porcentaje_bonificacion: $scope.porcentajeBonificacion,
 			aplicar_bonificacion: !!(sel.aplicarBonificacion)
 		};
-		
-		console.log('=== 📤 DATOS ENVIADOS A API CREATE PEDIDO ===');
-		console.log('URL:', $scope.baseComanda + 'Create');
-		console.log('Método:', 'POST');
-		console.log('Headers:', {
-			"Content-Type": "application/json; charset=utf-8",
-			"Authorization": ""
-		});
-		console.log('Datos del formulario:', jsonForm);
-		console.log('=== 🔍 ANÁLISIS DETALLADO DE CAMPOS ===');
-		console.log('Código plato:', jsonForm.cod_plato);
-		console.log('Monto final:', jsonForm.monto);
-		console.log('Precio original:', jsonForm.precio_original);
-		console.log('Bonificado:', jsonForm.bonificado);
-		console.log('Porcentaje bonificación:', jsonForm.porcentaje_bonificacion);
-		console.log('Aplicar bonificación:', jsonForm.aplicar_bonificacion);
-		console.log('Estado:', jsonForm.estado);
-		console.log('Usuario ID:', jsonForm.user_id);
-		console.log('Invitado:', jsonForm.invitado);
-		console.log('Fecha:', jsonForm.fecha_hora);
 		$http({
 			method: 'post',
 			headers: {
@@ -1628,36 +1600,31 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			url: $scope.baseComanda + 'Create',
 			data: jsonForm
 		}).then(function (success) {
-			console.log('=== 📥 RESPUESTA DE API CREATE PEDIDO ===');
-			console.log('Status de éxito:', success.status);
-			console.log('Datos de respuesta:', success.data);
-			console.log('Headers de respuesta:', success.headers);
-			console.log('Configuración de la petición:', success.config);
-			
 			if (success) {
-				console.log('✅ Pedido creado exitosamente');
-				
 				// === CONSUMIR BONIFICACIÓN SOLO SI EL PEDIDO SE CREÓ EXITOSAMENTE ===
 				if ($scope.pedidoSeleccionado && $scope.pedidoSeleccionado.aplicarBonificacion && 
 					$scope.bonificacionDisponible && $scope.cantidadBonificacionesHoy < 1) {
 					
-					console.log('=== CONSUMIENDO BONIFICACIÓN ===');
-					console.log('ANTES - pedidosRestantes:', $scope.pedidosRestantes);
-					console.log('ANTES - cantidadBonificacionesHoy:', $scope.cantidadBonificacionesHoy);
-					
-					// Consumir la bonificación
+					// Consumir la bonificación inmediatamente
 					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'CONFIRMAR_PEDIDO_CONSUMIR');
 					$scope.cantidadBonificacionesHoy = 1;
 					$scope.yaBonificadoHoy = true;
 					
-					console.log('DESPUÉS - pedidosRestantes:', $scope.pedidosRestantes);
-					console.log('DESPUÉS - cantidadBonificacionesHoy:', $scope.cantidadBonificacionesHoy);
-					console.log('✅ Bonificación consumida exitosamente');
+					// Forzar actualización de la vista
+					if (!$scope.$$phase) {
+						$scope.$apply();
+					}
 				}
 
 				// Limpiar preselección porque ya se consumió o se finalizó el flujo
 				$scope.bonificacionPreSeleccionada = false;
 				$scope.turnoBonificacionSeleccionada = null;
+				
+				// Verificar nuevamente el estado de bonificaciones desde el servidor después de un tiempo
+				// para que el pedido pueda tener estado 'R' (Recibido)
+				$timeout(function() {
+					$scope.verificarBonificacionHoy();
+				}, 2000);
 				
 				Swal.fire({
 					title: '¡Pedido Enviado!',
@@ -1670,16 +1637,9 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				}).then(() => {					
 					cerrarModales();
 					recargar();
-					//$scope.recargaPagina();
 				});
 			}
 		}, function (error) {
-			console.log('=== ❌ ERROR EN API CREATE PEDIDO ===');
-			console.log('Status de error:', error.status);
-			console.log('Datos de error:', error.data);
-			console.log('Headers de error:', error.headers);
-			console.log('Configuración de la petición:', error.config);
-			console.log('Mensaje de error:', error.statusText);
 			Swal.fire({
 				title: 'Operación Incorrecta',
 				text: JSON.stringify(error),
