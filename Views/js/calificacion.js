@@ -213,7 +213,7 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 	$scope.ModelReadAll();
 
 	$scope.currentPage = 0;
-	$scope.pageSize = parseInt($scope.pageSize) || 5; // Por defecto 5 filas (número)
+	$scope.pageSize = 5; // Por defecto 5 filas (número)
 	$scope.data = [];
 	$scope.numberOfPages = function () {
 		var len = Array.isArray($scope.data) ? $scope.data.length : 0;

@@ -56,7 +56,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
 
     // paginación
     $scope.currentPage = 0;
-    $scope.pageSize = parseInt($scope.pageSize) || 5; // Por defecto 5 filas (número)
+    $scope.pageSize = 5; // Por defecto 5 filas (número)
     $scope.totalPages = 1;
 
     // responsivo (para ocultar columnas en mobile)

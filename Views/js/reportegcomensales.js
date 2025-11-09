@@ -477,7 +477,7 @@ app.controller('ReportegComensales', function ($scope, $sce, $http, $window, $ti
 	$scope.ViewAction = 'inicio';
 
 	$scope.currentPage = 0;
-	$scope.pageSize = parseInt($scope.pageSize) || 5; // Por defecto 5 filas (número)
+	$scope.pageSize = 5; // Por defecto 5 filas (número)
 
 	$scope.currentPageusers = 0;
 	$scope.pageSizeusers = 20;

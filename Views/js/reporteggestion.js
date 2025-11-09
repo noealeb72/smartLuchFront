@@ -122,7 +122,7 @@
 
         // Paginación
         $scope.currentPage = 0;
-        $scope.pageSize = parseInt($scope.pageSize) || 5; // Por defecto 5 filas (número)
+        $scope.pageSize = 5; // Por defecto 5 filas (número)
 
         $scope.numberOfPages = function () {
             var len = Array.isArray($scope.dataset) ? $scope.dataset.length : 0;

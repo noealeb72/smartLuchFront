@@ -443,7 +443,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 	}
 
 	$scope.currentPage = 0;
-	$scope.pageSize = parseInt($scope.pageSize) || 5; // Por defecto 5 filas (número)
+	$scope.pageSize = 5; // Por defecto 5 filas (número)
 	$scope.searchText = '';
 
 	$scope.numberOfPages = function () {

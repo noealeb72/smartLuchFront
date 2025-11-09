@@ -151,10 +151,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
     $scope.totalPages = 1;
     $scope.searchText = ''; // Inicializar searchText
     
-    // Asegurar que pageSize se inicialice correctamente como número
-    // Convertir a número para asegurar que ng-value funcione correctamente
-    $scope.pageSize = parseInt($scope.pageSize) || 5;
-    
     $scope.numberOfPages = function () {
         var arr = $scope.getFilteredDataset() || [];
         var len = Array.isArray(arr) ? arr.length : 0;

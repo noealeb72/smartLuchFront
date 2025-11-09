@@ -513,6 +513,16 @@ footer, .smart-bg {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
+/* Eliminar efecto hover en cards de filtros */
+.card.mb-3:hover {
+    box-shadow: none !important;
+}
+
+.card.mb-3 .card-header:hover {
+    background-color: inherit !important;
+    color: inherit !important;
+}
+
 /* ============================================
    ESTILOS PARA DROPDOWN DEL NAVBAR
    ============================================ */

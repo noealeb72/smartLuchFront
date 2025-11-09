@@ -296,6 +296,20 @@
         .footer-sticky {
             margin-top: auto;
         }
+
+        /* Eliminar efecto hover en el card-header del filtro */
+        .card.mb-3 .card-header {
+            pointer-events: auto;
+        }
+
+        .card.mb-3:hover {
+            box-shadow: none !important;
+        }
+
+        .card.mb-3 .card-header:hover {
+            background: #6c757d !important;
+            color: #fff !important;
+        }
     </style>
 </head>
 
@@ -354,7 +368,9 @@
                 <div class="card mb-3">
                     <div class="card-header d-flex justify-content-between align-items-center"
                          style="background:#6c757d; color:#fff; cursor:pointer; user-select: none;"
-                         ng-click="toggleFiltros = !toggleFiltros">
+                         ng-click="toggleFiltros = !toggleFiltros"
+                         onmouseover="this.style.background='#6c757d'; this.style.color='#fff';"
+                         onmouseout="this.style.background='#6c757d'; this.style.color='#fff';">
                         <h6 class="mb-0"><i class="fa fa-filter mr-2"></i>Filtros de búsqueda</h6>
                         <i class="fa fa-chevron-down" ng-class="{'fa-chevron-down': !toggleFiltros, 'fa-chevron-up': toggleFiltros}"
                            style="transition: transform 0.3s ease;"></i>
@@ -543,7 +559,7 @@
                             </div>
                             
                         <!-- Paginaci�n -->
-                            <div class="datatable-pagination mt-3">
+                            <div class="datatable-pagination mt-3" ng-if="(dataset||[]).length >= 5">
                                 <div class="row align-items-center">
                                     <div class="col-md-6">
                                     <div class="text-muted">
@@ -553,7 +569,7 @@
                                 <div class="col-md-6 d-flex justify-content-end align-items-center">
                                     <span class="mr-2">Filas:</span>
                                     <select class="form-control form-control-sm mr-3 page-size-select"
-                                            ng-model="pageSize" ng-change="changePageSize(pageSize)" ng-init="pageSize = parseInt(pageSize) || 5">
+                                            ng-model="pageSize" ng-init="pageSize = pageSize || 5" ng-change="changePageSize(pageSize)">
                                                 <option ng-value="5">5</option>
                                                 <option ng-value="10">10</option>
                                                 <option ng-value="20">20</option>
