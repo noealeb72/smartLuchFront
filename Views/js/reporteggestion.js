@@ -69,6 +69,9 @@
         $scope.user_Name = localStorage.getItem('user_Name') || '';
         $scope.user_LastName = localStorage.getItem('user_LastName') || '';
         
+        // -------- Loading State ----------
+        $scope.isLoading = true;
+        
         // ---- Fecha y hora actual ----
         $scope.currentDateTime = new Date().toLocaleString('es-ES');
         setInterval(function() {
@@ -119,7 +122,7 @@
 
         // Paginación
         $scope.currentPage = 0;
-        $scope.pageSize = 20;
+        $scope.pageSize = parseInt($scope.pageSize) || 5; // Por defecto 5 filas (número)
 
         $scope.numberOfPages = function () {
             var len = Array.isArray($scope.dataset) ? $scope.dataset.length : 0;
@@ -147,7 +150,7 @@
 
         $scope.changePageSize = function (n) {
             n = parseInt(n, 10);
-            $scope.pageSize = isNaN(n) ? 20 : n;
+            $scope.pageSize = isNaN(n) ? 5 : n;
             $scope.currentPage = 0;
         };
 
@@ -155,10 +158,8 @@
         function toListIdDesc(arr) {
             if (!Array.isArray(arr)) return [];
             return arr.map(function (x) {
-                console.log('Procesando elemento:', x);
                 var id = x.id || x.Id || x.ID || x.codigo || x.code || x.value || null;
                 var nombre = x.nombre || x.Nombre || x.descripcion || x.Descripcion || x.detalle || x.text || 'Sin nombre';
-                console.log('ID mapeado:', id, 'Nombre mapeado:', nombre);
                 return {
                     id: id,
                     nombre: nombre
@@ -168,7 +169,6 @@
 
         // ===== Cargas de combos =====
         function cargarPlantas() {
-            console.log('🔄 Cargando plantas...');
             $http.get($scope.basePlantas + 'getAll')
                 .then(function (response) {
                     $scope.plantas = toListIdDesc(response.data);
@@ -178,27 +178,17 @@
                         var nombreB = (b.nombre || '').toLowerCase();
                         return nombreA.localeCompare(nombreB);
                     });
-                    console.log('✅ Plantas cargadas:', $scope.plantas.length, 'elementos');
                 })
                 .catch(function (error) {
                     $scope.plantas = [];
-                    console.error('❌ Error cargando plantas:', error.status, error.data);
                     warn('Error cargando plantas', {status: error.status, data: error.data});
                 });
         }
 
         function cargarCentros() {
-            console.log('🔄 Cargando centros de costo...');
-            console.log('URL:', $scope.baseCentrodecostos + 'getAll');
             $http.get($scope.baseCentrodecostos + 'getAll')
                 .then(function (response) {
-                    console.log('📥 Respuesta centros:', response);
-                    console.log('📥 Datos centros:', response.data);
-                    console.log('📥 Tipo de datos:', typeof response.data);
-                    console.log('📥 Es array:', Array.isArray(response.data));
                     if (Array.isArray(response.data) && response.data.length > 0) {
-                        console.log('📥 Primer elemento:', response.data[0]);
-                        console.log('📥 Campos del primer elemento:', Object.keys(response.data[0]));
                     }
                     $scope.centrosdecosto = toListIdDesc(response.data);
                     // Ordenar alfabéticamente por nombre
@@ -207,19 +197,14 @@
                         var nombreB = (b.nombre || '').toLowerCase();
                         return nombreA.localeCompare(nombreB);
                     });
-                    console.log('✅ Centros cargados:', $scope.centrosdecosto.length, 'elementos');
-                    console.log('✅ Lista centros:', $scope.centrosdecosto);
                 })
                 .catch(function (error) {
                     $scope.centrosdecosto = [];
-                    console.error('❌ Error cargando centros:', error.status, error.data);
-                    console.error('❌ Error completo:', error);
                     warn('Error cargando centros de costo', {status: error.status, data: error.data});
                 });
         }
 
         function cargarProyectos() {
-            console.log('🔄 Cargando proyectos...');
             $http.get($scope.baseProyectos + 'getAll')
                 .then(function (response) {
                     $scope.proyectos = toListIdDesc(response.data);
@@ -229,17 +214,14 @@
                         var nombreB = (b.nombre || '').toLowerCase();
                         return nombreA.localeCompare(nombreB);
                     });
-                    console.log('✅ Proyectos cargados:', $scope.proyectos.length, 'elementos');
                 })
                 .catch(function (error) {
                     $scope.proyectos = [];
-                    console.error('❌ Error cargando proyectos:', error.status, error.data);
                     warn('Error cargando proyectos', {status: error.status, data: error.data});
                 });
         }
 
         function cargarTurnos() {
-            console.log('🔄 Cargando turnos...');
             $http.get($scope.baseTurno + 'GetTurnosDisponibles')
                 .then(function (response) {
                     $scope.turnos = toListIdDesc(response.data);
@@ -249,45 +231,33 @@
                         var nombreB = (b.nombre || '').toLowerCase();
                         return nombreA.localeCompare(nombreB);
                     });
-                    console.log('✅ Turnos cargados:', $scope.turnos.length, 'elementos');
                 })
                 .catch(function (error) {
                     $scope.turnos = [];
-                    console.error('❌ Error cargando turnos:', error.status, error.data);
                     warn('Error cargando turnos', {status: error.status, data: error.data});
                 });
         }
 
         function cargarPerfiles() {
-            console.log('🔄 Cargando perfiles nutricionales...');
             var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
             $http.get(apiBaseUrl + '/api/plannutricional/getAll')
                 .then(function (response) {
                     // normalizo a {id, nombre} para ng-options pf as pf.nombre for pf in perfiles track by pf.id
                     var list = Array.isArray(response.data) ? response.data : [];
-                    console.log('📥 Datos originales de perfiles:', response.data);
-                    console.log('📥 Lista procesada:', list);
                     $scope.perfiles = list.map(function (x) {
                         var id = x.id || x.codigo || x.value || null;
                         var nombre = x.nombre || x.descripcion || String(x);
-                        console.log('🔄 Mapeando perfil:', x, '-> ID:', id, 'Nombre:', nombre);
                         return { id: id, nombre: nombre };
                     });
                     // Ordenar alfabéticamente por nombre
-                    console.log('🔄 Ordenando perfiles alfabéticamente...');
-                    console.log('📋 Perfiles antes del ordenamiento:', $scope.perfiles);
                     $scope.perfiles.sort(function(a, b) {
                         var nombreA = (a.nombre || '').toLowerCase();
                         var nombreB = (b.nombre || '').toLowerCase();
-                        console.log('🔄 Comparando:', nombreA, 'vs', nombreB);
                         return nombreA.localeCompare(nombreB);
                     });
-                    console.log('📋 Perfiles después del ordenamiento:', $scope.perfiles);
-                    console.log('✅ Perfiles cargados:', $scope.perfiles.length, 'elementos');
                 })
                 .catch(function (error) {
                     $scope.perfiles = [];
-                    console.error('❌ Error cargando perfiles:', error.status, error.data);
                     // no es crítico
                 });
         }
@@ -302,7 +272,6 @@
                     var data = Array.isArray(res.data) ? res.data : [];
                     $scope.platos = data;
                     $scope.platosFiltrados = data.slice();
-                    console.log('Platos:', data.length);
                     $timeout(function () {
                         var m = $('#modalBuscarPlato');
                         if (m.length) m.modal('show');
@@ -359,8 +328,7 @@
         }
 
         $scope.getReporte = function () {
-            console.log('🔍 Ejecutando getReporte()');
-            console.log('📊 ViewAction actual:', $scope.ViewAction);
+            $scope.isLoading = true;
             
             var params = {
                 fechadesde: fmtFecha($scope.filtro_fechadesde),
@@ -371,13 +339,9 @@
                 planta: ($scope.rep_planta && $scope.rep_planta.nombre) || ''
             };
 
-            console.log('📋 Parámetros de búsqueda:', params);
-
             $http.get($scope.baseReporte + 'GetComandas', { params: params })
                 .then(function (res) {
-                    console.log('✅ Respuesta de la API:', res.data);
                     var data = Array.isArray(res.data) ? res.data : [];
-                    console.log('📊 Datos procesados:', data.length, 'registros');
                     
                     // ya vienen ordenadas desc por createdate desde la API,
                     // pero si querés asegurarlo del lado del cliente:
@@ -388,12 +352,11 @@
                     $scope.comandas = data;
                     $scope.ViewAction = 'reporte';
                     $scope.currentPage = 0;
+                    $scope.isLoading = false;
                     
-                    console.log('🎯 ViewAction establecido a:', $scope.ViewAction);
-                    console.log('📊 Dataset establecido con', $scope.dataset.length, 'elementos');
                 })
                 .catch(function (e) {
-                    console.error('❌ Error en getReporte:', e);
+                    $scope.isLoading = false;
                     warn('Error al obtener comandas', e, true);
                 });
         };
@@ -418,7 +381,6 @@
         $scope.toggleFiltros = true;
 
         function warn(msg, err, toast) {
-            console.warn(msg, err);
             if ($window.Swal && $window.Swal.fire && toast) {
                 $window.Swal.fire({ icon: 'error', title: 'Error', text: (msg + (err && err.status ? ' (' + err.status + ')' : '')) });
             }
@@ -426,26 +388,16 @@
 
         // Cargar combos al iniciar
         (function init() {
-            console.log('🔄 Iniciando carga de combos...');
-            console.log('🔄 Llamando cargarPlantas...');
             cargarPlantas();
-            console.log('🔄 Llamando cargarCentros...');
             cargarCentros();
-            console.log('🔄 Llamando cargarProyectos...');
             cargarProyectos();
-            console.log('🔄 Llamando cargarTurnos...');
             cargarTurnos();
-            console.log('🔄 Llamando cargarPerfiles...');
             cargarPerfiles();
             
-            // Verificar carga después de un tiempo
+            // Ocultar loading después de cargar todos los combos
             setTimeout(function() {
-                console.log('📊 Estado de combos después de 2 segundos:');
-                console.log('Plantas:', $scope.plantas.length);
-                console.log('Centros:', $scope.centrosdecosto.length);
-                console.log('Proyectos:', $scope.proyectos.length);
-                console.log('Turnos:', $scope.turnos.length);
-                console.log('Perfiles:', $scope.perfiles.length);
+                $scope.isLoading = false;
+                $scope.$apply();
             }, 2000);
         })();
 

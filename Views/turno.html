@@ -80,7 +80,6 @@
             background-color: #495057 !important;
             border-color: #495057 !important;
             color: white !important;
-            transform: translateY(-1px) !important;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
         }
         
@@ -120,7 +119,6 @@
             background-color: #F34949 !important;
             border-color: #F34949 !important;
             color: white !important;
-            transform: translateY(-1px) !important;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
         }
         
@@ -152,7 +150,7 @@
         }
         
         .btn-link[title="Eliminar"] {
-            background-color: #dc3545 !important;
+            background-color: #F34949 !important;
             border: none !important;
             border-radius: 4px !important;
             padding: 6px 8px !important;
@@ -163,7 +161,7 @@
         }
         
         .btn-link[title="Eliminar"]:hover {
-            background-color: #c82333 !important;
+            background-color: #E63939 !important;
         }
         
         /* Bot�n de b�squeda (limpiar) */
@@ -309,14 +307,14 @@
         
         /* Bot�n Agregar espec�fico */
         .btn-primary {
-            background-color: #007bff !important;
-            border-color: #007bff !important;
+            background-color: #F34949 !important;
+            border-color: #F34949 !important;
             color: white !important;
         }
         
         .btn-primary:hover {
-            background-color: #0056b3 !important;
-            border-color: #0056b3 !important;
+            background-color: #E63939 !important;
+            border-color: #E63939 !important;
             color: white !important;
         }
         
@@ -354,7 +352,6 @@
             background-color: #5a6268 !important;
             border: none !important;
             color: white !important;
-            transform: translateY(-1px) !important;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
         }
         
@@ -395,7 +392,6 @@
             background-color: #F34949 !important;
             border-color: #F34949 !important;
             color: white !important;
-            transform: translateY(-1px) !important;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
         }
         
@@ -436,8 +432,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
 </head>
 
-<body data-spy="scroll" data-target="#navbar" class="static-layout">
-    <div class="container-fluid" ng-app="AngujarJS" ng-controller="Turno">
+<body data-spy="scroll" data-target="#navbar" class="static-layout ng-cloak" ng-app="AngujarJS">
+    <!-- Loading spinner -->
+    <div ng-hide="!isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido">
+        <span class="sr-only">Cargando contenido, por favor espere...</span>
+    </div>
+    <div class="container-fluid" ng-controller="Turno">
         <div class="solid-background">
             <!-- Menu -->
             <div ng-include="'navbar.html'"> </div>
@@ -537,15 +537,52 @@
                                 </tbody>
                             </table>
                             <!-- Paginaci�n -->
-                            <div class="pagination-container" ng-if="numberOfPages() > 1">
-                                <div class="pagination-buttons">
-                                    <button class="pagination-btn" ng-disabled="currentPage == 0" ng-click="currentPage=currentPage-1" title="Página anterior">
-                                        <i class="fas fa-angle-double-left"></i>
-                                    </button>
-                                    <div style="width:1px; background:#dee2e6; margin:4px 0;"></div>
-                                    <button class="pagination-btn" ng-disabled="currentPage+1 >= numberOfPages()" ng-click="currentPage=currentPage+1" title="Página siguiente">
-                                        <i class="fas fa-angle-double-right"></i>
-                                    </button>
+                            <!-- Paginación tipo DataTable -->
+                            <div class="datatable-pagination mt-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <div class="pagination-info mr-3">
+                                            Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, ((filteredData || dataset) || []).length)}} de {{((filteredData || dataset) || []).length}} registros
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <label class="text-muted small mr-2">Filas por página:</label>
+                                            <select class="form-control form-control-sm page-size-select" ng-model="pageSize" ng-change="changePageSize(pageSize)" ng-init="pageSize = parseInt(pageSize) || 5">
+                                                <option ng-value="5">5</option>
+                                                <option ng-value="10">10</option>
+                                                <option ng-value="20">20</option>
+                                                <option ng-value="50">50</option>
+                                                <option ng-value="100">100</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="pagination-controls">
+                                        <div class="btn-group mr-3" role="group">
+                                            <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(0)" title="Primera página">
+                                                <i class="fa fa-angle-double-left"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(currentPage-1)" title="Página anterior">
+                                                <i class="fa fa-angle-left"></i>
+                                            </button>
+                                            <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
+                                                <button class="btn page-number-btn" 
+                                                        ng-repeat="page in getPageNumbers() track by $index"
+                                                        ng-click="goToPage(page)"
+                                                        ng-class="{'btn-secondary': currentPage === page, 'btn-outline-secondary': currentPage !== page}"
+                                                        ng-disabled="page === '...'">
+                                                    {{page}}
+                                                </button>
+                                            </div>
+                                            <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(currentPage+1)" title="Página siguiente">
+                                                <i class="fa fa-angle-right"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(numberOfPages()-1)" title="Última página">
+                                                <i class="fa fa-angle-double-right"></i>
+                                            </button>
+                                        </div>
+                                        <div class="pagination-info">
+                                            Página {{currentPage+1}} de {{numberOfPages()}}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -804,6 +841,8 @@
 
                     <!-- Main JS -->
                     <!-- Main JS -->
+                    <!-- Configuración centralizada - DEBE CARGARSE PRIMERO -->
+                    <script src="js/config.js"></script>
                     <script src="js/angular.min.js"></script>
                     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 

@@ -99,7 +99,9 @@ var BonificacionesService = {
         return new Promise(function(resolve, reject) {
             // Consultar comandas del día
             var xhr = new XMLHttpRequest();
-            var url = 'http://localhost:8000/api/comanda/getPedido/' + dni;
+            // Usar la variable de configuración global API_BASE_URL
+            var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+            var url = apiBaseUrl + '/api/comanda/getPedido/' + dni;
             
             xhr.open('GET', url, true);
             xhr.onreadystatechange = function() {

@@ -133,7 +133,6 @@
             background-color: #343a40 !important;
             border-color: #343a40 !important;
             color: white !important;
-            transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
         }
 
@@ -277,7 +276,11 @@
     </style>
 </head>
 
-<body data-spy="scroll" data-target="#navbar" class="static-layout">
+<body data-spy="scroll" data-target="#navbar" class="static-layout ng-cloak">
+    <!-- Loading spinner -->
+    <div ng-hide="!isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido">
+        <span class="sr-only">Cargando contenido, por favor espere...</span>
+    </div>
     <div class="container-fluid" style="margin-top: 0 !important;">
         <div class="solid-background">
             <!-- Menu -->
@@ -387,12 +390,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal fade" id="pedidoModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal fade" id="pedidoModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="pedidoModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-lg" role="document" style="max-width: 30%; width: 30%;">
                         <div class="modal-content">
                             <div class="modal-header" style="background-color: #343a40; color: white; padding: 10px 15px; width: 100%; margin: 0;">
                                 <h5 class="modal-title" id="pedidoModalLabel" style="color: white; font-size: 16px; margin: 0; font-weight: 500;">Información del pedido</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar modal" style="color: white;">
                                     <span aria-hidden="true" style="color: white;">&times;</span>
                                 </button>
                             </div>
@@ -432,7 +435,8 @@
                                              style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: none; box-shadow: none;" 
                                              ng-src="{{Pic || 'img/logo-preview.png'}}" 
                                              ng-error="this.src='img/logo-preview.png'"
-                                             onerror="this.src='img/logo-preview.png'" />
+                                             onerror="this.src='img/logo-preview.png'"
+                                             alt="{{view_plato_descripcion || 'Imagen del plato del pedido'}}" />
                                     </div>
                                 </div>
                             </div>
@@ -465,6 +469,9 @@
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="js/angular-base64.js"></script>
+    
+    <!-- Configuración centralizada - DEBE CARGARSE ANTES DE LOS SCRIPTS QUE USAN API_BASE_URL -->
+    <script src="js/config.js"></script>
     <!-- Controlador AngularJS -->
 
     <script src="js/despacho.js"></script>

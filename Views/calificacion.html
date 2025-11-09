@@ -25,7 +25,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
 </head>
 
-<body data-spy="scroll" data-target="#navbar" class="static-layout">
+<body data-spy="scroll" data-target="#navbar" class="static-layout ng-cloak">
+    <!-- Loading spinner -->
+    <div ng-hide="!isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido">
+        <span class="sr-only">Cargando contenido, por favor espere...</span>
+    </div>
     <div class="imaged-background container-fluid" ng-app="AngujarJS" ng-controller="Calificacion">
         <div class="solid-background">
             <div id="side-nav" class="sidenav">
@@ -198,14 +202,53 @@
                                         </tr>
                                     </tbody>
                                 </table>
-                                <div>
-                                    <button class="btn btn-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="currentPage=currentPage-1">
-                                        Anterior
-                                    </button>
-                                    {{currentPage+1}}/{{numberOfPages()}}
-                                    <button class="btn btn-secondary btn-sm" ng-disabled="currentPage >= data.length/pageSize - 1" ng-click="currentPage=currentPage+1">
-                                        Siguiente
-                                    </button>
+                                <!-- Paginación tipo DataTable -->
+                                <div class="datatable-pagination mt-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <div class="pagination-info mr-3">
+                                                Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, (data || []).length)}} de {{(data || []).length}} registros
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <label class="text-muted small mr-2">Filas por página:</label>
+                                                <select class="form-control form-control-sm page-size-select" ng-model="pageSize" ng-change="changePageSize(pageSize)" ng-init="pageSize = parseInt(pageSize) || 5">
+                                                    <option ng-value="5">5</option>
+                                                    <option ng-value="10">10</option>
+                                                    <option ng-value="20">20</option>
+                                                    <option ng-value="50">50</option>
+                                                    <option ng-value="100">100</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="pagination-controls">
+                                            <div class="btn-group mr-3" role="group">
+                                                <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(0)" title="Primera página">
+                                                    <i class="fa fa-angle-double-left"></i>
+                                                </button>
+                                                <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(currentPage-1)" title="Página anterior">
+                                                    <i class="fa fa-angle-left"></i>
+                                                </button>
+                                                <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
+                                                    <button class="btn page-number-btn" 
+                                                            ng-repeat="page in getPageNumbers() track by $index"
+                                                            ng-click="goToPage(page)"
+                                                            ng-class="{'btn-secondary': currentPage === page, 'btn-outline-secondary': currentPage !== page}"
+                                                            ng-disabled="page === '...'">
+                                                        {{page}}
+                                                    </button>
+                                                </div>
+                                                <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(currentPage+1)" title="Página siguiente">
+                                                    <i class="fa fa-angle-right"></i>
+                                                </button>
+                                                <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(numberOfPages()-1)" title="Última página">
+                                                    <i class="fa fa-angle-double-right"></i>
+                                                </button>
+                                            </div>
+                                            <div class="pagination-info">
+                                                Página {{currentPage+1}} de {{numberOfPages()}}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -231,7 +274,7 @@
                                 </div>
                             </div>
                             <div class="col-3">
-                                <img class="mb-4 smart-imagen" src="img/steak.jpg" />
+                                <img class="mb-4 smart-imagen" src="img/steak.jpg" alt="Imagen decorativa de comida" />
                             </div>
                         </div>
                     </div>
@@ -256,7 +299,7 @@
                                 </div>
                             </div>
                             <div class="col-3">
-                                <img class="mb-4 smart-imagen" src="img/steak.jpg" />
+                                <img class="mb-4 smart-imagen" src="img/steak.jpg" alt="Imagen decorativa de comida" />
                             </div>
                         </div>
                     </div>
@@ -277,6 +320,8 @@
 
     <!-- Main JS -->
     <!-- Main JS -->
+    <!-- Configuración centralizada - DEBE CARGARSE PRIMERO -->
+    <script src="js/config.js"></script>
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="js/calificacion.js"></script>

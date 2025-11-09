@@ -21,13 +21,64 @@ app.controller('PlanNutricional', function ($scope, $http) {
     $scope.user_Rol = localStorage.getItem('role') || '';
     $scope.base = apiBaseUrl + '/api/plannutricional/';
     
+    // -------- Loading State ----------
+    $scope.isLoading = true;
+    
     // -------- Paginación ----------
     $scope.currentPage = 0;
-    $scope.pageSize = 10;
+    $scope.pageSize = 5; // Inicializar como número directamente
     
     $scope.numberOfPages = function () {
-        var len = Array.isArray($scope.dataset) ? $scope.dataset.length : 0;
+        var arr = ($scope.filteredData || $scope.dataset) || [];
+        var len = Array.isArray(arr) ? arr.length : 0;
         return Math.ceil(len / ($scope.pageSize || 1));
+    };
+
+    // Funciones para paginación tipo DataTable (igual que reportegcomensales)
+    $scope.getPageNumbers = function() {
+        var pages = [];
+        var totalPages = $scope.numberOfPages();
+        var current = $scope.currentPage;
+        
+        if (totalPages <= 7) {
+            for (var i = 0; i < totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            if (current <= 3) {
+                for (var i = 0; i < 5; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            } else if (current >= totalPages - 4) {
+                pages.push(0);
+                pages.push('...');
+                for (var i = totalPages - 5; i < totalPages; i++) {
+                    pages.push(i);
+                }
+            } else {
+                pages.push(0);
+                pages.push('...');
+                for (var i = current - 1; i <= current + 1; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            }
+        }
+        return pages;
+    };
+
+    $scope.goToPage = function(page) {
+        if (page >= 0 && page < $scope.numberOfPages()) {
+            $scope.currentPage = page;
+        }
+    };
+
+    $scope.changePageSize = function(newSize) {
+        $scope.pageSize = parseInt(newSize);
+        $scope.currentPage = 0;
     };
 
     // -------- Helpers ----------
@@ -72,16 +123,12 @@ app.controller('PlanNutricional', function ($scope, $http) {
 
     $scope.dataset = [];
     $scope.searchText = '';
-    $scope.currentPage = 0;
-    $scope.pageSize = 20;
+    // currentPage y pageSize ya están inicializados al inicio del controlador
 
 
     // -------- CRUD ----------
     $scope.ModelCreate = function (isValid, form) {
-        console.log('ModelCreate ejecutándose - isValid:', isValid, 'form:', form);
-        if (!isValid) { 
-            console.log('Formulario no válido, mostrando popup');
-            console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
+        if (!isValid) {
             touchAll(form); 
             
             // Verificar si SweetAlert2 está disponible
@@ -99,7 +146,6 @@ app.controller('PlanNutricional', function ($scope, $http) {
         }
         var payload = { nombre: ($scope.view_nombre || '').trim(), descripcion: ($scope.view_descripcion || '').trim() };
         if (!payload.nombre || !payload.descripcion) { 
-            console.log('Campos vacíos después del trim');
             touchAll(form); 
             
             if (typeof Swal !== 'undefined') {
@@ -131,19 +177,24 @@ app.controller('PlanNutricional', function ($scope, $http) {
     };
 
     $scope.ModelReadAll = function () {
+        $scope.isLoading = true;
         $scope.dataset = [];
         $scope.searchText = '';
         $scope.ViewAction = 'Lista de Items';
         $scope.view_id = -1; $scope.view_nombre = ''; $scope.view_descripcion = '';
-        console.log('ModelReadAll ejecutándose, searchText inicial:', $scope.searchText);
+        //console.log('ModelReadAll ejecutándose, searchText inicial:', $scope.searchText);
         $http.get($scope.base + 'getAll')
             .then(function (res) {
                 $scope.dataset = Array.isArray(res.data) ? res.data : [];
                 $scope.currentPage = 0;
-                console.log('Datos cargados:', $scope.dataset.length, 'elementos');
-                console.log('searchText después de cargar:', $scope.searchText);
+                //console.log('Datos cargados:', $scope.dataset.length, 'elementos');
+                //console.log('searchText después de cargar:', $scope.searchText);
+                $scope.isLoading = false;
             })
-            .catch(function () { Swal.fire({ title: 'Ha ocurrido un error', text: 'Api no presente', icon: 'error' }); });
+            .catch(function () { 
+                $scope.isLoading = false;
+                Swal.fire({ title: 'Ha ocurrido un error', text: 'Api no presente', icon: 'error' }); 
+            });
     };
 
     $scope.ModelUpdate = function (isValid, id, form) {
@@ -188,7 +239,7 @@ app.controller('PlanNutricional', function ($scope, $http) {
     };
 
     $scope.clearSearch = function () {
-        console.log('clearSearch ejecutándose'); // Debug
+        //console.log('clearSearch ejecutándose'); // Debug
         $scope.searchText = '';
         $scope.currentPage = 0;
     };

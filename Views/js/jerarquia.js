@@ -1,4 +1,10 @@
-﻿var app = angular.module('AngujarJS', []);
+﻿// Verificar si el módulo ya existe
+var app;
+try {
+	app = angular.module('AngujarJS');
+} catch (e) {
+	app = angular.module('AngujarJS', []);
+}
 
 app.filter('startFrom', function () {
     return function (input, start) {
@@ -11,6 +17,19 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window, $timeout) {
     // Usar la variable de configuración global API_BASE_URL
     var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
     $scope.base = apiBaseUrl + '/api/jerarquia/';
+
+    // -------- Loading State ----------
+    $scope.isLoading = true;
+    
+    // Inicializar variables
+    $scope.ViewAction = 'Lista de Items';
+    $scope.dataset = [];
+    $scope.filteredData = null;
+    $scope.searchText = '';
+    
+    // Inicializar paginación al inicio
+    $scope.currentPage = 0;
+    $scope.pageSize = 5; // Inicializar como número directamente
 
     // ============================================================
     // Datos de usuario (los dejé porque los tenías, aunque acá no se usan)
@@ -57,11 +76,6 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window, $timeout) {
         if (!descripcion) descripcion = ($scope.view_descripcion || '').trim();
         if (!bonificacion) bonificacion = ($scope.view_bonificacion || '').toString().trim();
 
-        console.log('=== MODELCREATE - VALORES OBTENIDOS ===');
-        console.log('perfil (DOM):', perfilElement ? perfilElement.value : 'N/A');
-        console.log('perfil (final):', perfil);
-        console.log('descripcion (final):', descripcion);
-        console.log('bonificacion (final):', bonificacion);
 
         // validaciones
         var camposFaltantes = [];
@@ -144,22 +158,22 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window, $timeout) {
 
                 var row = data[0];
 
-                console.log('=== DATOS DEL SERVIDOR ===');
+                /*console.log('=== DATOS DEL SERVIDOR ===');
                 console.log('row:', row);
                 console.log('row.perfil:', row.perfil);
                 console.log('row.nombre:', row.nombre);
                 console.log('row.descripcion:', row.descripcion);
-                console.log('row.bonificacion:', row.bonificacion);
+                console.log('row.bonificacion:', row.bonificacion);*/
 
                  // Usar el campo correcto del perfil
                  $scope.view_perfil       = row.perfil || row.nombre || 'Admin';
                 $scope.view_descripcion  = row.descripcion || '';
                 $scope.view_bonificacion = parseInt(row.bonificacion, 10) || 0;
 
-                console.log('=== VALORES ASIGNADOS ===');
+                /*console.log('=== VALORES ASIGNADOS ===');
                 console.log('view_perfil:', $scope.view_perfil);
                 console.log('view_descripcion:', $scope.view_descripcion);
-                console.log('view_bonificacion:', $scope.view_bonificacion);
+                console.log('view_bonificacion:', $scope.view_bonificacion);*/
 
                 // guardamos el id que estamos editando, por si acaso
                 $scope.view_id = row.id;
@@ -179,6 +193,7 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window, $timeout) {
     // READ ALL (lista)
     // ============================================================
     $scope.ModelReadAll = function () {
+        $scope.isLoading = true;
         $scope.dataset = [];
         $scope.searchKeyword = '';
         $scope.ViewAction = 'Lista de Items';
@@ -191,10 +206,12 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window, $timeout) {
         $scope.showValidationErrors = false;
 
         $http.get($scope.base + 'getAll')
-            .success(function (data) {
-                $scope.dataset = data;
+            .then(function (response) {
+                $scope.dataset = Array.isArray(response.data) ? response.data : [];
+                $scope.isLoading = false;
             })
-            .error(function () {
+            .catch(function () {
+                $scope.isLoading = false;
                 Swal.fire(
                     'Ha ocurrido un error',
                     'Api no presente',
@@ -222,11 +239,11 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window, $timeout) {
          if (!descripcion) descripcion = ($scope.view_descripcion || '').trim();
          if (!bonificacion) bonificacion = ($scope.view_bonificacion || '').toString().trim();
 
-         console.log('=== MODELUPDATE - VALORES OBTENIDOS ===');
+         /*console.log('=== MODELUPDATE - VALORES OBTENIDOS ===');
          console.log('perfil (DOM):', perfilElement ? perfilElement.value : 'N/A');
          console.log('perfil (final):', perfil);
          console.log('descripcion (final):', descripcion);
-         console.log('bonificacion (final):', bonificacion);
+         console.log('bonificacion (final):', bonificacion);*/
 
         if (!descripcion || bonificacion === '' || bonificacion === null || bonificacion === undefined) {
             Swal.fire({
@@ -263,8 +280,8 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window, $timeout) {
              bonificacion: bonificacionNum
          };
 
-         console.log('=== ENVIANDO AL SERVIDOR ===');
-         console.log('jsonForm:', jsonForm);
+         //console.log('=== ENVIANDO AL SERVIDOR ===');
+         //console.log('jsonForm:', jsonForm);
 
         $http({
             method: 'post',
@@ -352,8 +369,8 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window, $timeout) {
             text: 'Desea dar de baja la jerarquía?',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
+            confirmButtonColor: '#F34949',
+            cancelButtonColor: '#C92A2A',
             confirmButtonText: 'Aceptar',
             cancelButtonText: 'Cancelar'
         }).then(function (result) {
@@ -375,11 +392,59 @@ app.controller('Jerarquia', function ($scope, $sce, $http, $window, $timeout) {
         $scope.data.push("Item " + i);
     }
 
-    $scope.currentPage = 0;
-    $scope.pageSize = 20;
+    // currentPage y pageSize ya están inicializados al inicio del controlador
 
     $scope.numberOfPages = function () {
-        return Math.ceil(($scope.dataset || []).length / $scope.pageSize);
+        var arr = ($scope.filteredData || $scope.dataset) || [];
+        var len = Array.isArray(arr) ? arr.length : 0;
+        return Math.ceil(len / $scope.pageSize);
+    };
+
+    // Funciones para paginación tipo DataTable (igual que reportegcomensales)
+    $scope.getPageNumbers = function() {
+        var pages = [];
+        var totalPages = $scope.numberOfPages();
+        var current = $scope.currentPage;
+        
+        if (totalPages <= 7) {
+            for (var i = 0; i < totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            if (current <= 3) {
+                for (var i = 0; i < 5; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            } else if (current >= totalPages - 4) {
+                pages.push(0);
+                pages.push('...');
+                for (var i = totalPages - 5; i < totalPages; i++) {
+                    pages.push(i);
+                }
+            } else {
+                pages.push(0);
+                pages.push('...');
+                for (var i = current - 1; i <= current + 1; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            }
+        }
+        return pages;
+    };
+
+    $scope.goToPage = function(page) {
+        if (page >= 0 && page < $scope.numberOfPages()) {
+            $scope.currentPage = page;
+        }
+    };
+
+    $scope.changePageSize = function(newSize) {
+        $scope.pageSize = parseInt(newSize);
+        $scope.currentPage = 0;
     };
 
     // ============================================================

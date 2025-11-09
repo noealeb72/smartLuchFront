@@ -1,100 +1,105 @@
-<nav class="navbar navbar-expand-lg navbar-dark smart-bg d-flex align-items-center">
+<nav class="navbar navbar-expand-lg navbar-dark smart-bg d-flex align-items-center" role="navigation" aria-label="Navegación principal">
     <!-- Logo -->
     <h4 class="navbar-brand smart-title mb-0">
-        <i class="fa fa-utensils mr-2"></i>SmartLunch
+        <i class="fa fa-utensils mr-2" aria-hidden="true"></i>SmartLunch
     </h4>
 
     <!-- Información del usuario y fecha/hora -->
-    <div class="d-flex align-items-center ml-5" style="font-size: 0.8em; font-weight: normal; opacity: 0.9;">
+    <div class="d-flex align-items-center ml-5" style="font-size: 0.8em; font-weight: normal; opacity: 0.9;" aria-live="polite">
         <!-- Información del usuario primero -->
-        <span class="mr-3 d-flex align-items-center" ng-show="user_Rol">
-            <i class="fa fa-user mr-1" style="font-size: 1.1em;"></i>
-            <span class="badge badge-light text-dark" style="font-size: 0.9em; padding: 0.3em 0.6em;">{{user_Rol}}</span>
+        <span class="mr-3 d-flex align-items-center" ng-show="user_Rol" aria-label="Rol del usuario">
+            <i class="fa fa-user mr-1" style="font-size: 1.1em;" aria-hidden="true"></i>
+            <span class="badge badge-light text-dark" style="font-size: 0.9em; padding: 0.3em 0.6em;" aria-label="Rol: {{user_Rol}}">{{user_Rol}}</span>
         </span>
         <!-- Fecha y hora después -->
-        <span class="d-flex align-items-center">
-            <i class="fa fa-clock mr-1" style="font-size: 1.1em;"></i>
-            <span id="current-datetime" style="font-size: 1em;">{{currentDateTime}}</span>
+        <span class="d-flex align-items-center" aria-label="Fecha y hora actual">
+            <i class="fa fa-clock mr-1" style="font-size: 1.1em;" aria-hidden="true"></i>
+            <time id="current-datetime" style="font-size: 1em;" datetime="{{currentDateTimeISO}}">{{currentDateTime}}</time>
         </span>
     </div>
 
     <!-- Debug info (solo para desarrollo) -->
 
-    <!-- Bot�n toggle para m�vil -->
+    <!-- Botón toggle para móvil -->
     <button class="navbar-toggler" type="button" data-toggle="collapse"
             data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-            aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
+            aria-expanded="false" aria-label="Abrir menú de navegación">
+        <span class="navbar-toggler-icon" aria-hidden="true"></span>
     </button>
 
-    <!-- Men� de navegaci�n -->
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav ml-auto text-right" id="navbar-menu">
-            <li class="nav-item active">
-                <a class="nav-link" href="index.html" ng-if="user_Rol !== 'Comensal'">
-                    <i class="fa fa-home mr-1"></i> Inicio
+    <!-- Menú de navegación -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent" role="menu">
+        <ul class="navbar-nav ml-auto text-right" id="navbar-menu" role="menubar">
+            <li class="nav-item active" role="none">
+                <a class="nav-link" href="index.html" ng-if="user_Rol !== 'Comensal'" aria-label="Ir a inicio" role="menuitem">
+                    <i class="fa fa-home mr-1" aria-hidden="true"></i> Inicio
                 </a>
             </li>
 
             <!-- Cocina -->
-            <li class="nav-item active" ng-if="user_Rol === 'Cocina'">
-                <a class="nav-link" href="despacho.html">
-                    <i class="fa fa-edit mr-1"></i> Despacho de plato
+            <li class="nav-item active" ng-if="user_Rol === 'Cocina'" role="none">
+                <a class="nav-link" href="despacho.html" aria-label="Despacho de plato" role="menuitem">
+                    <i class="fa fa-edit mr-1" aria-hidden="true"></i> Despacho de plato
                 </a>
             </li>
 
-            <li class="nav-item dropdown" ng-if="user_Rol === 'Cocina'">
-                <a class="nav-link dropdown-toggle active" href="#" id="ddCocina" role="button"
-                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fa fa-boxes mr-1"></i> Cocina
+            <li class="nav-item dropdown" ng-if="user_Rol === 'Cocina'" role="none">
+                <a class="nav-link dropdown-toggle active" href="#" id="ddCocina" role="menuitem"
+                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Menú de cocina">
+                    <i class="fa fa-boxes mr-1" aria-hidden="true"></i> Cocina
                 </a>
-                <div class="dropdown-menu" aria-labelledby="ddCocina">
-                    <a class="dropdown-item" href="plato.html">Platos</a>
-                    <a class="dropdown-item" href="menudeldia.html">Menú del día</a>
+                <div class="dropdown-menu" aria-labelledby="ddCocina" role="menu">
+                    <a class="dropdown-item" href="plato.html" role="menuitem">Platos</a>
+                    <a class="dropdown-item" href="menudeldia.html" role="menuitem">Menú del día</a>
                 </div>
             </li>
 
             <!-- Gerencia -->
-            <li class="nav-item dropdown" ng-if="user_Rol === 'Gerencia'">
-                <a class="nav-link dropdown-toggle active" href="#" id="ddReportes" role="button"
-                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fa fa-chart-bar mr-1"></i> Reportes de Gestión
+            <li class="nav-item dropdown" ng-if="user_Rol === 'Gerencia'" role="none">
+                <a class="nav-link dropdown-toggle active" href="#" id="ddReportes" role="menuitem"
+                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Menú de reportes">
+                    <i class="fa fa-chart-bar mr-1" aria-hidden="true"></i> Reportes de Gestión
                 </a>
-                <div class="dropdown-menu" aria-labelledby="ddReportes">
-                    <a class="dropdown-item" href="reportegcomensales.html">Reporte por Comensal</a>
-                    <a class="dropdown-item" href="reporteggestion.html">Reporte de Gestión</a>
+                <div class="dropdown-menu" aria-labelledby="ddReportes" role="menu">
+                    <a class="dropdown-item" href="reportegcomensales.html" role="menuitem">Reporte por Comensal</a>
+                    <a class="dropdown-item" href="reporteggestion.html" role="menuitem">Reporte de Gestión</a>
                 </div>
             </li>
 
             
 
             <!-- Configuración (Admin o Gerencia) -->
-            <li class="nav-item dropdown" ng-if="user_Rol === 'Admin' || user_Rol === 'Gerencia'">
-                <a class="nav-link dropdown-toggle active" href="#" id="ddConfig" role="button"
-                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fa fa-cog mr-1"></i> Configuración
+            <li class="nav-item dropdown" ng-if="user_Rol === 'Admin' || user_Rol === 'Gerencia'" role="none">
+                <a class="nav-link dropdown-toggle active" href="#" id="ddConfig" role="menuitem"
+                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Menú de configuración">
+                    <i class="fa fa-cog mr-1" aria-hidden="true"></i> Configuración
                 </a>
-                <div class="dropdown-menu" aria-labelledby="ddConfig">
-                    <a class="dropdown-item" href="usuarios.html">Usuarios</a>
-                    <a class="dropdown-item" href="bloqueo-usuarios.html">Bloqueo de Usuarios</a>
-                    <a class="dropdown-item" href="planta.html">Planta</a>
-                    <a class="dropdown-item" href="centrodecosto.html">Centro de Costo</a>
-                    <a class="dropdown-item" href="proyecto.html">Proyecto</a>
-                    <a class="dropdown-item" href="plan-nutricional.html">Perfil Nutricional</a>
-                    <a class="dropdown-item" href="jerarquia.html">Jerarquia</a>
-                    <a class="dropdown-item" href="turno.html">Turnos</a>
+                <div class="dropdown-menu" aria-labelledby="ddConfig" role="menu">
+                    <a class="dropdown-item" href="usuarios.html" role="menuitem">Usuarios</a>
+                    <a class="dropdown-item" href="planta.html" role="menuitem">Planta</a>
+                    <a class="dropdown-item" href="centrodecosto.html" role="menuitem">Centro de Costo</a>
+                    <a class="dropdown-item" href="proyecto.html" role="menuitem">Proyecto</a>
+                    <a class="dropdown-item" href="plan-nutricional.html" role="menuitem">Perfil Nutricional</a>
+                    <a class="dropdown-item" href="jerarquia.html" role="menuitem">Jerarquia</a>
+                    <a class="dropdown-item" href="turno.html" role="menuitem">Turnos</a>
                 </div>
             </li>
 
-            <li class="nav-item active">
-                <a class="nav-link" href="login.html"><i class="fa fa-sign-out-alt ml-1"></i></a>
+            <li class="nav-item active" role="none">
+                <a class="nav-link" href="login.html" 
+                   aria-label="Cerrar sesión"
+                   title="Cerrar sesión"
+                   role="menuitem">
+                    <i class="fa fa-sign-out-alt mr-1" aria-hidden="true"></i>
+                    <span class="d-none d-lg-inline">Salir</span>
+                </a>
             </li>
         </ul>
     </div>
 </nav>
 
 <script>
-// Funci�n para actualizar fecha y hora
+// Función para actualizar fecha y hora
 function updateDateTime() {
     var now = new Date();
     var options = {
@@ -109,13 +114,16 @@ function updateDateTime() {
     
     var datetimeElement = document.getElementById('current-datetime');
     if (datetimeElement) {
-        datetimeElement.textContent = now.toLocaleString('es-ES', options);
+        var formattedDate = now.toLocaleString('es-ES', options);
+        datetimeElement.textContent = formattedDate;
+        // Agregar atributo datetime para accesibilidad
+        datetimeElement.setAttribute('datetime', now.toISOString());
     }
 }
 
 // Actualizar cada segundo
 setInterval(updateDateTime, 1000);
 
-// Actualizar inmediatamente cuando se carga la p�gina
+// Actualizar inmediatamente cuando se carga la página
 document.addEventListener('DOMContentLoaded', updateDateTime);
 </script>

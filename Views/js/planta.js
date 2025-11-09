@@ -16,14 +16,11 @@
 })(window);
 
 // VERSION 3.1 - SweetAlert2 v11 unificado
-console.log('=== Planta.JS V3.1 CARGANDO ===');
 
 // Usa el módulo si ya existe; si no, créalo (evita redefinirlo en otras páginas)
 var app;
 try { app = angular.module('AngujarJS'); }
 catch (e) { app = angular.module('AngujarJS', []); }
-
-console.log('=== MODULO ANGUJARJS OK ===');
 
 // Filtros defensivos
 app.filter('startFrom', function () {
@@ -38,6 +35,13 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
     // Usar la variable de configuración global API_BASE_URL
     var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
     $scope.base = apiBaseUrl + '/api/planta/';
+
+    // -------- Loading State ----------
+    $scope.isLoading = true;
+    
+    // Inicializar paginación al inicio
+    $scope.currentPage = 0;
+    $scope.pageSize = 5; // Inicializar como número directamente
 
     // USER (por si lo usas en headers o UI)
     $scope.user_Rol = localStorage.getItem('role');
@@ -64,8 +68,8 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 
     // CREATE
      $scope.ModelCreate = function (isValid) {
-         console.log('=== VALIDACIÓN CREATE PLANTA === isValid:', isValid);
-         console.log('=== FUNCIÓN MODELCREATE EJECUTADA ===');
+        /* console.log('=== VALIDACIÓN CREATE PLANTA === isValid:', isValid);
+         console.log('=== FUNCIÓN MODELCREATE EJECUTADA ===');*/
 
         // Tomo valores desde ng-model y respaldo desde el DOM
         var nombre = ($scope.view_nombre || '').trim();
@@ -81,19 +85,19 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
         if (!descripcion) errores.push('Descripción');
 
          if (!isValid || errores.length > 0) {
-             console.log('=== DEBUG VALIDACIÓN CREATE ===');
-             console.log('showValidationErrors antes:', $scope.showValidationErrors);
+             /*console.log('=== DEBUG VALIDACIÓN CREATE ===');
+             console.log('showValidationErrors antes:', $scope.showValidationErrors);*/
              
              // Mostrar leyendas rojas
              $scope.showValidationErrors = true;
-             console.log('showValidationErrors después:', $scope.showValidationErrors);
+            // console.log('showValidationErrors después:', $scope.showValidationErrors);
              
              Swal.fire({
                  title: 'Completar campos requeridos',
                  //text: errores.length ? '' + errores.join(', ') : '',
                  icon: 'warning',
                  confirmButtonText: 'Aceptar',
-                 confirmButtonColor: '#343A40',
+                 confirmButtonColor: '#F34949',
                  allowOutsideClick: false,
                  allowEscapeKey: false
              });
@@ -102,7 +106,7 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 
         // Payload usando valores validados
         var jsonForm = { nombre: nombre, descripcion: descripcion };
-        console.log('Payload Create:', jsonForm);
+       // console.log('Payload Create:', jsonForm);
 
         $http({
             method: 'post',
@@ -135,6 +139,7 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 
     // READ ALL
     $scope.ModelReadAll = function () {
+        $scope.isLoading = true;
         $scope.dataset = [];
         $scope.ViewAction = 'Lista de Items';
         $scope.view_id = -1;
@@ -145,15 +150,17 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
         $http.get($scope.base + 'getAll')
             .then(function (resp) {
                 $scope.dataset = Array.isArray(resp.data) ? resp.data : [];
+                $scope.isLoading = false;
             })
             .catch(function () {
+                $scope.isLoading = false;
                 $scope.showError('Ha ocurrido un error', 'Api no presente');
             });
     };
 
     // UPDATE
     $scope.ModelUpdate = function (isValid, view_id) {
-        console.log('=== VALIDACIÓN UPDATE PLANTA === isValid:', isValid, 'id:', view_id);
+       // console.log('=== VALIDACIÓN UPDATE PLANTA === isValid:', isValid, 'id:', view_id);
 
         // Tomo valores desde ng-model y respaldo desde el DOM
         var nombre = ($scope.view_nombre || '').trim();
@@ -169,20 +176,20 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
         if (!descripcion) errores.push('Descripción');
 
          if (!isValid || errores.length > 0) {
-             console.log('=== DEBUG VALIDACIÓN ===');
+             /*console.log('=== DEBUG VALIDACIÓN ===');
              console.log('ViewAction:', $scope.ViewAction);
-             console.log('showValidationErrors antes:', $scope.showValidationErrors);
+             console.log('showValidationErrors antes:', $scope.showValidationErrors);*/
              
              // Mostrar leyendas rojas en ambos modos
              $scope.showValidationErrors = true;
-             console.log('showValidationErrors después:', $scope.showValidationErrors);
+             //console.log('showValidationErrors después:', $scope.showValidationErrors);
              
              Swal.fire({
                  title: 'Completar campos requeridos',
                  //text: errores.length ? 'Faltan: ' + errores.join(', ') : '',
                  icon: 'warning',
                  confirmButtonText: 'Aceptar',
-                 confirmButtonColor: '#343A40',
+                 confirmButtonColor: '#F34949',
                  allowOutsideClick: false,
                  allowEscapeKey: false
              });
@@ -191,7 +198,7 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
 
         // Payload usando valores validados
         var jsonForm = { id: view_id, nombre: nombre, descripcion: descripcion };
-        console.log('Payload Update:', jsonForm);
+        //console.log('Payload Update:', jsonForm);
 
         $http({
             method: 'post',
@@ -263,7 +270,7 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
                 text: '¿Desea dar de baja la planta?',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#343A40',
+                confirmButtonColor: '#F34949',
                 cancelButtonColor: '#d33',
                 confirmButtonText: 'Aceptar',
                 cancelButtonText: 'Cancelar'
@@ -290,10 +297,57 @@ app.controller('Planta', function ($scope, $sce, $http, $window) {
     $scope.ModelReadAll();
     $scope.data = [];
     for (var i = 0; i < 45; i++) $scope.data.push("Item " + i);
-    $scope.currentPage = 0;
-    $scope.pageSize = 20;
+    // currentPage y pageSize ya están inicializados al inicio del controlador
     $scope.numberOfPages = function () {
-        var len = Array.isArray($scope.dataset) ? $scope.dataset.length : 0;
+        var arr = ($scope.filteredData || $scope.dataset) || [];
+        var len = Array.isArray(arr) ? arr.length : 0;
         return Math.ceil(len / ($scope.pageSize || 1));
+    };
+
+    // Funciones para paginación tipo DataTable (igual que reportegcomensales)
+    $scope.getPageNumbers = function() {
+        var pages = [];
+        var totalPages = $scope.numberOfPages();
+        var current = $scope.currentPage;
+        
+        if (totalPages <= 7) {
+            for (var i = 0; i < totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            if (current <= 3) {
+                for (var i = 0; i < 5; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            } else if (current >= totalPages - 4) {
+                pages.push(0);
+                pages.push('...');
+                for (var i = totalPages - 5; i < totalPages; i++) {
+                    pages.push(i);
+                }
+            } else {
+                pages.push(0);
+                pages.push('...');
+                for (var i = current - 1; i <= current + 1; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            }
+        }
+        return pages;
+    };
+
+    $scope.goToPage = function(page) {
+        if (page >= 0 && page < $scope.numberOfPages()) {
+            $scope.currentPage = page;
+        }
+    };
+
+    $scope.changePageSize = function(newSize) {
+        $scope.pageSize = parseInt(newSize);
+        $scope.currentPage = 0;
     };
 });

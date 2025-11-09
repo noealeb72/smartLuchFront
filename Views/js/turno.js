@@ -20,7 +20,13 @@
 	}
 })(window);
 
-var app = angular.module('AngujarJS', []);
+// Verificar si el módulo ya existe
+var app;
+try {
+	app = angular.module('AngujarJS');
+} catch (e) {
+	app = angular.module('AngujarJS', []);
+}
 
 app.filter('startFrom', function () {
 	return function (input, start) {
@@ -47,6 +53,20 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 	// Usar la variable de configuración global API_BASE_URL
 	var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
 	$scope.base = apiBaseUrl + '/api/turno/';
+	
+	// -------- Loading State ----------
+	$scope.isLoading = true;
+	
+	// Inicializar variables
+	$scope.ViewAction = 'Lista de Items';
+	$scope.dataset = [];
+	$scope.filteredData = null;
+	$scope.searchText = '';
+	
+	// Inicializar paginación al inicio
+	$scope.currentPage = 0;
+	$scope.pageSize = 5; // Inicializar como número directamente
+	
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
 	$scope.user_Nombre = localStorage.getItem('nombre');
@@ -130,7 +150,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			text: text || '',
 			icon: 'success',
 			confirmButtonText: 'Aceptar',
-			confirmButtonColor: '#5c636a'
+			confirmButtonColor: '#F34949'
 		});
 	};
 
@@ -141,17 +161,17 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			text: text || '',
 			icon: 'error',
 			confirmButtonText: 'Aceptar',
-			confirmButtonColor: '#5c636a'
+			confirmButtonColor: '#F34949'
 		});
 	};
 
 	$scope.ModelCreate = function () {
-		console.log('=== CREATE TURNO ===');
+		/*console.log('=== CREATE TURNO ===');
 		console.log('Valores del scope:');
 		console.log('view_codigo:', $scope.view_codigo, 'tipo:', typeof $scope.view_codigo);
 		console.log('view_descripcion:', $scope.view_descripcion, 'tipo:', typeof $scope.view_descripcion);
 		console.log('view_horadesde:', $scope.view_horadesde, 'tipo:', typeof $scope.view_horadesde);
-		console.log('view_horahasta:', $scope.view_horahasta, 'tipo:', typeof $scope.view_horahasta);
+		console.log('view_horahasta:', $scope.view_horahasta, 'tipo:', typeof $scope.view_horahasta);*/
 
 		// Obtener valores directamente del DOM como respaldo
 		var codigoField = document.getElementById('view_codigo');
@@ -164,7 +184,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 		var horadesde = horadesdeField ? horadesdeField.value.trim() : '';
 		var horahasta = horahastaField ? horahastaField.value.trim() : '';
 		
-		console.log('Valores desde DOM:');
+		/*console.log('Valores desde DOM:');
 		console.log('codigo desde DOM:', codigo);
 		console.log('descripcion desde DOM:', descripcion);
 		console.log('horadesde desde DOM:', horadesde);
@@ -174,48 +194,48 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 		console.log('codigo:', codigo, 'vacío?', !codigo);
 		console.log('descripcion:', descripcion, 'vacía?', !descripcion);
 		console.log('horadesde:', horadesde, 'vacía?', !horadesde);
-		console.log('horahasta:', horahasta, 'vacía?', !horahasta);
+		console.log('horahasta:', horahasta, 'vacía?', !horahasta);*/
 
 		// Validación básica requerida
 		var errores = [];
 		
-		console.log('=== VALIDACIÓN DETALLADA ===');
+		/*console.log('=== VALIDACIÓN DETALLADA ===');
 		console.log('codigo === ""?', codigo === "");
 		console.log('codigo === null?', codigo === null);
 		console.log('codigo === undefined?', codigo === undefined);
 		console.log('codigo.length:', codigo.length);
-		console.log('!codigo evalúa a:', !codigo);
+		console.log('!codigo evalúa a:', !codigo);*/
 		
 		if (!codigo) {
-			console.log('Agregando Código a errores');
+			//console.log('Agregando Código a errores');
 			errores.push('Código');
 		}
 		if (!descripcion) {
-			console.log('Agregando Descripción a errores');
+			//console.log('Agregando Descripción a errores');
 			errores.push('Descripción');
 		}
 		if (!horadesde) {
-			console.log('Agregando Hora desde a errores');
+			//console.log('Agregando Hora desde a errores');
 			errores.push('Hora desde');
 		}
 		if (!horahasta) {
-			console.log('Agregando Hora hasta a errores');
+			//console.log('Agregando Hora hasta a errores');
 			errores.push('Hora hasta');
 		}
 
-		console.log('Errores encontrados:', errores);
+		//console.log('Errores encontrados:', errores);
 
 		if (errores.length > 0) {
 			// Activo las leyendas rojas en el HTML
 			$scope.showValidationErrors = true;
-			console.log('showValidationErrors activado:', $scope.showValidationErrors);
+			//console.log('showValidationErrors activado:', $scope.showValidationErrors);
 
 			// Popup
 			Swal.fire({
 				title: 'Completar campos requeridos',
 				icon: 'warning',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a',
+				confirmButtonColor: '#F34949',
 				allowOutsideClick: false,
 				allowEscapeKey: false
 			});
@@ -231,7 +251,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			horahasta: horahasta
 		};
 
-		console.log('Payload Create:', jsonForm);
+		//console.log('Payload Create:', jsonForm);
 
 		$http({
 			method: 'post',
@@ -244,7 +264,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				text: 'Turno creado exitosamente',
 				icon: 'success',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonColor: '#F34949'
 			});
 			$scope.ModelReadAll();
 		}).catch(function (err) {
@@ -254,7 +274,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				text: msg,
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonColor: '#F34949'
 			});
 		});
 	};
@@ -283,14 +303,15 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				text: 'Api no presente',
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonColor: '#F34949'
 			});
 			});
 	};
 
 	$scope.ModelReadAll = function () {
+		$scope.isLoading = true;
 		$scope.dataset = [];
-		$scope.searchKeyword;
+		$scope.searchKeyword = '';
 		$scope.ViewAction = 'Lista de Items';
 		$scope.view_id = -1;
 		$scope.view_codigo = '';
@@ -308,24 +329,26 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 						   item.codigo && 
 						   item.codigo.trim() !== '';
 				});
+				$scope.isLoading = false;
 				// Ordenar alfabéticamente por descripción
 				$scope.dataset.sort(function(a, b) {
 					return a.descripcion.localeCompare(b.descripcion);
 				});
 			})
 			.catch(function (error) {
+				$scope.isLoading = false;
 				Swal.fire({
 					title: 'Ha ocurrido un error',
 					text: 'Api no presente',
 					icon: 'error',
 					confirmButtonText: 'Aceptar',
-					confirmButtonColor: '#5c636a'
+					confirmButtonColor: '#F34949'
 				});
 			});
 	};
 
 	$scope.ModelUpdate = function (isValid, view_id) {
-		console.log('=== UPDATE TURNO ===', view_id);
+		//console.log('=== UPDATE TURNO ===', view_id);
 
 		// Obtener valores directamente del DOM como respaldo
 		var codigoField = document.getElementById('view_codigo');
@@ -351,7 +374,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				title: 'Completar campos requeridos',
 				icon: 'warning',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a',
+				confirmButtonColor: '#F34949',
 				allowOutsideClick: false,
 				allowEscapeKey: false
 			});
@@ -366,7 +389,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			horahasta: horahasta
 		};
 
-		console.log('Payload Update:', jsonForm);
+		//console.log('Payload Update:', jsonForm);
 
 		$http({
 			method: 'post',
@@ -379,7 +402,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				text: 'Turno actualizado exitosamente',
 				icon: 'success',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonColor: '#F34949'
 			});
 			$scope.ModelReadAll();
 		}).catch(function (err) {
@@ -389,7 +412,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 				text: msg,
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonColor: '#F34949'
 			});
 		});
 	};
@@ -445,7 +468,7 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 			text: 'Desea dar de baja el turno?',
 			icon: 'warning',
 			showCancelButton: true,
-			  confirmButtonColor: '#343A40',
+			  confirmButtonColor: '#F34949',
 			cancelButtonColor: '#d33',
 			confirmButtonText: 'Aceptar',
 			cancelButtonText: 'Cancelar'
@@ -471,10 +494,58 @@ app.controller('Turno', function ($scope, $sce, $http, $window) {
 		$scope.data.push("Item " + i);
 	}
 
-	$scope.currentPage = 0;
-	$scope.pageSize = 20;
+	// currentPage y pageSize ya están inicializados al inicio del controlador
 
 	$scope.numberOfPages = function () {
-		return Math.ceil($scope.dataset.length / $scope.pageSize);
+		var arr = ($scope.filteredData || $scope.dataset) || [];
+		var len = Array.isArray(arr) ? arr.length : 0;
+		return Math.ceil(len / $scope.pageSize);
 	}
+
+	// Funciones para paginación tipo DataTable (igual que reportegcomensales)
+	$scope.getPageNumbers = function() {
+		var pages = [];
+		var totalPages = $scope.numberOfPages();
+		var current = $scope.currentPage;
+		
+		if (totalPages <= 7) {
+			for (var i = 0; i < totalPages; i++) {
+				pages.push(i);
+			}
+		} else {
+			if (current <= 3) {
+				for (var i = 0; i < 5; i++) {
+					pages.push(i);
+				}
+				pages.push('...');
+				pages.push(totalPages - 1);
+			} else if (current >= totalPages - 4) {
+				pages.push(0);
+				pages.push('...');
+				for (var i = totalPages - 5; i < totalPages; i++) {
+					pages.push(i);
+				}
+			} else {
+				pages.push(0);
+				pages.push('...');
+				for (var i = current - 1; i <= current + 1; i++) {
+					pages.push(i);
+				}
+				pages.push('...');
+				pages.push(totalPages - 1);
+			}
+		}
+		return pages;
+	};
+
+	$scope.goToPage = function(page) {
+		if (page >= 0 && page < $scope.numberOfPages()) {
+			$scope.currentPage = page;
+		}
+	};
+
+	$scope.changePageSize = function(newSize) {
+		$scope.pageSize = parseInt(newSize);
+		$scope.currentPage = 0;
+	};
 });

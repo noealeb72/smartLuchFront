@@ -99,12 +99,10 @@
             .pagination-btn:hover:not(:disabled) {
                 background-color: #e9ecef;
                 color: #495057;
-                transform: translateY(-1px);
                 box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
             }
 
             .pagination-btn:active:not(:disabled) {
-                transform: translateY(0);
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             }
 
@@ -271,9 +269,11 @@
             margin-top: 0px;
         }
 
-        /* Estilos para que el fondo blanco llegue hasta el final */
+        /* Estilos para que el footer quede abajo */
         html, body {
             height: 100%;
+            margin: 0;
+            padding: 0;
         }
 
         body {
@@ -284,63 +284,62 @@
 
         .container-fluid {
             flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .solid-background {
-            min-height: calc(100vh - 60px);
+            flex: 1;
             background-color: #ffffff;
         }
 
-        .smart-bg {
+        .footer-sticky {
             margin-top: auto;
         }
     </style>
 </head>
 
-<body class="d-flex flex-column min-vh-100">
-    <div class="container-fluid flex-grow-1">
+<body class="d-flex flex-column min-vh-100 ng-cloak">
+    <!-- Loading spinner -->
+    <div ng-hide="!isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido">
+        <span class="sr-only">Cargando contenido, por favor espere...</span>
+    </div>
+    <div class="container-fluid">
         <div class="solid-background">
 
 
                 <!-- Menu -->
             <div ng-include="'navbar.html'"></div>
             <script>
-                console.log('Página cargada, verificando navbar...');
                 setTimeout(function() {
                     var navbar = document.querySelector('nav.navbar');
                     if (navbar) {
-                        console.log('? Navbar encontrado:', navbar);
                         
                         // Verificar si el rol se est� mostrando
                         var roleElement = document.querySelector('.navbar .user-role');
                         if (roleElement) {
-                            console.log('? Elemento de rol encontrado:', roleElement.textContent);
                         } else {
-                            console.log('? Elemento de rol no encontrado');
                         }
                         
                         // Verificar localStorage
                         var role = localStorage.getItem('role');
-                        console.log('?? Rol en localStorage:', role);
                         
                         // Verificar contenedor del men�
                         var menuContainer = document.getElementById('navbar-menu');
                         if (menuContainer) {
-                            console.log('? Contenedor del men� encontrado:', menuContainer);
+                            /*console.log('? Contenedor del men� encontrado:', menuContainer);
                             console.log('?? N�mero de elementos en el men�:', menuContainer.children.length);
-                            console.log('?? Elementos del men�:', menuContainer.innerHTML);
+                            console.log('?? Elementos del men�:', menuContainer.innerHTML);*/
                         } else {
-                            console.log('? Contenedor del men� NO encontrado');
+                           // console.log('? Contenedor del men� NO encontrado');
                         }
                         
                         // Forzar recarga del navbar si es necesario
                         if (window.reloadNavbar) {
-                            console.log('?? Forzando recarga del navbar...');
                             window.reloadNavbar();
                         }
                         
                     } else {
-                        console.error('? Navbar NO encontrado');
                     }
                 }, 2000);
             </script>
@@ -385,7 +384,7 @@
                                             <div class="input-group">
                                             <input id="filtro_plato" class="form-control" type="text" ng-model="filtro_plato" placeholder="Código de plato..." />
                                                 <div class="input-group-append">
-                                                <button type="button" class="btn btn-primary" ng-click="buscarPlato()" title="Buscar plato">
+                                                <button type="button" class="btn btn-primary" ng-click="buscarPlato()" title="Buscar plato" aria-label="Buscar plato">
                                                         <i class="fa fa-search"></i>
                                                     </button>
                                                 </div>
@@ -553,12 +552,13 @@
                                 </div>
                                 <div class="col-md-6 d-flex justify-content-end align-items-center">
                                     <span class="mr-2">Filas:</span>
-                                    <select class="form-control form-control-sm mr-3" style="width:80px"
-                                            ng-model="pageSize" ng-change="changePageSize(pageSize)">
-                                                <option value="10">10</option>
-                                        <option value="20" selected>20</option>
-                                                <option value="50">50</option>
-                                                <option value="100">100</option>
+                                    <select class="form-control form-control-sm mr-3 page-size-select"
+                                            ng-model="pageSize" ng-change="changePageSize(pageSize)" ng-init="pageSize = parseInt(pageSize) || 5">
+                                                <option ng-value="5">5</option>
+                                                <option ng-value="10">10</option>
+                                                <option ng-value="20">20</option>
+                                                <option ng-value="50">50</option>
+                                                <option ng-value="100">100</option>
                                             </select>
                                             
                                             <button class="btn btn-sm btn-outline-secondary page-number-btn" 
@@ -573,7 +573,7 @@
                                             <span class="mx-2" ng-repeat="page in getPageNumbers() track by $index">
                                                 <button ng-if="page !== '...'" 
                                                         class="btn btn-sm page-number-btn" 
-                                                        ng-class="{'btn-primary': page === currentPage + 1, 'btn-outline-secondary': page !== currentPage + 1}"
+                                                        ng-class="{'btn-secondary': currentPage === (page - 1), 'btn-outline-secondary': currentPage !== (page - 1)}"
                                                         ng-click="goToPage(page - 1)">
                                                     {{page}}
                                                 </button>
@@ -597,12 +597,12 @@
         </div>
 
         <!-- Modal Buscar Plato -->
-                <div class="modal fade" id="modalBuscarPlato" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal fade" id="modalBuscarPlato" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalBuscarPlatoLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                             <div class="modal-header" style="background:#F34949; color:#fff;">
-                        <h5 class="modal-title"><i class="fa fa-search mr-2"></i>Buscar Plato</h5>
-                                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                        <h5 class="modal-title" id="modalBuscarPlatoLabel"><i class="fa fa-search mr-2" aria-hidden="true"></i>Buscar Plato</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar modal"><span aria-hidden="true">&times;</span></button>
                     </div>
                     <div class="modal-body">
                         <div class="form-group">
@@ -645,8 +645,9 @@
                 </div>
             </div> <!-- Fin del contenido principal -->
         </div> <!-- Fin de solid-background -->
-        <!-- Footer -->
-        <div ng-include="'footer.html'" class="footer-sticky" style="margin-top: auto;"></div>
+    </div> <!-- Fin de container-fluid -->
+    <!-- Footer -->
+    <div ng-include="'footer.html'" class="footer-sticky"></div>
     <!-- External JS -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
@@ -662,6 +663,9 @@
     <!-- Main JS -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    
+    <!-- Configuración centralizada - DEBE CARGARSE ANTES DE LOS SCRIPTS QUE USAN API_BASE_URL -->
+    <script src="js/config.js"></script>
 
     <script src="js/reporteggestion.js"></script>
 </body>

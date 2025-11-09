@@ -11,6 +11,10 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 	// Usar la variable de configuración global API_BASE_URL
 	var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
 	$scope.base = apiBaseUrl + '/api/plannutricional/';
+	
+	// -------- Loading State ----------
+	$scope.isLoading = true;
+	
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
 	$scope.user_Nombre = localStorage.getItem('nombre');
@@ -73,6 +77,7 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ModelReadAll = function () {
+		$scope.isLoading = true;
 		$scope.dataset = [];
 		$scope.searchKeyword;
 		$scope.ViewAction = 'Platos consumidos';
@@ -81,10 +86,12 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 		$scope.view_descripcion = '';
 
 		$http.get($scope.base + 'getAll')
-			.success(function (data) {
-				$scope.dataset = data;
+			.then(function (response) {
+				$scope.dataset = Array.isArray(response.data) ? response.data : [];
+				$scope.isLoading = false;
 			})
-			.error(function (data, status) {
+			.catch(function (error) {
+				$scope.isLoading = false;
 				Swal.fire(
 					'Ha ocurrido un error',
 					'Api no presente',
@@ -94,12 +101,12 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.checkStars = function ($event) {
-		console.log($event.target);
+		//console.log($event.target);
 		let parent = $event.target.parentElement;
 		let maxIndex = $event.target.id;
-		console.log("Max " + maxIndex);
+		//console.log("Max " + maxIndex);
 		let childrenArr = parent.children;
-		console.log(childrenArr);
+		///console.log(childrenArr);
 		for (let i = 0; i < maxIndex; i++) {
 			parent.children[i + 1].classList.add("star-checked");
 			parent.children[i + 1].nextElementSibling.classList.remove("star-checked");
@@ -188,7 +195,7 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 			text: 'Desea dar de baja el plan nutricional?',
 			type: 'warning',
 			showCancelButton: true,
-			confirmButtonColor: '#343A40',
+			confirmButtonColor: '#F34949',
 			cancelButtonColor: '#d33',
 			confirmButtonText: 'Aceptar'
 		})
@@ -206,11 +213,59 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 	$scope.ModelReadAll();
 
 	$scope.currentPage = 0;
-	$scope.pageSize = 10;
+	$scope.pageSize = parseInt($scope.pageSize) || 5; // Por defecto 5 filas (número)
 	$scope.data = [];
 	$scope.numberOfPages = function () {
-		return Math.ceil($scope.data.length / $scope.pageSize);
+		var len = Array.isArray($scope.data) ? $scope.data.length : 0;
+		return Math.ceil(len / $scope.pageSize);
 	}
+
+	// Funciones para paginación tipo DataTable (igual que reportegcomensales)
+	$scope.getPageNumbers = function() {
+		var pages = [];
+		var totalPages = $scope.numberOfPages();
+		var current = $scope.currentPage;
+		
+		if (totalPages <= 7) {
+			for (var i = 0; i < totalPages; i++) {
+				pages.push(i);
+			}
+		} else {
+			if (current <= 3) {
+				for (var i = 0; i < 5; i++) {
+					pages.push(i);
+				}
+				pages.push('...');
+				pages.push(totalPages - 1);
+			} else if (current >= totalPages - 4) {
+				pages.push(0);
+				pages.push('...');
+				for (var i = totalPages - 5; i < totalPages; i++) {
+					pages.push(i);
+				}
+			} else {
+				pages.push(0);
+				pages.push('...');
+				for (var i = current - 1; i <= current + 1; i++) {
+					pages.push(i);
+				}
+				pages.push('...');
+				pages.push(totalPages - 1);
+			}
+		}
+		return pages;
+	};
+
+	$scope.goToPage = function(page) {
+		if (page >= 0 && page < $scope.numberOfPages()) {
+			$scope.currentPage = page;
+		}
+	};
+
+	$scope.changePageSize = function(newSize) {
+		$scope.pageSize = parseInt(newSize);
+		$scope.currentPage = 0;
+	};
 	for (var i = 0; i < 45; i++) {
 		$scope.data.push("Item " + i);
 	}

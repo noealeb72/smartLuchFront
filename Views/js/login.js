@@ -84,9 +84,9 @@ app.controller('Login', function ($scope, $http, $window, $location) {
                             title: '⚠️ Error en el Login',
                             text: messageError,
                             icon: 'error',
-                            iconHtml: '<i class="fas fa-times-circle" style="color: #dc3545; font-size: 3rem;"></i>',
+                            iconHtml: '<i class="fas fa-times-circle" style="color: #F34949; font-size: 3rem;"></i>',
                             confirmButtonText: 'Aceptar',
-                            confirmButtonColor: '#343A40',
+                            confirmButtonColor: '#F34949',
                             width: '400px',
                             padding: '1.5rem',
                             allowOutsideClick: true,
@@ -160,32 +160,65 @@ app.controller('Login', function ($scope, $http, $window, $location) {
                 var usuarioSmatTime = response.data.usuarioSmatTime;
 
                 // Verificar si el tipo de usuario está bloqueado
-                var tipoUsuario = usuario.perfil || '';
+                // Normalizar el tipo de usuario (trim, capitalizar primera letra)
+                var tipoUsuarioRaw = (usuario.perfil || '').toString().trim();
+                var tipoUsuario = tipoUsuarioRaw.charAt(0).toUpperCase() + tipoUsuarioRaw.slice(1).toLowerCase();
                 var estaBloqueado = false;
+                
+                // Debug: ver qué valor llega
+               /* console.log('=== DEBUG BLOQUEO USUARIOS ===');
+                console.log('usuario.perfil (raw):', usuario.perfil);
+                console.log('tipoUsuarioRaw:', tipoUsuarioRaw);
+                console.log('tipoUsuario (normalizado):', tipoUsuario);
+                console.log('BLOQUEO_USUARIOS:', typeof BLOQUEO_USUARIOS !== 'undefined' ? BLOQUEO_USUARIOS : 'NO DEFINIDO');
+                console.log('BloqueoUsuariosService:', typeof BloqueoUsuariosService !== 'undefined' ? 'DEFINIDO' : 'NO DEFINIDO');*/
                 
                 // Verificar bloqueo usando el servicio
                 if (typeof BloqueoUsuariosService !== 'undefined') {
                     estaBloqueado = BloqueoUsuariosService.estaBloqueado(tipoUsuario);
+                    //console.log('Resultado de BloqueoUsuariosService.estaBloqueado:', estaBloqueado);
                 } else {
                     // Fallback: verificar en localStorage primero, luego en config.js
                     try {
                         var bloqueos = localStorage.getItem('bloqueo_usuarios');
                         if (bloqueos) {
                             var bloqueosObj = JSON.parse(bloqueos);
-                            if (bloqueosObj.hasOwnProperty(tipoUsuario)) {
-                                estaBloqueado = bloqueosObj[tipoUsuario] === true;
-                            } else if (typeof BLOQUEO_USUARIOS !== 'undefined' && BLOQUEO_USUARIOS) {
-                                // Si no está en localStorage, usar config.js
-                                estaBloqueado = BLOQUEO_USUARIOS[tipoUsuario] === true;
+                            // Buscar con normalización
+                            var encontrado = false;
+                            for (var key in bloqueosObj) {
+                                var keyNormalizado = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+                                if (keyNormalizado === tipoUsuario) {
+                                    estaBloqueado = bloqueosObj[key] === true;
+                                    encontrado = true;
+                                    break;
+                                }
+                            }
+                            if (!encontrado && typeof BLOQUEO_USUARIOS !== 'undefined' && BLOQUEO_USUARIOS) {
+                                // Si no está en localStorage, buscar en config.js con normalización
+                                for (var key in BLOQUEO_USUARIOS) {
+                                    var keyNormalizado = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+                                    if (keyNormalizado === tipoUsuario) {
+                                        estaBloqueado = BLOQUEO_USUARIOS[key] === true;
+                                        break;
+                                    }
+                                }
                             }
                         } else if (typeof BLOQUEO_USUARIOS !== 'undefined' && BLOQUEO_USUARIOS) {
-                            // Si no hay localStorage, usar config.js directamente
-                            estaBloqueado = BLOQUEO_USUARIOS[tipoUsuario] === true;
+                            // Si no hay localStorage, buscar en config.js directamente con normalización
+                            for (var key in BLOQUEO_USUARIOS) {
+                                var keyNormalizado = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+                                if (keyNormalizado === tipoUsuario) {
+                                    estaBloqueado = BLOQUEO_USUARIOS[key] === true;
+                                    break;
+                                }
+                            }
                         }
                     } catch (e) {
                         console.error('Error al verificar bloqueo:', e);
                     }
                 }
+                
+                //console.log('estaBloqueado (final):', estaBloqueado);
 
                 // Si el tipo de usuario está bloqueado, no permitir el login
                 if (estaBloqueado) {
@@ -200,9 +233,9 @@ app.controller('Login', function ($scope, $http, $window, $location) {
                             title: 'Acceso Bloqueado',
                             text: messageError,
                             icon: 'error',
-                            iconHtml: '<i class="fas fa-ban" style="color: #dc3545; font-size: 3rem;"></i>',
+                            iconHtml: '<i class="fas fa-ban" style="color: #F34949; font-size: 3rem;"></i>',
                             confirmButtonText: 'Aceptar',
-                            confirmButtonColor: '#343A40',
+                            confirmButtonColor: '#F34949',
                             width: '450px',
                             padding: '1.5rem',
                             allowOutsideClick: true,

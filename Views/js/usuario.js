@@ -1,7 +1,5 @@
 ﻿// VERSION 3.1 - SweetAlert2 v11 unificado - FORZAR RECARGA
-console.log('=== USUARIO.JS V3.1 CARGANDO ===');
 var app = angular.module('AngujarJS', []);
-console.log('=== MODULO ANGUJARJS V3.1 CREADO ===');
 
 app.filter('startFrom', function () {
 	return function (input, start) {
@@ -25,6 +23,14 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	$scope.base = apiBaseUrl + '/api/usuario/';
 	$scope.basePlan = apiBaseUrl + '/api/plannutricional/';
 	$scope.planes = '';
+	
+	// -------- Loading State ----------
+	$scope.isLoading = true;
+	
+	// Inicializar paginación al inicio
+	$scope.currentPage = 0;
+	$scope.pageSize = 5; // Inicializar como número directamente
+	
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
 	$scope.user_Nombre = localStorage.getItem('nombre');
@@ -80,9 +86,9 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ModelCreate = function (form) {
-		console.log('=== DEBUGGING ModelCreate ===');
+		/*console.log('=== DEBUGGING ModelCreate ===');
 		console.log('form:', form);
-		console.log('form.$valid:', form && form.$valid);
+		console.log('form.$valid:', form && form.$valid);*/
 		
 		// Obtener valores directamente del DOM para verificar
 		var camposRequeridos = [
@@ -101,7 +107,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 			{ id: 'view_plannutricional', nombre: 'Plan nutricional' }
 		];
 		
-		console.log('=== VALORES DE LOS CAMPOS ===');
+		//console.log('=== VALORES DE LOS CAMPOS ===');
 		var camposFaltantes = [];
 		
 		camposRequeridos.forEach(function(campo) {
@@ -109,7 +115,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 			var valor = elemento ? elemento.value : 'NO ENCONTRADO';
 			var estaVacio = !valor || valor.trim() === '';
 			
-			console.log(campo.nombre + ':', valor, estaVacio ? '(VACÍO)' : '(OK)');
+			//console.log(campo.nombre + ':', valor, estaVacio ? '(VACÍO)' : '(OK)');
 			
 			if (estaVacio) {
 				camposFaltantes.push(campo.nombre);
@@ -117,14 +123,13 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 		});
 		
 		if (camposFaltantes.length > 0) {
-			console.warn('CAMPOS FALTANTES:', camposFaltantes);
 			$scope.showPopup('Completar campos requeridos','', 'warning');
 			return;
 		}
 		
 		if (form && !form.$valid) {
-			console.log('=== ERRORES DE VALIDACIÓN DE ANGULAR ===');
-			console.log('form.$error:', form.$error);
+			//console.log('=== ERRORES DE VALIDACIÓN DE ANGULAR ===');
+			//console.log('form.$error:', form.$error);
 			
 			var requiredErrors = (form.$error && form.$error.required) ? form.$error.required : [];
 			var patternErrors = (form.$error && form.$error.pattern) ? form.$error.pattern : [];
@@ -163,8 +168,6 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				}
 			});
 			
-			console.warn('Campos requeridos faltantes:', missing);
-			console.warn('Errores de validación:', errores);
 			
 			var mensaje = '';
 			if (missing.length > 0) {
@@ -268,7 +271,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 			bonificacion_invitado: bonificacionInvitado,
 				foto: $scope.view_previewImage
 			};
-		console.log('Payload Create:', jsonForm);
+		//console.log('Payload Create:', jsonForm);
 
 			$http({
 				method: 'post',
@@ -282,22 +285,21 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				}
 			}, function (error) {
 			var msg = (error && error.data) ? (typeof error.data === 'string' ? error.data : (error.data.Message || JSON.stringify(error.data))) : (error.statusText || 'Error desconocido');
-			console.error('Create 400/500:', error);
+			//console.error('Create 400/500:', error);
 			$scope.showError('Operación Incorrecta', msg);
 		});
 	};
 
 	$scope.ModelRead = function (view_id) {
-		console.log('=== MODELREAD EJECUTADO ===');
+		/*console.log('=== MODELREAD EJECUTADO ===');
 		console.log('ID del usuario:', view_id);
-		console.log('URL:', $scope.base + 'get/' + view_id);
+		console.log('URL:', $scope.base + 'get/' + view_id);*/
 		$http.get($scope.base + 'get/' + view_id)
 			.success(function (data) {
-				console.log('Datos recibidos del servidor:', data);
+				//console.log('Datos recibidos del servidor:', data);
 
 				// Validar que data existe (puede ser objeto o array)
 				if (!data) {
-					console.error('Error: No se recibieron datos del servidor');
 					$scope.showError('Error', 'No se pudieron cargar los datos del usuario');
 					return;
 				}
@@ -306,7 +308,6 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				var userData = Array.isArray(data) ? data[0] : data;
 				
 				if (!userData) {
-					console.error('Error: Datos de usuario no válidos');
 					$scope.showError('Error', 'No se pudieron cargar los datos del usuario');
 					return;
 				}
@@ -335,7 +336,6 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 					aux = userData.fechaingreso.split('-');
 					fecha = new Date(aux[0], aux[1] - 1, aux[2]);
 				} else {
-					console.warn('fechaingreso no encontrada en los datos');
 					fecha = new Date();
 				}
 
@@ -365,8 +365,9 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ModelReadAll = function () {
+		$scope.isLoading = true;
 		$scope.dataset = [];
-		$scope.searchKeyword;
+		$scope.searchKeyword = '';
 		$scope.searchText = '';
 		$scope.ViewAction = 'Lista de Items';
 		$scope.view_id = -1;
@@ -390,17 +391,19 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 		$scope.view_previewImage = '';
 
 		$http.get($scope.base + 'getAll')
-			.success(function (data) {
-				$scope.dataset = data;
+			.then(function (response) {
+				$scope.dataset = Array.isArray(response.data) ? response.data : [];
 				$scope.searchText = '';
+				$scope.isLoading = false;
 			})
-			.error(function (data, status) {
+			.catch(function (error) {
+				$scope.isLoading = false;
 				$scope.showError('Ha ocurrido un error', 'Api no presente');
 			});
 	};
 
 	$scope.ModelUpdate = function (isValid, view_id) {
-		console.log('ModelUpdate ejecutándose - isValid:', isValid);
+		//console.log('ModelUpdate ejecutándose - isValid:', isValid);
 		
 		// Validación adicional para selects vacíos
 		var selectFields = ['view_perfil', 'view_planta', 'view_proyecto', 'view_centrodecosto'];
@@ -419,14 +422,13 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 		});
 		
 		if (emptySelects.length > 0) {
-			console.warn('Selects vacíos:', emptySelects);
 			$scope.showPopup('Completar campos requeridos', '', 'warning');
 			return;
 		}*/
 		
 		if (!isValid) { 
-			console.log('Formulario no válido, mostrando popup');
-			console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
+			//console.log('Formulario no válido, mostrando popup');
+			//console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
 			
 			// Verificar si SweetAlert2 está disponible
 			if (typeof Swal !== 'undefined' && Swal.fire) {
@@ -505,12 +507,12 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ModelDelete = function (view_id) {
-		console.log('=== MODELDELETE EJECUTADO ===');
+		/*console.log('=== MODELDELETE EJECUTADO ===');
 		console.log('ID a eliminar:', view_id);
-		console.log('URL:', $scope.base + 'Delete');
+		console.log('URL:', $scope.base + 'Delete');*/
 		
 		var jsonForm = { id: view_id };
-		console.log('Datos a enviar:', jsonForm);
+		//console.log('Datos a enviar:', jsonForm);
 
 		$http({
 			method: 'post',
@@ -521,13 +523,13 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 			url: $scope.base + 'Delete',
 			data: jsonForm
 		}).then(function (response) {
-			console.log('Respuesta completa del servidor:', response);
+			/*console.log('Respuesta completa del servidor:', response);
 			console.log('Status:', response.status);
-			console.log('Data:', response.data);
+			console.log('Data:', response.data);*/
 			
 			// Verificar si la respuesta indica éxito
 			if (response.status === 200 && response.data) {
-				console.log('Eliminación exitosa');
+				//console.log('Eliminación exitosa');
 				Swal.fire({
 					title: 'Operación Correcta',
 					text: 'Usuario eliminado exitosamente',
@@ -536,7 +538,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				});
 				$scope.ModelReadAll();
 			} else {
-				console.log('Respuesta inesperada del servidor');
+				//console.log('Respuesta inesperada del servidor');
 				Swal.fire({
 					title: 'Error',
 					text: 'Respuesta inesperada del servidor: ' + JSON.stringify(response.data),
@@ -545,9 +547,9 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				});
 			}
 		}, function (error) {
-			console.log('Error en eliminación:', error);
+			/*console.log('Error en eliminación:', error);
 			console.log('Status:', error.status);
-			console.log('Data:', error.data);
+			console.log('Data:', error.data);*/
 			Swal.fire({
 				title: 'Operación Incorrecta',
 				text: 'Error al eliminar el usuario: ' + (error.data || error.statusText || 'Error desconocido'),
@@ -570,7 +572,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				// Si estamos en modo "Nuevo Usuario" y hay planes disponibles, seleccionar el primero
 				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.planes.length > 0) {
 					$scope.view_plannutricional = $scope.planes[0].nombre;
-					console.log('Plan nutricional seleccionado automáticamente:', $scope.view_plannutricional);
+					//console.log('Plan nutricional seleccionado automáticamente:', $scope.view_plannutricional);
 				}
 			})
 			.error(function (data, status) {
@@ -591,7 +593,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				// Si estamos en modo "Nuevo Usuario" y hay plantas disponibles, seleccionar el primero
 				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.plantas.length > 0) {
 					$scope.view_planta = $scope.plantas[0].nombre;
-					console.log('Planta seleccionada automáticamente:', $scope.view_planta);
+					//console.log('Planta seleccionada automáticamente:', $scope.view_planta);
 				}
 			})
 			.error(function (data, status) {
@@ -624,14 +626,14 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 		
 		// Seleccionar automáticamente el primer perfil (Admin)
 		$scope.view_perfil = 'Admin';
-		console.log('Perfil seleccionado automáticamente:', $scope.view_perfil);
+		//console.log('Perfil seleccionado automáticamente:', $scope.view_perfil);
 		
-		console.log('ViewCreate - Inicializando selects:', {
+		/*console.log('ViewCreate - Inicializando selects:', {
 			perfil: $scope.view_perfil,
 			planta: $scope.view_planta,
 			centrodecosto: $scope.view_centrodecosto,
 			proyecto: $scope.view_proyecto
-		});
+		});*/
 
 		// Cargar datos
 		$scope.ModelReadPlanes();
@@ -641,32 +643,26 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 		
 		// Asegurar que los selects mantengan el valor por defecto después de cargar datos
 		setTimeout(function() {
-			console.log('setTimeout - Verificando selects:', {
-				perfil: $scope.view_perfil,
-				planta: $scope.view_planta,
-				centrodecosto: $scope.view_centrodecosto,
-				proyecto: $scope.view_proyecto
-			});
 			
 			if (!$scope.view_perfil || $scope.view_perfil === '') {
 				$scope.view_perfil = '-- Seleccionar --';
-				console.log('Restaurando perfil a -- Seleccionar --');
+				//console.log('Restaurando perfil a -- Seleccionar --');
 			}
 			if (!$scope.view_plannutricional || $scope.view_plannutricional === '') {
 				$scope.view_plannutricional = '-- Seleccionar --';
-				console.log('Restaurando plannutricional a -- Seleccionar --');
+				//console.log('Restaurando plannutricional a -- Seleccionar --');
 			}
 			if (!$scope.view_planta || $scope.view_planta === '') {
 				$scope.view_planta = '-- Seleccionar --';
-				console.log('Restaurando planta a -- Seleccionar --');
+				//console.log('Restaurando planta a -- Seleccionar --');
 			}
 			if (!$scope.view_centrodecosto || $scope.view_centrodecosto === '') {
 				$scope.view_centrodecosto = '-- Seleccionar --';
-				console.log('Restaurando centrodecosto a -- Seleccionar --');
+				//console.log('Restaurando centrodecosto a -- Seleccionar --');
 			}
 			if (!$scope.view_proyecto || $scope.view_proyecto === '') {
 				$scope.view_proyecto = '-- Seleccionar --';
-				console.log('Restaurando proyecto a -- Seleccionar --');
+				//console.log('Restaurando proyecto a -- Seleccionar --');
 			}
 			$scope.$apply();
 		}, 200);
@@ -685,7 +681,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				// Si estamos en modo "Nuevo Usuario" y hay proyectos disponibles, seleccionar el primero
 				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.proyectos.length > 0) {
 					$scope.view_proyecto = $scope.proyectos[0].nombre;
-					console.log('Proyecto seleccionado automáticamente:', $scope.view_proyecto);
+					//console.log('Proyecto seleccionado automáticamente:', $scope.view_proyecto);
 				}
 			})
 			.error(function (data, status) {
@@ -706,7 +702,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				// Si estamos en modo "Nuevo Usuario" y hay centros disponibles, seleccionar el primero
 				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.centros.length > 0) {
 					$scope.view_centrodecosto = $scope.centros[0].nombre;
-					console.log('Centro de costo seleccionado automáticamente:', $scope.view_centrodecosto);
+					//console.log('Centro de costo seleccionado automáticamente:', $scope.view_centrodecosto);
 				}
 			})
 			.error(function (data, status) {
@@ -715,8 +711,8 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ViewUpdate = function (view_id) {
-		console.log('=== EDITAR USUARIO ===');
-		console.log('ID del usuario:', view_id);
+		/*console.log('=== EDITAR USUARIO ===');
+		console.log('ID del usuario:', view_id);*/
 		$scope.ViewAction = 'Editar Usuario';
 		$scope.view_id = view_id;
 		$scope.ModelRead(view_id);
@@ -736,7 +732,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 			text: '¿Desea dar de baja el usuario?',
 			icon: 'warning',
 			showCancelButton: true,
-			  confirmButtonColor: '#343A40',
+			  confirmButtonColor: '#F34949',
 			cancelButtonColor: '#d33',
 			confirmButtonText: 'Aceptar',
 			cancelButtonText: 'Cancelar'
@@ -773,10 +769,66 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 		$scope.data.push("Item " + i);
 	}
 
-	$scope.currentPage = 0;
-	$scope.pageSize = 20;
+	// pageSize y currentPage ya están inicializados al inicio del controlador
 
 	$scope.numberOfPages = function () {
-		return Math.ceil($scope.dataset.length / $scope.pageSize);
+		var arr = ($scope.filteredData || $scope.dataset) || [];
+		var len = Array.isArray(arr) ? arr.length : 0;
+		return Math.ceil(len / $scope.pageSize);
 	}
+
+	// Funciones para paginación tipo DataTable (igual que reportegcomensales)
+	$scope.getPageNumbers = function() {
+		var pages = [];
+		var totalPages = $scope.numberOfPages();
+		var current = $scope.currentPage;
+		
+		if (totalPages <= 7) {
+			// Si hay 7 páginas o menos, mostrar todas
+			for (var i = 0; i < totalPages; i++) {
+				pages.push(i);
+			}
+		} else {
+			// Lógica para mostrar páginas con puntos suspensivos
+			if (current <= 3) {
+				// Estamos cerca del inicio
+				for (var i = 0; i < 5; i++) {
+					pages.push(i);
+				}
+				pages.push('...');
+				pages.push(totalPages - 1);
+			} else if (current >= totalPages - 4) {
+				// Estamos cerca del final
+				pages.push(0);
+				pages.push('...');
+				for (var i = totalPages - 5; i < totalPages; i++) {
+					pages.push(i);
+				}
+			} else {
+				// Estamos en el medio
+				pages.push(0);
+				pages.push('...');
+				for (var i = current - 1; i <= current + 1; i++) {
+					pages.push(i);
+				}
+				pages.push('...');
+				pages.push(totalPages - 1);
+			}
+		}
+		
+		return pages;
+	};
+
+	// Función para ir a una página específica
+	$scope.goToPage = function(page) {
+		if (page >= 0 && page < $scope.numberOfPages()) {
+			$scope.currentPage = page;
+		}
+	};
+
+	// Función para cambiar el tamaño de página
+	$scope.changePageSize = function(newSize) {
+		$scope.pageSize = parseInt(newSize);
+		$scope.currentPage = 0; // Volver a la primera página
+	};
 });

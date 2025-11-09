@@ -335,7 +335,11 @@
 
 </head>
 
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100 ng-cloak">
+    <!-- Loading spinner -->
+    <div ng-hide="!isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido">
+        <span class="sr-only">Cargando contenido, por favor espere...</span>
+    </div>
     <div class="container-fluid flex-grow-1">
         <div class="solid-background">
 
@@ -374,7 +378,7 @@
                                 <div class="input-group">
                                     <input id="filtro_user" ng-model="filtro_user" class="form-control" type="number" placeholder="Ingrese el legajo del comensal" required onkeypress="return event.charCode >= 48 && event.charCode <= 57" min="0" />
                                     <div class="input-group-append">
-                                        <button class="btn btn-outline-secondary" data-target="#userSearch" data-toggle="modal" type="button" title="Buscar por nombre">
+                                        <button class="btn btn-outline-secondary" data-target="#userSearch" data-toggle="modal" type="button" title="Buscar por nombre" aria-label="Buscar comensal por nombre, apellido o legajo">
                                             <i class="fa fa-search"></i>
                                         </button>
                                     </div>
@@ -395,14 +399,14 @@
                     </div>
                 </div>
                 <!-- Modal de B�squeda de Usuarios -->
-                <div class="modal fade" id="userSearch" tabindex="-1" role="dialog" aria-labelledby="userModalLabel" aria-hidden="true">
+                <div class="modal fade" id="userSearch" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="userModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-lg" role="document">
                         <div class="modal-content">
                             <div class="modal-header text-white" style="background-color: #F34949;">
                                 <h5 class="modal-title" id="userModalLabel">
-                                    <i class="fa fa-users mr-2"></i>Buscar Comensal
+                                    <i class="fa fa-users mr-2" aria-hidden="true"></i>Buscar Comensal
                                 </h5>
-                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar modal">
                                     <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
@@ -500,8 +504,8 @@
                                             </div>
 
                                             <!-- muestra valor invitado
-    <div class="col-6">
-        <strong>Platos invitados:</strong> {{reportes.bonificadosInvitados}}
+                                            <div class="col-6">
+                                                <strong>Platos invitados:</strong> {{reportes.bonificadosInvitados}}
     </div>-->
                                         </div>
                                     </div>
@@ -578,11 +582,12 @@
                                     </div>
                                     <div class="d-flex align-items-center">
                                         <label class="text-muted small mr-2">Filas por página:</label>
-                                        <select class="form-control form-control-sm page-size-select" ng-model="pageSize" ng-change="changePageSize(pageSize)">
-                                            <option value="10">10</option>
-                                            <option value="20">20</option>
-                                            <option value="50">50</option>
-                                            <option value="100">100</option>
+                                        <select class="form-control form-control-sm page-size-select" ng-model="pageSize" ng-change="changePageSize(pageSize)" ng-init="pageSize = parseInt(pageSize) || 5">
+                                            <option ng-value="5">5</option>
+                                            <option ng-value="10">10</option>
+                                            <option ng-value="20">20</option>
+                                            <option ng-value="50">50</option>
+                                            <option ng-value="100">100</option>
                                         </select>
                                     </div>
                                 </div>
@@ -624,12 +629,12 @@
                                 </div>
                             </div>
                         </div>
-                            <div class="modal fade container-fluid" id="filtrosModal" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal fade container-fluid" id="filtrosModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="filtrosModalLabel" aria-hidden="true">
                                 <div style="max-width: 100% !important;" class="modal-dialog container-fluid" role="document">
                                     <div class="modal-content container-fluid">
                                         <div class="modal-header">
-                                            <h5 class="modal-title" id="pedidoModalLabel">Opciones de filtrado</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="cursor: pointer;">
+                                            <h5 class="modal-title" id="filtrosModalLabel">Opciones de filtrado</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar modal">
                                                 <span aria-hidden="true">&times;</span>
                                             </button>
                                         </div>
@@ -707,6 +712,9 @@
     <!-- Main JS -->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    
+    <!-- Configuración centralizada - DEBE CARGARSE ANTES DE LOS SCRIPTS QUE USAN API_BASE_URL -->
+    <script src="js/config.js"></script>
 
     <script src="js/reportegcomensales.js"></script>
 </body>

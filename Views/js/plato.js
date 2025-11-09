@@ -40,6 +40,9 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     $scope.base = apiBaseUrl + '/api/plato/';
     $scope.basePlan = apiBaseUrl + '/api/plannutricional/';
 
+    // -------- Loading State ----------
+    $scope.isLoading = true;
+
     $scope.dataset = [];
     $scope.filteredData = null;
     $scope.planes = [];
@@ -53,7 +56,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
 
     // paginación
     $scope.currentPage = 0;
-    $scope.pageSize = 20;
+    $scope.pageSize = parseInt($scope.pageSize) || 5; // Por defecto 5 filas (número)
     $scope.totalPages = 1;
 
     // responsivo (para ocultar columnas en mobile)
@@ -79,15 +82,15 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     // --------- Helpers ---------
     function fireOk(title, text) {
         // Popup de alert eliminado
-        console.log('Éxito:', title || 'Operación Correcta', text || '');
+        //console.log('Éxito:', title || 'Operación Correcta', text || '');
     }
     function fireErr(title, text) {
         // Popup de alert eliminado
-        console.log('Error:', title || 'Operación Incorrecta', text || '');
+        //console.log('Error:', title || 'Operación Incorrecta', text || '');
     }
     function fireWarn(title, text) {
         // Popup de alert eliminado
-        console.log('Advertencia:', title || 'Atención', text || '');
+        //console.log('Advertencia:', title || 'Atención', text || '');
     }
 
     $scope.getNumber = function (n) {
@@ -108,9 +111,70 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
         recomputePages();
     });
 
+    // Funciones para paginación tipo DataTable (igual que reportegcomensales)
+    $scope.numberOfPages = function () {
+        var arr = ($scope.filteredData || $scope.dataset) || [];
+        var len = Array.isArray(arr) ? arr.length : 0;
+        return Math.ceil(len / $scope.pageSize);
+    };
+
+    $scope.getPageNumbers = function() {
+        var pages = [];
+        var totalPages = $scope.numberOfPages();
+        var current = $scope.currentPage;
+        
+        if (totalPages <= 7) {
+            // Si hay 7 páginas o menos, mostrar todas
+            for (var i = 0; i < totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            // Lógica para mostrar páginas con puntos suspensivos
+            if (current <= 3) {
+                // Estamos cerca del inicio
+                for (var i = 0; i < 5; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            } else if (current >= totalPages - 4) {
+                // Estamos cerca del final
+                pages.push(0);
+                pages.push('...');
+                for (var i = totalPages - 5; i < totalPages; i++) {
+                    pages.push(i);
+                }
+            } else {
+                // Estamos en el medio
+                pages.push(0);
+                pages.push('...');
+                for (var i = current - 1; i <= current + 1; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            }
+        }
+        
+        return pages;
+    };
+
+    // Función para ir a una página específica
+    $scope.goToPage = function(page) {
+        if (page >= 0 && page < $scope.numberOfPages()) {
+            $scope.currentPage = page;
+        }
+    };
+
+    // Función para cambiar el tamaño de página
+    $scope.changePageSize = function(newSize) {
+        $scope.pageSize = parseInt(newSize);
+        $scope.currentPage = 0; // Volver a la primera página
+    };
+
     // --------- CRUD ---------
     $scope.ModelCreate = function (isValid) {
-        console.log('ModelCreate - isValid:', isValid);
+        //console.log('ModelCreate - isValid:', isValid);
         
         if (!isValid) {
             // Primero mostrar el popup
@@ -120,12 +184,12 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                 icon: 'warning',
                 showCancelButton: false,
                 confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#343A40',
+                confirmButtonColor: '#F34949',
                 buttonsStyling: true
             }).then(() => {
                 // Después del popup, mostrar las leyendas rojas
                 $scope.showValidationErrors = true;
-                console.log('ModelCreate - showValidationErrors establecido en true después del popup');
+                //console.log('ModelCreate - showValidationErrors establecido en true después del popup');
                 $scope.$apply();
             });
             return;
@@ -171,6 +235,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     };
 
     $scope.ModelReadAll = function () {
+        $scope.isLoading = true;
         $scope.ViewAction = 'Platos';
         $scope.plato = {};
         $scope.view_previewImage = '';
@@ -179,14 +244,16 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
             .then(function (resp) {
                 $scope.dataset = Array.isArray(resp.data) ? resp.data : [];
                 recomputePages();
+                $scope.isLoading = false;
             })
             .catch(function () {
+                $scope.isLoading = false;
                 fireErr('Ha ocurrido un error', 'Api no presente');
             });
     };
 
     $scope.ModelUpdate = function (isValid, view_id) {
-        console.log('ModelUpdate - isValid:', isValid);
+        //console.log('ModelUpdate - isValid:', isValid);
         
         if (!isValid) {
             // Primero mostrar el popup
@@ -196,12 +263,12 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                 icon: 'warning',
                 showCancelButton: false,
                 confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#343A40',
+                confirmButtonColor: '#F34949',
                 buttonsStyling: true
             }).then(() => {
                 // Después del popup, mostrar las leyendas rojas
                 $scope.showValidationErrors = true;
-                console.log('ModelUpdate - showValidationErrors establecido en true después del popup');
+                //console.log('ModelUpdate - showValidationErrors establecido en true después del popup');
                 $scope.$apply();
             });
             return;
@@ -255,7 +322,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                     // Si estamos en modo "Nuevo Plato" y no hay valor seleccionado, seleccionar el primero
                     if ($scope.ViewAction === 'Nuevo Plato' && (!$scope.plato.plannutricional || $scope.plato.plannutricional === '')) {
                         $scope.plato.plannutricional = $scope.planes[0].nombre;
-                        console.log('Plan Nutricional seleccionado por defecto:', $scope.plato.plannutricional);
+                        //console.log('Plan Nutricional seleccionado por defecto:', $scope.plato.plannutricional);
                     }
                 }
             })
@@ -263,6 +330,144 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                 fireErr('Error', 'Error al obtener planes nutricionales.');
             });
     };
+
+    // --------- Generación automática de código ---------
+    // Función para generar código automáticamente desde la descripción
+    // Ejemplo: "Milanesa de pollo con arroz y ensalada" -> "MIL-ARROZ"
+    $scope.generarCodigoDesdeDescripcion = function(descripcion) {
+        if (!descripcion || descripcion.trim() === '') {
+            return '';
+        }
+        
+        // Palabras comunes a excluir (artículos, preposiciones, conjunciones)
+        var palabrasExcluidas = ['de', 'con', 'y', 'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 
+                                  'del', 'al', 'en', 'por', 'para', 'a', 'o', 'e', 'u', 'que', 'cual', 
+                                  'cuales', 'donde', 'cuando', 'como', 'si', 'no', 'ni', 'pero', 'mas', 
+                                  'sin', 'sobre', 'bajo', 'entre', 'hasta', 'desde', 'durante', 'mediante'];
+        
+        // Palabras clave comunes de platos (se incluyen completas si están presentes)
+        var palabrasClave = ['arroz', 'pollo', 'carne', 'pescado', 'ensalada', 'pasta', 'papa', 'papas',
+                             'tomate', 'lechuga', 'zanahoria', 'cebolla', 'ajo', 'queso', 'huevo', 'huevos'];
+        
+        // Normalizar: convertir a minúsculas, eliminar acentos y caracteres especiales
+        var texto = descripcion.toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
+            .replace(/[^a-z0-9\s]/g, ' ') // Reemplazar caracteres especiales por espacios
+            .replace(/\s+/g, ' ') // Reemplazar múltiples espacios por uno solo
+            .trim();
+        
+        // Dividir en palabras y filtrar
+        var palabras = texto.split(/\s+/)
+            .filter(function(palabra) {
+                return palabra.length > 0 && palabrasExcluidas.indexOf(palabra) === -1;
+            });
+        
+        if (palabras.length === 0) {
+            return '';
+        }
+        
+        var codigoPartes = [];
+        
+        // Primera palabra: siempre las primeras 3 letras
+        if (palabras.length > 0) {
+            var primeraPalabra = palabras[0];
+            if (primeraPalabra.length >= 3) {
+                codigoPartes.push(primeraPalabra.substring(0, 3).toUpperCase());
+            } else {
+                codigoPartes.push(primeraPalabra.toUpperCase());
+            }
+        }
+        
+        // Buscar palabras clave en el resto de las palabras
+        var palabraClaveEncontrada = null;
+        for (var i = 1; i < palabras.length && !palabraClaveEncontrada; i++) {
+            var palabra = palabras[i];
+            // Verificar si es una palabra clave
+            for (var j = 0; j < palabrasClave.length; j++) {
+                if (palabra === palabrasClave[j] || palabra.indexOf(palabrasClave[j]) === 0) {
+                    palabraClaveEncontrada = palabrasClave[j];
+                    break;
+                }
+            }
+        }
+        
+        // Si se encontró una palabra clave, agregarla completa (máximo 6 letras)
+        if (palabraClaveEncontrada) {
+            if (palabraClaveEncontrada.length <= 6) {
+                codigoPartes.push(palabraClaveEncontrada.toUpperCase());
+            } else {
+                codigoPartes.push(palabraClaveEncontrada.substring(0, 6).toUpperCase());
+            }
+        } else if (palabras.length > 1) {
+            // Si no hay palabra clave, tomar la segunda palabra importante (primeras 3 letras)
+            var segundaPalabra = palabras[1];
+            if (segundaPalabra.length >= 3) {
+                codigoPartes.push(segundaPalabra.substring(0, 3).toUpperCase());
+            } else {
+                codigoPartes.push(segundaPalabra.toUpperCase());
+            }
+        }
+        
+        // Unir con guiones (máximo 2 partes)
+        return codigoPartes.slice(0, 2).join('-');
+    };
+    
+    // Función para generar código automáticamente cuando cambia la descripción (al escribir)
+    $scope.onDescripcionChange = function() {
+        generarCodigoSiEsNecesario();
+    };
+    
+    // Función para generar código automáticamente cuando el usuario sale del campo (al pegar o al perder el foco)
+    $scope.onDescripcionBlur = function() {
+        generarCodigoSiEsNecesario();
+    };
+    
+    // Función auxiliar para generar el código si es necesario
+    function generarCodigoSiEsNecesario() {
+        // Solo generar código automáticamente si:
+        // 1. Estamos en modo "Nuevo Plato"
+        // 2. Hay una descripción
+        if ($scope.ViewAction === 'Nuevo Plato' && 
+            $scope.plato.descripcion && 
+            $scope.plato.descripcion.trim() !== '') {
+            
+            // Verificar si el código actual coincide con el que se generaría (para saber si fue modificado)
+            var codigoActual = $scope.plato.codigo || '';
+            var codigoGenerado = $scope.generarCodigoDesdeDescripcion($scope.plato.descripcion);
+            
+            // Solo actualizar si:
+            // 1. El código está vacío, O
+            // 2. El código coincide con el generado anteriormente (no fue modificado manualmente), O
+            // 3. El código no fue generado automáticamente (primera vez)
+            if (!codigoActual || 
+                codigoActual === '' || 
+                codigoActual === $scope.codigoAnteriorGenerado ||
+                !$scope.codigoAutoGenerado) {
+                if (codigoGenerado && codigoGenerado !== '') {
+                    $scope.plato.codigo = codigoGenerado;
+                    $scope.codigoAnteriorGenerado = codigoGenerado;
+                    $scope.codigoAutoGenerado = true;
+                }
+            }
+        }
+    }
+    
+    // Watch para detectar si el usuario modifica manualmente el código
+    $scope.$watch('plato.codigo', function(newVal, oldVal) {
+        // Si el usuario modifica el código manualmente, desactivar la generación automática
+        if ($scope.ViewAction === 'Nuevo Plato' && 
+            newVal !== oldVal && 
+            oldVal !== undefined && 
+            $scope.codigoAutoGenerado) {
+            // Si el código cambió y no coincide con el generado, fue modificado manualmente
+            var codigoGenerado = $scope.generarCodigoDesdeDescripcion($scope.plato.descripcion);
+            if (newVal !== codigoGenerado && newVal !== '') {
+                $scope.codigoAutoGenerado = false;
+                $scope.codigoAnteriorGenerado = null;
+            }
+        }
+    });
 
     // --------- Vistas ---------
     $scope.ViewCreate = function () {
@@ -275,13 +480,15 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
         };
         $scope.view_id = -1;
         $scope.view_previewImage = '';
+        $scope.codigoAutoGenerado = false; // Resetear flag de código auto-generado
+        $scope.codigoAnteriorGenerado = null; // Resetear código anterior generado
         $scope.ModelReadPlanes();
         
         // Asegurar que se seleccione el primer plan nutricional después de cargar
         setTimeout(function() {
             if ($scope.planes && $scope.planes.length > 0 && (!$scope.plato.plannutricional || $scope.plato.plannutricional === '')) {
                 $scope.plato.plannutricional = $scope.planes[0].nombre;
-                console.log('Plan Nutricional establecido por defecto en ViewCreate:', $scope.plato.plannutricional);
+                //console.log('Plan Nutricional establecido por defecto en ViewCreate:', $scope.plato.plannutricional);
                 $scope.$apply();
             }
         }, 300);
@@ -291,6 +498,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
         $scope.ViewAction = 'Editar Plato';
         $scope.titulo = 'Modificar plato';
         $scope.showValidationErrors = true;
+        $scope.codigoAutoGenerado = false; // Desactivar generación automática en modo edición
         $scope.view_id = view_id;
         $scope.ModelRead(view_id);
         $scope.ModelReadPlanes();
@@ -307,8 +515,8 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
             showCancelButton: true,
             confirmButtonText: 'Aceptar',
             cancelButtonText: 'Cancel',
-            confirmButtonColor: '#343A40',
-            cancelButtonColor: '#dc3545',
+            confirmButtonColor: '#F34949',
+            cancelButtonColor: '#C92A2A',
             buttonsStyling: true
         }).then((result) => {
             if (result.isConfirmed) {

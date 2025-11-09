@@ -56,7 +56,7 @@ var app = angular.module('AngujarJS', ['ja.qr']);
 							  '</div>',
 						icon: 'error',
 						confirmButtonText: 'Aceptar',
-						confirmButtonColor: '#343A40',
+						confirmButtonColor: '#F34949',
 						width: '650px',
 						allowOutsideClick: false,
 						allowEscapeKey: true
@@ -100,7 +100,7 @@ var app = angular.module('AngujarJS', ['ja.qr']);
 							  '</div>',
 						icon: 'error',
 						confirmButtonText: 'Aceptar',
-						confirmButtonColor: '#343A40',
+						confirmButtonColor: '#F34949',
 						width: '650px',
 						allowOutsideClick: false,
 						allowEscapeKey: true
@@ -175,7 +175,7 @@ app.config(function($httpProvider) {
 									  '</div>',
 								icon: 'error',
 								confirmButtonText: 'Aceptar',
-								confirmButtonColor: '#343A40',
+								confirmButtonColor: '#F34949',
 								width: '600px',
 								allowOutsideClick: false,
 								allowEscapeKey: true
@@ -213,7 +213,7 @@ app.config(function($httpProvider) {
 									  '</div>',
 								icon: 'error',
 								confirmButtonText: 'Aceptar',
-								confirmButtonColor: '#343A40',
+								confirmButtonColor: '#F34949',
 								width: '650px',
 								allowOutsideClick: false,
 								allowEscapeKey: true
@@ -233,10 +233,8 @@ app.config(function($httpProvider) {
 					}, 3000);
 				} else if (rejection.status === 404) {
 					// Endpoint no encontrado
-					console.error('❌ Endpoint no encontrado:', rejection.config ? rejection.config.url : 'N/A');
 				} else if (rejection.status >= 500) {
 					// Error del servidor
-					console.error('❌ Error del servidor:', rejection.status, rejection.config ? rejection.config.url : 'N/A');
 				}
 				
 				return $q.reject(rejection);
@@ -280,7 +278,6 @@ function showInfoToast(msg) {
 			closeOnEsc: true
 		});
 	} else {
-		console.info(msg);
 	}
 }
 
@@ -347,7 +344,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 						html: contenido,
 						icon: 'error',
 						confirmButtonText: 'Aceptar',
-						confirmButtonColor: '#343A40',
+						confirmButtonColor: '#F34949',
 						width: '650px',
 						allowOutsideClick: false,
 						allowEscapeKey: true
@@ -415,17 +412,14 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 				// Backend no corriendo tarda más (timeout de conexión puede tardar varios segundos)
 				if (tiempoTranscurrido < 500) {
 					esCORS = true;
-					console.log('🔍 Error detectado rápidamente (< 500ms) - Probable CORS');
 					mostrarErrorBackend(true);
 				} else if (tiempoTranscurrido < 2000) {
 					// Entre 500ms y 2 segundos, puede ser CORS o conexión rechazada
 					// Como el usuario está viendo el error de CORS en la consola, asumimos CORS
 					esCORS = true;
-					console.log('🔍 Error detectado en tiempo intermedio - Probable CORS');
 					mostrarErrorBackend(true);
 				} else {
 					// Error después de mucho tiempo sugiere que el backend no está corriendo
-					console.log('🔍 Error detectado después de tiempo (> 2s) - Backend no corriendo');
 					mostrarErrorBackend(false);
 				}
 			};
@@ -436,11 +430,9 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 				// Si hay respuesta (incluso si es error), el backend está corriendo
 				if (xhr.status >= 200 && xhr.status < 500) {
 					verificacionCompletada = true;
-					console.log('✅ Backend está corriendo correctamente (status: ' + xhr.status + ')');
 				} else {
 					// Error del servidor, pero backend está corriendo
 					verificacionCompletada = true;
-					console.log('✅ Backend está corriendo (status: ' + xhr.status + ')');
 				}
 			};
 			
@@ -472,7 +464,6 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 			
 			peticionPrueba.then(function(response) {
 				verificacionCompletada = true;
-				console.log('✅ Backend está corriendo correctamente');
 			}).catch(function(rejection) {
 				if (verificacionCompletada) return; // Ya se mostró el mensaje
 				
@@ -495,10 +486,8 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 					}
 				} else if (status === 404) {
 					verificacionCompletada = true;
-					console.log('✅ Backend está corriendo (404 es normal para endpoint de prueba)');
 				} else {
 					verificacionCompletada = true;
-					console.log('✅ Backend está corriendo (status: ' + status + ')');
 				}
 			});
 		};
@@ -570,70 +559,27 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 	$scope.precioConBonificacion = 0;
 	$scope.descuentoAplicado = 0;
 	
-	// === FUNCIÓN DE MONITOREO PARA PEDIDOS RESTANTES ===
-	$scope.monitorearPedidosRestantes = function(nuevoValor, contexto) {
-		console.log('🔍 MONITOREO pedidosRestantes:', {
-			valorAnterior: $scope.pedidosRestantes,
-			valorNuevo: nuevoValor,
-			contexto: contexto,
-			stackTrace: new Error().stack
-		});
-		
-		if (nuevoValor < 0) {
-			console.error('❌ ERROR: pedidosRestantes NEGATIVO DETECTADO:', nuevoValor, 'en contexto:', contexto);
-			console.error('Stack trace:', new Error().stack);
-			return 0; // Corregir a 0
-		}
-		
-		return nuevoValor;
-	}; 
 	//usuario SmarTime
 	$scope.smarTime = localStorage.getItem('SmarTime');
 	$scope.usuarioSmatTime = localStorage.getItem('usuarioSmatTime');
 	$scope.tipoVisualizacionCodigo = localStorage.getItem('tipoVisualizacionCodigo') || 'QR';//Barra
-	console.log("🧾 Tipo de visualización seleccionada:", $scope.tipoVisualizacionCodigo);
 	//alert("Tipo de visualización:", $scope.tipoVisualizacionCodigo);
 	////////////////////////////////////////////////INICIALIZACIONES////////////////////////////////////////////////
 	// Llamada automática al iniciar
 	
 	$scope.changeTurno = function () {
-		console.log("🔄 changeTurno ejecutado");
-		console.log("📋 selectedTurno:", $scope.selectedTurno);
-		console.log("📋 Tipo de selectedTurno:", typeof $scope.selectedTurno);
-		
 		$scope.dataset = [];
 		$scope.menuDatasetSeleccionado = [];
 
-		if (!$scope.selectedTurno) {
-			console.warn("⚠️ selectedTurno es null/undefined");
+		if (!$scope.selectedTurno || typeof $scope.selectedTurno === 'string' || !$scope.selectedTurno.descripcion) {
 			$scope.isLoading = false;
 			return;
 		}
-		
-		if (typeof $scope.selectedTurno === 'string') {
-			console.warn("⚠️ selectedTurno es string, no objeto:", $scope.selectedTurno);
-			$scope.isLoading = false;
-			return;
-		}
-		
-		if (!$scope.selectedTurno.descripcion) {
-			console.warn("⚠️ selectedTurno no tiene descripción:", $scope.selectedTurno);
-			$scope.isLoading = false;
-			return;
-		}
-
-		console.log("📦 Parámetros enviados a filtrarPorTurno:");
-		console.log("planta:", $scope.user_Planta);
-		console.log("centrodecosto:", $scope.user_Centrodecosto);
-		console.log("jerarquia:", $scope.user_Jerarquia);
-		console.log("proyecto:", $scope.user_Proyecto);
-		console.log("turno:", $scope.selectedTurno.descripcion);
 
 		const ahora = new Date();
 		const hoy = ahora.getFullYear() + '-' +
 			String(ahora.getMonth() + 1).padStart(2, '0') + '-' +
 			String(ahora.getDate()).padStart(2, '0');
-		console.log(hoy);
 
 
 		// Intentar conectar con el servidor real
@@ -647,34 +593,11 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				fecha: hoy || ''
 			}
 		}).then(function (response) {
-			console.log('=== 📊 DATOS DE API FILTRAR POR TURNO ===');
-			console.log('URL llamada:', $scope.baseMenu + 'filtrarPorTurno');
-			console.log('Parámetros:', {
-				planta: $scope.user_Planta,
-				centro: $scope.user_Centrodecosto,
-				jerarquia: $scope.user_Jerarquia,
-				proyecto: $scope.user_Proyecto,
-				turno: $scope.selectedTurno.descripcion,
-				fecha: hoy
-			});
-			console.log('Status:', response.status);
-			console.log('Datos recibidos:', response.data);
-			console.log('Tipo de datos:', Array.isArray(response.data) ? 'Array' : typeof response.data);
-			console.log('Cantidad de menús filtrados:', Array.isArray(response.data) ? response.data.length : 'No es array');
-			if (Array.isArray(response.data) && response.data.length > 0) {
-				console.log('Primer menú filtrado:', response.data[0]);
-				console.log('Campos del primer menú filtrado:', Object.keys(response.data[0]));
-			}
-			
 			if (Array.isArray(response.data)) {
-				console.log("✅ Datos recibidos de filtrarPorTurno:", response.data); 
 				$scope.menuDatasetSeleccionado = response.data;
 				$scope.filtraPlatos();
-			} else {
-				console.warn("La respuesta no es un array:", response.data);
 			}
 		}).catch(function (error) {
-			console.warn("⚠️ Servidor API no disponible. Continuando sin datos.");
 			// Manejar el error de forma silenciosa - no bloquear la aplicación
 			$scope.isLoading = false;
 			
@@ -684,7 +607,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			
 			// Log silencioso para desarrollo
 			if (typeof AppConfig !== 'undefined' && AppConfig.development.logApiCalls) {
-				console.log("🔧 Modo desarrollo: API no disponible, continuando sin datos");
 			}
 		});
 	};
@@ -695,7 +617,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 
 		// Si no hay datos del menú, simplemente continuar sin mostrar nada
 		if (!$scope.menuDatasetSeleccionado || $scope.menuDatasetSeleccionado.length === 0) {
-			console.log("No hay datos de menú disponibles. Continuando sin mostrar platos.");
 			$scope.isLoading = false;
 			return;
 		}
@@ -704,7 +625,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			const plato = $scope.platos.find(o => o.descripcion.trim() === menuItem.plato.trim());
 
 			if (!plato) {
-				console.warn("No se encontró el plato:", menuItem.plato);
 			}
 
 			if (plato) {
@@ -720,30 +640,10 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 
 	$http.get($scope.basePlatos + 'getAll')
 		.then(function (response) {
-			console.log('=== 📊 DATOS DE API PLATOS ===');
-			console.log('URL llamada:', $scope.basePlatos + 'getAll');
-			console.log('Status:', response.status);
-			console.log('Datos recibidos:', response.data);
-			console.log('Tipo de datos:', Array.isArray(response.data) ? 'Array' : typeof response.data);
-			console.log('Cantidad de platos:', Array.isArray(response.data) ? response.data.length : 'No es array');
-			if (Array.isArray(response.data) && response.data.length > 0) {
-				console.log('Primer plato:', response.data[0]);
-				console.log('Campos del primer plato:', Object.keys(response.data[0]));
-			}
 			$scope.platos = response.data;
 			return $http.get($scope.baseTurno + 'GetTurnosDisponibles');
 		})
 		.then(function (response) {
-			console.log('=== 📊 DATOS DE API TURNOS ===');
-			console.log('URL llamada:', $scope.baseTurno + 'GetTurnosDisponibles');
-			console.log('Status:', response.status);
-			console.log('Datos recibidos:', response.data);
-			console.log('Tipo de datos:', Array.isArray(response.data) ? 'Array' : typeof response.data);
-			console.log('Cantidad de turnos:', Array.isArray(response.data) ? response.data.length : 'No es array');
-			if (Array.isArray(response.data) && response.data.length > 0) {
-				console.log('Primer turno:', response.data[0]);
-				console.log('Campos del primer turno:', Object.keys(response.data[0]));
-			}
 			
 			$scope.turnoDataset = Array.isArray(response.data) ? response.data : [];
 			if ($scope.turnoDataset.length === 0) {
@@ -771,24 +671,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			});
 		})
 		.then(function (response) {
-			console.log('=== 📊 DATOS DE API MENÚ DEL DÍA ===');
-			console.log('URL llamada:', $scope.baseMenu + 'filtrar');
-			console.log('Parámetros:', {
-				planta: $scope.user_Planta,
-				centro: $scope.user_Centrodecosto,
-				jerarquia: $scope.user_Jerarquia,
-				proyecto: $scope.user_Proyecto,
-				desde: hoy,
-				hasta: hoy
-			});
-			console.log('Status:', response.status);
-			console.log('Datos recibidos:', response.data);
-			console.log('Tipo de datos:', Array.isArray(response.data) ? 'Array' : typeof response.data);
-			console.log('Cantidad de menús:', Array.isArray(response.data) ? response.data.length : 'No es array');
-			if (Array.isArray(response.data) && response.data.length > 0) {
-				console.log('Primer menú:', response.data[0]);
-				console.log('Campos del primer menú:', Object.keys(response.data[0]));
-			}
 			
 			if (Array.isArray(response.data)) {
 				$scope.menudeldia = response.data;
@@ -797,19 +679,15 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				if ($scope.selectedTurno && $scope.selectedTurno.descripcion) {
 					$scope.changeTurno();
 				} else {
-					console.warn("No hay turno seleccionado para aplicar changeTurno");
 				}
 			} else {
-				console.warn("No vino un array para menudeldia");
 			}
 		})
 		.catch(function (error) {
-			console.warn("⚠️ Error al obtener menú del día. Continuando sin datos.");
 			$scope.menudeldia = [];
 			$scope.isLoading = false;
 		})
 		.catch(function (error) {
-			console.warn("⚠️ Error en inicialización de datos. Continuando sin datos.");
 			$scope.platos = [];
 			$scope.turnoDataset = [];
 			$scope.menudeldia = [];
@@ -842,56 +720,36 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				proximoTurno = turno;
 			}
 		});
-
-		console.log("🔄 getTurnoActual ejecutado");
-		console.log("📋 turnoElegidoManual:", $scope.turnoElegidoManual);
-		console.log("📋 selectedTurno actual:", $scope.selectedTurno);
 		
 		if (!$scope.turnoElegidoManual) {
-			console.log("📋 Usuario no eligió manualmente, estableciendo turno automático");
 			if (turnoActual) {
-				console.log("📋 Estableciendo turno actual:", turnoActual.descripcion);
 				$scope.selectedTurno = turnoActual;
 				$scope.turnoDisponible = true;
 			} else if (proximoTurno) {
-				console.log("📋 Estableciendo próximo turno:", proximoTurno.descripcion);
 				$scope.selectedTurno = proximoTurno;
 				$scope.turnoDisponible = true;
 			} else {
-				console.log("📋 No hay turnos disponibles");
-				//$scope.selectedTurno = null;
-				//$scope.turnoDisponible = false;
-				//Swal.fire('Sin turnos disponibles', 'Ya no hay turnos activos para hoy.', 'info');
 				showInfoToast('Sin turnos disponibles para hoy.');
 			}
 
 			if ($scope.selectedTurno) {
-				console.log("📋 Llamando changeTurno desde getTurnoActual");
 				$scope.changeTurno();
 			} else {
-				$scope.isLoading = false; // asegurá que no quede spinner
+				$scope.isLoading = false;
 			}
 		} else {
-			console.log("📋 Usuario eligió manualmente, NO sobrescribiendo selectedTurno");
 		}
 	};
 
 	$scope.onTurnoChanged = function () {
-		console.log("🔄 === onTurnoChanged EJECUTADO ===");
-		
 		// FORZAR SINCRONIZACIÓN: Leer directamente del DOM
 		var selectElement = document.getElementById('turno');
 		var selectedIndex = selectElement ? selectElement.selectedIndex : -1;
 		var selectedValue = selectElement ? selectElement.value : null;
 		
-		console.log("📋 selectedIndex:", selectedIndex);
-		console.log("📋 selectedValue:", selectedValue);
-		console.log("📋 turnoDataset disponible:", $scope.turnoDataset ? $scope.turnoDataset.length : 'NO');
-		
 		// Obtener el objeto completo del turno seleccionado
 		if (selectedIndex >= 0 && $scope.turnoDataset && $scope.turnoDataset[selectedIndex]) {
 			var turnoSeleccionado = $scope.turnoDataset[selectedIndex];
-			console.log("📋 Turno seleccionado del DOM:", turnoSeleccionado);
 			
 			// FORZAR ACTUALIZACIÓN DEL SCOPE
 			$scope.$apply(function() {
@@ -899,29 +757,16 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				$scope.turnoElegidoManual = true;
 			});
 			
-			console.log("📋 selectedTurno actualizado:", $scope.selectedTurno);
-			
 			// Procesar el cambio
 			if ($scope.selectedTurno && $scope.selectedTurno.descripcion) {
-				console.log("✅ Procesando turno:", $scope.selectedTurno.descripcion);
 				$scope.changeTurno();
 			}
-		} else {
-			console.warn("⚠️ No se pudo obtener el turno del DOM");
 		}
-		
-		console.log("🔄 === FIN onTurnoChanged ===");
 	};
 	
 	// Watch para detectar cambios en selectedTurno
 	$scope.$watch('selectedTurno', function(newVal, oldVal) {
-		console.log("🔄 $watch ejecutado");
-		console.log("📋 newVal:", newVal);
-		console.log("📋 oldVal:", oldVal);
-		console.log("📋 Son diferentes:", newVal !== oldVal);
-		
 		if (newVal && newVal !== oldVal) {
-			console.log("🔄 $watch detectó cambio en selectedTurno:", newVal);
 			$scope.onTurnoChanged();
 		}
 	}, true);
@@ -935,14 +780,11 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			
 			// Agregar nuevo listener
 			$scope.handleTurnoChange = function(event) {
-				console.log("🎯 Event listener detectó cambio en select");
 				$scope.onTurnoChanged();
 			};
 			
 			selectElement.addEventListener('change', $scope.handleTurnoChange);
-			console.log("✅ Event listener configurado para select turno");
 		} else {
-			console.warn("⚠️ No se encontró el select con id 'turno'");
 		}
 	};
 
@@ -950,34 +792,9 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 		var id = $scope.user_DNI;
 		var url = $scope.baseComanda + 'getPedido/' + id;
 
-		console.log('=== 📊 DATOS DE API COMANDAS (obtieneComandas) ===');
-		console.log('URL llamada:', url);
-		console.log('DNI del usuario:', id);
 
 		$http.get(url)
 			.success(function (data) {
-				console.log('=== 📊 RESPUESTA DE API COMANDAS ===');
-				console.log('Datos recibidos:', data);
-				console.log('Tipo de datos:', Array.isArray(data) ? 'Array' : typeof data);
-				console.log('Cantidad de comandas:', Array.isArray(data) ? data.length : 'No es array');
-				if (Array.isArray(data) && data.length > 0) {
-					console.log('Primera comanda:', data[0]);
-					console.log('Campos de la primera comanda:', Object.keys(data[0]));
-					console.log('=== 🔍 ANÁLISIS DETALLADO DE COMANDAS ===');
-					data.forEach(function(comanda, index) {
-						console.log(`--- COMANDA ${index + 1} ---`);
-						console.log('ID:', comanda.id);
-						console.log('Código plato:', comanda.cod_plato);
-						console.log('Monto:', comanda.monto);
-						console.log('Bonificado:', comanda.bonificado);
-						console.log('Estado:', comanda.estado);
-						console.log('Fecha:', comanda.fecha);
-						console.log('Fecha_hora:', comanda.fecha_hora);
-						console.log('Invitado:', comanda.invitado);
-						console.log('Todos los campos:', Object.keys(comanda));
-						console.log('--- FIN COMANDA ---');
-					});
-				}
 				$timeout(function () {
 					var pedidosNoC = data.filter(function (elemento) {
 						return elemento.estado !== 'C';
@@ -989,11 +806,69 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 					var pedidosInvitados = 0;
 					$scope.pedidoVigente = []; // reinicio para evitar duplicados
 
+					// Validar si hay pedidos con bonificación aplicada
+					var tieneBonificacionEnPedidosVigentes = false;
+					var fechaHoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+					
 					data.forEach(x => {
 						var plato = $scope.platos.find(o => o.codigo === x.cod_plato);
 						if (!plato) return;
 
 						plato = angular.copy(plato); // para evitar modificar el array original
+
+						// Validar si este pedido tiene bonificación aplicada y es del día de hoy
+						if (x.bonificado !== null && x.bonificado !== undefined && x.bonificado !== '') {
+							var bonificadoValue = parseFloat(x.bonificado) || 0;
+							if (bonificadoValue > 0) {
+								// Verificar que sea del día de hoy
+								var fechaPedido = null;
+								if (x.fecha_hora) {
+									var fechaHoraStr = String(x.fecha_hora);
+									try {
+										fechaPedido = new Date(fechaHoraStr).toISOString().split('T')[0];
+										if (fechaPedido === 'Invalid Date') {
+											fechaPedido = null;
+										}
+									} catch (e) {
+										fechaPedido = null;
+									}
+									
+									// Si falla, intentar parseo manual
+									if (!fechaPedido || fechaPedido === 'Invalid Date') {
+										var m1 = fechaHoraStr.match(/(\d{1,2}):(\d{1,2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+										if (m1) {
+											var dd = m1[3].padStart(2, '0');
+											var mm = m1[4].padStart(2, '0');
+											var yyyy = m1[5];
+											fechaPedido = yyyy + '-' + mm + '-' + dd;
+										} else {
+											var m2 = fechaHoraStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+											if (m2) {
+												var dd = m2[1].padStart(2, '0');
+												var mm = m2[2].padStart(2, '0');
+												var yyyy = m2[3];
+												fechaPedido = yyyy + '-' + mm + '-' + dd;
+											}
+										}
+									}
+								} else if (x.fecha) {
+									try {
+										var f = x.fecha;
+										fechaPedido = (new Date(f)).toISOString().split('T')[0];
+										if (fechaPedido === 'Invalid Date') {
+											fechaPedido = x.fecha;
+										}
+									} catch (e) {
+										fechaPedido = x.fecha;
+									}
+								}
+								
+								// Si es del día de hoy y tiene bonificación, y el estado no es cancelado ni devuelto
+								if (fechaPedido === fechaHoy && (x.estado !== 'C' && x.estado !== 'D')) {
+									tieneBonificacionEnPedidosVigentes = true;
+								}
+							}
+						}
 
 						if (x.estado == 'P') {
 							plato.user_npedido = x.id;
@@ -1015,6 +890,14 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 							pedidosInvitados++;
 						}
 					});
+					
+					// Si hay bonificación en pedidos vigentes, actualizar el estado
+					if (tieneBonificacionEnPedidosVigentes) {
+						$scope.cantidadBonificacionesHoy = 1;
+						$scope.yaBonificadoHoy = true;
+						$scope.pedidosRestantes = 0;
+						$scope.guardarEstadoBonificacion();
+					}
 
 					// NO modificar pedidosRestantes aquí, se maneja en el sistema de bonificaciones
 					$scope.pedidosInvitadosRestantes = $scope.user_BonificacionInvitado - pedidosInvitados;
@@ -1035,7 +918,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 										displayValue: true
 									});
 								} else {
-									console.warn("❌ No se encontró el elemento para renderizar:", idSelector);
 								}
 							});
 						}, 200); // Espera corta después del render
@@ -1053,7 +935,7 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				text: 'Error al obtener pedidos',
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
+				confirmButtonColor: '#F34949'
 			});
 			});
 	};
@@ -1071,10 +953,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 
 				$scope.pedidosGastados = pedidosNoC.length;
 				// NO modificar pedidosRestantes aquí, se maneja en el sistema de bonificaciones
-				console.log('=== LOG PEDIDOS GASTADOS ===');
-				console.log('pedidosGastados:', $scope.pedidosGastados);
-				console.log('user_Bonificacion:', $scope.user_Bonificacion);
-				console.log('pedidosRestantes ANTES:', $scope.pedidosRestantes);
 
 				var pedidosInvitados = 0;
 				$scope.pedidoVigente = [];
@@ -1107,9 +985,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				});
 
 				// NO modificar pedidosRestantes aquí, se maneja en el sistema de bonificaciones
-				console.log('=== LOG PEDIDOS INVITADOS ===');
-				console.log('pedidosInvitados:', pedidosInvitados);
-				console.log('pedidosRestantes DESPUÉS:', $scope.pedidosRestantes);
 				$scope.pedidosInvitadosRestantes = $scope.user_BonificacionInvitado - pedidosInvitados;
 
 			})
@@ -1119,7 +994,7 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				text: 'Error al obtener pedidos',
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonColor: '#F34949'
 			});
 			});
 	};*/
@@ -1186,7 +1061,8 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 		// Cargar estado guardado desde localStorage
 		var estadoGuardado = $scope.cargarEstadoBonificacion();
 		if (estadoGuardado && estadoGuardado.cantidadBonificacionesHoy >= 1) {
-			// Si hay un estado guardado que indica que ya se usó la bonificación, usarlo
+			// Si hay un estado guardado que indica que ya se usó la bonificación, usarlo temporalmente
+			// hasta que el servidor confirme (ahora que contamos estado 'P' también, debería confirmar correctamente)
 			$scope.cantidadBonificacionesHoy = estadoGuardado.cantidadBonificacionesHoy;
 			$scope.yaBonificadoHoy = estadoGuardado.yaBonificadoHoy;
 			$scope.pedidosRestantes = estadoGuardado.pedidosRestantes;
@@ -1200,61 +1076,46 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				
 				// Inicializar pedidos restantes solo si NO hay bonificación disponible
 				if (!$scope.bonificacionDisponible) {
-					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'INICIALIZAR_SIN_BONIFICACION');
+					$scope.pedidosRestantes = 0;
 				}
 				
 				// Verificar si ya se usó la bonificación hoy (esto actualizará pedidosRestantes correctamente)
-				// Pero si hay un estado guardado, mantenerlo hasta que el servidor confirme
+				// Ahora que contamos estado 'P' también, debería confirmar correctamente
 				return $scope.verificarBonificacionHoy();
 			})
 			.catch(function(error) {
 				$scope.bonificacionDisponible = false;
 				$scope.porcentajeBonificacion = 0;
-				$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'ERROR_CATCH_INICIALIZAR');
+				$scope.pedidosRestantes = 0;
 			});
 	};
 	
 	// Verificar si ya se usó la bonificación hoy
-	// Consulta directamente usando $scope.baseComanda
+	// Valida usando SOLO el campo bonificado de sl_comanda
 	$scope.verificarBonificacionHoy = function() {
 		var fechaHoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 		var url = $scope.baseComanda + 'getPedido/' + $scope.user_DNI;
-		
 		
 		return $http.get(url)
 			.then(function(response) {
 				var data = response.data || [];
 				
 				// Filtrar pedidos del día que tengan bonificado > 0
-				var pedidosBonificados = data.filter(function(pedido, index) {
-					// Verificar si tiene campo bonificado con valor > 0
-					// Si bonificado tiene cualquier valor positivo (distinto de vacío, null, 0), ya se aplicó la bonificación
-					var bonificadoOriginal = pedido.bonificado;
+				// SOLO usar el campo bonificado para validar
+				var pedidosBonificados = data.filter(function(pedido) {
+					// Validar campo bonificado: si tiene valor > 0, se usó la bonificación
 					var bonificadoValue = 0;
-					var tieneBonificacion = false;
-					
-					// Verificar si bonificado tiene valor (distinto de vacío, null, undefined)
-					if (bonificadoOriginal !== null && bonificadoOriginal !== undefined && bonificadoOriginal !== '') {
-						bonificadoValue = parseFloat(bonificadoOriginal) || 0;
-						// Si el valor parseado es > 0, tiene bonificación
-						tieneBonificacion = bonificadoValue > 0;
+					if (pedido.bonificado !== null && pedido.bonificado !== undefined && pedido.bonificado !== '') {
+						bonificadoValue = parseFloat(pedido.bonificado) || 0;
 					}
 					
-					// Verificar por fecha si está disponible
-					var esDelDia = true;
-					if (pedido.fecha) {
-						try {
-							var f = pedido.fecha;
-							var fIso = (new Date(f)).toISOString().split('T')[0];
-							esDelDia = fIso === fechaHoy || f === fechaHoy;
-						} catch (e) {
-							esDelDia = pedido.fecha === fechaHoy;
-						}
-					} else if (pedido.fecha_hora) {
-						var fechaPedido = null;
+					// Validar fecha: debe ser del día de hoy
+					var esDelDia = false;
+					if (pedido.fecha_hora) {
 						var fechaHoraStr = String(pedido.fecha_hora);
+						var fechaPedido = null;
 						
-						// Intentar parseo con Date nativo primero
+						// Intentar parseo con Date nativo
 						try {
 							fechaPedido = new Date(fechaHoraStr).toISOString().split('T')[0];
 							if (fechaPedido === 'Invalid Date') {
@@ -1264,9 +1125,9 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 							fechaPedido = null;
 						}
 						
-						// Si el Date nativo falla, intentar parseo manual de diferentes formatos
+						// Si falla, intentar parseo manual
 						if (!fechaPedido || fechaPedido === 'Invalid Date') {
-							// Formato 1: "h:mm dd/mm/yyyy" (ejemplo: "1:10 2/10/2025")
+							// Formato: "h:mm dd/mm/yyyy" o "dd/mm/yyyy hh:mm"
 							var m1 = fechaHoraStr.match(/(\d{1,2}):(\d{1,2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
 							if (m1) {
 								var dd = m1[3].padStart(2, '0');
@@ -1274,7 +1135,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 								var yyyy = m1[5];
 								fechaPedido = yyyy + '-' + mm + '-' + dd;
 							} else {
-								// Formato 2: "dd/mm/yyyy hh:mm" (formato estándar)
 								var m2 = fechaHoraStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
 								if (m2) {
 									var dd = m2[1].padStart(2, '0');
@@ -1286,58 +1146,53 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 						}
 						
 						esDelDia = fechaPedido === fechaHoy;
+					} else if (pedido.fecha) {
+						try {
+							var f = pedido.fecha;
+							var fIso = (new Date(f)).toISOString().split('T')[0];
+							esDelDia = fIso === fechaHoy || f === fechaHoy;
+						} catch (e) {
+							esDelDia = pedido.fecha === fechaHoy;
+						}
 					}
 					
-					// Validar estado: solo contar si el estado es 'R' (Recibido)
+					// Validar estado: NO contar si está cancelado ('C') o devuelto ('D')
 					var estado = (pedido.estado || '').toString().trim().toUpperCase();
-					var estadoValido = estado === 'R'; // Solo contar si estado es 'R' (Recibido)
-
-					// Solo cuenta si: es del día, tiene bonificado > 0, y tiene estado 'R' (Recibido)
-					var cumpleCriterios = esDelDia && tieneBonificacion && estadoValido;
+					var estadoValido = estado !== 'C' && estado !== 'D';
 					
-					return cumpleCriterios;
+					// Solo cuenta si: es del día, tiene bonificado > 0, y estado válido
+					return esDelDia && bonificadoValue > 0 && estadoValido;
 				});
 				
-				// === LÓGICA CORRECTA ===
-				// Solo cuenta las comandas con bonificado > 0 y estado 'R' (Recibido)
-				// Guardar el array de pedidos bonificados con estado 'R' en el scope
-				$scope.pedidosBonificadosArray = pedidosBonificados; // Array de pedidos con bonificado > 0 y estado 'R'
-				
-				var yaBonificado = pedidosBonificados.length >= 1;
-				var cantidadBonificados = pedidosBonificados.length;
+				// Verificar si hay un estado guardado en localStorage que indique que se usó la bonificación
+				var estadoGuardado = $scope.cargarEstadoBonificacion();
+				var yaBonificadoLocal = estadoGuardado && estadoGuardado.cantidadBonificacionesHoy >= 1;
 				
 				// Actualizar variables del scope
-				// Si ya se consumió la bonificación localmente (cantidadBonificacionesHoy = 1), mantener ese estado
-				// a menos que el servidor confirme que hay más de 1 bonificación
-				if ($scope.cantidadBonificacionesHoy === 1 && cantidadBonificados === 0) {
-					// El pedido recién creado puede tener estado 'P' (Pendiente) y no 'R' (Recibido)
-					// Mantener el estado local hasta que el servidor confirme
-					// No actualizar cantidadBonificacionesHoy ni pedidosRestantes
-					// Pero guardar el estado en localStorage para persistir
-					$scope.guardarEstadoBonificacion();
-				} else {
-					$scope.yaBonificadoHoy = yaBonificado;
+				var cantidadBonificados = pedidosBonificados.length;
+				
+				// Si el servidor confirma que hay bonificaciones, usar ese valor
+				// Si no hay confirmación del servidor pero hay estado guardado local, respetar el estado local
+				if (cantidadBonificados >= 1) {
+					$scope.yaBonificadoHoy = true;
 					$scope.cantidadBonificacionesHoy = cantidadBonificados;
-					
-					// Si el servidor confirma que hay bonificaciones, guardar el estado
-					if (cantidadBonificados >= 1) {
-						$scope.guardarEstadoBonificacion();
-					} else {
-						// Si no hay bonificaciones confirmadas por el servidor, limpiar el estado guardado
-						$scope.limpiarEstadoBonificacion();
-					}
+					$scope.guardarEstadoBonificacion();
+				} else if (yaBonificadoLocal) {
+					// Si hay estado local que indica que se usó, mantenerlo hasta que el servidor confirme
+					$scope.yaBonificadoHoy = true;
+					$scope.cantidadBonificacionesHoy = 1;
+					// No limpiar el localStorage, mantener el estado
+				} else {
+					$scope.yaBonificadoHoy = false;
+					$scope.cantidadBonificacionesHoy = 0;
+					$scope.limpiarEstadoBonificacion();
 				}
 				
-				// === LÓGICA MEJORADA DE "TE QUEDAN PLATOS BONIFICADOS" ===
-				// Si hay bonificación disponible:
-				// - Si ya se usó hoy (cantidad >= 1): mostrar 0
-				// - Si no se ha usado hoy (cantidad = 0): mostrar 1
+				// Actualizar pedidosRestantes según si se usó o no la bonificación
 				if ($scope.bonificacionDisponible) {
-					var nuevoValor = $scope.cantidadBonificacionesHoy >= 1 ? 0 : 1;
-					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(nuevoValor, 'VERIFICAR_BONIFICACION_CON_BONIFICACION');
+					$scope.pedidosRestantes = $scope.cantidadBonificacionesHoy >= 1 ? 0 : 1;
 				} else {
-					// Si no hay bonificación disponible, mantener en 0
-					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'VERIFICAR_BONIFICACION_SIN_BONIFICACION');
+					$scope.pedidosRestantes = 0;
 				}
 				
 				// === VALIDACIÓN: NUNCA NEGATIVO ===
@@ -1346,20 +1201,29 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				}
 				
 				if (!$scope.$$phase) {
-					$scope.$apply();
+				$scope.$apply();
 				}
 			})
 			.catch(function(error) {
+				// En caso de error, verificar si hay estado guardado en localStorage
+				var estadoGuardado = $scope.cargarEstadoBonificacion();
+				if (estadoGuardado && estadoGuardado.cantidadBonificacionesHoy >= 1) {
+					$scope.yaBonificadoHoy = true;
+					$scope.cantidadBonificacionesHoy = 1;
+					$scope.pedidosRestantes = 0;
+				} else {
 				$scope.yaBonificadoHoy = false;
-				$scope.cantidadBonificacionesHoy = 0;
-				$scope.pedidosBonificadosArray = []; // Inicializar array vacío en caso de error
-				$scope.pedidosRestantes = $scope.monitorearPedidosRestantes($scope.bonificacionDisponible ? 1 : 0, 'ERROR_CATCH_VERIFICAR');
+					$scope.cantidadBonificacionesHoy = 0;
+					$scope.pedidosRestantes = $scope.bonificacionDisponible ? 1 : 0;
+				}
 				
 				// === VALIDACIÓN: NUNCA NEGATIVO ===
 				if ($scope.pedidosRestantes < 0) {
 					$scope.pedidosRestantes = 0;
 				}
+				if (!$scope.$$phase) {
 				$scope.$apply();
+				}
 			});
 	};
 	
@@ -1378,22 +1242,12 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			$scope.porcentajeBonificacion
 		);
 		
-		console.log('Cálculo de bonificación:', {
-			precioOriginal: precioOriginal,
-			porcentaje: $scope.porcentajeBonificacion,
-			cantidadBonificacionesHoy: $scope.cantidadBonificacionesHoy,
-			resultado: resultado
-		});
 		
 		return resultado;
 	};
 	
 	// Aplicar bonificación a un plato (solo preview, no consume bonificación)
 	$scope.aplicarBonificacion = function(item, aplicarBonificacion) {
-		console.log('=== PREVIEW BONIFICACIÓN ===');
-		console.log('aplicarBonificacion:', aplicarBonificacion);
-		console.log('bonificacionDisponible:', $scope.bonificacionDisponible);
-		console.log('cantidadBonificacionesHoy:', $scope.cantidadBonificacionesHoy);
 		
 		// === LÓGICA DE RADIO BUTTON: SOLO UN PLATO PUEDE TENER DESCUENTO ===
 		if (aplicarBonificacion) {
@@ -1406,7 +1260,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 					plato.bonificado = 0;
 				}
 			});
-			console.log('✅ Desmarcando otros platos, solo este tendrá descuento');
 		}
 		
 		// Actualizar el estado del plato actual
@@ -1431,22 +1284,11 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			item.precioFinal = parseFloat(item.costo) || 0;
 			item.bonificado = 0;
 		}
-		
-		console.log('Preview bonificación:', {
-			plato: item.descripcion,
-			precioOriginal: item.costo,
-			precioFinal: item.precioFinal,
-			descuento: item.bonificado,
-			aplicarBonificacion: aplicarBonificacion,
-			bonificacionPreSeleccionada: $scope.bonificacionPreSeleccionada,
-			turnoBonificacionSeleccionada: $scope.turnoBonificacionSeleccionada
-		});
 	};
 
 	////////////////////////////////////////////////ACCIONES SMARTIME////////////////////////////////////////////////
 	
 	$scope.hacerPedido = function (item) {
-		console.log("Se hizo clic en Ordenar", item);
 
 		// Asegurar que el pedido seleccionado quede seteado para el modal/confirmación
 		$scope.pedidoSeleccionado = item;
@@ -1456,18 +1298,198 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 		const smarTime = localStorage.getItem("smarTime") === 'true';
 		const usuarioSmatTime = localStorage.getItem("usuarioSmatTime");
 
-		// Validar si ya tiene pedido en ese turno
-		const pedidoExistente = $scope.pedidoVigente.find(pedido =>
-			pedido.turno === $scope.selectedTurno.descripcion
-		);
-
-		if (pedidoExistente) {
+		// Validar si ya tiene pedido en el mismo turno del mismo día
+		var fechaHoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+		var turnoActual = $scope.selectedTurno ? $scope.selectedTurno.descripcion : null;
+		
+		if (!turnoActual) {
 			Swal.fire({
-				title: 'Pedido ya registrado en esta franja horaria',
-				text: 'No es posible hacer más de un pedido en el mismo horario.',
+				title: 'Error',
+				text: 'No se ha seleccionado un turno válido.',
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40',
+				confirmButtonColor: '#F34949'
+			});
+			return;
+		}
+		
+		// Obtener el código del plato que se está intentando pedir
+		var codPlatoActual = item.codigo || item.cod_plato;
+		var descripcionPlatoActual = item.descripcion || item.plato_descripcion;
+		
+		// Verificar en pedidos vigentes (estado 'P' o 'E') si hay alguno en el mismo turno del día de hoy
+		var pedidoMismoTurnoHoy = $scope.pedidoVigente.find(function(pedido) {
+			if (!pedido.user_Pedido) return false;
+			
+			// Verificar que sea del día de hoy
+			var fechaPedido = null;
+			if (pedido.user_Pedido.fecha_hora) {
+				var fechaHoraStr = String(pedido.user_Pedido.fecha_hora);
+				try {
+					fechaPedido = new Date(fechaHoraStr).toISOString().split('T')[0];
+					if (fechaPedido === 'Invalid Date') {
+						fechaPedido = null;
+					}
+				} catch (e) {
+					fechaPedido = null;
+				}
+				
+				// Si falla, intentar parseo manual
+				if (!fechaPedido || fechaPedido === 'Invalid Date') {
+					var m1 = fechaHoraStr.match(/(\d{1,2}):(\d{1,2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+					if (m1) {
+						var dd = m1[3].padStart(2, '0');
+						var mm = m1[4].padStart(2, '0');
+						var yyyy = m1[5];
+						fechaPedido = yyyy + '-' + mm + '-' + dd;
+					} else {
+						var m2 = fechaHoraStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+						if (m2) {
+							var dd = m2[1].padStart(2, '0');
+							var mm = m2[2].padStart(2, '0');
+							var yyyy = m2[3];
+							fechaPedido = yyyy + '-' + mm + '-' + dd;
+						}
+					}
+				}
+			} else if (pedido.user_Pedido.fecha) {
+				try {
+					var f = pedido.user_Pedido.fecha;
+					fechaPedido = (new Date(f)).toISOString().split('T')[0];
+					if (fechaPedido === 'Invalid Date') {
+						fechaPedido = pedido.user_Pedido.fecha;
+					}
+				} catch (e) {
+					fechaPedido = pedido.user_Pedido.fecha;
+				}
+			}
+			
+			// Si no es del día de hoy, no cuenta
+			if (fechaPedido !== fechaHoy) return false;
+			
+			// Verificar si el plato del pedido existente está en el menú del turno actual
+			// Si está, significa que ese pedido fue hecho en este turno
+			var codPlatoPedido = pedido.codigo || pedido.user_Pedido.cod_plato;
+			var platoEnTurnoActual = false;
+			
+			// Buscar el plato en el menú del turno actual
+			if ($scope.menuDatasetSeleccionado && $scope.menuDatasetSeleccionado.length > 0) {
+				platoEnTurnoActual = $scope.menuDatasetSeleccionado.some(function(menu) {
+					return (menu.cod_plato === codPlatoPedido || 
+							menu.plato === codPlatoPedido ||
+							(menu.plato_descripcion && menu.plato_descripcion === pedido.descripcion));
+				});
+			}
+			
+			// Si el plato del pedido existente está en el menú del turno actual, significa que ya hay un pedido en este turno
+			return platoEnTurnoActual;
+		});
+		
+		// Validar si ya se pidió el mismo plato específico en el mismo turno del mismo día
+		var pedidoMismoPlatoHoy = $scope.pedidoVigente.find(function(pedido) {
+			if (!pedido.user_Pedido) return false;
+			
+			// Verificar que sea del día de hoy
+			var fechaPedido = null;
+			if (pedido.user_Pedido.fecha_hora) {
+				var fechaHoraStr = String(pedido.user_Pedido.fecha_hora);
+				try {
+					fechaPedido = new Date(fechaHoraStr).toISOString().split('T')[0];
+					if (fechaPedido === 'Invalid Date') {
+						fechaPedido = null;
+					}
+				} catch (e) {
+					fechaPedido = null;
+				}
+				
+				// Si falla, intentar parseo manual
+				if (!fechaPedido || fechaPedido === 'Invalid Date') {
+					var m1 = fechaHoraStr.match(/(\d{1,2}):(\d{1,2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+					if (m1) {
+						var dd = m1[3].padStart(2, '0');
+						var mm = m1[4].padStart(2, '0');
+						var yyyy = m1[5];
+						fechaPedido = yyyy + '-' + mm + '-' + dd;
+					} else {
+						var m2 = fechaHoraStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+						if (m2) {
+							var dd = m2[1].padStart(2, '0');
+							var mm = m2[2].padStart(2, '0');
+							var yyyy = m2[3];
+							fechaPedido = yyyy + '-' + mm + '-' + dd;
+						}
+					}
+				}
+			} else if (pedido.user_Pedido.fecha) {
+				try {
+					var f = pedido.user_Pedido.fecha;
+					fechaPedido = (new Date(f)).toISOString().split('T')[0];
+					if (fechaPedido === 'Invalid Date') {
+						fechaPedido = pedido.user_Pedido.fecha;
+					}
+				} catch (e) {
+					fechaPedido = pedido.user_Pedido.fecha;
+				}
+			}
+			
+			// Si no es del día de hoy, no cuenta
+			if (fechaPedido !== fechaHoy) return false;
+			
+			// Obtener el código del plato del pedido existente
+			var codPlatoPedido = pedido.codigo || pedido.user_Pedido.cod_plato;
+			var descripcionPlatoPedido = pedido.descripcion || pedido.user_Pedido.plato_descripcion;
+			
+			// Verificar si el plato del pedido existente está en el menú del turno actual
+			var platoEnTurnoActual = false;
+			if ($scope.menuDatasetSeleccionado && $scope.menuDatasetSeleccionado.length > 0) {
+				platoEnTurnoActual = $scope.menuDatasetSeleccionado.some(function(menu) {
+					return (menu.cod_plato === codPlatoPedido || 
+							menu.plato === codPlatoPedido ||
+							(menu.plato_descripcion && menu.plato_descripcion === descripcionPlatoPedido));
+				});
+			}
+			
+			// Si el plato está en el turno actual, verificar si es el mismo plato que se está intentando pedir
+			if (platoEnTurnoActual) {
+				// Comparar por código de plato
+				if (codPlatoPedido && codPlatoActual && 
+					(codPlatoPedido === codPlatoActual || 
+					 codPlatoPedido === item.cod_plato ||
+					 codPlatoActual === pedido.user_Pedido.cod_plato)) {
+					return true;
+				}
+				
+				// Comparar por descripción si no hay código
+				if (descripcionPlatoPedido && descripcionPlatoActual && 
+					descripcionPlatoPedido === descripcionPlatoActual) {
+					return true;
+				}
+			}
+			
+			return false;
+		});
+
+		if (pedidoMismoTurnoHoy) {
+			Swal.fire({
+				title: 'Ya tienes un pedido en este turno',
+				text: 'No es posible hacer más de un pedido en el mismo turno del mismo día.',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#F34949',
+				allowOutsideClick: false,
+				allowEscapeKey: false
+			});
+			return;
+		}
+		
+		// Validar si ya se pidió el mismo plato específico
+		if (pedidoMismoPlatoHoy) {
+			Swal.fire({
+				title: 'Ya pediste este plato',
+				text: 'No es posible pedir el mismo plato dos veces en el mismo turno del mismo día.',
+				icon: 'error',
+				confirmButtonText: 'Aceptar',
+				confirmButtonColor: '#F34949',
 				allowOutsideClick: false,
 				allowEscapeKey: false
 			});
@@ -1475,16 +1497,8 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 		}
 
 		// === LÓGICA DE BONIFICACIÓN MEJORADA ===
-		console.log('=== HACER PEDIDO - ESTADO BONIFICACIÓN ===');
-		console.log('bonificacionDisponible:', $scope.bonificacionDisponible);
-		console.log('yaBonificadoHoy:', $scope.yaBonificadoHoy);
-		console.log('cantidadBonificacionesHoy:', $scope.cantidadBonificacionesHoy);
-		console.log('pedidosRestantes:', $scope.pedidosRestantes);
-		console.log('item.aplicarBonificacion ANTES:', item.aplicarBonificacion);
-		
 		// Inicializar bonificaciones si no se ha hecho
 		if (!$scope.bonificacionDisponible && !$scope.yaBonificadoHoy) {
-			console.log('Inicializando bonificaciones...');
 			$scope.inicializarBonificaciones();
 		}
 		
@@ -1498,16 +1512,13 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 		// Si no se ha inicializado el campo, usar el valor por defecto
 		if (item.aplicarBonificacion === undefined) {
 			item.aplicarBonificacion = puedeAplicarBonificacion;
-			console.log('item.aplicarBonificacion INICIALIZADO A:', item.aplicarBonificacion, '(puedeAplicarBonificacion:', puedeAplicarBonificacion, ')');
 		}
 		
 		// Si no puede aplicar bonificación, forzar a false
 		if (!puedeAplicarBonificacion) {
-			console.log('No puede aplicar bonificación, forzando a false');
 			item.aplicarBonificacion = false;
 		}
 		
-		console.log('item.aplicarBonificacion FINAL:', item.aplicarBonificacion);
 		
 		// Solo actualizar el preview, NO consumir bonificación aún
 		$scope.aplicarBonificacion(item, item.aplicarBonificacion);
@@ -1519,7 +1530,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 		$scope.pedidoPresentacion = item.presentacion || $scope.defaultImage;
 		$scope.pedidoEstado = 'P';
 		$scope.pedidoCalificacion = 1;
-		console.log("pasa por aca");
 		// Lógica según si se usa SmarTime
 		if (smarTime) {
 			if ($scope.user_Rol === usuarioSmatTime) {
@@ -1535,18 +1545,17 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 								text: mensajeSmatTime || "El usuario no tiene fichadas en SmarTime",
 								icon: 'error',
 								confirmButtonText: 'Aceptar',
-								confirmButtonColor: '#343A40'
+								confirmButtonColor: '#F34949'
 							});
 						}
 					})
 					.catch(function (error) {
-						console.error("Error al obtener SmarTime", error);
 						Swal.fire({
 							title: 'Error',
 							text: "Error al obtener SmarTime: " + error.statusText,
 							icon: 'error',
 							confirmButtonText: 'Aceptar',
-							confirmButtonColor: '#343A40'
+							confirmButtonColor: '#F34949'
 						});
 					});
 			} else {
@@ -1554,7 +1563,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				mostrarModalConfirmacion();
 			}
 		} else {
-			console.log("mostrarModalConfirmacion");
 			mostrarModalConfirmacion();
 		}
 	};
@@ -1565,13 +1573,14 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 		//let calif = $window.document.getElementById('pedidoCalificacion').value;
 		$scope.pedidoCalificacion = parseInt($window.document.getElementById('pedidoCalificacion').value) || 0;
 	
-		// Verificar si el pedido que se está cancelando tenía bonificación
+		// Verificar si el pedido tenía bonificación y obtener el valor
 		var pedidoTeniaBonificacion = false;
+		var bonificadoValue = 0;
 		if ($scope.pedidoSeleccionado && $scope.pedidoSeleccionado.user_Pedido) {
-			var bonificadoValue = $scope.pedidoSeleccionado.user_Pedido.bonificado;
-			if (bonificadoValue !== null && bonificadoValue !== undefined && bonificadoValue !== '') {
-				var bonificado = parseFloat(bonificadoValue) || 0;
-				pedidoTeniaBonificacion = bonificado > 0;
+			var bonificadoOriginal = $scope.pedidoSeleccionado.user_Pedido.bonificado;
+			if (bonificadoOriginal !== null && bonificadoOriginal !== undefined && bonificadoOriginal !== '') {
+				bonificadoValue = parseFloat(bonificadoOriginal) || 0;
+				pedidoTeniaBonificacion = bonificadoValue > 0;
 			}
 		}
 	
@@ -1588,7 +1597,8 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			user_name: $scope.user_Nombre,
 			user_lastName: $scope.user_Apellido,
 			user_fileNumber: $scope.user_legajo,
-			fecha_hora: $scope.pedidoSeleccionado.fecha_hora ?? new Date().toISOString()
+			fecha_hora: $scope.pedidoSeleccionado.fecha_hora ?? new Date().toISOString(),
+			bonificado: bonificadoValue // Incluir el campo bonificado al actualizar
 		};
 		$http({
 			method: 'POST',
@@ -1600,24 +1610,43 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			data: jsonForm
 		}).then(function (success) {
 		if (success) {
-			// Si se canceló un pedido con bonificación, restaurar el descuento
-			if (nuevoEstado === 'C' && pedidoTeniaBonificacion) {
-				// Verificar si ese era el único pedido bonificado del día
-				if ($scope.cantidadBonificacionesHoy >= 1) {
-					// Restaurar el descuento
-					$scope.cantidadBonificacionesHoy = 0;
-					$scope.yaBonificadoHoy = false;
-					if ($scope.bonificacionDisponible) {
-						$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(1, 'CANCELAR_PEDIDO_CON_BONIFICACION');
-					}
-					
-					// Limpiar el estado guardado en localStorage
-					$scope.limpiarEstadoBonificacion();
-					
-					// Forzar actualización de la vista
-					if (!$scope.$$phase) {
-						$scope.$apply();
-					}
+			// Si se recibió ('R') un pedido con bonificación, consumir la bonificación
+			if (nuevoEstado === 'R' && pedidoTeniaBonificacion) {
+				// Consumir la bonificación
+				$scope.cantidadBonificacionesHoy = 1;
+				$scope.yaBonificadoHoy = true;
+				if ($scope.bonificacionDisponible) {
+					$scope.pedidosRestantes = 0;
+				}
+				
+				// Guardar el estado en localStorage
+				$scope.guardarEstadoBonificacion();
+				
+				// Forzar actualización de la vista
+				if (!$scope.$$phase) {
+					$scope.$apply();
+				}
+				
+				// Verificar nuevamente el estado de bonificaciones desde el servidor
+				$timeout(function() {
+					$scope.verificarBonificacionHoy();
+				}, 1000);
+			}
+			// Si se canceló ('C') o devolvió ('D') un pedido con bonificación, restaurar el descuento
+			else if ((nuevoEstado === 'C' || nuevoEstado === 'D') && pedidoTeniaBonificacion) {
+				// Restaurar el descuento
+				$scope.cantidadBonificacionesHoy = 0;
+				$scope.yaBonificadoHoy = false;
+				if ($scope.bonificacionDisponible) {
+					$scope.pedidosRestantes = 1;
+				}
+				
+				// Limpiar el estado guardado en localStorage
+				$scope.limpiarEstadoBonificacion();
+				
+				// Forzar actualización de la vista
+				if (!$scope.$$phase) {
+					$scope.$apply();
 				}
 				
 				// Verificar nuevamente el estado de bonificaciones desde el servidor
@@ -1631,7 +1660,7 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				text: '',
 				icon: 'success',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
+				confirmButtonColor: '#F34949'
 			}).then(() => {
 					cerrarModales();
 					recargar();
@@ -1643,14 +1672,14 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				text: error,
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
+				confirmButtonColor: '#F34949'
 			});
 			Swal.fire({
 				title: 'Operación Incorrecta',
 				text: JSON.stringify(error),
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
+				confirmButtonColor: '#F34949'
 			});
 		});
 	};
@@ -1708,7 +1737,7 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 					$scope.bonificacionDisponible && $scope.cantidadBonificacionesHoy < 1) {
 					
 					// Consumir la bonificación inmediatamente
-					$scope.pedidosRestantes = $scope.monitorearPedidosRestantes(0, 'CONFIRMAR_PEDIDO_CONSUMIR');
+					$scope.pedidosRestantes = 0;
 					$scope.cantidadBonificacionesHoy = 1;
 					$scope.yaBonificadoHoy = true;
 					
@@ -1725,18 +1754,18 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				$scope.bonificacionPreSeleccionada = false;
 				$scope.turnoBonificacionSeleccionada = null;
 				
-				// Verificar nuevamente el estado de bonificaciones desde el servidor después de un tiempo
-				// para que el pedido pueda tener estado 'R' (Recibido)
+				// Verificar nuevamente el estado de bonificaciones desde el servidor después de más tiempo
+				// para que el servidor tenga tiempo de guardar el campo bonificado
 				$timeout(function() {
 					$scope.verificarBonificacionHoy();
-				}, 2000);
+				}, 3000);
 				
 				Swal.fire({
 					title: '¡Pedido Enviado!',
 					text: '',
 					icon: 'success',
 					confirmButtonText: 'Aceptar',
-					confirmButtonColor: '#343A40',
+					confirmButtonColor: '#F34949',
 					allowOutsideClick: false,
 					allowEscapeKey: false
 				}).then(() => {					
@@ -1750,14 +1779,13 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				text: JSON.stringify(error),
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
+				confirmButtonColor: '#F34949'
 			});
 		});
 	}
 
 	
 	$scope.seleccionaPedido = function (pedido) {
-		//console.log(pedido); // Verifica el valor de pedido.paraRetirar
 		$scope.pedidoSeleccionado = pedido;
 	}
 
@@ -1825,7 +1853,6 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 
 	function recargar() {
 		$scope.pedidoVigente = []; // limpia antes de recargar
-		console.log("🔄 Recargando pedidos...");
 		$scope.obtieneComandas(); // recarga los pedidos vigentes
 		$scope.$applyAsync(); // asegura que se refleje en el DOM
 		//location.reload();
@@ -1835,9 +1862,7 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 	}
 
 	$('#confirmModal').on('shown.bs.modal', function () {
-		console.log("✅ Modal mostrado correctamente");
 	});
 	$('#confirmModal').on('hidden.bs.modal', function () {
-		console.log("🔙 Modal cerrado");
 	});
 });

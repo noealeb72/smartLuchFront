@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="AngujarJS" ng-controller="BloqueoUsuarios">
 
 <head>
     <meta charset="utf-8">
@@ -26,20 +26,30 @@
             padding: 0;
         }
 
-        .footer-sticky {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-        }
-
-        .footer-sticky .smart-bg {
-            background-color: #F34949 !important;
-        }
-
         body {
-            padding-bottom: 80px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container-fluid {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .solid-background {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .smart-bg {
+            margin-top: auto;
+        }
+
+        .breadcrumb {
+            border-radius: 0;
         }
 
         /* Estilos para las tarjetas de bloqueo */
@@ -158,106 +168,109 @@
     </style>
 </head>
 
-<body ng-app="AngujarJS" ng-controller="BloqueoUsuarios">
-    <!-- Navbar -->
-    <div ng-include="'navbar.html'"></div>
+<body data-spy="scroll" data-target="#navbar" class="static-layout">
+    <div class="container-fluid" style="margin-top: 0 !important;">
+        <div class="solid-background">
+            <!-- Navbar -->
+            <div ng-include="'navbar.html'"></div>
 
-    <!-- Contenido principal -->
-    <div class="container-fluid" style="margin-top: 20px; padding: 20px;">
-        <!-- Breadcrumb -->
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="index.html">Inicio</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Bloqueo de Usuarios</li>
-            </ol>
-        </nav>
+            <!-- Contenido principal -->
+            <div style="padding: 20px; flex: 1;">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="index.html">Inicio</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Bloqueo de Usuarios</li>
+                    </ol>
+                </nav>
 
-        <!-- Título -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h3 class="mb-3">
-                    <i class="fa fa-user-lock mr-2"></i>Bloqueo de Usuarios por Tipo
-                </h3>
-                <p class="text-muted">Configure el bloqueo de acceso para cada tipo de usuario del sistema.</p>
-            </div>
-        </div>
-
-        <!-- Mensaje de información -->
-        <div class="alert alert-info" role="alert">
-            <i class="fa fa-info-circle mr-2"></i>
-            <strong>Información:</strong> Al bloquear un tipo de usuario, todos los usuarios de ese tipo no podrán acceder al sistema hasta que se desbloquee.
-        </div>
-
-        <!-- Tarjetas de bloqueo por tipo de usuario -->
-        <div class="row">
-            <div class="col-md-6 col-lg-3" ng-repeat="tipoUsuario in tiposUsuarios">
-                <div class="bloqueo-card">
-                    <div class="bloqueo-card-header">
-                        <h5 class="bloqueo-card-title">
-                            <i class="fa mr-2" ng-class="{
-                                'fa-user-shield': tipoUsuario.tipo === 'Admin',
-                                'fa-utensils': tipoUsuario.tipo === 'Cocina',
-                                'fa-user': tipoUsuario.tipo === 'Comensal',
-                                'fa-user-tie': tipoUsuario.tipo === 'Gerencia'
-                            }"></i>
-                            {{tipoUsuario.tipo}}
-                        </h5>
-                        <span class="info-badge" ng-class="{
-                            'badge-bloqueado': tipoUsuario.bloqueado,
-                            'badge-activo': !tipoUsuario.bloqueado
-                        }">
-                            {{tipoUsuario.bloqueado ? 'Bloqueado' : 'Activo'}}
-                        </span>
+                <!-- Título -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h3 class="mb-3">
+                            <i class="fa fa-user-lock mr-2"></i>Bloqueo de Usuarios por Tipo
+                        </h3>
+                        <p class="text-muted">Configure el bloqueo de acceso para cada tipo de usuario del sistema.</p>
                     </div>
-                    <div class="bloqueo-card-description">
-                        {{tipoUsuario.descripcion}}
+                </div>
+
+                <!-- Mensaje de información -->
+                <div class="alert alert-info" role="alert">
+                    <i class="fa fa-info-circle mr-2"></i>
+                    <strong>Información:</strong> Al bloquear un tipo de usuario, todos los usuarios de ese tipo no podrán acceder al sistema hasta que se desbloquee.
+                </div>
+
+                <!-- Tarjetas de bloqueo por tipo de usuario -->
+                <div class="row">
+                    <div class="col-md-6 col-lg-3" ng-repeat="tipoUsuario in tiposUsuarios">
+                        <div class="bloqueo-card">
+                            <div class="bloqueo-card-header">
+                                <h5 class="bloqueo-card-title">
+                                    <i class="fa mr-2" ng-class="{
+                                        'fa-user-shield': tipoUsuario.tipo === 'Admin',
+                                        'fa-utensils': tipoUsuario.tipo === 'Cocina',
+                                        'fa-user': tipoUsuario.tipo === 'Comensal',
+                                        'fa-user-tie': tipoUsuario.tipo === 'Gerencia'
+                                    }"></i>
+                                    {{tipoUsuario.tipo}}
+                                </h5>
+                                <span class="info-badge" ng-class="{
+                                    'badge-bloqueado': tipoUsuario.bloqueado,
+                                    'badge-activo': !tipoUsuario.bloqueado
+                                }">
+                                    {{tipoUsuario.bloqueado ? 'Bloqueado' : 'Activo'}}
+                                </span>
+                            </div>
+                            <div class="bloqueo-card-description">
+                                {{tipoUsuario.descripcion}}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="switch">
+                                    <input type="checkbox" 
+                                           ng-model="tipoUsuario.bloqueado" 
+                                           ng-change="cambiarEstadoBloqueo(tipoUsuario)"
+                                           ng-disabled="isLoading">
+                                    <span class="slider"></span>
+                                </label>
+                                <span class="estado-texto" ng-class="{
+                                    'estado-bloqueado': tipoUsuario.bloqueado,
+                                    'estado-activo': !tipoUsuario.bloqueado
+                                }">
+                                    {{tipoUsuario.bloqueado ? 'Bloqueado' : 'Desbloqueado'}}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <label class="switch">
-                            <input type="checkbox" 
-                                   ng-model="tipoUsuario.bloqueado" 
-                                   ng-change="cambiarEstadoBloqueo(tipoUsuario)"
-                                   ng-disabled="isLoading">
-                            <span class="slider"></span>
-                        </label>
-                        <span class="estado-texto" ng-class="{
-                            'estado-bloqueado': tipoUsuario.bloqueado,
-                            'estado-activo': !tipoUsuario.bloqueado
-                        }">
-                            {{tipoUsuario.bloqueado ? 'Bloqueado' : 'Desbloqueado'}}
-                        </span>
+                </div>
+
+                <!-- Loading spinner -->
+                <div ng-if="isLoading" class="text-center mt-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Cargando...</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Loading spinner -->
-        <div ng-if="isLoading" class="text-center mt-4">
-            <div class="spinner-border text-primary" role="status">
-                <span class="sr-only">Cargando...</span>
-            </div>
-        </div>
+        <!-- Footer -->
+        <div ng-include="'footer.html'"></div>
     </div>
 
-    <!-- Footer -->
-    <div ng-include="'footer.html'"></div>
-
     <!-- Scripts -->
+    <!-- jQuery primero (requerido por Bootstrap) -->
+    <script src="Scripts/jquery-3.4.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="Scripts/bootstrap.min.js"></script>
+    <!-- AngularJS -->
+    <script src="Scripts/angular/angular.min.js"></script>
     <!-- Configuración centralizada -->
     <script src="js/config.js"></script>
     <!-- Servicio de bloqueo de usuarios -->
     <script src="js/bloqueo-usuarios-service.js"></script>
-    <!-- AngularJS -->
-    <script src="Scripts/angular/angular.min.js"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- jQuery -->
-    <script src="Scripts/jquery-3.4.1.min.js"></script>
-    <!-- Bootstrap JS -->
-    <script src="Scripts/bootstrap.min.js"></script>
-    <!-- Controlador de bloqueo de usuarios -->
+    <!-- Controlador de bloqueo de usuarios (debe ir después de AngularJS) -->
     <script src="js/bloqueo-usuarios.js"></script>
 </body>
 
 </html>
-

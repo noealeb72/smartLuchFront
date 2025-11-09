@@ -69,9 +69,16 @@ app.filter('formatDateArg', function () {
     }
 });
 
-app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
-    // Inicializar fecha por defecto
-    $scope.view_fechadeldia = new Date();
+app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
+    // Inicializar fecha por defecto en formato YYYY-MM-DD para input type="date"
+    var fechaHoy = new Date();
+    var year = fechaHoy.getFullYear();
+    var month = String(fechaHoy.getMonth() + 1).padStart(2, '0');
+    var day = String(fechaHoy.getDate()).padStart(2, '0');
+    $scope.view_fechadeldia = year + '-' + month + '-' + day;
+    
+    // -------- Loading State ----------
+    $scope.isLoading = true;
     
     // Detecta si la pantalla es móvil
     $scope.isMobile = $window.innerWidth < 768;
@@ -140,24 +147,122 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
 
     // --- Utilidades de paginación usadas por la vista ---
     $scope.currentPage = 0;
-    $scope.pageSize = 10;
+    $scope.pageSize = 5; // Por defecto 5 filas (número)
     $scope.totalPages = 1;
+    $scope.searchText = ''; // Inicializar searchText
+    
+    // Asegurar que pageSize se inicialice correctamente como número
+    // Convertir a número para asegurar que ng-value funcione correctamente
+    $scope.pageSize = parseInt($scope.pageSize) || 5;
     
     $scope.numberOfPages = function () {
-        return Math.ceil(($scope.dataset || []).length / $scope.pageSize);
+        var arr = $scope.getFilteredDataset() || [];
+        var len = Array.isArray(arr) ? arr.length : 0;
+        var pages = Math.ceil(len / $scope.pageSize);
+        return Math.max(1, pages); // Siempre devolver al menos 1 página
+    };
+
+    // Funciones para paginación tipo DataTable (igual que reportegcomensales)
+    $scope.getPageNumbers = function() {
+        var pages = [];
+        var totalPages = $scope.numberOfPages();
+        var current = $scope.currentPage;
+        
+        // Asegurar que totalPages sea al menos 1
+        if (totalPages < 1) {
+            totalPages = 1;
+        }
+        
+        // Asegurar que current no exceda totalPages
+        if (current >= totalPages) {
+            current = Math.max(0, totalPages - 1);
+            $scope.currentPage = current;
+        }
+        
+        if (totalPages <= 7) {
+            // Si hay 7 páginas o menos, mostrar todas
+            for (var i = 0; i < totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            // Lógica para mostrar páginas con puntos suspensivos
+            if (current <= 3) {
+                // Estamos cerca del inicio
+                for (var i = 0; i < 5; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            } else if (current >= totalPages - 4) {
+                // Estamos cerca del final
+                pages.push(0);
+                pages.push('...');
+                for (var i = totalPages - 5; i < totalPages; i++) {
+                    pages.push(i);
+                }
+            } else {
+                // Estamos en el medio
+                pages.push(0);
+                pages.push('...');
+                for (var i = current - 1; i <= current + 1; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            }
+        }
+        
+        return pages;
+    };
+
+    // Función para ir a una página específica
+    $scope.goToPage = function(page) {
+        if (page >= 0 && page < $scope.numberOfPages()) {
+            $scope.currentPage = page;
+        }
+    };
+
+    // Función para cambiar el tamaño de página
+    $scope.changePageSize = function(newSize) {
+        $scope.pageSize = parseInt(newSize);
+        $scope.currentPage = 0; // Volver a la primera página
+    };
+    
+    // Función para obtener datos filtrados (igual que en el HTML)
+    $scope.getFilteredDataset = function() {
+        var filteredData = $scope.dataset || [];
+        // Aplicar el mismo filtro que se usa en el HTML (filter:searchText)
+        if ($scope.searchText && $scope.searchText.trim() !== '') {
+            var searchLower = $scope.searchText.toLowerCase();
+            filteredData = filteredData.filter(function(item) {
+                // Buscar en todos los campos del objeto
+                var itemStr = JSON.stringify(item).toLowerCase();
+                return itemStr.indexOf(searchLower) !== -1;
+            });
+        }
+        return filteredData;
     };
     
     // Función para recalcular totalPages
     function updateTotalPages() {
-        var filteredData = $scope.dataset || [];
-        // Solo aplicar filtro de texto local, los filtros avanzados se manejan desde la API
-        if ($scope.searchText && $scope.searchText.trim() !== '') {
-            filteredData = filteredData.filter(function(item) {
-                return JSON.stringify(item).toLowerCase().indexOf($scope.searchText.toLowerCase()) !== -1;
-            });
+        // Usar la misma función de filtrado que se usa en el HTML
+        var filteredData = $scope.getFilteredDataset();
+        var totalItems = filteredData.length;
+        
+        // Calcular totalPages basándose en el dataset filtrado
+        if (totalItems === 0) {
+            $scope.totalPages = 1;
+        } else {
+            $scope.totalPages = Math.ceil(totalItems / $scope.pageSize);
         }
-        $scope.totalPages = Math.ceil(filteredData.length / $scope.pageSize);
-        if ($scope.currentPage >= $scope.totalPages) {
+        
+        // Asegurar que totalPages sea al menos 1
+        if ($scope.totalPages < 1) {
+            $scope.totalPages = 1;
+        }
+        
+        // Ajustar currentPage si es necesario
+        if ($scope.currentPage >= $scope.totalPages && $scope.totalPages > 0) {
             $scope.currentPage = Math.max(0, $scope.totalPages - 1);
         }
     }
@@ -197,14 +302,12 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     
     // Función para abrir popup de platos (para filtro)
     $scope.abrirPopupPlatos = function() {
-        console.log('🔍 Abriendo popup de platos para filtro');
         $scope.modoSeleccionPlato = 'filtro';
         cargarPlatosYMostrarModal();
     };
     
     // Función para abrir popup de platos (para formulario)
     $scope.abrirPopupPlatosFormulario = function() {
-        console.log('🔍 Abriendo popup de platos para formulario');
         $scope.modoSeleccionPlato = 'formulario';
         cargarPlatosYMostrarModal();
     };
@@ -214,7 +317,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         // Cargar platos disponibles
         $http.get($scope.basePlatos + 'getAll')
             .success(function(data) {
-                console.log('✅ Platos cargados:', data);
                 $scope.platosDisponibles = data;
                 $scope.busquedaPlato = ''; // Limpiar búsqueda
                 
@@ -222,13 +324,12 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                 $('#modalSeleccionarPlato').modal('show');
             })
             .error(function(data, status) {
-                console.error('❌ Error al cargar platos:', data, status);
                 $window.Swal && $window.Swal.fire({
                     title: 'Error',
                     text: 'Error al cargar la lista de platos: ' + (data || status),
                     icon: 'error',
                     confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#343A40'
+                    confirmButtonColor: '#F34949'
                 });
             });
     };
@@ -246,13 +347,10 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     
     // Función para seleccionar un plato
     $scope.seleccionarPlato = function(plato) {
-        console.log('✅ Plato seleccionado:', plato);
-        console.log('📍 Modo selección:', $scope.modoSeleccionPlato);
         
         if ($scope.modoSeleccionPlato === 'formulario') {
             // Si estamos en modo formulario, actualizar el campo view_plato
             $scope.view_plato = plato.descripcion;
-            console.log('✅ Plato asignado al formulario:', plato.descripcion);
             
             // Forzar actualización del select si es necesario
             if (!$scope.$$phase) {
@@ -261,7 +359,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         } else {
             // Si estamos en modo filtro, actualizar el filtro
             $scope.filtroPlato = plato.descripcion;
-            console.log('✅ Plato asignado al filtro:', plato.descripcion);
         }
         
         $('#modalSeleccionarPlato').modal('hide');
@@ -269,7 +366,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     
     // Función para verificar y corregir la fecha en modo edición
     $scope.verificarYCorregirFecha = function() {
-        console.log('🔍 Verificando fecha en modo edición...');
         
         // Verificar si el campo de fecha está vacío o tiene un valor incorrecto
         var fechaField = document.getElementById('view_fechadeldia');
@@ -277,18 +373,14 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
             var valorActual = fechaField.value;
             var valorScope = $scope.view_fechadeldia;
             
-            console.log('Valor del campo DOM:', valorActual);
-            console.log('Valor del scope:', valorScope);
             
             // Si el campo está vacío pero el scope tiene valor, aplicar el valor del scope
             if ((!valorActual || valorActual === '') && valorScope) {
                 fechaField.value = valorScope;
-                console.log('✅ Fecha aplicada desde scope al DOM:', valorScope);
             }
             // Si el scope está vacío pero el campo tiene valor, actualizar el scope
             else if (valorActual && (!valorScope || valorScope === '')) {
                 $scope.view_fechadeldia = valorActual;
-                console.log('✅ Fecha aplicada desde DOM al scope:', valorActual);
             }
             // Si ambos están vacíos, usar fecha actual
             else if ((!valorActual || valorActual === '') && (!valorScope || valorScope === '')) {
@@ -300,7 +392,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                 
                 $scope.view_fechadeldia = fechaHoy;
                 fechaField.value = fechaHoy;
-                console.log('✅ Fecha actual aplicada:', fechaHoy);
             }
         }
     };
@@ -381,16 +472,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     
     // Función para aplicar filtros avanzados
     $scope.aplicarFiltrosAvanzados = function() {
-        console.log('🔍 Aplicando filtros avanzados:', {
-            fechaDesde: $scope.filtroFechaDesde,
-            plato: $scope.filtroPlato,
-            centroCosto: $scope.filtroCentroCosto,
-            proyecto: $scope.filtroProyecto,
-            planta: $scope.filtroPlanta,
-            turno: $scope.filtroTurno,
-            jerarquia: $scope.filtroJerarquia,
-            estado: $scope.filtroEstado
-        });
         
         // Construir parámetros para la API
         var params = {};
@@ -432,25 +513,33 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
             params.estado = $scope.filtroEstado;
         }
         
-        console.log('📡 Parámetros para API:', params);
         
         // Llamar a la API
+        $scope.isLoading = true;
         $http.get($scope.base + 'BuscarAvanzado', { params: params })
-            .success(function(data) {
-                console.log('✅ Datos recibidos de la API:', data);
-                $scope.dataset = data;
+            .then(function(response) {
+                $scope.dataset = Array.isArray(response.data) ? response.data : [];
+                // Ordenar por ID descendente para que el plato más reciente aparezca primero
+                $scope.dataset.sort(function(a, b) {
+                    var idA = parseInt(a.id) || 0;
+                    var idB = parseInt(b.id) || 0;
+                    return idB - idA; // Orden descendente (mayor ID primero)
+                });
                 $scope.currentPage = 0; // Resetear a la primera página
                 $scope.filtrosActivos = Object.keys(params).length > 0; // Marcar si hay filtros activos
-                updateTotalPages();
+                $timeout(function() {
+                    updateTotalPages();
+                }, 0);
+                $scope.isLoading = false;
             })
-            .error(function(data, status) {
-                console.error('❌ Error al buscar en la API:', data, status);
+            .catch(function(error) {
+                $scope.isLoading = false;
                 $window.Swal && $window.Swal.fire({
                     title: 'Error',
-                    text: 'Error al buscar en la base de datos: ' + (data || status),
+                    text: 'Error al buscar en la base de datos: ' + (error.data || error.status),
                     icon: 'error',
                     confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#343A40'
+                    confirmButtonColor: '#F34949'
                 });
             });
     };
@@ -466,15 +555,28 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $scope.filtroJerarquia = '';
         $scope.filtroEstado = '';
         $scope.filtrosActivos = false;
-        console.log('🧹 Filtros avanzados limpiados');
         
         // Recargar todos los datos originales
         $scope.ModelReadAll();
     };
     
+    // Watcher para el dataset - recalcular totalPages cuando cambia
+    $scope.$watch('dataset', function(newVal, oldVal) {
+        if (newVal !== oldVal) {
+            $timeout(function() {
+                updateTotalPages();
+            }, 0);
+        }
+    }, true); // true para deep watch
+    
     // Watcher solo para el buscador de texto (filtrado local)
-    $scope.$watch('searchText', function() {
-        updateTotalPages();
+    $scope.$watch('searchText', function(newVal, oldVal) {
+        if (newVal !== oldVal) {
+            $scope.currentPage = 0; // Resetear a la primera página cuando cambia el filtro
+            $timeout(function() {
+                updateTotalPages();
+            }, 0);
+        }
     });
     
     // Los filtros avanzados ahora se manejan desde la API, no necesitan watchers automáticos
@@ -519,7 +621,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                     icon: 'warning',
                     showCancelButton: false,
                     confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#343A40',
+                    confirmButtonColor: '#F34949',
                     buttonsStyling: true
                 });
             }
@@ -568,7 +670,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     $scope.ModelRead = function (view_id) {
         $http.get($scope.base + 'get/' + view_id)
             .success(function (data) {
-                console.log('Datos recibidos para edición:', data);
                 
                 // Procesar fecha de manera más robusta
                 var fecha = '';
@@ -576,7 +677,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                     try {
                         // Intentar diferentes formatos de fecha
                         var fechaStr = data[0].fechadeldia;
-                        console.log('Fecha original:', fechaStr, 'Tipo:', typeof fechaStr);
                         
                         // Si viene en formato YYYY-MM-DD
                         if (fechaStr.includes('-')) {
@@ -597,16 +697,13 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                             fecha = fechaStr;
                         }
                         
-                        console.log('Fecha procesada:', fecha);
                     } catch (e) {
-                        console.error('Error procesando fecha:', e);
                         fecha = '';
                     }
                 }
                 
                 // Si no hay fecha válida, usar fecha actual como fallback
                 if (!fecha || fecha === '' || isNaN(fecha.getTime())) {
-                    console.log('Usando fecha actual como fallback');
                     fecha = new Date();
                 }
 
@@ -617,7 +714,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                     var month = String(fecha.getMonth() + 1).padStart(2, '0');
                     var day = String(fecha.getDate()).padStart(2, '0');
                     fechaFormateada = year + '-' + month + '-' + day;
-                    console.log('Fecha formateada para input:', fechaFormateada);
                 }
 
                 $scope.view_turno = data[0].turno || '';
@@ -631,11 +727,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                 $scope.view_despachado = data[0].despachado || '';
                 $scope.view_fechadeldia = fechaFormateada;
                 
-                console.log('Variables asignadas:', {
-                    turno: $scope.view_turno,
-                    planta: $scope.view_planta,
-                    fechadeldia: $scope.view_fechadeldia
-                });
                 
                 // Forzar actualización de la vista con timeout para asegurar que el DOM esté listo
                 $scope.$apply();
@@ -645,7 +736,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                     var fechaField = document.getElementById('view_fechadeldia');
                     if (fechaField && fechaFormateada) {
                         fechaField.value = fechaFormateada;
-                        console.log('Fecha aplicada directamente al DOM:', fechaFormateada);
                     }
                 }, 100);
             })
@@ -655,10 +745,10 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     };
 
     $scope.ModelReadAll = function () {
+        $scope.isLoading = true;
         $scope.dataset = [];
         $scope.searchKeyword;
         $scope.ViewAction = 'Lista de Items';
-        console.log('ViewAction inicializado a:', $scope.ViewAction);
         $scope.view_id = -1;
         $scope.view_turno = '';
         $scope.view_planta = '';
@@ -674,13 +764,27 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
 
         $http.get($scope.base + 'GetToday')
             // $http.get($scope.base + 'GetToday') // solo trae el menu del día
-            .success(function (data) {
-                $scope.dataset = data;
-                // opcional: reset de página si el dataset cambió
+            .then(function (response) {
+                $scope.dataset = Array.isArray(response.data) ? response.data : [];
+                // Ordenar por ID descendente para que el plato más reciente aparezca primero
+                $scope.dataset.sort(function(a, b) {
+                    var idA = parseInt(a.id) || 0;
+                    var idB = parseInt(b.id) || 0;
+                    return idB - idA; // Orden descendente (mayor ID primero)
+                });
+                // Resetear a la primera página cuando se carga un nuevo dataset
+                $scope.currentPage = 0;
+                // Recalcular totalPages después de actualizar el dataset
+                $timeout(function() {
+                    updateTotalPages();
+                }, 0);
+                $scope.isLoading = false;
+            })
+            .catch(function () {
+                $scope.isLoading = false;
+                $scope.dataset = [];
                 $scope.currentPage = 0;
                 updateTotalPages();
-            })
-            .error(function () {
                 $window.Swal && $window.Swal.fire({ title: 'Ha ocurrido un error', text: 'API no presente', icon: 'error' });
             });
     };
@@ -716,7 +820,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                     icon: 'warning',
                     showCancelButton: false,
                     confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#343A40',
+                    confirmButtonColor: '#F34949',
                     buttonsStyling: true
                 });
             }
@@ -802,7 +906,12 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
         $scope.view_plato = '';
         $scope.view_estado = '';
         $scope.view_cantidad = 1;
-        $scope.view_fechadeldia = new Date();
+        // Inicializar fecha en formato YYYY-MM-DD para input type="date"
+        var fechaHoy = new Date();
+        var year = fechaHoy.getFullYear();
+        var month = String(fechaHoy.getMonth() + 1).padStart(2, '0');
+        var day = String(fechaHoy.getDate()).padStart(2, '0');
+        $scope.view_fechadeldia = year + '-' + month + '-' + day;
         
         // Forzar actualización de la vista
         if (!$scope.$$phase) {
@@ -845,7 +954,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                                 return a.descripcion.localeCompare(b.descripcion);
                             });
                             $scope.view_plato = sortedPlatos[0].descripcion;
-                            console.log('Primer plato seleccionado después del filtrado:', $scope.view_plato);
                         }
                     }, 50);
                 }, 100);
@@ -880,9 +988,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
             .success(function (data) {
                 $scope.allPlatos = data; // Almacenar todos los platos
                 $scope.platos = data; // Mostrar todos los platos por defecto
-                console.log('Platos cargados:', $scope.platos.length);
-                console.log('Primer plato:', $scope.platos[0]);
-                console.log('Propiedades del primer plato:', Object.keys($scope.platos[0] || {}));
             })
             .error(function () {
                 $window.Swal && $window.Swal.fire({ title: 'Ha ocurrido un error', text: 'Error al obtener platos', icon: 'error' });
@@ -930,51 +1035,39 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
     };
 
     $scope.ModelReadTurnos = function () {
-        console.log('🔄 Cargando turnos desde:', $scope.baseTurnos + 'getAll');
-        
         // Inicializar con datos por defecto primero
         $scope.turnos = [
             { id: 1, descripcion: 'Almuerzo' },
             { id: 2, descripcion: 'Cena' }
         ];
         $scope.view_turno = 'Almuerzo';
-        console.log('⚠️ Usando turnos por defecto mientras se carga la API');
         
         $http.get($scope.baseTurnos + 'getAll')
             .success(function (data) {
-                console.log('✅ Turnos cargados exitosamente desde API:', data);
                 if (data && data.length > 0) {
                     $scope.turnos = data;
                     // Establecer el primer turno como valor por defecto si no hay uno seleccionado
                     if (!$scope.view_turno || $scope.view_turno === '') {
                         $scope.view_turno = data[0].descripcion;
-                        console.log('🎯 Primer turno seleccionado desde API:', $scope.view_turno);
                         // Forzar actualización de la vista
                         $scope.$apply();
                     }
                 }
             })
             .error(function (data, status) {
-                console.error('❌ Error al cargar turnos desde API:', data, status);
-                console.log('⚠️ Manteniendo turnos por defecto debido a error en API');
                 // No mostrar popup de error para no interrumpir la experiencia del usuario
             });
     };
 
     // Función para filtrar platos por turno - VERSIÓN SIMPLIFICADA
     $scope.filtrarPlatosPorTurno = function(turno) {
-        console.log('🚀 filtrarPlatosPorTurno ejecutada con turno:', turno);
-        
         if (!turno) {
-            console.warn('⚠️ Turno vacío, mostrando todos los platos');
             $scope.platos = $scope.allPlatos || [];
             return;
         }
         
         // SIMULACIÓN SIMPLE: Filtrar platos basándose en el turno
         if ($scope.allPlatos && $scope.allPlatos.length > 0) {
-            console.log('🔍 Filtrando platos para turno:', turno);
-            console.log('Platos disponibles:', $scope.allPlatos.length);
             
             // Simular filtrado basándose en el turno
             if (turno.toLowerCase().includes('almuerzo')) {
@@ -988,47 +1081,30 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                 $scope.platos = $scope.allPlatos;
             }
             
-            console.log('✅ Platos filtrados para turno', turno, ':', $scope.platos.length);
-            console.log('Platos mostrados:', $scope.platos.map(p => p.descripcion || p.nombre || 'Sin nombre'));
         } else {
-            console.warn('⚠️ No hay platos disponibles para filtrar');
             $scope.platos = [];
         }
     };
 
     // Función para manejar el cambio de turno
     $scope.onTurnoChange = function() {
-        console.log('🔥 onTurnoChange ejecutada!');
-        console.log('Turno actual:', $scope.view_turno);
-        console.log('Tipo de turno:', typeof $scope.view_turno);
-        console.log('Platos antes del filtrado:', $scope.platos ? $scope.platos.length : 'undefined');
-        console.log('AllPlatos disponibles:', $scope.allPlatos ? $scope.allPlatos.length : 'undefined');
-        
         // Verificar que el turno no esté vacío
         if (!$scope.view_turno || $scope.view_turno.trim() === '') {
-            console.warn('⚠️ Turno vacío, no se puede filtrar');
             return;
         }
         
         // Filtrar platos por turno
         $scope.filtrarPlatosPorTurno($scope.view_turno);
-        
-        // No limpiar la selección de plato para mantener el primer plato seleccionado
-        
-        console.log('✅ Filtrado de platos completado para turno:', $scope.view_turno);
-        console.log('Platos después del filtrado:', $scope.platos ? $scope.platos.length : 'undefined');
     };
 
     // Función de prueba para verificar si ng-change funciona
     $scope.testTurnoChange = function() {
-        console.log('🧪 TEST: ng-change funciona!');
         alert('ng-change funciona!');
     };
 
     // Watch simple para detectar cambios en view_turno
     $scope.$watch('view_turno', function(newVal, oldVal) {
         if (newVal && newVal !== oldVal) {
-            console.log('👀 $watch detectó cambio en view_turno:', oldVal, '->', newVal);
             $scope.onTurnoChange();
         }
     });
@@ -1129,7 +1205,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                 showCancelButton: true,
                 confirmButtonText: 'Aceptar',
                 cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#343A40',
+                    confirmButtonColor: '#F34949',
                 cancelButtonColor: '#d33',
                 allowOutsideClick: false
             }).then((res) => {
@@ -1166,7 +1242,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                         })
                         .catch((error) => {
                             $window.Swal && $window.Swal.fire({ title: 'Error', text: 'No se pudo activar el menú', icon: 'error' });
-                            console.error(error);
                         });
                 }
             });
@@ -1179,7 +1254,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
                     })
                     .catch((error) => {
                         $window.Swal && $window.Swal.fire({ title: 'Error', text: 'No se pudo activar el menú', icon: 'error' });
-                        console.error(error);
                     });
             }
         }
@@ -1207,13 +1281,20 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window) {
 
         $http.get(url)
             .then(response => {
-                $scope.dataset = response.data;
+                $scope.dataset = response.data || [];
+                // Ordenar por ID descendente para que el plato más reciente aparezca primero
+                $scope.dataset.sort(function(a, b) {
+                    var idA = parseInt(a.id) || 0;
+                    var idB = parseInt(b.id) || 0;
+                    return idB - idA; // Orden descendente (mayor ID primero)
+                });
                 $scope.currentPage = 0;
-                updateTotalPages();
+                $timeout(function() {
+                    updateTotalPages();
+                }, 0);
             })
             .catch(error => {
                 $window.Swal && $window.Swal.fire({ title: 'Error', text: 'No se pudo obtener el menú filtrado', icon: 'error' });
-                console.error(error);
             });
     };
 

@@ -55,6 +55,10 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 	$scope.allPlatos = [];
 	$scope.allTurnos = [];
 	$scope.allMenus = [];
+	
+	// -------- Loading State ----------
+	$scope.isLoading = true;
+	
 	////////////////////////////////////////////////USER////////////////////////////////////////////////
 	$scope.user_Rol = localStorage.getItem('role');
 	$scope.user_Nombre = localStorage.getItem('nombre');
@@ -113,7 +117,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				text: '',
 				icon: 'success',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
+				confirmButtonColor: '#F34949'
 			});
 				$scope.ModelReadAll();
 			}
@@ -123,7 +127,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				text: error,
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
+				confirmButtonColor: '#F34949'
 			});
 		});
 	};
@@ -215,6 +219,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 	};
 
 	$scope.ModelReadAll = function () {
+		$scope.isLoading = true;
 		$scope.dataset = [];
 		$scope.searchKeyword;
 		$scope.ViewAction = 'Pedidos';
@@ -248,11 +253,12 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 		// Cuando todas las promesas se resuelvan, cargar comandas
 		Promise.all(promesas).then(function() {
 			$http.get($scope.base + 'getAll')
-				.success(function (data) {
+				.then(function (response) {
+					var data = response.data;
 					if ($scope.filterSearch === '') {
-						$scope.dataset = data;
+						$scope.dataset = Array.isArray(data) ? data : [];
 					} else {
-						var dato = data;
+						var dato = Array.isArray(data) ? data : [];
 						$scope.dataset = [];
 						dato.forEach(x => {
 							id = x.id.toString();
@@ -273,24 +279,26 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 						var dateB = new Date(b.createdate);
 						return dateB - dateA; // Orden descendente (más nuevos primero)
 					});
+					$scope.isLoading = false;
 				})
-				.error(function (data, status) {
-				Swal.fire({
-					title: 'Ha ocurrido un error',
-					text: 'No hay comunicación con la Api del sistema',
-					icon: 'error',
-					confirmButtonText: 'Aceptar',
-					confirmButtonColor: '#343A40'
-				});
+				.catch(function (error) {
+					$scope.isLoading = false;
+					Swal.fire({
+						title: 'Ha ocurrido un error',
+						text: 'No hay comunicación con la Api del sistema',
+						icon: 'error',
+						confirmButtonText: 'Aceptar',
+						confirmButtonColor: '#F34949'
+					});
 				});
 		}).catch(function(error) {
-			console.error('Error al cargar datos auxiliares:', error);
+			$scope.isLoading = false;
 			Swal.fire({
 				title: 'Ha ocurrido un error',
 				text: 'Error al cargar información de platos y turnos',
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
+				confirmButtonColor: '#F34949'
 			});
 		});
 	};
@@ -300,7 +308,6 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 		$http.get($scope.baseUser + 'getPic/' + item.user_id)
 			.success(function (data) {
 				$scope.Pic = data;
-				alert('Entro');
 			})
 			.error(function (data, status) {
 			Swal.fire({
@@ -308,7 +315,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				text: 'Api no presente',
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#5c636a'
+				confirmButtonColor: '#F34949'
 			});
 			});
 	};*/
@@ -344,11 +351,10 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				text: 'Error al obtener foto',
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
+				confirmButtonColor: '#F34949'
 			});
 			})
 		.catch (function(response) {
-			console.log("ERROR:", response);
 		});
 		
 		// Obtener descripción del plato por código
@@ -370,7 +376,6 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 					}
 				})
 				.error(function (data, status) {
-					console.error('Error al obtener descripción del plato:', data, status);
 					$scope.view_plato_descripcion = '';
 				});
 		}
@@ -415,7 +420,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				text: '',
 				icon: 'success',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
+				confirmButtonColor: '#F34949'
 			});
 				$scope.ModelReadAll();
 			}
@@ -425,7 +430,7 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 				text: error,
 				icon: 'error',
 				confirmButtonText: 'Aceptar',
-				confirmButtonColor: '#343A40'
+				confirmButtonColor: '#F34949'
 			});
 		});
 	}
@@ -438,12 +443,69 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 	}
 
 	$scope.currentPage = 0;
-	$scope.pageSize = 20;
+	$scope.pageSize = parseInt($scope.pageSize) || 5; // Por defecto 5 filas (número)
 	$scope.searchText = '';
 
 	$scope.numberOfPages = function () {
-		return Math.ceil($scope.dataset.length / $scope.pageSize);
+		var arr = ($scope.dataset || []);
+		var len = Array.isArray(arr) ? arr.length : 0;
+		return Math.ceil(len / $scope.pageSize);
 	}
+
+	// Funciones para paginación tipo DataTable (igual que reportegcomensales)
+	$scope.getPageNumbers = function() {
+		var pages = [];
+		var totalPages = $scope.numberOfPages();
+		var current = $scope.currentPage;
+		
+		if (totalPages <= 7) {
+			// Si hay 7 páginas o menos, mostrar todas
+			for (var i = 0; i < totalPages; i++) {
+				pages.push(i);
+			}
+		} else {
+			// Lógica para mostrar páginas con puntos suspensivos
+			if (current <= 3) {
+				// Estamos cerca del inicio
+				for (var i = 0; i < 5; i++) {
+					pages.push(i);
+				}
+				pages.push('...');
+				pages.push(totalPages - 1);
+			} else if (current >= totalPages - 4) {
+				// Estamos cerca del final
+				pages.push(0);
+				pages.push('...');
+				for (var i = totalPages - 5; i < totalPages; i++) {
+					pages.push(i);
+				}
+			} else {
+				// Estamos en el medio
+				pages.push(0);
+				pages.push('...');
+				for (var i = current - 1; i <= current + 1; i++) {
+					pages.push(i);
+				}
+				pages.push('...');
+				pages.push(totalPages - 1);
+			}
+		}
+		
+		return pages;
+	};
+
+	// Función para ir a una página específica
+	$scope.goToPage = function(page) {
+		if (page >= 0 && page < $scope.numberOfPages()) {
+			$scope.currentPage = page;
+		}
+	};
+
+	// Función para cambiar el tamaño de página
+	$scope.changePageSize = function(newSize) {
+		$scope.pageSize = parseInt(newSize);
+		$scope.currentPage = 0; // Volver a la primera página
+	};
 
 	// Función de búsqueda personalizada que incluye estados formateados
 	$scope.customSearch = function(item) {

@@ -1,7 +1,13 @@
 // Controlador para la página de bloqueo de usuarios
-var app = angular.module('AngujarJS', []);
+// Verificar si el módulo ya existe, si no, crearlo
+var app;
+try {
+    app = angular.module('AngujarJS');
+} catch (e) {
+    app = angular.module('AngujarJS', []);
+}
 
-app.controller('BloqueoUsuarios', function ($scope, $http, $window) {
+app.controller('BloqueoUsuarios', function ($scope, $http, $window, $timeout) {
     // Usar la variable de configuración global API_BASE_URL
     var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
     
@@ -120,7 +126,7 @@ app.controller('BloqueoUsuarios', function ($scope, $http, $window) {
                 text: mensaje,
                 icon: 'success',
                 confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#343A40',
+                confirmButtonColor: '#F34949',
                 timer: 2000,
                 timerProgressBar: true
             });
@@ -130,7 +136,7 @@ app.controller('BloqueoUsuarios', function ($scope, $http, $window) {
                 text: 'No se pudo guardar el estado de bloqueo. Por favor, intente nuevamente.',
                 icon: 'error',
                 confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#343A40'
+                confirmButtonColor: '#F34949'
             });
             
             // Revertir cambio
@@ -139,6 +145,11 @@ app.controller('BloqueoUsuarios', function ($scope, $http, $window) {
     };
     
     // Inicializar: cargar estados al iniciar
-    $scope.cargarEstadosBloqueo();
+    $timeout(function() {
+        $scope.cargarEstadosBloqueo();
+        if (!$scope.$$phase) {
+            $scope.$apply();
+        }
+    }, 0);
 });
 

@@ -442,9 +442,11 @@
             <div ng-include="'navbar.html'"></div>
 
             <!-- Main Content -->
-            <div ng-show="isLoading" class="se-pre-con"></div>
+            <div ng-show="isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido">
+                <span class="sr-only">Cargando contenido, por favor espere...</span>
+            </div>
             <!-- Welcome Section -->
-            <section id="gtco-welcome" class="bg-white section-padding">
+            <section id="gtco-welcome" class="bg-white section-padding" aria-live="polite">
                 <div class="container">
                     <div class="section-content">
                         <div class="row">
@@ -455,7 +457,10 @@
                                         Bienvenido {{user_Nombre}} {{user_Apellido}}
 
                                     </h3>
-                                    <h5 style="color: #6c757d;" ng-if="bonificacionDisponible && turnoDisponible && dataset.length > 0">Te quedan {{pedidosRestantes}} {{pedidosRestantes | pluralize:'plato bonificado':'platos bonificados'}}</h5>
+                                    <h5 style="color: #6c757d;" ng-if="bonificacionDisponible && turnoDisponible && dataset.length > 0">
+                                        <span ng-if="pedidosRestantes === 0">Te quedan 0 platos bonificados el día de hoy</span>
+                                        <span ng-if="pedidosRestantes === 1">Te queda 1 plato bonificado el día de hoy</span>
+                                    </h5>
                                     <!-- comenta pedidos de invitados
                                     <h5 style="color: #6c757d;" ng-if="pedidosInvitadosRestantes > 0">
                                         Te quedan {{pedidosInvitadosRestantes}} platos para invitar este mes
@@ -549,70 +554,70 @@
                             </div>
 
                             <div class="col-sm-4 pt-5 imagen-escondida">
-                                <img class="sticky-image rised-image w-100" src="img/hero-2.jpg" />
+                                <img class="sticky-image rised-image w-100" src="img/hero-2.jpg" alt="Imagen decorativa de comida" />
                             </div>
                             <!--MODALES HEADER-->
                             <!--MODAL CANCELAR-->
-                            <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="cancelModalLabel" aria-hidden="true">
                                 <div class="modal-dialog" role="document">
                                     <div class="modal-content">
                                         <div class="modal-header">
                                             <h5 class="modal-title" id="cancelModalLabel">Cancelar pedido</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar modal">
                                                 <span aria-hidden="true">&times;</span>
                                             </button>
                                         </div>
                                         <div class="modal-body">
-                                            óEsta seguro de que quieres cancelar el pedido?
+                                            <p>¿Está seguro de que quieres cancelar el pedido?</p>
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="button" class="btn btn-danger" data-dismiss="modal" ng-click="cerrarModalYRecargar()">Cancelar</button>
-                                            <button ng-click="actualizaPedido('C')" type="button" class="btn btn-dark">Aceptar</button>
+                                            <button type="button" class="btn btn-danger" data-dismiss="modal" ng-click="cerrarModalYRecargar()" aria-label="No cancelar pedido">Cancelar</button>
+                                            <button ng-click="actualizaPedido('C')" type="button" class="btn btn-dark" aria-label="Confirmar cancelación del pedido">Aceptar</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <!--MODAL RECIBIR-->
-                            <div class="modal fade" id="receiveModal" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal fade" id="receiveModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="receiveModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-lg" role="document" style="max-width: 600px;">
                                     <div class="modal-content">
                                         <div class="modal-header" style="background-color: #343a40; color: white;">
                                             <h5 class="modal-title" id="receiveModalLabel" style="color: white;">Recepción del pedido</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar modal" style="color: white;">
                                                 <span aria-hidden="true" style="color: white;">&times;</span>
                                             </button>
                                         </div>
                                         <div class="modal-body">
                                             <div class="mb-3">
                                                 <small class="text-muted">
-                                                    <i class="fa fa-info-circle mr-1"></i>
+                                                    <i class="fa fa-info-circle mr-1" aria-hidden="true"></i>
                                                     Tu calificación nos ayuda a mejorar la calidad del servicio y los platos que ofrecemos.
                                                 </small>
                                             </div>
-                                            <select class="form-control" id="pedidoCalificacion" ng-model="pedidoCalificacion" style="font-size: 18px; border: 1px solid #ddd; box-shadow: none; background-color: #fff;">
-                                                <option value="" selected disabled>Calificó tu pedido!</option>
-                                                <option value="1" style="color: #ffc107; background-color: #fff;">⭐</option>
-                                                <option value="2" style="color: #ffc107; background-color: #fff;">⭐⭐</option>
-                                                <option value="3" style="color: #ffc107; background-color: #fff;">⭐⭐⭐</option>
-                                                <option value="4" style="color: #ffc107; background-color: #fff;">⭐⭐⭐⭐</option>
-                                                <option value="5" style="color: #ffc107; background-color: #fff;">⭐⭐⭐⭐⭐</option>
+                                            <label for="pedidoCalificacion" class="sr-only">Califica tu pedido</label>
+                                            <select class="form-control" id="pedidoCalificacion" ng-model="pedidoCalificacion" aria-label="Selecciona una calificación de 1 a 5 estrellas" style="font-size: 18px; border: 1px solid #ddd; box-shadow: none; background-color: #fff;">
+                                                <option value="" selected disabled>Califica tu pedido!</option>
+                                                <option value="1" style="color: #ffc107; background-color: #fff;">⭐ 1 estrella</option>
+                                                <option value="2" style="color: #ffc107; background-color: #fff;">⭐⭐ 2 estrellas</option>
+                                                <option value="3" style="color: #ffc107; background-color: #fff;">⭐⭐⭐ 3 estrellas</option>
+                                                <option value="4" style="color: #ffc107; background-color: #fff;">⭐⭐⭐⭐ 4 estrellas</option>
+                                                <option value="5" style="color: #ffc107; background-color: #fff;">⭐⭐⭐⭐⭐ 5 estrellas</option>
                                             </select>
                                         </div>
                                         <div class="modal-footer">
-                                            <button ng-click="actualizaPedido('D')" type="button" class="btn btn-danger">Devolver pedido</button>
-                                            <button ng-click="actualizaPedido('R')" type="button" class="btn btn-dark">Aceptar plato</button>
+                                            <button ng-click="actualizaPedido('D')" type="button" class="btn btn-danger" aria-label="Devolver el pedido">Devolver pedido</button>
+                                            <button ng-click="actualizaPedido('R')" type="button" class="btn btn-dark" aria-label="Aceptar y recibir el plato">Aceptar plato</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <!--MODAL PEDIR-->
-                            <!--<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-hidden="true">-->
-                            <div id="confirmModal" class="modal fade" tabindex="-1" role="dialog">
+                            <div id="confirmModal" class="modal fade" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="confirmModalLabel" aria-hidden="true">
                                 <div class="modal-dialog" role="document">
                                     <div class="modal-content">
                                         <div class="modal-header" style="background-color: #343a40; color: white; padding: 10px 15px;">
                                             <h5 class="modal-title" id="confirmModalLabel" style="color: white; font-size: 16px; margin: 0; font-weight: 500;">Confirmar pedido</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar modal" style="color: white;">
                                                 <span aria-hidden="true" style="color: white;">&times;</span>
                                             </button>
                                         </div>
@@ -651,7 +656,7 @@
 
                                             </div>
                                             <div class="col-4 pl-0 mx-auto mt-5">
-                                                <img class="round-img mr-4" style="width:100%; border-radius: 50%; object-fit: cover; aspect-ratio: 1;" ng-src="{{pedidoPresentacion || defaultImage}}" />
+                                                <img class="round-img mr-4" style="width:100%; border-radius: 50%; object-fit: cover; aspect-ratio: 1;" ng-src="{{pedidoPresentacion || defaultImage}}" alt="{{pedidoPlato || 'Imagen del plato seleccionado'}}" />
                                             </div>
                                             <!-- === INFORMACIóN DE BONIFICACIóN === -->
                                             <div class="col-12 mt-4 pl-4" ng-if="pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1">
@@ -669,13 +674,6 @@
                                                 </div>
                                             </div>
 
-                                            <!-- === MENSAJE SI NO HAY BONIFICACIóN DISPONIBLE === -->
-                                            <div class="col-12 mt-4 pl-4" ng-if="!bonificacionDisponible">
-                                                <div class="alert alert-warning" style="font-size: 14px; margin: 0;">
-                                                    <i class="fas fa-exclamation-triangle"></i>
-                                                    Tu perfil no tiene bonificación disponible.
-                                                </div>
-                                            </div>
                                             <!-- === Invitado
     <div class="col-12 mt-4 pl-4">
         <div class="form-check d-flex align-items-center">
@@ -686,12 +684,13 @@
                                             <div class="col-12 mt-4 pl-4">
                                                 <div class="form-group">
                                                     <label for="pedidoComentario">Comentario</label>
-                                                    <textarea class="form-control w-100" ng-model="pedidoComentario" rows="2" maxlength="200"></textarea>
+                                                    <textarea class="form-control w-100" id="pedidoComentario" ng-model="pedidoComentario" rows="2" maxlength="200" aria-describedby="comentarioHelp"></textarea>
+                                                    <small id="comentarioHelp" class="form-text text-muted">Máximo 200 caracteres</small>
                                                 </div>
                                             </div>
                                             <div class="col-12 modal-footer">
-                                                <button type="button" class="btn btn-danger mr-2" data-dismiss="modal">Cancelar</button>
-                                                <button type="button" class="btn btn-dark" ng-click="confirmaPedido()">Enviar pedido</button>
+                                                <button type="button" class="btn btn-danger mr-2" data-dismiss="modal" aria-label="Cancelar y cerrar modal">Cancelar</button>
+                                                <button type="button" class="btn btn-dark" ng-click="confirmaPedido()" aria-label="Confirmar y enviar pedido">Enviar pedido</button>
                                             </div>
                                         </div>
                                     </div>
@@ -702,7 +701,7 @@
                                 <h4 class="mt-4 text-danger">Tu próximo pedido reservado</h4>
                                 
                                 <!-- Mensaje cuando no hay pedidos -->
-                                <div ng-show="pedidoVigente.length === 0" class="card mt-2 pl-2">
+                                <div ng-show="pedidoVigente.length === 0" class="card mt-2 pl-2" role="status" aria-live="polite">
                                     <div class="card-body text-center py-4">
                                         <h5 class="text-muted">No hay pedidos vigentes</h5>
                                         <p class="text-muted mb-0">No tienes pedidos pendientes de recibir o cancelar en este momento.</p>
@@ -713,10 +712,10 @@
                                 <div class="card mt-2 pl-2" ng-show="pedidoVigente.length > 0">
                                     <div class="row no-gutters" ng-show="pedido.paraRetirar || pedido.paraCancelar" ng-repeat="pedido in pedidoVigente track by $index">
                                         <div class="col-md-4 mt-2 mb-2">
-                                            <img ng-src="{{pedido.presentacion || defaultImage}}" class="card-img" alt="...">
+                                            <img ng-src="{{pedido.presentacion || defaultImage}}" class="card-img" alt="{{pedido.descripcion || 'Imagen del plato del pedido'}}">
                                             <div class="row mt-2 pl-3">
-                                                <button ng-show="pedido.paraCancelar" type="button" ng-click="seleccionaPedido(pedido)" class="btn btn-outline-danger btn-sm mr-1" data-target="#cancelModal" data-toggle="modal">Cancelar pedido</button>
-                                                <button ng-show="pedido.paraRetirar" type="button" ng-click="seleccionaPedido(pedido)" class="btn btn-outline-success btn-sm" data-target="#receiveModal" data-toggle="modal">Recibir pedido</button>
+                                                <button ng-show="pedido.paraCancelar" type="button" ng-click="seleccionaPedido(pedido)" class="btn btn-outline-danger btn-sm mr-1" data-target="#cancelModal" data-toggle="modal" aria-label="Cancelar pedido {{pedido.descripcion}}">Cancelar pedido</button>
+                                                <button ng-show="pedido.paraRetirar" type="button" ng-click="seleccionaPedido(pedido)" class="btn btn-outline-success btn-sm" data-target="#receiveModal" data-toggle="modal" aria-label="Recibir pedido {{pedido.descripcion}}">Recibir pedido</button>
                                             </div>
                                         </div>
                                         <div class="col-md-8">
@@ -749,7 +748,7 @@
                                 <div ng-if="turnoDisponible">
                                     <h4 class="mt-4" style="color: #343a40;">Menú del día</h4>
                                     <!--<h5 class="mt-4">Turno {{selectedTurno}}</h5> -->
-                                    <div ng-if="!isLoading && dataset.length === 0" class="alert alert-warning mt-3">
+                                    <div ng-if="!isLoading && dataset.length === 0" class="alert alert-warning mt-3" role="alert" aria-live="polite">
                                         No hay platos disponibles para este turno.
                                     </div>
                                     <div class="card mt-2 pl-2" ng-repeat="item in dataset track by $index">
@@ -761,7 +760,8 @@
                                                         class="btn btn-dark btn-sm mt-2"
                                                         ng-click="hacerPedido(item, $index)"
                                                         ng-disabled="!turnoDisponible"
-                                                        title="{{ turnoDisponible ? '' : 'Ya no hay turnos disponibles hoy' }}">
+                                                        aria-label="Ordenar {{item.descripcion}}"
+                                                        title="{{ turnoDisponible ? 'Ordenar ' + item.descripcion : 'Ya no hay turnos disponibles hoy' }}">
                                                     ¡Ordenar ahora!
                                                 </button>
 
@@ -819,11 +819,6 @@
                                                         Ya utilizaste tu bonificación del día
                                                     </div>
                                                     
-                                                    <!-- === MENSAJE SI NO HAY BONIFICACIóN DISPONIBLE === -->
-                                                    <div ng-if="!bonificacionDisponible && item.costo > 0" class="alert alert-warning mt-2" style="font-size: 0.8em; padding: 0.5rem;">
-                                                        <i class="fas fa-exclamation-triangle"></i> 
-                                                        Tu perfil no tiene bonificación disponible
-                                                    </div>
                                                     <!-- Muestra la cantidad disponibles
                                                     <p>
                                                         <strong>Cantidad disponible:</strong>
@@ -935,10 +930,10 @@
         <!-- tu directorio -->
         <script src="js/qrcode.min.js"></script>
         <script src="js/angular-qr.min.js"></script>
+        <!-- Configuración centralizada - DEBE CARGARSE PRIMERO -->
+        <script src="js/config.js"></script>
         <!-- === SISTEMA DE BONIFICACIONES === -->
         <script src="js/bonificaciones-service.js"></script>
-        <!-- Configuración centralizada -->
-        <script src="js/config.js"></script>
         <script src="js/index.js"></script>
 
 

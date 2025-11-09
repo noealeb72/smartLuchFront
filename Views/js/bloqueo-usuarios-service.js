@@ -4,20 +4,43 @@ var BloqueoUsuariosService = {
     // Prioridad: 1) localStorage (cambios dinámicos), 2) config.js (configuración inicial)
     getEstadoBloqueo: function(tipoUsuario) {
         try {
+            // Normalizar el tipo de usuario (trim, capitalizar primera letra)
+            var tipoUsuarioNormalizado = (tipoUsuario || '').toString().trim();
+            tipoUsuarioNormalizado = tipoUsuarioNormalizado.charAt(0).toUpperCase() + tipoUsuarioNormalizado.slice(1).toLowerCase();
+            
+            console.log('BloqueoUsuariosService.getEstadoBloqueo - tipoUsuario:', tipoUsuario);
+            console.log('BloqueoUsuariosService.getEstadoBloqueo - tipoUsuarioNormalizado:', tipoUsuarioNormalizado);
+            
             // Primero verificar localStorage (cambios dinámicos)
             var bloqueos = localStorage.getItem('bloqueo_usuarios');
             if (bloqueos) {
                 var bloqueosObj = JSON.parse(bloqueos);
-                if (bloqueosObj.hasOwnProperty(tipoUsuario)) {
-                    return bloqueosObj[tipoUsuario] === true;
+                console.log('BloqueoUsuariosService - bloqueos en localStorage:', bloqueosObj);
+                // Buscar con normalización
+                for (var key in bloqueosObj) {
+                    var keyNormalizado = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+                    if (keyNormalizado === tipoUsuarioNormalizado) {
+                        var resultado = bloqueosObj[key] === true;
+                        console.log('BloqueoUsuariosService - encontrado en localStorage:', key, '=', resultado);
+                        return resultado;
+                    }
                 }
             }
             
-            // Si no hay en localStorage, usar configuración de config.js
+            // Si no hay en localStorage, usar configuración de config.js con normalización
             if (typeof BLOQUEO_USUARIOS !== 'undefined' && BLOQUEO_USUARIOS) {
-                return BLOQUEO_USUARIOS[tipoUsuario] === true;
+                console.log('BloqueoUsuariosService - BLOQUEO_USUARIOS de config.js:', BLOQUEO_USUARIOS);
+                for (var key in BLOQUEO_USUARIOS) {
+                    var keyNormalizado = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+                    if (keyNormalizado === tipoUsuarioNormalizado) {
+                        var resultado = BLOQUEO_USUARIOS[key] === true;
+                        console.log('BloqueoUsuariosService - encontrado en config.js:', key, '=', resultado);
+                        return resultado;
+                    }
+                }
             }
             
+            console.log('BloqueoUsuariosService - no encontrado, retornando false');
             return false; // Por defecto, no está bloqueado
         } catch (e) {
             console.error('Error al obtener estado de bloqueo:', e);
@@ -28,6 +51,10 @@ var BloqueoUsuariosService = {
     // Establecer estado de bloqueo de un tipo de usuario
     setEstadoBloqueo: function(tipoUsuario, bloqueado) {
         try {
+            // Normalizar el tipo de usuario (trim, capitalizar primera letra)
+            var tipoUsuarioNormalizado = (tipoUsuario || '').toString().trim();
+            tipoUsuarioNormalizado = tipoUsuarioNormalizado.charAt(0).toUpperCase() + tipoUsuarioNormalizado.slice(1).toLowerCase();
+            
             var bloqueos = localStorage.getItem('bloqueo_usuarios');
             var bloqueosObj = {};
             
@@ -35,7 +62,19 @@ var BloqueoUsuariosService = {
                 bloqueosObj = JSON.parse(bloqueos);
             }
             
-            bloqueosObj[tipoUsuario] = bloqueado === true;
+            // Buscar si ya existe una clave con el mismo valor normalizado
+            var claveExistente = null;
+            for (var key in bloqueosObj) {
+                var keyNormalizado = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+                if (keyNormalizado === tipoUsuarioNormalizado) {
+                    claveExistente = key;
+                    break;
+                }
+            }
+            
+            // Si existe, usar esa clave; si no, usar la normalizada
+            var claveAGuardar = claveExistente || tipoUsuarioNormalizado;
+            bloqueosObj[claveAGuardar] = bloqueado === true;
             localStorage.setItem('bloqueo_usuarios', JSON.stringify(bloqueosObj));
             return true;
         } catch (e) {

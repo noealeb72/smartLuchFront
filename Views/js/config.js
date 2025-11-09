@@ -1,17 +1,13 @@
 // === Configuración centralizada del sistema ===
-// URL base del backend API
+// Configuración con valores por defecto
+
+// Valores de configuración
 var API_BASE_URL = 'http://localhost:8000';
-
-// URL completa para las APIs
 var API_BASE = API_BASE_URL + '/api/';
-
-// === Configuración de Bloqueo de Usuarios ===
-// Define qué tipos de usuarios están bloqueados (no pueden acceder al sistema)
-// Valores posibles: true (bloqueado) o false (desbloqueado)
 var BLOQUEO_USUARIOS = {
-    'Admin': false,      // Administradores
-    'Cocina': false,     // Personal de cocina
-    'Comensal': false,    // Usuarios comensales ← BLOQUEADO
-    'Gerencia': false    // Personal de gerencia
+    'Admin': false,
+    'Cocina': false,
+    'Comensal': false,
+    'Gerencia': false
 };
 
