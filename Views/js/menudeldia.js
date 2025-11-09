@@ -916,6 +916,12 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
         
         // Asegurar que todos los campos se establezcan después de cargar los datos
         setTimeout(function() {
+            // Asegurar que la fecha se establezca correctamente en el campo HTML
+            var fechaField = document.getElementById('view_fechadeldia');
+            if (fechaField) {
+                fechaField.value = $scope.view_fechadeldia;
+            }
+            
             // Turno - SIEMPRE establecer el primero
             if ($scope.turnos && $scope.turnos.length > 0) {
                 var sortedTurnos = $scope.turnos.slice().sort(function(a, b) {
