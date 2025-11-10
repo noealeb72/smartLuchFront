@@ -505,8 +505,8 @@
                                    id="buscarPlan"
                                    placeholder="Buscar por nombre o descripción...">
                             <div class="input-group-append">
-                                <button class="btn btn-outline-secondary" type="button" 
-                                        ng-click="searchText = ''; currentPage = 0;" 
+                                <button class="btn btn-outline-secondary" type="button"
+                                        ng-click="searchText = ''; currentPage = 0;"
                                         ng-disabled="!searchText"
                                         title="Limpiar búsqueda"
                                         style="cursor: pointer;">
@@ -584,7 +584,7 @@
                                                 <i class="fa fa-angle-left"></i>
                                             </button>
                                             <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
-                                                <button class="btn page-number-btn" 
+                                                <button class="btn page-number-btn"
                                                         ng-repeat="page in getPageNumbers() track by $index"
                                                         ng-click="goToPage(page)"
                                                         ng-class="{'btn-secondary': currentPage === page, 'btn-outline-secondary': currentPage !== page}"

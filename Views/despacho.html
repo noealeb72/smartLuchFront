@@ -277,8 +277,12 @@
 </head>
 
 <body data-spy="scroll" data-target="#navbar" class="static-layout ng-cloak">
-    <!-- Loading spinner -->
-    <div ng-hide="!isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido">
+    <!-- Loading spinner inicial - se muestra antes de AngularJS -->
+    <div id="initial-loading" class="se-pre-con" style="display: flex !important;" role="status" aria-live="polite" aria-label="Cargando contenido">
+        <span class="sr-only">Cargando contenido, por favor espere...</span>
+    </div>
+    <!-- Loading spinner controlado por AngularJS -->
+    <div ng-hide="!isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido" ng-cloak>
         <span class="sr-only">Cargando contenido, por favor espere...</span>
     </div>
     <div class="container-fluid" style="margin-top: 0 !important;">

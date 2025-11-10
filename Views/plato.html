@@ -497,7 +497,7 @@
                                     </select>
                                 </div>
                             </div>
-                            
+
                             <!-- Navegación de páginas -->
                             <div class="pagination-controls">
                                 <!-- Botones de navegación -->
@@ -508,10 +508,10 @@
                                     <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(currentPage-1)" title="Página anterior">
                                         <i class="fa fa-angle-left"></i>
                                     </button>
-                                    
+
                                     <!-- Números de página -->
                                     <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
-                                        <button class="btn page-number-btn" 
+                                        <button class="btn page-number-btn"
                                                 ng-repeat="page in getPageNumbers() track by $index"
                                                 ng-click="goToPage(page)"
                                                 ng-class="{'btn-secondary': currentPage === page, 'btn-outline-secondary': currentPage !== page}"
@@ -519,7 +519,7 @@
                                             {{page}}
                                         </button>
                                     </div>
-                                    
+
                                     <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(currentPage+1)" title="Página siguiente">
                                         <i class="fa fa-angle-right"></i>
                                     </button>
@@ -527,7 +527,7 @@
                                         <i class="fa fa-angle-double-right"></i>
                                     </button>
                                 </div>
-                                
+
                                 <!-- Información de página -->
                                 <div class="pagination-info">
                                     Página {{currentPage+1}} de {{numberOfPages()}}
@@ -550,8 +550,8 @@
                         </div>
                         <div class="dishes-text col-12" style="margin-top: -20px !important;">
                             <form class="form-group row" name="platoForm"
-                          ng-submit="ViewAction==='Nuevo Plato' ? ModelCreate(platoForm.$valid) : ModelUpdate(platoForm.$valid, view_id)"
-                          novalidate>
+                                  ng-submit="ViewAction==='Nuevo Plato' ? ModelCreate(platoForm.$valid) : ModelUpdate(platoForm.$valid, view_id)"
+                                  novalidate>
                                 <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
                                     <div class="pb-3 form-group" style="margin-top: 20px !important;">
                                         <label for="codigo"><span class="text-danger">*</span> Código</label>
@@ -567,10 +567,10 @@
 
                                     <div class="pb-3 form-group">
                                         <label for="descripcion"><span class="text-danger">*</span> Descripción</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9óóóóóóóóóóó.,_ %+-]*$/"
+                                        <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.,;:()_%+\-\s]*$/"
                                                ng-minlength="2" ng-maxlength="140"
                                                class="col-8 form-control" type="text" id="descripcion" name="descripcion"
-                                               ng-model="plato.descripcion" 
+                                               ng-model="plato.descripcion"
                                                ng-change="onDescripcionChange()"
                                                ng-blur="onDescripcionBlur()"
                                                placeholder="Ingrese descripción" required>
@@ -579,7 +579,7 @@
 
                                     <div class="pb-3 form-group">
                                         <label for="ingredientes"><span class="text-danger">*</span> Ingredientes</label>
-                                        <input ng-pattern="/^[a-zA-Z0-9óóóóóóóóóóó.,_ %+-]*$/"
+                                        <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.,;:()_%+\-\s]*$/"
                                                ng-minlength="2" ng-maxlength="140"
                                                class="col-8 form-control" type="text" id="ingredientes" name="ingredientes"
                                                ng-model="plato.ingredientes" placeholder="Ingrese ingredientes" required>
@@ -624,27 +624,27 @@
 
 
                                 <div class="col-12">
-                                    <button type="submit" class="btn btn-primary mt-3" title="Guardar" 
+                                    <button type="submit" class="btn btn-primary mt-3" title="Guardar"
                                             style="background-color: #36393F; border-color: #36393F; color: white; cursor: pointer; margin-right:8px; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                         <i class="fa fa-save" style="margin-right: 6px;"></i>Guardar
                                     </button>
-                                    <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()" 
+                                    <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()"
                                             style="background-color: #F04747; border-color: #F04747; color: white; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                         <i class="fa fa-times" style="margin-right: 6px;"></i>Cancelar
                                     </button>
                                 </div>
 
                         </div>
-                            </form>
-                        </div>
+                        </form>
                     </div>
                 </div>
-
             </div>
-        </div>
 
-        <!-- Footer -->
-        <div ng-include="'footer.html'"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div ng-include="'footer.html'"></div>
     </div>
 
     <!-- JS Externo -->
@@ -669,10 +669,10 @@
     <script>
         (function (w) {
             if (!w.Swal || typeof w.Swal.fire !== 'function') return;
-            
+
             // Guardar la función original para evitar recursión
             var originalSwalFire = w.Swal.fire;
-            
+
             w.Swal.fire = function () {
                 if (arguments.length === 1 && typeof arguments[0] === 'object') {
                     return originalSwalFire.call(w.Swal, arguments[0]);

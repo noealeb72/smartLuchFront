@@ -607,7 +607,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
         if (!jerarquia || jerarquia.trim() === '') camposFaltantes.push('Jerarquía');
         if (!proyecto || proyecto.trim() === '') camposFaltantes.push('Proyecto');
         if (!cantidad || cantidad.trim() === '' || parseInt(cantidad) < 1 || !/^[1-9][0-9]*$/.test(cantidad)) camposFaltantes.push('Cantidad');
-        if (!fechadeldia || fechadeldia.trim() === '') camposFaltantes.push('Fecha del día');
+        if (!fechadeldia || (typeof fechadeldia === 'string' && fechadeldia.trim() === '')) camposFaltantes.push('Fecha del día');
         if (!plato || plato.trim() === '') camposFaltantes.push('Plato');
         
         if (camposFaltantes.length > 0) {
@@ -806,7 +806,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
         if (!jerarquia || jerarquia.trim() === '') camposFaltantes.push('Jerarquía');
         if (!proyecto || proyecto.trim() === '') camposFaltantes.push('Proyecto');
         if (!cantidad || cantidad.trim() === '' || parseInt(cantidad) < 1 || !/^[1-9][0-9]*$/.test(cantidad)) camposFaltantes.push('Cantidad');
-        if (!fechadeldia || fechadeldia.trim() === '') camposFaltantes.push('Fecha del día');
+        if (!fechadeldia || (typeof fechadeldia === 'string' && fechadeldia.trim() === '')) camposFaltantes.push('Fecha del día');
         if (!plato || plato.trim() === '') camposFaltantes.push('Plato');
         
         if (camposFaltantes.length > 0) {

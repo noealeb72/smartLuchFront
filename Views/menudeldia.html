@@ -281,33 +281,33 @@
             <!-- Menu -->
             <div ng-include="'navbar.html'"></div>
 
-             <!-- Titulo -->
-             <div class="heading-section bg-dark text-white pt-2 pl-3">
-                 <div class="row align-items-center">
-                     <div class="col-md-8">
-                         <h3 class="mb-0">Menú del día</h3>
-                     </div>
-                     <div class="col-md-4">
-                         <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Lista de Items'">
-                             <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
-                                 <li class="breadcrumb-item">
-                                     <a href="#" ng-click="ViewAction = 'Lista de Items'; ModelReadAll()" class="text-white-50" style="text-decoration: none;">
-                                         <i class="fa fa-home mr-1"></i>Menú del día
-                                     </a>
-                                 </li>
-                                 <li class="breadcrumb-item active text-white" aria-current="page">
-                                     <span ng-if="ViewAction === 'Nuevo Menó'">
-                                         <i class="fa fa-plus mr-1"></i>Nuevo
-                                     </span>
-                                     <span ng-if="ViewAction === 'Editar Menó'">
-                                         <i class="fa fa-edit mr-1"></i>Editar
-                                     </span>
-                                 </li>
-                             </ol>
-                         </nav>
-                     </div>
-                 </div>
-             </div>
+            <!-- Titulo -->
+            <div class="heading-section bg-dark text-white pt-2 pl-3">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 class="mb-0">Menú del día</h3>
+                    </div>
+                    <div class="col-md-4">
+                        <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Lista de Items'">
+                            <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size: 0.9em;">
+                                <li class="breadcrumb-item">
+                                    <a href="#" ng-click="ViewAction = 'Lista de Items'; ModelReadAll()" class="text-white-50" style="text-decoration: none;">
+                                        <i class="fa fa-home mr-1"></i>Menú del día
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item active text-white" aria-current="page">
+                                    <span ng-if="ViewAction === 'Nuevo Menó'">
+                                        <i class="fa fa-plus mr-1"></i>Nuevo
+                                    </span>
+                                    <span ng-if="ViewAction === 'Editar Menó'">
+                                        <i class="fa fa-edit mr-1"></i>Editar
+                                    </span>
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+            </div>
 
             <!-- Contenido principal -->
             <div class="container-fluid" style="margin-top: 0 !important;">
@@ -322,7 +322,7 @@
 
                 <!-- Filtros de bósqueda avanzados -->
                 <div class="card mb-3" ng-show="ViewAction !== 'Nuevo Menó' && ViewAction !== 'Editar Menó'">
-                    <div class="card-header" style="background-color: #5c636a; color: white; cursor: pointer;" 
+                    <div class="card-header" style="background-color: #5c636a; color: white; cursor: pointer;"
                          ng-click="toggleFiltros()"
                          onmouseover="this.style.background='#5c636a'; this.style.color='white';"
                          onmouseout="this.style.background='#5c636a'; this.style.color='white';">
@@ -336,16 +336,16 @@
                             <!-- Primera fila -->
                             <div class="col-md-3 mb-2">
                                 <label for="filtroFechaDesde" class="form-label small">Fecha</label>
-                                <input type="date" class="form-control form-control-sm" id="filtroFechaDesde" 
+                                <input type="date" class="form-control form-control-sm" id="filtroFechaDesde"
                                        ng-model="filtroFechaDesde" placeholder="dd/mm/aaaa">
                             </div>
                             <div class="col-md-3 mb-2">
                                 <label for="filtroPlato" class="form-label small">Plato</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control form-control-sm" id="filtroPlato" 
+                                    <input type="text" class="form-control form-control-sm" id="filtroPlato"
                                            ng-model="filtroPlato" placeholder="Seleccionar plato..." readonly
                                            ng-click="abrirPopupPlatos()">
-                                    <button class="btn btn-sm" type="button" ng-click="abrirPopupPlatos()" 
+                                    <button class="btn btn-sm" type="button" ng-click="abrirPopupPlatos()"
                                             style="background-color: #5c636a; color: white; border: none;">
                                         <i class="fa fa-search"></i>
                                     </button>
@@ -401,7 +401,7 @@
                         <div class="row">
                             <!-- Botones de acción -->
                             <div class="col-md-12 mb-2 d-flex justify-content-end">
-                                <button class="btn btn-sm" type="button" ng-click="aplicarFiltrosAvanzados()" 
+                                <button class="btn btn-sm" type="button" ng-click="aplicarFiltrosAvanzados()"
                                         style="background-color: #5c636a; color: white; border: none; margin-right: 10px;">
                                     <i class="fa fa-search"></i> Buscar
                                 </button>
@@ -418,8 +418,8 @@
                 <div ng-if="ViewAction==='Lista de Items'">
                     <!-- Indicador de filtros activos -->
                     <div class="alert alert-info" ng-show="filtrosActivos" style="margin-bottom: 15px;">
-                        <i class="fa fa-filter"></i> 
-                        <strong>Filtros aplicados:</strong> 
+                        <i class="fa fa-filter"></i>
+                        <strong>Filtros aplicados:</strong>
                         <span ng-if="filtroFechaDesde">Desde: {{filtroFechaDesde}}</span>
                         <span ng-if="filtroPlato">, Plato: {{filtroPlato}}</span>
                         <span ng-if="filtroCentroCosto">, Centro: {{filtroCentroCosto}}</span>
@@ -432,7 +432,7 @@
                             <i class="fa fa-times"></i> Limpiar
                         </button>
                     </div>
-                    
+
                     <div class="table-responsive">
                         <table class="table table-hover table-sm">
                             <thead style="font-size: 14px;">
@@ -499,7 +499,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Navegación de páginas -->
                                 <div class="pagination-controls">
                                     <!-- Botones de navegación -->
@@ -510,10 +510,10 @@
                                         <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(currentPage-1)" title="Página anterior">
                                             <i class="fa fa-angle-left"></i>
                                         </button>
-                                        
+
                                         <!-- Números de página -->
                                         <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
-                                            <button class="btn page-number-btn" 
+                                            <button class="btn page-number-btn"
                                                     ng-repeat="page in getPageNumbers() track by $index"
                                                     ng-click="goToPage(page)"
                                                     ng-class="{'btn-secondary': currentPage === page, 'btn-outline-secondary': currentPage !== page}"
@@ -521,7 +521,7 @@
                                                 {{page}}
                                             </button>
                                         </div>
-                                        
+
                                         <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(currentPage+1)" title="Página siguiente">
                                             <i class="fa fa-angle-right"></i>
                                         </button>
@@ -529,7 +529,7 @@
                                             <i class="fa fa-angle-double-right"></i>
                                         </button>
                                     </div>
-                                    
+
                                     <!-- Información de página -->
                                     <div class="pagination-info">
                                         Página {{currentPage+1}} de {{numberOfPages()}}
@@ -540,14 +540,14 @@
                     </div>
                 </div>
 
-                 <!-- Formulario de Nuevo Menó -->
-                 <div ng-if="ViewAction==='Nuevo Menó'">
-                     <div class="container-fluid">
-                         <div class="alert alert-info mb-3" role="alert">
-                             <i class="fa fa-info-circle mr-2"></i>
+                <!-- Formulario de Nuevo Menó -->
+                <div ng-if="ViewAction==='Nuevo Menó'">
+                    <div class="container-fluid">
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="fa fa-info-circle mr-2"></i>
                             <strong>Creando nuevo menú</strong> - Complete los campos obligatorios para guardar.
-                         </div>
-                         <div class="dishes-text col-12" style="margin-top: -20px !important;">
+                        </div>
+                        <div class="dishes-text col-12" style="margin-top: -20px !important;">
                             <form class="form-group row" name="menuddForm" ng-submit="ModelCreate(menuddForm.$valid, menuddForm)" novalidate>
                                 <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
                                     <div class="pb-3 form-group" style="margin-top: 20px !important;">
@@ -560,7 +560,7 @@
                                     <div class="pb-3 form-group">
                                         <label for="view_planta"> Planta</label>
                                         <select class="col-8 form-control" id="view_planta" name="view_planta" ng-model="view_planta" required>
-                                            
+
                                             <option ng-repeat="x in plantas | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                         </select>
                                         <span ng-show="(!view_planta || view_planta.trim() === '') && showValidationErrors" class="text-danger">Campo Planta requerido</span>
@@ -568,7 +568,7 @@
                                     <div class="pb-3 form-group">
                                         <label for="view_centrodecosto"> Centro de costo</label>
                                         <select class="col-8 form-control" id="view_centrodecosto" name="view_centrodecosto" ng-model="view_centrodecosto" required>
-                                           
+
                                             <option ng-repeat="x in centros | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                         </select>
                                         <span ng-show="(!view_centrodecosto || view_centrodecosto.trim() === '') && showValidationErrors" class="text-danger">Campo Centro de costo requerido</span>
@@ -586,7 +586,7 @@
                                     <div class="pb-3 form-group" style="margin-top: 20px !important;">
                                         <label for="view_proyecto"> Proyecto</label>
                                         <select class="col-8 form-control" id="view_proyecto" name="view_proyecto" ng-model="view_proyecto" required>
-                                            
+
                                             <option ng-repeat="x in proyectos | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
                                         </select>
                                         <span ng-show="(!view_proyecto || view_proyecto.trim() === '') && showValidationErrors" class="text-danger">Campo Proyecto requerido</span>
@@ -600,12 +600,12 @@
                                     <div class="pb-3 form-group">
                                         <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del día</label>
                                         <input class="col-8 form-control" type="date" id="view_fechadeldia" name="view_fechadeldia" ng-model="view_fechadeldia" placeholder="Fecha automatica" required>
-                                        <span ng-show="(!view_fechadeldia || view_fechadeldia.trim() === '') && showValidationErrors" class="text-danger">Campo Fecha del día requerido</span>
+                                        <span ng-show="(!view_fechadeldia || (view_fechadeldia && typeof view_fechadeldia === 'string' && view_fechadeldia.trim() === '')) && showValidationErrors" class="text-danger">Campo Fecha del día requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_plato"> Plato</label>
                                         <div class="input-group col-8" style="padding: 0;">
-                                            <input type="text" class="form-control" id="view_plato" name="view_plato" 
+                                            <input type="text" class="form-control" id="view_plato" name="view_plato"
                                                    ng-model="view_plato" required readonly
                                                    placeholder="Buscar plato...">
                                             <div class="input-group-append">
@@ -618,18 +618,18 @@
                                     </div>
                                 </div>
 
-                                 <button type="submit" class="btn btn-primary mt-3" title="Guardar" style="background-color: #36393F; border-color: #36393F; color: white; cursor: pointer; margin-right:8px; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                                     <i class="fa fa-save" style="margin-right: 6px;"></i>Guardar
-                                 </button>
-                                 <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()" style="background-color: #F04747; border-color: #F04747; color: white; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                                     <i class="fa fa-times" style="margin-right: 6px;"></i>Cancelar
-                                 </button>
-                             </form>
-                         </div>
-                     </div>
-                 </div>
- 
-                 <!-- Editar Menó -->
+                                <button type="submit" class="btn btn-primary mt-3" title="Guardar" style="background-color: #36393F; border-color: #36393F; color: white; cursor: pointer; margin-right:8px; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                    <i class="fa fa-save" style="margin-right: 6px;"></i>Guardar
+                                </button>
+                                <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()" style="background-color: #F04747; border-color: #F04747; color: white; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                    <i class="fa fa-times" style="margin-right: 6px;"></i>Cancelar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Editar Menó -->
                 <div ng-if="ViewAction==='Editar Menó'">
                     <div class="container-fluid">
                         <div class="alert alert-info mb-3" role="alert">
@@ -637,13 +637,13 @@
                             <strong>Editando menú</strong> - Modifique los campos necesarios y guarde los cambios.
                         </div>
                         <div class="dishes-text col-12" style="margin-top: -20px !important;">
-                           <form class="form-group row" name="menuddForm" ng-submit="ModelUpdate(menuddForm.$valid,view_id, menuddForm)" novalidate>
-                               <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
-                                   <div class="pb-3 form-group" style="margin-top: 20px !important;">
-                                       <label for="view_turno">Turno</label>
-                                       <select class="col-8 form-control" id="view_turno" name="view_turno" ng-model="view_turno" ng-change="onTurnoChange()" ng-click="onTurnoChange()" required>
-                                           <option ng-repeat="x in turnos" value="{{x.descripcion}}" ng-selected="turnos.length === 1">{{x.descripcion}}</option>
-                                       </select>
+                            <form class="form-group row" name="menuddForm" ng-submit="ModelUpdate(menuddForm.$valid,view_id, menuddForm)" novalidate>
+                                <div class="col-6" style="padding-left: 0px; padding-right:8px !important">
+                                    <div class="pb-3 form-group" style="margin-top: 20px !important;">
+                                        <label for="view_turno">Turno</label>
+                                        <select class="col-8 form-control" id="view_turno" name="view_turno" ng-model="view_turno" ng-change="onTurnoChange()" ng-click="onTurnoChange()" required>
+                                            <option ng-repeat="x in turnos" value="{{x.descripcion}}" ng-selected="turnos.length === 1">{{x.descripcion}}</option>
+                                        </select>
                                         <span ng-show="(!view_turno || view_turno.trim() === '') && showValidationErrors" class="text-danger">Campo Turno requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
@@ -686,12 +686,12 @@
                                     <div class="pb-3 form-group">
                                         <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del día</label>
                                         <input class="col-8 form-control" type="date" id="view_fechadeldia" name="view_fechadeldia" ng-model="view_fechadeldia" placeholder="Fecha automatica" required>
-                                        <span ng-show="(!view_fechadeldia || view_fechadeldia.trim() === '') && showValidationErrors" class="text-danger">Campo Fecha del día requerido</span>
+                                        <span ng-show="(!view_fechadeldia || (view_fechadeldia && typeof view_fechadeldia === 'string' && view_fechadeldia.trim() === '')) && showValidationErrors" class="text-danger">Campo Fecha del día requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_plato">Plato</label>
                                         <div class="input-group col-8" style="padding: 0;">
-                                            <input type="text" class="form-control" id="view_plato" name="view_plato" 
+                                            <input type="text" class="form-control" id="view_plato" name="view_plato"
                                                    ng-model="view_plato" required readonly
                                                    placeholder="Buscar plato...">
                                             <div class="input-group-append">
@@ -704,18 +704,18 @@
                                     </div>
                                 </div>
 
-                                 <button type="submit" class="btn btn-primary mt-3" title="Guardar" style="background-color: #36393F; border-color: #36393F; color: white; cursor: pointer; margin-right:8px; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                                     <i class="fa fa-save" style="margin-right: 6px;"></i>Guardar
-                                 </button>
-                                 <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()" style="background-color: #F04747; border-color: #F04747; color: white; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                                     <i class="fa fa-times" style="margin-right: 6px;"></i>Cancelar
-                                 </button>
-                             </form>
-                         </div>
-                     </div>
-                 </div>
- 
-             </div>
+                                <button type="submit" class="btn btn-primary mt-3" title="Guardar" style="background-color: #36393F; border-color: #36393F; color: white; cursor: pointer; margin-right:8px; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                    <i class="fa fa-save" style="margin-right: 6px;"></i>Guardar
+                                </button>
+                                <button type="button" class="btn btn-primary mt-3" ng-click="ViewCancel()" style="background-color: #F04747; border-color: #F04747; color: white; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                    <i class="fa fa-times" style="margin-right: 6px;"></i>Cancelar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
         <!-- Footer -->
@@ -739,7 +739,7 @@
 
     <!-- SweetAlert2 JS (antes de tus controladores) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    
+
     <!-- Configuración centralizada - DEBE CARGARSE ANTES DE LOS SCRIPTS QUE USAN API_BASE_URL -->
     <script src="js/config.js"></script>
 
@@ -760,7 +760,7 @@
                     <div class="row mb-3">
                         <div class="col-md-12">
                             <div class="input-group">
-                                <input type="text" class="form-control" ng-model="busquedaPlato" 
+                                <input type="text" class="form-control" ng-model="busquedaPlato"
                                        placeholder="Buscar plato por nombre (descripción) o código...">
                                 <div class="input-group-append">
                                     <button class="btn btn-outline-secondary" type="button" ng-click="busquedaPlato = ''">
@@ -770,7 +770,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Lista de platos -->
                     <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                         <table class="table table-hover table-sm">
@@ -782,8 +782,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-repeat="plato in platosDisponibles | filter:busquedaPlato" 
-                                    ng-click="seleccionarPlato(plato)" 
+                                <tr ng-repeat="plato in platosDisponibles | filter:busquedaPlato"
+                                    ng-click="seleccionarPlato(plato)"
                                     style="cursor: pointer;">
                                     <td>{{plato.codigo}}</td>
                                     <td><strong>{{plato.descripcion}}</strong></td>

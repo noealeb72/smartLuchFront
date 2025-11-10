@@ -91,7 +91,7 @@
                                     <a class="dropdown-item" href="turno.html">Turnos</a>
                                 </div>
                             </li>
-                           
+
                             <li class="nav-item active">
                                 <a class="nav-link" href="login.html"><i class="fa fa-sign-out-alt ml-1"></i></a>
                             </li>
@@ -229,7 +229,7 @@
                                                     <i class="fa fa-angle-left"></i>
                                                 </button>
                                                 <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
-                                                    <button class="btn page-number-btn" 
+                                                    <button class="btn page-number-btn"
                                                             ng-repeat="page in getPageNumbers() track by $index"
                                                             ng-click="goToPage(page)"
                                                             ng-class="{'btn-secondary': currentPage === page, 'btn-outline-secondary': currentPage !== page}"
@@ -260,13 +260,13 @@
                                     <div class="pb-3 container">
                                         <label class="row" for="view_nombre">Nombre</label>
                                         <div class="row">
-                                            <input class="col-8 form-control" type="text" id="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                            <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç\s]*$/" class="col-8 form-control" type="text" id="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                         </div>
                                     </div>
                                     <div class="pb-3 container">
                                         <label class="row" for="view_descripcion">Descripcion</label>
                                         <div class="row">
-                                            <input class="col-8 form-control" type="text" id="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripcion" required>
+                                            <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.,;:()_%+\-\s]*$/" class="col-8 form-control" type="text" id="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripcion" required>
                                         </div>
                                     </div>
                                     <button type="button" class="btn-primary mt-3" ng-click="ModelCreate()">Guardar</button>
@@ -285,13 +285,13 @@
                                     <div class="pb-3 container">
                                         <label class="row" for="view_nombre">Nombre</label>
                                         <div class="row">
-                                            <input class="col-8 form-control" type="text" id="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                            <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç\s]*$/" class="col-8 form-control" type="text" id="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                         </div>
                                     </div>
                                     <div class="pb-3 container">
                                         <label class="row" for="view_descripcion">Descripcion</label>
                                         <div class="row">
-                                            <input class="col-8 form-control" type="text" id="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripcion" required>
+                                            <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.,;:()_%+\-\s]*$/" class="col-8 form-control" type="text" id="view_descripcion" ng-model="view_descripcion" placeholder="Ingrese descripcion" required>
                                         </div>
                                     </div>
                                     <button type="submit" class="btn-primary mt-3" ng-click="ModelUpdate(view_id)">Guardar</button>
@@ -320,8 +320,8 @@
 
     <!-- Main JS -->
     <!-- Main JS -->
-    <!-- Configuración centralizada - DEBE CARGARSE PRIMERO -->
-    <script src="js/config.js"></script>
+    <!-- Configuración centralizada - DEBE CARGARSE PRIMERO
+    <script src="js/config.js"></script>-->
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="js/calificacion.js"></script>

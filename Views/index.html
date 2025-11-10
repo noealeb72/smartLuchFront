@@ -441,8 +441,12 @@
             <!-- Navbar -->
             <div ng-include="'navbar.html'"></div>
 
+            <!-- Loading spinner inicial - se muestra antes de AngularJS -->
+            <div id="initial-loading" class="se-pre-con" style="display: flex !important;" role="status" aria-live="polite" aria-label="Cargando contenido">
+                <span class="sr-only">Cargando contenido, por favor espere...</span>
+            </div>
             <!-- Main Content -->
-            <div ng-show="isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido">
+            <div ng-show="isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido" ng-cloak>
                 <span class="sr-only">Cargando contenido, por favor espere...</span>
             </div>
             <!-- Welcome Section -->

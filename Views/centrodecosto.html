@@ -441,28 +441,28 @@
 
             <!-- Encabezado -->
             <div class="heading-section bg-dark text-white pt-2 pl-3">
-                    <div class="row">
-                        <div class="col-md-8">
+                <div class="row">
+                    <div class="col-md-8">
                         <h3 class="mb-0">{{titulo}}</h3>
-                        </div>
-                        <div class="col-md-4">
-                            <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Lista de Items'">
+                    </div>
+                    <div class="col-md-4">
+                        <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Lista de Items'">
                             <ol class="breadcrumb mb-0 bg-transparent text-white" style="font-size:.9em;">
-                                    <li class="breadcrumb-item">
+                                <li class="breadcrumb-item">
                                     <a href="#" class="text-white-50" style="text-decoration:none;"
                                        ng-click="ViewAction='Lista de Items'; ModelReadAll();">
-                                            <i class="fa fa-home mr-1"></i>Centro de Costo
-                                        </a>
-                                    </li>
-                                    <li class="breadcrumb-item active text-white" aria-current="page">
+                                        <i class="fa fa-home mr-1"></i>Centro de Costo
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item active text-white" aria-current="page">
                                     <span ng-if="ViewAction==='Nuevo'"><i class="fa fa-plus mr-1"></i>Nuevo</span>
                                     <span ng-if="ViewAction==='Editar'"><i class="fa fa-edit mr-1"></i>Editar</span>
-                                    </li>
-                                </ol>
-                            </nav>
-                        </div>
+                                </li>
+                            </ol>
+                        </nav>
                     </div>
                 </div>
+            </div>
 
             <div class="container-fluid" style="margin-top:0!important;">
                 <!-- Bot�n Agregar -->
@@ -471,9 +471,9 @@
                         <button type="button" class="btn btn-primary mb-2 mr-3" ng-click="ViewCreate()"
                                 style="background-color: #5c636a; border-color: #5c636a; color: white; padding: 8px 16px; border-radius: 4px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;">
                             <i class="fa fa-plus" style="color: white; font-size: 14px;"></i> Agregar
-                            </button>
-                        </div>
+                        </button>
                     </div>
+                </div>
 
                 <!-- Lista -->
                 <div ng-if="ViewAction==='Lista de Items'">
@@ -494,169 +494,112 @@
                     </div>
 
                     <!-- Tabla -->
-                        <div class="table-responsive">
-                            <table class="table table-hover table-sm">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
                             <thead style="font-size:14px;">
-                                    <tr class="bg-dark text-white">
-                                        <th>Nombre</th>
-                                        <th class="d-none d-md-table-cell">Descripción</th>
-                                        <th>Planta</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                                <tr class="bg-dark text-white">
+                                    <th>Nombre</th>
+                                    <th class="d-none d-md-table-cell">Descripción</th>
+                                    <th>Planta</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                 <tr ng-repeat="item in (filteredData=(dataset | filter:searchText)) | startFrom:currentPage*pageSize | limitTo:pageSize">
-                                        <td>{{item.nombre}}</td>
-                                        <td class="d-none d-md-table-cell">{{item.descripcion}}</td>
-                                        <td>{{item.planta}}</td>
+                                    <td>{{item.nombre}}</td>
+                                    <td class="d-none d-md-table-cell">{{item.descripcion}}</td>
+                                    <td>{{item.planta}}</td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-link p-0 align-middle" ng-click="ViewUpdate(item.id)" title="Editar">
                                             <i class="fa fa-edit" style="color:#5c636a; font-size:14px;"></i>
-                                            </button>
+                                        </button>
                                         <button type="button" class="btn btn-link p-0 align-middle ml-2" ng-click="ViewDelete(item.id)" title="Eliminar">
                                             <i class="fas fa-trash" style="color:white; font-size:14px;"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <!-- Paginación tipo DataTable -->
-                        <div class="datatable-pagination mt-3" ng-if="((filteredData || dataset) || []).length >= 5">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <div class="pagination-info mr-3">
-                                        Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, ((filteredData || dataset) || []).length)}} de {{((filteredData || dataset) || []).length}} registros
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <label class="text-muted small mr-2">Filas por página:</label>
-                                        <select class="form-control form-control-sm page-size-select" ng-model="pageSize" ng-init="pageSize = pageSize || 5" ng-change="changePageSize(pageSize)">
-                                            <option ng-value="5">5</option>
-                                            <option ng-value="10">10</option>
-                                            <option ng-value="20">20</option>
-                                            <option ng-value="50">50</option>
-                                            <option ng-value="100">100</option>
-                                        </select>
-                                    </div>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Paginación tipo DataTable -->
+                    <div class="datatable-pagination mt-3" ng-if="((filteredData || dataset) || []).length >= 5">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="pagination-info mr-3">
+                                    Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, ((filteredData || dataset) || []).length)}} de {{((filteredData || dataset) || []).length}} registros
                                 </div>
-                                <div class="pagination-controls">
-                                    <div class="btn-group mr-3" role="group">
-                                        <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(0)" title="Primera página">
-                                            <i class="fa fa-angle-double-left"></i>
-                                        </button>
-                                        <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(currentPage-1)" title="Página anterior">
-                                            <i class="fa fa-angle-left"></i>
-                                        </button>
-                                        <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
-                                            <button class="btn page-number-btn" 
-                                                    ng-repeat="page in getPageNumbers() track by $index"
-                                                    ng-click="goToPage(page)"
-                                                    ng-class="{'btn-secondary': currentPage === page, 'btn-outline-secondary': currentPage !== page}"
-                                                    ng-disabled="page === '...'">
-                                                {{page}}
-                                            </button>
-                                        </div>
-                                        <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(currentPage+1)" title="Página siguiente">
-                                            <i class="fa fa-angle-right"></i>
-                                        </button>
-                                        <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(numberOfPages()-1)" title="Última página">
-                                            <i class="fa fa-angle-double-right"></i>
+                                <div class="d-flex align-items-center">
+                                    <label class="text-muted small mr-2">Filas por página:</label>
+                                    <select class="form-control form-control-sm page-size-select" ng-model="pageSize" ng-init="pageSize = pageSize || 5" ng-change="changePageSize(pageSize)">
+                                        <option ng-value="5">5</option>
+                                        <option ng-value="10">10</option>
+                                        <option ng-value="20">20</option>
+                                        <option ng-value="50">50</option>
+                                        <option ng-value="100">100</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="pagination-controls">
+                                <div class="btn-group mr-3" role="group">
+                                    <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(0)" title="Primera página">
+                                        <i class="fa fa-angle-double-left"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(currentPage-1)" title="Página anterior">
+                                        <i class="fa fa-angle-left"></i>
+                                    </button>
+                                    <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
+                                        <button class="btn page-number-btn"
+                                                ng-repeat="page in getPageNumbers() track by $index"
+                                                ng-click="goToPage(page)"
+                                                ng-class="{'btn-secondary': currentPage === page, 'btn-outline-secondary': currentPage !== page}"
+                                                ng-disabled="page === '...'">
+                                            {{page}}
                                         </button>
                                     </div>
-                                    <div class="pagination-info">
-                                        Página {{currentPage+1}} de {{numberOfPages()}}
-                                    </div>
+                                    <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(currentPage+1)" title="Página siguiente">
+                                        <i class="fa fa-angle-right"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(numberOfPages()-1)" title="Última página">
+                                        <i class="fa fa-angle-double-right"></i>
+                                    </button>
+                                </div>
+                                <div class="pagination-info">
+                                    Página {{currentPage+1}} de {{numberOfPages()}}
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
                 <!-- NUEVO -->
-                    <div ng-if="ViewAction==='Nuevo'">
-                        <div class="container-fluid">
-                            <div class="alert alert-info mb-3" role="alert">
-                                <i class="fa fa-info-circle mr-2"></i>
-                                <strong>Creando nuevo centro de costo</strong> - Complete los campos obligatorios para guardar.
-                            </div>
+                <div ng-if="ViewAction==='Nuevo'">
+                    <div class="container-fluid">
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="fa fa-info-circle mr-2"></i>
+                            <strong>Creando nuevo centro de costo</strong> - Complete los campos obligatorios para guardar.
+                        </div>
 
-                            <div class="dishes-text col-12">
+                        <div class="dishes-text col-12">
                             <!-- name="centroForm" queda disponible en el $scope -->
                             <form class="form-group" name="centroForm" ng-submit="ModelCreate(true)" novalidate>
                                 <!-- Nombre -->
-                                    <div class="pb-3 form-group">
+                                <div class="pb-3 form-group">
                                     <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
                                     <input id="view_nombre" name="view_nombre" class="form-control w-100" type="text"
-                                               ng-model="view_nombre"
-                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]*$/"
+                                           ng-model="view_nombre"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç\s]*$/"
                                            ng-minlength="2" ng-maxlength="20"
                                            placeholder="Ingrese nombre" required />
                                     <span class="text-danger" ng-show="centroForm.view_nombre.$error.pattern">Caracteres inválidos.</span>
                                     <span class="text-danger" ng-show="(centroForm.$submitted || centroForm.view_nombre.$touched) && centroForm.view_nombre.$error.required">Nombre requerido.</span>
-                                    </div>
+                                </div>
 
                                 <!-- Descripci�n -->
-                                    <div class="pb-3 form-group">
+                                <div class="pb-3 form-group">
                                     <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
                                     <input id="view_descripcion" name="view_descripcion" class="form-control w-100" type="text"
-                                               ng-model="view_descripcion"
-                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9._%+\-\s]*$/"
-                                           ng-minlength="4" ng-maxlength="140"
-                                           placeholder="Ingrese descripción" required />
-                                    <span class="text-danger" ng-show="centroForm.view_descripcion.$error.pattern">Caracteres inválidos.</span>
-                                    <span class="text-danger" ng-show="(centroForm.$submitted || centroForm.view_descripcion.$touched) && centroForm.view_descripcion.$error.required">Descripción requerida.</span>
-                                    </div>
-
-                                <!-- Planta -->
-                                    <div class="pb-3 form-group">
-                                    <label for="view_planta">Planta</label>
-                                    <select id="view_planta" name="view_planta" class="form-control w-100"
-                                            ng-model="view_planta">                                           
-                                            <option ng-repeat="x in plantas | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="d-flex gap-2 mt-3">
-                                    <!-- Sin ng-disabled para permitir popup -->
-                                    <button type="submit" class="btn-primary mr-3" style="cursor:pointer;">
-                                            <i class="fa fa-save mr-1"></i>Guardar
-                                        </button>
-                                    <button type="button" class="btn-cancelar" ng-click="ViewCancel()" style="cursor:pointer;">
-                                            <i class="fa fa-times mr-1"></i>Cancelar
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
-                <!-- EDITAR -->
-                    <div ng-if="ViewAction==='Editar'">
-                        <div class="container-fluid">
-                        <div class="alert alert-info mb-3" role="alert">
-                                <i class="fa fa-edit mr-2"></i>
-                                <strong>Editando centro de costo</strong> - Modifique los campos necesarios y guarde los cambios.
-                            </div>
-
-                            <div class="dishes-text col-12">
-                            <form class="form-group" name="centroForm" ng-submit="ModelUpdate(true, view_id)" novalidate>
-                                <!-- Nombre -->
-                                    <div class="pb-3 form-group">
-                                    <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                    <input id="view_nombre" name="view_nombre" class="form-control" type="text"
-                                           ng-model="view_nombre"
-                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]*$/"
-                                           ng-minlength="2" ng-maxlength="20"
-                                           placeholder="Ingrese nombre" required />
-                                    <span class="text-danger" ng-show="centroForm.view_nombre.$error.pattern">Caracteres inválidos.</span>
-                                    <span class="text-danger" ng-show="(centroForm.$submitted || centroForm.view_nombre.$touched) && centroForm.view_nombre.$error.required">Nombre requerido.</span>
-                                    </div>
-
-                                <!-- Descripci�n -->
-                                    <div class="pb-3 form-group">
-                                    <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
-                                    <input id="view_descripcion" name="view_descripcion" class="form-control" type="text"
-                                               ng-model="view_descripcion"
-                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9._%+\-\s]*$/"
+                                           ng-model="view_descripcion"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.,;:()_%+\-\s]*$/"
                                            ng-minlength="4" ng-maxlength="140"
                                            placeholder="Ingrese descripción" required />
                                     <span class="text-danger" ng-show="centroForm.view_descripcion.$error.pattern">Caracteres inválidos.</span>
@@ -664,46 +607,103 @@
                                 </div>
 
                                 <!-- Planta -->
-                                    <div class="pb-3 form-group">
+                                <div class="pb-3 form-group">
+                                    <label for="view_planta">Planta</label>
+                                    <select id="view_planta" name="view_planta" class="form-control w-100"
+                                            ng-model="view_planta">
+                                        <option ng-repeat="x in plantas | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
+                                    </select>
+                                </div>
+
+                                <div class="d-flex gap-2 mt-3">
+                                    <!-- Sin ng-disabled para permitir popup -->
+                                    <button type="submit" class="btn-primary mr-3" style="cursor:pointer;">
+                                        <i class="fa fa-save mr-1"></i>Guardar
+                                    </button>
+                                    <button type="button" class="btn-cancelar" ng-click="ViewCancel()" style="cursor:pointer;">
+                                        <i class="fa fa-times mr-1"></i>Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EDITAR -->
+                <div ng-if="ViewAction==='Editar'">
+                    <div class="container-fluid">
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="fa fa-edit mr-2"></i>
+                            <strong>Editando centro de costo</strong> - Modifique los campos necesarios y guarde los cambios.
+                        </div>
+
+                        <div class="dishes-text col-12">
+                            <form class="form-group" name="centroForm" ng-submit="ModelUpdate(true, view_id)" novalidate>
+                                <!-- Nombre -->
+                                <div class="pb-3 form-group">
+                                    <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
+                                    <input id="view_nombre" name="view_nombre" class="form-control" type="text"
+                                           ng-model="view_nombre"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç\s]*$/"
+                                           ng-minlength="2" ng-maxlength="20"
+                                           placeholder="Ingrese nombre" required />
+                                    <span class="text-danger" ng-show="centroForm.view_nombre.$error.pattern">Caracteres inválidos.</span>
+                                    <span class="text-danger" ng-show="(centroForm.$submitted || centroForm.view_nombre.$touched) && centroForm.view_nombre.$error.required">Nombre requerido.</span>
+                                </div>
+
+                                <!-- Descripci�n -->
+                                <div class="pb-3 form-group">
+                                    <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
+                                    <input id="view_descripcion" name="view_descripcion" class="form-control" type="text"
+                                           ng-model="view_descripcion"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.,;:()_%+\-\s]*$/"
+                                           ng-minlength="4" ng-maxlength="140"
+                                           placeholder="Ingrese descripción" required />
+                                    <span class="text-danger" ng-show="centroForm.view_descripcion.$error.pattern">Caracteres inválidos.</span>
+                                    <span class="text-danger" ng-show="(centroForm.$submitted || centroForm.view_descripcion.$touched) && centroForm.view_descripcion.$error.required">Descripción requerida.</span>
+                                </div>
+
+                                <!-- Planta -->
+                                <div class="pb-3 form-group">
                                     <label for="view_planta">Planta</label>
                                     <select id="view_planta" name="view_planta" class="form-control"
                                             ng-model="view_planta">
-                                            <option value="">Sin planta</option>
-                                            <option ng-repeat="x in plantas | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
-                                        </select>
-                                    </div>
+                                        <option value="">Sin planta</option>
+                                        <option ng-repeat="x in plantas | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
+                                    </select>
+                                </div>
 
-                                    <div class="d-flex gap-2 mt-3">
+                                <div class="d-flex gap-2 mt-3">
                                     <button type="submit" class="btn-primary mr-3" style="cursor:pointer;">
-                                            <i class="fa fa-save mr-1"></i>Guardar
-                                        </button>
+                                        <i class="fa fa-save mr-1"></i>Guardar
+                                    </button>
                                     <button type="button" class="btn-cancelar" ng-click="ViewCancel()" style="cursor:pointer;">
-                                            <i class="fa fa-times mr-1"></i>Cancelar
-                                        </button>
-                                    </div>
-                                </form>
+                                        <i class="fa fa-times mr-1"></i>Cancelar
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
 
             </div> <!-- /container-fluid -->
         </div> <!-- /solid-background -->
-            <!-- Footer -->
+        <!-- Footer -->
         <div class="footer-sticky" style="position:fixed;left:0;right:0;bottom:0;z-index:1000;">
-                <div class="smart-bg text-white">
-                    <div class="container">  
-                        <div class="row pt-3">
-                            <div class="col-md-12 d-flex align-items-center">
-                                <p class="mx-auto text-center mb-0 text-white">
-                                    Copyright 2020. All Right Reserved. Grupo Datco SRL
-                                </p>
-                            </div>
+            <div class="smart-bg text-white">
+                <div class="container">
+                    <div class="row pt-3">
+                        <div class="col-md-12 d-flex align-items-center">
+                            <p class="mx-auto text-center mb-0 text-white">
+                                Copyright 2020. All Right Reserved. Grupo Datco SRL
+                            </p>
                         </div>
-                        <br />
                     </div>
+                    <br />
                 </div>
             </div>
         </div>
+    </div>
 
     <!-- JS vendors -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
@@ -714,7 +714,7 @@
     <!-- Configuración centralizada - DEBE CARGARSE PRIMERO -->
     <script src="js/config.js"></script>
     <script src="js/centrodecosto.js"></script>
-    
+
     <!-- Script para navbar -->
     <script>
         // Funci�n para actualizar fecha y hora
@@ -729,7 +729,7 @@
                 second: '2-digit',
                 hour12: false
             };
-            
+
             var datetimeElement = document.getElementById('current-datetime');
             if (datetimeElement) {
                 datetimeElement.textContent = now.toLocaleString('es-ES', options);
@@ -740,7 +740,7 @@
         function showUserInfo() {
             var userInfo = document.getElementById('user-info-navbar');
             var userRole = document.getElementById('user-role-navbar');
-            
+
             if (userInfo && userRole) {
                 var role = localStorage.getItem('role') || '';
                 if (role && role.trim() !== '') {
@@ -760,12 +760,12 @@
                 testIcon.style.position = 'absolute';
                 testIcon.style.left = '-9999px';
                 document.body.appendChild(testIcon);
-                
+
                 var computedStyle = window.getComputedStyle(testIcon, ':before');
                 var content = computedStyle.getPropertyValue('content');
-                
+
                 document.body.removeChild(testIcon);
-                
+
                 if (content && content !== 'none' && content !== '""') {
                     //console.log('FontAwesome cargado correctamente');
                     return true;
@@ -780,17 +780,17 @@
         }
 
         // Inicializar cuando el DOM est� listo
-        document.addEventListener('DOMContentLoaded', function() {
-           // console.log('Centro de Costo - DOM cargado');
-            
+        document.addEventListener('DOMContentLoaded', function () {
+            // console.log('Centro de Costo - DOM cargado');
+
             // Verificar FontAwesome
-            setTimeout(function() {
+            setTimeout(function () {
                 if (!checkFontAwesome()) {
                     //console.log('FontAwesome no disponible, los iconos pueden no mostrarse');
                 } else {
                     // Forzar estilos de iconos si FontAwesome est� cargado
                     var icons = document.querySelectorAll('.fa, .fas, .far, .fab');
-                    icons.forEach(function(icon) {
+                    icons.forEach(function (icon) {
                         icon.style.fontFamily = '"Font Awesome 5 Free"';
                         icon.style.fontWeight = '900';
                         icon.style.display = 'inline-block';
@@ -798,10 +798,10 @@
                         icon.style.opacity = '1';
                     });
                     //console.log('Iconos forzados:', icons.length);
-                    
+
                     // Forzar espec�ficamente los iconos de botones de acciones
                     var actionIcons = document.querySelectorAll('.btn-link[title="Editar"] i, .btn-link[title="Eliminar"] i');
-                    actionIcons.forEach(function(icon) {
+                    actionIcons.forEach(function (icon) {
                         icon.style.fontFamily = '"Font Awesome 5 Free"';
                         icon.style.fontWeight = '900';
                         icon.style.color = 'white';
@@ -813,10 +813,10 @@
                     //console.log('Iconos de acciones forzados:', actionIcons.length);
                 }
             }, 1000);
-            
+
             updateDateTime();
             showUserInfo();
-            
+
             // Actualizar fecha y hora cada segundo
             setInterval(updateDateTime, 1000);
         });

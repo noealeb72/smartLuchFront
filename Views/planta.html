@@ -267,7 +267,7 @@
                                             <i class="fa fa-angle-left"></i>
                                         </button>
                                         <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
-                                            <button class="btn page-number-btn" 
+                                            <button class="btn page-number-btn"
                                                     ng-repeat="page in getPageNumbers() track by $index"
                                                     ng-click="goToPage(page)"
                                                     ng-class="{'btn-secondary': currentPage === page, 'btn-outline-secondary': currentPage !== page}"
@@ -309,7 +309,7 @@
                                            id="view_nombre"
                                            name="view_nombre"
                                            ng-model="view_nombre"
-                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç\s]*$/"
                                            ng-minlength="2"
                                            ng-maxlength="20"
                                            required />
@@ -323,7 +323,7 @@
                                            id="view_descripcion"
                                            name="view_descripcion"
                                            ng-model="view_descripcion"
-                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.,;:()_%+\-\s]*$/"
                                            ng-minlength="4"
                                            ng-maxlength="140"
                                            required />
@@ -360,7 +360,7 @@
                                            id="view_nombre"
                                            name="view_nombre"
                                            ng-model="view_nombre"
-                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç\s]*$/"
                                            ng-minlength="2"
                                            ng-maxlength="20"
                                            required />
@@ -374,7 +374,7 @@
                                            id="view_descripcion"
                                            name="view_descripcion"
                                            ng-model="view_descripcion"
-                                           ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/"
+                                           ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.,;:()_%+\-\s]*$/"
                                            ng-minlength="4"
                                            ng-maxlength="140"
                                            required />
