@@ -24,97 +24,11 @@
 var app = angular.module('AngujarJS', ['ja.qr']);
 
 // === Capturar errores de CORS a nivel global ===
+// Deshabilitado - el interceptor HTTP maneja los errores de CORS
+// Esto evita mostrar múltiples mensajes de error duplicados
 (function() {
-	var mensajeCORSMostrado = false;
-	
-	// Capturar errores no capturados que mencionen CORS
-	window.addEventListener('error', function(event) {
-		var mensaje = event.message || '';
-		if (mensaje.toLowerCase().indexOf('cors') !== -1 || 
-			mensaje.toLowerCase().indexOf('cross-origin') !== -1 ||
-			mensaje.toLowerCase().indexOf('origen cruzado') !== -1) {
-			
-			if (!mensajeCORSMostrado && window.Swal && typeof window.Swal.fire === 'function') {
-				mensajeCORSMostrado = true;
-				setTimeout(function() {
-					window.Swal.fire({
-						title: '⚠️ Error de CORS',
-						html: '<div style="text-align: left;">' +
-							  '<p><strong>No se puede conectar con el backend por restricciones CORS.</strong></p>' +
-							  '<p style="color: #d33; font-weight: bold;">El backend debe configurar CORS para permitir solicitudes desde el frontend.</p>' +
-							  '<hr style="margin: 15px 0;">' +
-							  '<p><strong>Por favor verifica en el backend (C#/ASP.NET):</strong></p>' +
-							  '<ul style="margin-left: 20px; text-align: left;">' +
-							  '<li>Que CORS esté habilitado en <code>WebApiConfig.cs</code></li>' +
-							  '<li>Que permita el origen del frontend:<br>' +
-							  '<code style="display: block; margin: 5px 0; padding: 5px; background: #f5f5f5;">http://localhost:4200</code></li>' +
-							  '<li>Que los métodos HTTP necesarios estén permitidos</li>' +
-							  '<li>Que los headers necesarios estén permitidos</li>' +
-							  '</ul>' +
-							  '<p style="margin-top: 15px; color: #666; font-size: 0.9em;">' +
-							  '<strong>Error detectado:</strong> Solicitud de origen cruzado bloqueada</p>' +
-							  '</div>',
-						icon: 'error',
-						confirmButtonText: 'Aceptar',
-						confirmButtonColor: '#F34949',
-						width: '650px',
-						allowOutsideClick: false,
-						allowEscapeKey: true
-					}).then(function() {
-						mensajeCORSMostrado = false;
-					});
-				}, 500);
-				
-				// Resetear el flag después de 5 segundos
-				setTimeout(function() {
-					mensajeCORSMostrado = false;
-				}, 5000);
-			}
-		}
-	}, true);
-	
-	// También capturar errores de promesas no manejadas
-	window.addEventListener('unhandledrejection', function(event) {
-		var mensaje = (event.reason && event.reason.message) || (event.reason && event.reason.toString()) || '';
-		if (mensaje.toLowerCase().indexOf('cors') !== -1 || 
-			mensaje.toLowerCase().indexOf('cross-origin') !== -1 ||
-			mensaje.toLowerCase().indexOf('origen cruzado') !== -1) {
-			
-			if (!mensajeCORSMostrado && window.Swal && typeof window.Swal.fire === 'function') {
-				mensajeCORSMostrado = true;
-				setTimeout(function() {
-					window.Swal.fire({
-						title: '⚠️ Error de CORS',
-						html: '<div style="text-align: left;">' +
-							  '<p><strong>No se puede conectar con el backend por restricciones CORS.</strong></p>' +
-							  '<p style="color: #d33; font-weight: bold;">El backend debe configurar CORS para permitir solicitudes desde el frontend.</p>' +
-							  '<hr style="margin: 15px 0;">' +
-							  '<p><strong>Por favor verifica en el backend (C#/ASP.NET):</strong></p>' +
-							  '<ul style="margin-left: 20px; text-align: left;">' +
-							  '<li>Que CORS esté habilitado en <code>WebApiConfig.cs</code></li>' +
-							  '<li>Que permita el origen del frontend:<br>' +
-							  '<code style="display: block; margin: 5px 0; padding: 5px; background: #f5f5f5;">http://localhost:4200</code></li>' +
-							  '<li>Que los métodos HTTP necesarios estén permitidos</li>' +
-							  '<li>Que los headers necesarios estén permitidos</li>' +
-							  '</ul>' +
-							  '</div>',
-						icon: 'error',
-						confirmButtonText: 'Aceptar',
-						confirmButtonColor: '#F34949',
-						width: '650px',
-						allowOutsideClick: false,
-						allowEscapeKey: true
-					}).then(function() {
-						mensajeCORSMostrado = false;
-					});
-				}, 500);
-				
-				setTimeout(function() {
-					mensajeCORSMostrado = false;
-				}, 5000);
-			}
-		}
-	});
+	// Los errores de CORS son manejados por el interceptor HTTP
+	// No es necesario capturarlos aquí también
 })();
 
 // === Interceptor HTTP para detectar errores de conexión y CORS ===
@@ -128,10 +42,10 @@ app.config(function($httpProvider) {
 				// Detectar errores de conexión o CORS
 				var esErrorConexion = !rejection.status || rejection.status === 0 || rejection.status === -1;
 				var urlTarget = (rejection.config && rejection.config.url) || '';
-				var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+				var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:80';
 				// Extraer el dominio y puerto de la URL base
 				var apiDomain = apiBaseUrl.replace(/^https?:\/\//, '').split('/')[0];
-				var esPeticionBackend = urlTarget.indexOf(apiDomain) !== -1 || urlTarget.indexOf('localhost:8000') !== -1 || urlTarget.indexOf('127.0.0.1:8000') !== -1;
+				var esPeticionBackend = urlTarget.indexOf(apiDomain) !== -1 || urlTarget.indexOf('localhost:80') !== -1 || urlTarget.indexOf('127.0.0.1:80') !== -1;
 				
 				// Detectar CORS desde el mensaje del error
 				var mensajeError = rejection.message || rejection.statusText || '';
@@ -141,18 +55,22 @@ app.config(function($httpProvider) {
 								  mensajeErrorLower.indexOf('origen cruzado') !== -1 ||
 								  mensajeErrorLower.indexOf('solicitud de origen cruzado') !== -1;
 				
-				// Si el status es 0 y es una petición al backend, probablemente es CORS
-				// CORS típicamente devuelve status 0, mientras que backend no corriendo puede dar timeout
-				if (esErrorConexion && esPeticionBackend && (rejection.status === 0 || rejection.status === -1)) {
-					// Cuando status es 0/-1 desde backend, casi siempre es CORS
-					esErrorCORS = true;
-				}
+				// Detectar CORS de forma más precisa
+				// CORS típicamente devuelve status 0, pero solo si el mensaje del error lo indica
+				// No asumir automáticamente que status 0 es CORS
 				
 				if (esErrorConexion && !mensajeMostrandose) {
 					mensajeMostrandose = true;
 					
-					// Mensaje específico para CORS (si es backend y status 0, es CORS)
-					if (esErrorCORS || (esPeticionBackend && (rejection.status === 0 || rejection.status === -1))) {
+					// Solo mostrar error de CORS si el mensaje del error lo indica explícitamente
+					// o si es una petición al backend y el error ocurre inmediatamente (típico de CORS)
+					var esCORSConfirmado = esErrorCORS || 
+						(esPeticionBackend && rejection.status === 0 && 
+						 (mensajeErrorLower.indexOf('blocked') !== -1 || 
+						  mensajeErrorLower.indexOf('bloqueado') !== -1 ||
+						  mensajeErrorLower.indexOf('access-control') !== -1));
+					
+					if (esCORSConfirmado) {
 						if ($window.Swal && typeof $window.Swal.fire === 'function') {
 							$window.Swal.fire({
 								title: '⚠️ Error de CORS',
@@ -198,7 +116,7 @@ app.config(function($httpProvider) {
 									  '<ul style="margin-left: 20px; text-align: left;">' +
 									  '<li>Que el backend esté iniciado</li>' +
 									  '<li>Que esté corriendo en <code style="background: #f5f5f5; padding: 2px 5px;">' + 
-									  (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:8000') + 
+									  (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:80') + 
 									  '</code></li>' +
 									  '<li>Que el puerto esté disponible y no esté ocupado por otro proceso</li>' +
 									  '<li>Que no haya errores al iniciar el backend</li>' +
@@ -221,7 +139,7 @@ app.config(function($httpProvider) {
 								mensajeMostrandose = false;
 							});
 						} else {
-							var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+							var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:80';
 							alert('⚠️ Backend No Está Corriendo\n\nNo se puede conectar al servidor backend en ' + apiBaseUrl + '\n\nPor favor verifica que el backend esté iniciado y corriendo.\n\nURL que falló: ' + (rejection.config ? rejection.config.url : 'N/A'));
 							mensajeMostrandose = false;
 						}
@@ -330,7 +248,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 						  '<ul style="margin-left: 20px; text-align: left;">' +
 						  '<li>Que el backend esté iniciado</li>' +
 						  '<li>Que esté corriendo en <code style="background: #f5f5f5; padding: 2px 5px;">' + 
-						  (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:8000') + 
+						  (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:80') + 
 						  '</code></li>' +
 						  '<li>Que el puerto esté disponible y no esté ocupado por otro proceso</li>' +
 						  '<li>Que no haya errores al iniciar el backend</li>' +
@@ -353,7 +271,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 					});
 					} else {
 						// Fallback si SweetAlert2 no está disponible
-						var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+						var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:80';
 						var mensaje = esCORS ? 
 							'⚠️ Error de CORS\n\nNo se puede conectar con el backend por restricciones CORS.\n\nEl backend debe configurar CORS para permitir solicitudes desde el frontend.' :
 							'⚠️ Backend No Está Corriendo\n\nNo se puede conectar al servidor backend en ' + apiBaseUrl + '\n\nPor favor verifica que el backend esté iniciado y corriendo.';
@@ -365,7 +283,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 		
 		// Usar XMLHttpRequest directamente para mejor detección de errores CORS
 		var verificarConXMLHttpRequest = function() {
-			var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+			var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:80';
 			var xhr = new XMLHttpRequest();
 			var urlPrueba = apiBaseUrl + '/api/jerarquia/GetName?name=Test';
 			var timeoutID = null;
@@ -457,7 +375,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 		
 		// También usar $http como respaldo
 		var verificarConAngularHttp = function() {
-			var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+			var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:80';
 			var peticionPrueba = $http.get(apiBaseUrl + '/api/jerarquia/GetName?name=Test', {
 				timeout: 4000
 			});
@@ -506,7 +424,7 @@ app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 	}, tiempoEspera);
 })();
 // Usar la variable de configuración global API_BASE_URL
-var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:80';
 $scope.baseMenu = apiBaseUrl + '/api/menudd/';
 $scope.basePlatos = apiBaseUrl + '/api/plato/';
 $scope.baseComanda = apiBaseUrl + '/api/comanda/';
@@ -795,6 +713,50 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 
 		$http.get(url)
 			.success(function (data) {
+				// === LOG: DATOS DE API COMANDAS (obtieneComandas) ===
+				/*console.log('=== 📊 DATOS DE API COMANDAS (obtieneComandas) ===');
+				console.log('URL llamada:', url);
+				console.log('Response completa:', JSON.stringify(data, null, 2));
+				console.log('Datos parseados:', data);
+				console.log('Tipo de datos:', Array.isArray(data) ? 'Array' : typeof data);
+				console.log('Cantidad de registros:', Array.isArray(data) ? data.length : 'No es array');*/
+				
+				// Mostrar cada pedido individualmente con todos los campos de la comanda
+				if (Array.isArray(data) && data.length > 0) {
+					//console.log('=== 🔍 ANÁLISIS DETALLADO DE CADA PEDIDO (obtieneComandas) ===');
+					data.forEach(function(pedido, index) {
+						/*console.log(`--- PEDIDO ${index + 1} ---`);
+						console.log('Datos completos del pedido (comanda):', pedido);
+						console.log('Campos disponibles:', Object.keys(pedido));
+						console.log('--- CAMPOS DE LA COMANDA ---');
+						console.log('id:', pedido.id);
+						console.log('cod_plato:', pedido.cod_plato);
+						console.log('monto:', pedido.monto);
+						console.log('precio_original:', pedido.precio_original);
+						console.log('bonificado:', pedido.bonificado);
+						console.log('porcentaje_bonificacion:', pedido.porcentaje_bonificacion);
+						console.log('aplicar_bonificacion:', pedido.aplicar_bonificacion);
+						console.log('estado:', pedido.estado);
+						console.log('fecha_hora:', pedido.fecha_hora);
+						console.log('fecha:', pedido.fecha);
+						console.log('user_id:', pedido.user_id);
+						console.log('user_name:', pedido.user_name);
+						console.log('user_lastName:', pedido.user_lastName);
+						console.log('user_fileNumber:', pedido.user_fileNumber);
+						console.log('planta:', pedido.planta);
+						console.log('proyecto:', pedido.proyecto);
+						console.log('centrodecosto:', pedido.centrodecosto);
+						console.log('calificacion:', pedido.calificacion);
+						console.log('invitado:', pedido.invitado);
+						console.log('comentario:', pedido.comentario);*/
+						var bonificadoValue = pedido.bonificado !== null && pedido.bonificado !== undefined && pedido.bonificado !== '' ? parseFloat(pedido.bonificado) || 0 : 0;
+						/*console.log('Valor numérico de bonificado:', bonificadoValue);
+						console.log('¿Bonificado distinto de 0?', bonificadoValue !== 0);
+						console.log('¿Bonificado vacío?', pedido.bonificado === null || pedido.bonificado === undefined || pedido.bonificado === '');
+						console.log('--- FIN PEDIDO ---');*/
+					});
+				}
+				
 				$timeout(function () {
 					var pedidosNoC = data.filter(function (elemento) {
 						return elemento.estado !== 'C';
@@ -807,8 +769,8 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 					$scope.pedidoVigente = []; // reinicio para evitar duplicados
 
 					// Validar si hay pedidos con bonificación aplicada
+					// SOLO validar el campo bonificado de la comanda (bonificadoValue !== 0)
 					var tieneBonificacionEnPedidosVigentes = false;
-					var fechaHoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 					
 					data.forEach(x => {
 						var plato = $scope.platos.find(o => o.codigo === x.cod_plato);
@@ -816,57 +778,15 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 
 						plato = angular.copy(plato); // para evitar modificar el array original
 
-						// Validar si este pedido tiene bonificación aplicada y es del día de hoy
+						// === VALIDACIÓN SIMPLE: Solo validar el campo bonificado de la comanda ===
+						// Si el campo bonificado tiene valor distinto de 0, tiene bonificación aplicada
+						// NO validar fecha, solo el valor del campo bonificado
 						if (x.bonificado !== null && x.bonificado !== undefined && x.bonificado !== '') {
 							var bonificadoValue = parseFloat(x.bonificado) || 0;
-							if (bonificadoValue > 0) {
-								// Verificar que sea del día de hoy
-								var fechaPedido = null;
-								if (x.fecha_hora) {
-									var fechaHoraStr = String(x.fecha_hora);
-									try {
-										fechaPedido = new Date(fechaHoraStr).toISOString().split('T')[0];
-										if (fechaPedido === 'Invalid Date') {
-											fechaPedido = null;
-										}
-									} catch (e) {
-										fechaPedido = null;
-									}
-									
-									// Si falla, intentar parseo manual
-									if (!fechaPedido || fechaPedido === 'Invalid Date') {
-										var m1 = fechaHoraStr.match(/(\d{1,2}):(\d{1,2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-										if (m1) {
-											var dd = m1[3].padStart(2, '0');
-											var mm = m1[4].padStart(2, '0');
-											var yyyy = m1[5];
-											fechaPedido = yyyy + '-' + mm + '-' + dd;
-										} else {
-											var m2 = fechaHoraStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-											if (m2) {
-												var dd = m2[1].padStart(2, '0');
-												var mm = m2[2].padStart(2, '0');
-												var yyyy = m2[3];
-												fechaPedido = yyyy + '-' + mm + '-' + dd;
-											}
-										}
-									}
-								} else if (x.fecha) {
-									try {
-										var f = x.fecha;
-										fechaPedido = (new Date(f)).toISOString().split('T')[0];
-										if (fechaPedido === 'Invalid Date') {
-											fechaPedido = x.fecha;
-										}
-									} catch (e) {
-										fechaPedido = x.fecha;
-									}
-								}
-								
-								// Si es del día de hoy y tiene bonificación, y el estado no es cancelado ni devuelto
-								if (fechaPedido === fechaHoy && (x.estado !== 'C' && x.estado !== 'D')) {
-									tieneBonificacionEnPedidosVigentes = true;
-								}
+							// Si bonificadoValue !== 0, tiene bonificación aplicada
+							if (bonificadoValue !== 0) {
+								tieneBonificacionEnPedidosVigentes = true;
+								//console.log('✅ Pedido con bonificación encontrado - bonificadoValue:', bonificadoValue, 'estado:', x.estado);
 							}
 						}
 
@@ -891,15 +811,30 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 						}
 					});
 					
-					// Si hay bonificación en pedidos vigentes, actualizar el estado
+					// Si hay bonificación en pedidos vigentes (campo bonificado !== 0), actualizar el estado
 					if (tieneBonificacionEnPedidosVigentes) {
 						$scope.cantidadBonificacionesHoy = 1;
 						$scope.yaBonificadoHoy = true;
 						$scope.pedidosRestantes = 0;
 						$scope.guardarEstadoBonificacion();
+						//console.log('✅ Bonificación ya aplicada hoy (campo bonificado !== 0) - No mostrar checkbox de descuento');
+					} else {
+						// Si NO hay bonificación aplicada, inicializar correctamente
+						$scope.cantidadBonificacionesHoy = 0;
+						$scope.yaBonificadoHoy = false;
+						if ($scope.bonificacionDisponible) {
+							$scope.pedidosRestantes = 1;
+						} else {
+							$scope.pedidosRestantes = 0;
+						}
+						$scope.limpiarEstadoBonificacion();
+						//console.log('✅ No hay bonificación aplicada hoy (campo bonificado = 0 o vacío) - Mostrar checkbox de descuento');
 					}
-
-					// NO modificar pedidosRestantes aquí, se maneja en el sistema de bonificaciones
+					
+					// Forzar actualización de la vista
+					if (!$scope.$$phase) {
+						$scope.$apply();
+					}
 					$scope.pedidosInvitadosRestantes = $scope.user_BonificacionInvitado - pedidosInvitados;
 
 					// Generar los códigos de barra (espera que DOM esté renderizado)
@@ -1053,26 +988,31 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 	
 	// Inicializar sistema de bonificaciones al cargar la página
 	$scope.inicializarBonificaciones = function() {
-		if (!window.BonificacionesService) {
-			$scope.pedidosRestantes = 0;
-			return;
-		}
-		
 		// Cargar estado guardado desde localStorage
 		var estadoGuardado = $scope.cargarEstadoBonificacion();
 		if (estadoGuardado && estadoGuardado.cantidadBonificacionesHoy >= 1) {
 			// Si hay un estado guardado que indica que ya se usó la bonificación, usarlo temporalmente
-			// hasta que el servidor confirme (ahora que contamos estado 'P' también, debería confirmar correctamente)
+			// hasta que el servidor confirme
 			$scope.cantidadBonificacionesHoy = estadoGuardado.cantidadBonificacionesHoy;
 			$scope.yaBonificadoHoy = estadoGuardado.yaBonificadoHoy;
 			$scope.pedidosRestantes = estadoGuardado.pedidosRestantes;
 		}
 		
-		// Obtener bonificación para el perfil del usuario
-		window.BonificacionesService.obtenerBonificacion($scope.user_Rol)
-			.then(function(bonificacion) {
-				$scope.porcentajeBonificacion = bonificacion.porcentaje;
-				$scope.bonificacionDisponible = bonificacion.porcentaje > 0;
+		// Obtener bonificación para el perfil del usuario directamente desde la API
+		var url = $scope.base + 'GetName?name=' + encodeURIComponent($scope.user_Rol);
+		$http.get(url)
+			.then(function(response) {
+				var data = response.data || [];
+				// La respuesta puede ser un objeto o un array
+				var jerarquia = Array.isArray(data) ? data[0] : data;
+				
+				if (jerarquia && jerarquia.bonificacion !== undefined) {
+					$scope.porcentajeBonificacion = parseInt(jerarquia.bonificacion) || 0;
+					$scope.bonificacionDisponible = $scope.porcentajeBonificacion > 0;
+				} else {
+					$scope.porcentajeBonificacion = 0;
+					$scope.bonificacionDisponible = false;
+				}
 				
 				// Inicializar pedidos restantes solo si NO hay bonificación disponible
 				if (!$scope.bonificacionDisponible) {
@@ -1080,10 +1020,10 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 				}
 				
 				// Verificar si ya se usó la bonificación hoy (esto actualizará pedidosRestantes correctamente)
-				// Ahora que contamos estado 'P' también, debería confirmar correctamente
 				return $scope.verificarBonificacionHoy();
 			})
 			.catch(function(error) {
+				console.error('Error obteniendo bonificación:', error);
 				$scope.bonificacionDisponible = false;
 				$scope.porcentajeBonificacion = 0;
 				$scope.pedidosRestantes = 0;
@@ -1237,13 +1177,26 @@ $scope.base = apiBaseUrl + '/api/jerarquia/';
 			};
 		}
 		
-		var resultado = window.BonificacionesService.calcularPrecioConBonificacion(
-			precioOriginal, 
-			$scope.porcentajeBonificacion
-		);
+		// Calcular precio con bonificación directamente
+		var precio = parseFloat(precioOriginal) || 0;
+		var porcentaje = parseInt($scope.porcentajeBonificacion) || 0;
 		
+		if (porcentaje <= 0) {
+			return {
+				precioFinal: precio,
+				bonificado: 0,
+				descuento: 0
+			};
+		}
 		
-		return resultado;
+		var descuento = (precio * porcentaje) / 100;
+		var precioFinal = precio - descuento;
+		
+		return {
+			precioFinal: Math.round(precioFinal * 100) / 100,
+			bonificado: Math.round(descuento * 100) / 100,
+			descuento: Math.round(descuento * 100) / 100
+		};
 	};
 	
 	// Aplicar bonificación a un plato (solo preview, no consume bonificación)
