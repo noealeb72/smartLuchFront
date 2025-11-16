@@ -211,7 +211,20 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
             })
             .catch(function (err) {
                 console.error(err);
-                fireErr('Error al crear', 'No se pudo crear el plato.');
+                var errorMessage = 'No se pudo crear el plato.';
+                
+                // Manejar error 409 (Conflict) - código duplicado
+                if (err.status === 409) {
+                    errorMessage = 'El código del plato ya existe. Por favor, use un código diferente.';
+                } else if (err.data && err.data.Message) {
+                    errorMessage = err.data.Message;
+                } else if (err.data && typeof err.data === 'string') {
+                    errorMessage = err.data;
+                } else if (err.statusText) {
+                    errorMessage = 'Error: ' + err.statusText;
+                }
+                
+                fireErr('Error al crear', errorMessage);
             });
     };
 
@@ -291,8 +304,22 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                 $scope.ViewAction = 'Platos';
                 $scope.titulo = 'Gestión de Platos';
             })
-            .catch(function () {
-                fireErr('Error al actualizar', 'No se pudo actualizar el plato.');
+            .catch(function (err) {
+                console.error(err);
+                var errorMessage = 'No se pudo actualizar el plato.';
+                
+                // Manejar error 409 (Conflict) - código duplicado
+                if (err.status === 409) {
+                    errorMessage = 'El código del plato ya existe. Por favor, use un código diferente.';
+                } else if (err.data && err.data.Message) {
+                    errorMessage = err.data.Message;
+                } else if (err.data && typeof err.data === 'string') {
+                    errorMessage = err.data;
+                } else if (err.statusText) {
+                    errorMessage = 'Error: ' + err.statusText;
+                }
+                
+                fireErr('Error al actualizar', errorMessage);
             });
     };
 

@@ -293,76 +293,121 @@
             margin-top: auto;
         }
         
-        /* Estilos para columnas de tabla con ancho fijo y ajuste de texto */
+        /* Estilos para columnas de tabla responsive */
+        /* Asegurar que la tabla se ajuste al ancho disponible */
+        .table-responsive {
+            overflow-x: visible !important;
+            width: 100%;
+        }
+        
+        .table {
+            table-layout: auto;
+            width: 100%;
+            margin-bottom: 0;
+        }
+        
+        /* Asegurar que las celdas respeten el ancho y alineación superior */
+        .table td {
+            vertical-align: top;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        .table th {
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        
         /* Columna Código - primera columna (más pequeña) */
         .table thead tr th:nth-child(1),
         .table tbody tr td:nth-child(1) {
-            width: 100px;
-            max-width: 100px;
-            min-width: 100px;
-            word-wrap: break-word;
-            word-break: break-word;
-            white-space: normal;
-            overflow-wrap: break-word;
+            width: 8%;
+            max-width: 120px;
+            min-width: 80px;
         }
         
         /* Columna Descripción - segunda columna (más grande) */
         .table thead tr th:nth-child(2),
         .table tbody tr td:nth-child(2) {
-            width: 450px;
-            max-width: 450px;
-            min-width: 450px;
-            word-wrap: break-word;
-            word-break: break-word;
-            white-space: normal;
-            overflow-wrap: break-word;
+            width: 20%;
+            max-width: 300px;
+            min-width: 150px;
         }
         
         /* Columna Ingredientes - tercera columna (más grande, solo desktop) */
         .table thead tr th:nth-child(3),
         .table tbody tr td:nth-child(3) {
-            width: 500px;
-            max-width: 500px;
-            min-width: 500px;
-            word-wrap: break-word;
-            word-break: break-word;
-            white-space: normal;
-            overflow-wrap: break-word;
+            width: 25%;
+            max-width: 350px;
+            min-width: 200px;
         }
         
         /* Columna Plan Nutricional - cuarta columna (más pequeña) */
         .table thead tr th:nth-child(4),
         .table tbody tr td:nth-child(4) {
-            width: 180px;
+            width: 15%;
             max-width: 180px;
-            min-width: 180px;
-            word-wrap: break-word;
-            word-break: break-word;
-            white-space: normal;
-            overflow-wrap: break-word;
+            min-width: 120px;
         }
         
         /* Columna Costo - quinta columna (más pequeña) */
         .table thead tr th:nth-child(5),
         .table tbody tr td:nth-child(5) {
-            width: 100px;
-            max-width: 100px;
+            width: 10%;
+            max-width: 120px;
+            min-width: 80px;
+        }
+        
+        /* Columna Acciones - última columna */
+        .table thead tr th:nth-child(6),
+        .table tbody tr td:nth-child(6) {
+            width: 12%;
+            max-width: 120px;
             min-width: 100px;
-            word-wrap: break-word;
-            word-break: break-word;
-            white-space: normal;
-            overflow-wrap: break-word;
         }
         
-        /* Asegurar que la tabla respete los anchos fijos */
-        .table {
-            table-layout: fixed;
-            width: 100%;
-        }
-        
-        /* Asegurar que las celdas respeten el ancho fijo y alineación superior */
-        .table td {
-            vertical-align: top;
+        /* En pantallas pequeñas, hacer la tabla más compacta */
+        @media (max-width: 768px) {
+            .table {
+                font-size: 0.85rem;
+            }
+            
+            .table thead tr th:nth-child(1),
+            .table tbody tr td:nth-child(1) {
+                width: 10%;
+                max-width: 100px;
+                min-width: 60px;
+            }
+            
+            .table thead tr th:nth-child(2),
+            .table tbody tr td:nth-child(2) {
+                width: 25%;
+                max-width: 200px;
+                min-width: 120px;
+            }
+            
+            .table thead tr th:nth-child(4),
+            .table tbody tr td:nth-child(4) {
+                width: 20%;
+                max-width: 150px;
+                min-width: 100px;
+            }
+            
+            .table thead tr th:nth-child(5),
+            .table tbody tr td:nth-child(5) {
+                width: 15%;
+                max-width: 100px;
+                min-width: 70px;
+            }
+            
+            .table thead tr th:nth-child(6),
+            .table tbody tr td:nth-child(6) {
+                width: 15%;
+                max-width: 100px;
+                min-width: 80px;
+            }
         }
     </style>
 </head>
@@ -441,8 +486,8 @@
 
                 <!-- Lista -->
                 <div ng-if="ViewAction==='Platos'">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-sm">
+                    <div class="table-responsive" style="overflow-x: visible; width: 100%;">
+                        <table class="table table-hover table-sm" style="width: 100%; table-layout: auto;">
                             <thead style="font-size: 14px;">
                                 <tr class="bg-dark text-white">
                                     <th ng-class="{'d-none d-md-table-cell': isMobile}">Código</th>
@@ -585,15 +630,6 @@
                                                ng-model="plato.ingredientes" placeholder="Ingrese ingredientes" required>
                                         <span ng-show="(!plato.ingredientes || plato.ingredientes.trim() === '') && showValidationErrors" class="text-danger">Campo Ingredientes requerido</span>
                                     </div>
-
-                                    <div class="pb-3 form-group">
-                                        <label for="plannutricional">Plan Nutricional</label>
-                                        <select class="col-8 form-control" id="plannutricional" name="plannutricional"
-                                                ng-model="plato.plannutricional" required>
-                                            <option ng-repeat="x in planes | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
-                                        </select>
-                                        <span ng-show="(!plato.plannutricional || plato.plannutricional.trim() === '') && showValidationErrors" class="text-danger">Campo Plan Nutricional requerido</span>
-                                    </div>
                                 </div>
 
                                 <div class="col-6" style="padding-left: 0px; padding-right:0px !important">
@@ -609,7 +645,19 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="pb-3 form-group" style="margin-top: 40px !important;">
+                                    
+                                    <!-- Plan Nutricional debajo de la imagen, en posición normal como Descripción e Ingredientes -->
+                                    <div class="pb-3 form-group">
+                                        <label for="plannutricional">Plan Nutricional</label>
+                                        <select class="col-8 form-control" id="plannutricional" name="plannutricional"
+                                                ng-model="plato.plannutricional" required>
+                                            <option ng-repeat="x in planes | orderBy:'nombre'" value="{{x.nombre}}">{{x.nombre}}</option>
+                                        </select>
+                                        <span ng-show="(!plato.plannutricional || plato.plannutricional.trim() === '') && showValidationErrors" class="text-danger">Campo Plan Nutricional requerido</span>
+                                    </div>
+                                    
+                                    <!-- Costo debajo de Plan Nutricional -->
+                                    <div class="pb-3 form-group">
                                         <label for="costo">Costo ($)</label>
                                         <input class="col-8 form-control" type="number" id="costo" name="costo"
                                                ng-model="plato.costo" placeholder="0.00" min="0" step="0.01"
