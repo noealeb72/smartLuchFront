@@ -25,18 +25,23 @@
 
     <style>
         /* Layout base centrado con fondo mejorado */
-        body {
+        html, body {
             margin: 0;
             padding: 0;
-            min-height: 100vh;
+            height: 100%;
+            width: 100%;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
             background-attachment: fixed;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             color: #212529;
             overflow-y: auto;
             position: relative;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         
         /* Decoraciones de fondo sutiles */
@@ -71,10 +76,13 @@
             width: 100%;
             max-width: 450px;
             padding: 30px;
-            padding-top: 120px;
+            padding-top: 110px;
             position: relative;
             z-index: 1;
             border: 1px solid rgba(243, 73, 73, 0.1);
+            margin: 20px;
+            max-height: 95vh;
+            box-sizing: border-box;
         }
 
         .brand_logo_container {
@@ -83,7 +91,7 @@
             position: absolute;
             height: 180px;
             width: 180px;
-            top: -90px;
+            top: -60px;
             left: 50%;
             transform: translateX(-50%);
             border-radius: 50%;
@@ -394,7 +402,8 @@
 
         @media (max-width: 768px) {
             body {
-                padding: 20px;
+                padding: 10px;
+                min-height: 100vh;
             }
             
             .user_card {
@@ -402,27 +411,142 @@
                 max-width: 100%;
                 border-radius: 12px;
                 box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+                padding: 20px;
+                padding-top: 110px;
+                margin: 10px;
+                max-height: 98vh;
+            }
+            
+            .welcome-title h4 {
+                font-size: 1.2rem;
+            }
+        }
+        
+        /* Ajustes según altura de pantalla - reducir proporcionalmente (logo mantiene tamaño original) */
+        @media (max-height: 800px) {
+            .user_card {
                 padding: 25px;
                 padding-top: 110px;
             }
             
-            .brand_logo_container {
-                height: 160px;
-                width: 160px;
-                top: -80px;
+            .welcome-title h4 {
+                font-size: 1.4rem;
             }
             
-            .brand_logo_container .login-logo {
-                font-size: 3rem;
+            .welcome-title p {
+                font-size: 0.85rem;
+            }
+        }
+        
+        @media (max-height: 700px) {
+            .user_card {
+                padding: 20px;
+                padding-top: 110px;
+            }
+            
+            .welcome-title {
+                margin-bottom: 1rem;
+                margin-top: 0.5rem;
             }
             
             .welcome-title h4 {
                 font-size: 1.3rem;
             }
             
-            .d-flex.justify-content-center.h-100 {
-                height: 100vh;
-                align-items: center;
+            .welcome-title p {
+                font-size: 0.8rem;
+            }
+            
+            .input-group {
+                margin-bottom: 0.75rem !important;
+            }
+            
+            .form-group {
+                margin-bottom: 1rem !important;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .user_card {
+                padding: 15px;
+                padding-top: 110px;
+            }
+            
+            .welcome-title {
+                margin-bottom: 0.75rem;
+                margin-top: 0.25rem;
+            }
+            
+            .welcome-title h4 {
+                font-size: 1.1rem;
+            }
+            
+            .welcome-title p {
+                font-size: 0.75rem;
+            }
+            
+            .input-group {
+                margin-bottom: 0.5rem !important;
+            }
+            
+            .input-group-text {
+                padding: 0.5rem 0.75rem !important;
+            }
+            
+            .form-control {
+                padding: 0.5rem 0.75rem !important;
+                font-size: 0.9rem;
+            }
+            
+            .form-group {
+                margin-bottom: 0.75rem !important;
+            }
+            
+            .login_btn {
+                padding: 0.6rem 1.5rem !important;
+                font-size: 0.9rem !important;
+            }
+        }
+        
+        @media (max-height: 500px) {
+            .user_card {
+                padding: 10px;
+                padding-top: 110px;
+            }
+            
+            .welcome-title {
+                margin-bottom: 0.5rem;
+                margin-top: 0;
+            }
+            
+            .welcome-title h4 {
+                font-size: 1rem;
+            }
+            
+            .welcome-title p {
+                font-size: 0.7rem;
+            }
+            
+            .input-group {
+                margin-bottom: 0.4rem !important;
+            }
+            
+            .input-group-text {
+                padding: 0.4rem 0.6rem !important;
+            }
+            
+            .form-control {
+                padding: 0.4rem 0.6rem !important;
+                font-size: 0.85rem;
+            }
+            
+            .form-group {
+                margin-bottom: 0.5rem !important;
+            }
+            
+            .login_btn {
+                padding: 0.5rem 1.2rem !important;
+                font-size: 0.85rem !important;
             }
         }
         
@@ -543,8 +667,8 @@
     <!-- Loading spinner -->
     <div ng-hide="!isLoading" class="se-pre-con"></div>
     
-    <div class="container" style="padding-top: 0;">
-        <div class="d-flex justify-content-center h-100" style="min-height: 100vh; align-items: center;">
+    <div class="container" style="padding-top: 0; height: 100%; width: 100%; display: flex; align-items: center; justify-content: center;">
+        <div class="d-flex justify-content-center" style="width: 100%; height: 100%; align-items: center; padding: 20px;">
             <div class="user_card">
 
                 <div class="d-flex justify-content-center">
@@ -603,7 +727,7 @@
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-center mt-4 login_container">
+                        <div class="d-flex justify-content-center mt-5 login_container" style="margin-top: 3rem !important;">
                             <button type="submit" class="btn login_btn" ng-disabled="!isFormValid()" style="padding: 0.75rem 2rem; font-size: 1rem; font-weight: 600; letter-spacing: 0.5px; border-radius: 8px; transition: all 0.3s ease;">
                                 Ingresar <i class="fas fa-arrow-right ml-2"></i>
                             </button>
@@ -612,9 +736,6 @@
                         <!-- Línea decorativa -->
                         <div class="text-center mt-4 mb-3" style="position: relative;">
                             <hr style="border: none; border-top: 1px solid #e9ecef; margin: 0;">
-                            <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #ffffff; padding: 0 15px; color: var(--smart-gray-medium); font-size: 0.85rem;">
-                                <i class="fas fa-shield-alt mr-1"></i> Acceso seguro
-                            </span>
                         </div>
                     </form>
                 </div>
