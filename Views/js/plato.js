@@ -34,8 +34,15 @@ app.filter('startFrom', function () {
 
 app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
     // --------- Estado base ---------
-    // Usar la variable de configuración global API_BASE_URL
-    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+    // Siempre usar puerto 8000, detectando el hostname automáticamente
+    function getApiBaseUrl() {
+        var protocol = window.location.protocol;
+        var hostname = window.location.hostname;
+        // Siempre usar puerto 8000
+        return protocol + '//' + hostname + ':8000';
+    }
+    
+    var apiBaseUrl = getApiBaseUrl();
     $scope.titulo = 'Gestión de Platos';
     $scope.base = apiBaseUrl + '/api/plato/';
     $scope.basePlan = apiBaseUrl + '/api/plannutricional/';
@@ -81,16 +88,39 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
 
     // --------- Helpers ---------
     function fireOk(title, text) {
-        // Popup de alert eliminado
-        //console.log('Éxito:', title || 'Operación Correcta', text || '');
+        if (typeof Swal !== 'undefined' && Swal.fire) {
+            Swal.fire({
+                title: title || 'Operación Correcta',
+                text: text || '',
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#F34949'
+            });
+        }
     }
     function fireErr(title, text) {
-        // Popup de alert eliminado
-        //console.log('Error:', title || 'Operación Incorrecta', text || '');
+        if (typeof Swal !== 'undefined' && Swal.fire) {
+            Swal.fire({
+                title: title || 'Operación Incorrecta',
+                text: text || 'Ha ocurrido un error',
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#F34949'
+            });
+        } else {
+            alert((title || 'Error') + ': ' + (text || 'Ha ocurrido un error'));
+        }
     }
     function fireWarn(title, text) {
-        // Popup de alert eliminado
-        //console.log('Advertencia:', title || 'Atención', text || '');
+        if (typeof Swal !== 'undefined' && Swal.fire) {
+            Swal.fire({
+                title: title || 'Atención',
+                text: text || '',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#F34949'
+            });
+        }
     }
 
     $scope.getNumber = function (n) {
@@ -210,20 +240,40 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                 $scope.ModelReadAll();
             })
             .catch(function (err) {
-                console.error(err);
+                console.error('Error al crear plato:', err);
+                console.error('err.data:', err.data);
+                console.error('err.status:', err.status);
+                
                 var errorMessage = 'No se pudo crear el plato.';
                 
                 // Manejar error 409 (Conflict) - código duplicado
                 if (err.status === 409) {
-                    errorMessage = 'El código del plato ya existe. Por favor, use un código diferente.';
-                } else if (err.data && err.data.Message) {
-                    errorMessage = err.data.Message;
-                } else if (err.data && typeof err.data === 'string') {
-                    errorMessage = err.data;
+                    // Buscar el mensaje de error en diferentes ubicaciones posibles
+                    if (err.data && err.data.error) {
+                        errorMessage = err.data.error;
+                    } else if (err.data && err.data.Message) {
+                        errorMessage = err.data.Message;
+                    } else if (err.data && typeof err.data === 'string') {
+                        errorMessage = err.data;
+                    } else {
+                        errorMessage = 'El código del plato ya existe. Por favor, use un código diferente.';
+                    }
+                } else if (err.data) {
+                    // Para otros errores, buscar el mensaje en diferentes ubicaciones
+                    if (err.data.error) {
+                        errorMessage = err.data.error;
+                    } else if (err.data.Message) {
+                        errorMessage = err.data.Message;
+                    } else if (typeof err.data === 'string') {
+                        errorMessage = err.data;
+                    } else if (err.data.message) {
+                        errorMessage = err.data.message;
+                    }
                 } else if (err.statusText) {
                     errorMessage = 'Error: ' + err.statusText;
                 }
                 
+                console.log('Mensaje de error a mostrar:', errorMessage);
                 fireErr('Error al crear', errorMessage);
             });
     };
@@ -305,20 +355,40 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                 $scope.titulo = 'Gestión de Platos';
             })
             .catch(function (err) {
-                console.error(err);
+                console.error('Error al actualizar plato:', err);
+                console.error('err.data:', err.data);
+                console.error('err.status:', err.status);
+                
                 var errorMessage = 'No se pudo actualizar el plato.';
                 
                 // Manejar error 409 (Conflict) - código duplicado
                 if (err.status === 409) {
-                    errorMessage = 'El código del plato ya existe. Por favor, use un código diferente.';
-                } else if (err.data && err.data.Message) {
-                    errorMessage = err.data.Message;
-                } else if (err.data && typeof err.data === 'string') {
-                    errorMessage = err.data;
+                    // Buscar el mensaje de error en diferentes ubicaciones posibles
+                    if (err.data && err.data.error) {
+                        errorMessage = err.data.error;
+                    } else if (err.data && err.data.Message) {
+                        errorMessage = err.data.Message;
+                    } else if (err.data && typeof err.data === 'string') {
+                        errorMessage = err.data;
+                    } else {
+                        errorMessage = 'El código del plato ya existe. Por favor, use un código diferente.';
+                    }
+                } else if (err.data) {
+                    // Para otros errores, buscar el mensaje en diferentes ubicaciones
+                    if (err.data.error) {
+                        errorMessage = err.data.error;
+                    } else if (err.data.Message) {
+                        errorMessage = err.data.Message;
+                    } else if (typeof err.data === 'string') {
+                        errorMessage = err.data;
+                    } else if (err.data.message) {
+                        errorMessage = err.data.message;
+                    }
                 } else if (err.statusText) {
                     errorMessage = 'Error: ' + err.statusText;
                 }
                 
+                console.log('Mensaje de error a mostrar:', errorMessage);
                 fireErr('Error al actualizar', errorMessage);
             });
     };
@@ -330,8 +400,27 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
                 $scope.ModelReadAll();
             })
             .catch(function (err) {
-                console.error(err);
-                fireErr('Operación Incorrecta', 'Error al eliminar el plato.');
+                console.error('Error al eliminar plato:', err);
+                console.error('err.data:', err.data);
+                console.error('err.status:', err.status);
+                
+                var errorMessage = 'Error al eliminar el plato.';
+                
+                if (err.data) {
+                    if (err.data.error) {
+                        errorMessage = err.data.error;
+                    } else if (err.data.Message) {
+                        errorMessage = err.data.Message;
+                    } else if (typeof err.data === 'string') {
+                        errorMessage = err.data;
+                    } else if (err.data.message) {
+                        errorMessage = err.data.message;
+                    }
+                } else if (err.statusText) {
+                    errorMessage = 'Error: ' + err.statusText;
+                }
+                
+                fireErr('Operación Incorrecta', errorMessage);
             });
     };
 
@@ -503,7 +592,7 @@ app.controller('Plato', function ($scope, $http, $window, $base64, $timeout) {
         $scope.showValidationErrors = false;
         $scope.plato = {
             codigo: '', descripcion: '', ingredientes: '',
-            plannutricional: '', costo: 0.00, presentacion: ''
+            plannutricional: '', costo: undefined, presentacion: ''
         };
         $scope.view_id = -1;
         $scope.view_previewImage = '';

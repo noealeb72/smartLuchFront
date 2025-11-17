@@ -4,8 +4,13 @@ var app = angular.module('AngujarJS', []);
 
 app.controller('Login', function ($scope, $http, $window, $location) {
     // --- Config ---
-    // Usar la variable de configuración global API_BASE_URL
-    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+    // Siempre usar puerto 8000, detectando el hostname automáticamente
+    function getApiBaseUrl() {
+        var protocol = window.location.protocol;
+        var hostname = window.location.hostname;
+        return protocol + '//' + hostname + ':8000';
+    }
+    var apiBaseUrl = getApiBaseUrl();
     $scope.base = apiBaseUrl + '/api/login/';
 
     // --- Estado UI ---

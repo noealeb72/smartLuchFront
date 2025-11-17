@@ -77,9 +77,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
     var day = String(fechaHoy.getDate()).padStart(2, '0');
     $scope.view_fechadeldia = year + '-' + month + '-' + day;
     
-    // Inicializar flag para controlar cuando mostrar el error de fecha
-    $scope.fechadeldiaTouched = false;
-    
     // -------- Loading State ----------
     $scope.isLoading = true;
     
@@ -155,17 +152,9 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
 
     // --- Utilidades de paginación usadas por la vista ---
     $scope.currentPage = 0;
-    // Inicializar pageSize como número 5 explícitamente
     $scope.pageSize = 5; // Por defecto 5 filas (número)
     $scope.totalPages = 1;
     $scope.searchText = ''; // Inicializar searchText
-    
-    // Asegurar que pageSize esté correctamente inicializado después de que AngularJS cargue
-    $timeout(function() {
-        if (!$scope.pageSize || $scope.pageSize !== 5) {
-            $scope.pageSize = 5;
-        }
-    }, 0);
     
     $scope.numberOfPages = function () {
         var arr = $scope.getFilteredDataset() || [];
@@ -236,15 +225,8 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
 
     // Función para cambiar el tamaño de página
     $scope.changePageSize = function(newSize) {
-        // Convertir a número y asegurar que sea válido
-        // Si viene como string del select, convertirlo a número
-        var newPageSize = typeof newSize === 'string' ? parseInt(newSize, 10) : parseInt(newSize, 10);
-        if (isNaN(newPageSize) || newPageSize < 1) {
-            newPageSize = 5; // Valor por defecto si es inválido
-        }
-        $scope.pageSize = newPageSize;
+        $scope.pageSize = parseInt(newSize);
         $scope.currentPage = 0; // Volver a la primera página
-        updateTotalPages(); // Recalcular totalPages después de cambiar el tamaño
     };
     
     // Función para obtener datos filtrados (igual que en el HTML)
@@ -353,7 +335,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
             });
     };
     
-    // Función de filtro personalizada para buscar platos por descripción, código o plan nutricional
+    // Función de filtro personalizada para buscar platos por descripción o código
     $scope.filtrarPlatos = function(plato) {
         if (!$scope.busquedaPlato || $scope.busquedaPlato.trim() === '') {
             return true;
@@ -361,10 +343,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
         var busqueda = $scope.busquedaPlato.toLowerCase().trim();
         var descripcion = (plato.descripcion || '').toLowerCase();
         var codigo = (plato.codigo || '').toLowerCase();
-        var planNutricional = (plato.plannutricional || '').toLowerCase();
-        return descripcion.indexOf(busqueda) !== -1 || 
-               codigo.indexOf(busqueda) !== -1 || 
-               planNutricional.indexOf(busqueda) !== -1;
+        return descripcion.indexOf(busqueda) !== -1 || codigo.indexOf(busqueda) !== -1;
     };
     
     // Función para seleccionar un plato
@@ -633,7 +612,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
         if (!jerarquia || jerarquia.trim() === '') camposFaltantes.push('Jerarquía');
         if (!proyecto || proyecto.trim() === '') camposFaltantes.push('Proyecto');
         if (!cantidad || cantidad.trim() === '' || parseInt(cantidad) < 1 || !/^[1-9][0-9]*$/.test(cantidad)) camposFaltantes.push('Cantidad');
-        if (!fechadeldia || (typeof fechadeldia === 'string' && fechadeldia.trim() === '')) camposFaltantes.push('Fecha del día');
+        if (!fechadeldia || fechadeldia.trim() === '') camposFaltantes.push('Fecha del día');
         if (!plato || plato.trim() === '') camposFaltantes.push('Plato');
         
         if (camposFaltantes.length > 0) {
@@ -690,47 +669,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
             });
             $scope.ModelReadAll();
         }, function (error) {
-            console.error('Error al crear menú:', error);
-            console.error('err.data:', error.data);
-            console.error('err.status:', error.status);
-            
-            var errorMessage = 'No se pudo crear el menú.';
-            
-            // Manejar error 409 (Conflict) - duplicado
-            if (error.status === 409) {
-                // Buscar el mensaje de error en diferentes ubicaciones posibles
-                if (error.data && error.data.error) {
-                    errorMessage = error.data.error;
-                } else if (error.data && error.data.Message) {
-                    errorMessage = error.data.Message;
-                } else if (error.data && typeof error.data === 'string') {
-                    errorMessage = error.data;
-                } else {
-                    errorMessage = 'Ya existe un menú con estos datos. Por favor, verifique los campos.';
-                }
-            } else if (error.data) {
-                // Para otros errores, buscar el mensaje en diferentes ubicaciones
-                if (error.data.error) {
-                    errorMessage = error.data.error;
-                } else if (error.data.Message) {
-                    errorMessage = error.data.Message;
-                } else if (typeof error.data === 'string') {
-                    errorMessage = error.data;
-                } else if (error.data.message) {
-                    errorMessage = error.data.message;
-                }
-            } else if (error.statusText) {
-                errorMessage = 'Error: ' + error.statusText;
-            }
-            
-            console.log('Mensaje de error a mostrar:', errorMessage);
-            $window.Swal && $window.Swal.fire({ 
-                title: 'Operación Incorrecta', 
-                text: errorMessage, 
-                icon: 'error',
-                confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#F34949'
-            });
+            $window.Swal && $window.Swal.fire({ title: 'Operación Incorrecta', text: ('' + error), icon: 'error' });
         });
     };
 
@@ -829,16 +768,10 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
         $scope.view_despachado = '';
         $scope.view_fechadeldia = (new Date()).toISOString().split('T')[0];
 
-        // La página de menú del día es administrativa, debe mostrar TODOS los items sin filtrar por plan nutricional
         $http.get($scope.base + 'GetToday')
+            // $http.get($scope.base + 'GetToday') // solo trae el menu del día
             .then(function (response) {
                 $scope.dataset = Array.isArray(response.data) ? response.data : [];
-                console.log('✅ Menu del día cargado:', $scope.dataset.length, 'items');
-                if ($scope.dataset.length > 0) {
-                    console.log('📋 Primer item del menú:', $scope.dataset[0]);
-                    console.log('   Campos disponibles:', Object.keys($scope.dataset[0]));
-                    console.log('   Valor de item.plato:', $scope.dataset[0].plato);
-                }
                 // Ordenar por ID descendente para que el plato más reciente aparezca primero
                 $scope.dataset.sort(function(a, b) {
                     var idA = parseInt(a.id) || 0;
@@ -883,7 +816,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
         if (!jerarquia || jerarquia.trim() === '') camposFaltantes.push('Jerarquía');
         if (!proyecto || proyecto.trim() === '') camposFaltantes.push('Proyecto');
         if (!cantidad || cantidad.trim() === '' || parseInt(cantidad) < 1 || !/^[1-9][0-9]*$/.test(cantidad)) camposFaltantes.push('Cantidad');
-        if (!fechadeldia || (typeof fechadeldia === 'string' && fechadeldia.trim() === '')) camposFaltantes.push('Fecha del día');
+        if (!fechadeldia || fechadeldia.trim() === '') camposFaltantes.push('Fecha del día');
         if (!plato || plato.trim() === '') camposFaltantes.push('Plato');
         
         if (camposFaltantes.length > 0) {
@@ -944,47 +877,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
             });
             $scope.ModelReadAll();
         }, function (error) {
-            console.error('Error al actualizar menú:', error);
-            console.error('err.data:', error.data);
-            console.error('err.status:', error.status);
-            
-            var errorMessage = 'No se pudo actualizar el menú.';
-            
-            // Manejar error 409 (Conflict) - duplicado
-            if (error.status === 409) {
-                // Buscar el mensaje de error en diferentes ubicaciones posibles
-                if (error.data && error.data.error) {
-                    errorMessage = error.data.error;
-                } else if (error.data && error.data.Message) {
-                    errorMessage = error.data.Message;
-                } else if (error.data && typeof error.data === 'string') {
-                    errorMessage = error.data;
-                } else {
-                    errorMessage = 'Ya existe un menú con estos datos. Por favor, verifique los campos.';
-                }
-            } else if (error.data) {
-                // Para otros errores, buscar el mensaje en diferentes ubicaciones
-                if (error.data.error) {
-                    errorMessage = error.data.error;
-                } else if (error.data.Message) {
-                    errorMessage = error.data.Message;
-                } else if (typeof error.data === 'string') {
-                    errorMessage = error.data;
-                } else if (error.data.message) {
-                    errorMessage = error.data.message;
-                }
-            } else if (error.statusText) {
-                errorMessage = 'Error: ' + error.statusText;
-            }
-            
-            console.log('Mensaje de error a mostrar:', errorMessage);
-            $window.Swal && $window.Swal.fire({ 
-                title: 'Operación Incorrecta', 
-                text: errorMessage, 
-                icon: 'error',
-                confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#F34949'
-            });
+            $window.Swal && $window.Swal.fire({ title: 'Operación Incorrecta', text: ('' + error), icon: 'error' });
         });
     };
 
@@ -1008,33 +901,7 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
             });
             $scope.ModelReadAll();
         }, function (error) {
-            console.error('Error al eliminar menú:', error);
-            console.error('err.data:', error.data);
-            console.error('err.status:', error.status);
-            
-            var errorMessage = 'No se pudo eliminar el menú.';
-            
-            if (error.data) {
-                if (error.data.error) {
-                    errorMessage = error.data.error;
-                } else if (error.data.Message) {
-                    errorMessage = error.data.Message;
-                } else if (typeof error.data === 'string') {
-                    errorMessage = error.data;
-                } else if (error.data.message) {
-                    errorMessage = error.data.message;
-                }
-            } else if (error.statusText) {
-                errorMessage = 'Error: ' + error.statusText;
-            }
-            
-            $window.Swal && $window.Swal.fire({ 
-                title: 'Operación Incorrecta', 
-                text: errorMessage, 
-                icon: 'error',
-                confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#F34949'
-            });
+            $window.Swal && $window.Swal.fire({ title: 'Operación Incorrecta', text: ('' + error), icon: 'error' });
         });
     };
 
@@ -1045,7 +912,6 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
         $scope.view_id = -1;
         $scope.showValidationErrors = false;
         $scope.isEditMode = false;
-        $scope.fechadeldiaTouched = false; // Resetear flag de fecha tocada
         
         // Inicializar campos básicos
         $scope.view_turno = '';
@@ -1069,49 +935,12 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
         }
         
         // Asegurar que todos los campos se establezcan después de cargar los datos
-        // Función para establecer la fecha en el campo HTML
-        var establecerFecha = function() {
+        setTimeout(function() {
+            // Asegurar que la fecha se establezca correctamente en el campo HTML
             var fechaField = document.getElementById('view_fechadeldia');
             if (fechaField) {
-                // Establecer el valor directamente en el campo HTML
                 fechaField.value = $scope.view_fechadeldia;
-                // Forzar actualización del modelo de AngularJS usando $timeout
-                $timeout(function() {
-                    // Disparar evento input para asegurar que AngularJS detecte el cambio
-                    try {
-                        var event = new Event('input', { bubbles: true });
-                        fechaField.dispatchEvent(event);
-                    } catch(e) {
-                        // Fallback para navegadores antiguos
-                        var event = document.createEvent('Event');
-                        event.initEvent('input', true, true);
-                        fechaField.dispatchEvent(event);
-                    }
-                    // También disparar evento change
-                    try {
-                        var changeEvent = new Event('change', { bubbles: true });
-                        fechaField.dispatchEvent(changeEvent);
-                    } catch(e) {
-                        var changeEvent = document.createEvent('Event');
-                        changeEvent.initEvent('change', true, true);
-                        fechaField.dispatchEvent(changeEvent);
-                    }
-                    console.log('✅ Fecha establecida en el campo:', $scope.view_fechadeldia, 'Valor del campo:', fechaField.value);
-                }, 0);
-            } else {
-                console.warn('⚠️ Campo de fecha no encontrado, reintentando...');
             }
-        };
-        
-        // Intentar establecer la fecha inmediatamente
-        $timeout(establecerFecha, 0);
-        
-        // Reintentar después de un delay más largo por si el DOM aún no está listo
-        $timeout(function() {
-            establecerFecha();
-            
-            // Reintentar una vez más después de otro delay
-            $timeout(establecerFecha, 200);
             
             // Turno - SIEMPRE establecer el primero
             if ($scope.turnos && $scope.turnos.length > 0) {
@@ -1177,68 +1006,14 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
     };
 
     $scope.ModelReadPlatos = function () {
-        return $http.get($scope.basePlatos + 'getAll')
-            .then(function (response) {
-                var data = response.data || response; // Compatibilidad con .success y .then
-                $scope.allPlatos = Array.isArray(data) ? data : []; // Almacenar todos los platos
-                $scope.platos = Array.isArray(data) ? data : []; // Mostrar todos los platos por defecto
-                console.log('✅ Platos cargados en ModelReadPlatos:', $scope.allPlatos.length);
-                console.log('📋 Primeros 3 platos:', $scope.allPlatos.slice(0, 3));
-                return $scope.allPlatos;
+        $http.get($scope.basePlatos + 'getAll')
+            .success(function (data) {
+                $scope.allPlatos = data; // Almacenar todos los platos
+                $scope.platos = data; // Mostrar todos los platos por defecto
             })
-            .catch(function (error) {
-                console.error('❌ Error al cargar platos:', error);
-                $scope.allPlatos = [];
-                $scope.platos = [];
+            .error(function () {
                 $window.Swal && $window.Swal.fire({ title: 'Ha ocurrido un error', text: 'Error al obtener platos', icon: 'error' });
-                return [];
             });
-    };
-    
-    // Función helper para obtener el plan nutricional de un plato por su nombre
-    $scope.getPlanNutricional = function(nombrePlato) {
-        if (!nombrePlato || !$scope.allPlatos || $scope.allPlatos.length === 0) {
-            console.log('⚠️ getPlanNutricional: datos faltantes', {
-                nombrePlato: nombrePlato,
-                allPlatosLength: $scope.allPlatos ? $scope.allPlatos.length : 0
-            });
-            return null;
-        }
-        
-        // Normalizar el nombre del plato (trim y lowercase)
-        var nombreNormalizado = (nombrePlato || '').toString().trim().toLowerCase();
-        
-        // Buscar el plato por descripcion
-        var plato = $scope.allPlatos.find(function(p) {
-            if (!p) return false;
-            // Intentar con descripcion
-            if (p.descripcion) {
-                var descNormalizada = p.descripcion.toString().trim().toLowerCase();
-                if (descNormalizada === nombreNormalizado) {
-                    return true;
-                }
-            }
-            // Intentar con otros campos posibles (nombre, plato, etc.)
-            if (p.nombre) {
-                var nomNormalizado = p.nombre.toString().trim().toLowerCase();
-                if (nomNormalizado === nombreNormalizado) {
-                    return true;
-                }
-            }
-            return false;
-        });
-        
-        if (plato) {
-            console.log('✅ Plan nutricional encontrado para', nombrePlato, ':', plato.plannutricional);
-            return plato.plannutricional || null;
-        } else {
-            console.log('⚠️ No se encontró plato para:', nombrePlato);
-            console.log('   Buscando en', $scope.allPlatos.length, 'platos');
-            console.log('   Primeros 3 platos disponibles:', $scope.allPlatos.slice(0, 3).map(function(p) {
-                return { descripcion: p.descripcion, nombre: p.nombre, plannutricional: p.plannutricional };
-            }));
-            return null;
-        }
     };
 
     $scope.ModelReadPlantas = function () {
@@ -1569,15 +1344,11 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
 
     $scope.ViewCancel = function () {
         $scope.ViewAction = 'Lista de Items';
-        $scope.fechadeldiaTouched = false; // Resetear flag de fecha tocada al cancelar
     };
 
     // --- Init ---
-    // Cargar primero los platos para que estén disponibles al filtrar el menú del día
-    $scope.ModelReadPlatos().then(function() {
-        // Una vez cargados los platos, cargar el menú del día (que usará allPlatos para filtrar)
-        $scope.ModelReadAll();
-    });
+    $scope.ModelReadAll();
+    $scope.ModelReadPlatos();
     $scope.ModelReadPlantas();
     $scope.ModelReadCentros();
     $scope.ModelReadProyectos();

@@ -80,8 +80,13 @@
         }, 1000);
 
         // ---- Endpoints ----
-        // Usar la variable de configuración global API_BASE_URL
-        var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+        // Siempre usar puerto 8000, detectando el hostname automáticamente
+        function getApiBaseUrl() {
+            var protocol = window.location.protocol;
+            var hostname = window.location.hostname;
+            return protocol + '//' + hostname + ':8000';
+        }
+        var apiBaseUrl = getApiBaseUrl();
         $scope.basePlantas = apiBaseUrl + '/api/planta/';
         $scope.baseCentrodecostos = apiBaseUrl + '/api/centrodecosto/';
         $scope.baseProyectos = apiBaseUrl + '/api/proyecto/';
@@ -239,7 +244,12 @@
         }
 
         function cargarPerfiles() {
-            var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+            function getApiBaseUrl() {
+                var protocol = window.location.protocol;
+                var hostname = window.location.hostname;
+                return protocol + '//' + hostname + ':8000';
+            }
+            var apiBaseUrl = getApiBaseUrl();
             $http.get(apiBaseUrl + '/api/plannutricional/getAll')
                 .then(function (response) {
                     // normalizo a {id, nombre} para ng-options pf as pf.nombre for pf in perfiles track by pf.id

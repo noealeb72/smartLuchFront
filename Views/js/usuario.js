@@ -17,9 +17,15 @@ app.filter('formatDateArg', function () {
 });
 
 app.controller('Usuario', function ($scope, $sce, $http, $window) {
-	// Usar la variable de configuración global API_BASE_URL
-	var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
-
+	// Siempre usar puerto 8000, detectando el hostname automáticamente
+	function getApiBaseUrl() {
+		var protocol = window.location.protocol;
+		var hostname = window.location.hostname;
+		// Siempre usar puerto 8000
+		return protocol + '//' + hostname + ':8000';
+	}
+	
+	var apiBaseUrl = getApiBaseUrl();
 	$scope.base = apiBaseUrl + '/api/usuario/';
 	$scope.basePlan = apiBaseUrl + '/api/plannutricional/';
 	$scope.planes = '';
@@ -392,13 +398,49 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 
 		$http.get($scope.base + 'getAll')
 			.then(function (response) {
+				console.log('✅ Respuesta de usuarios recibida:', response);
+				console.log('   Tipo de datos:', Array.isArray(response.data) ? 'Array' : typeof response.data);
+				console.log('   Cantidad de usuarios:', Array.isArray(response.data) ? response.data.length : 'No es array');
+				
 				$scope.dataset = Array.isArray(response.data) ? response.data : [];
+				
+				if ($scope.dataset.length > 0) {
+					console.log('📋 Primer usuario:', $scope.dataset[0]);
+					
+					// Ordenar alfabéticamente por apellido y luego por nombre
+					$scope.dataset.sort(function(a, b) {
+						var apellidoA = (a.apellido || '').toLowerCase().trim();
+						var apellidoB = (b.apellido || '').toLowerCase().trim();
+						var nombreA = (a.nombre || '').toLowerCase().trim();
+						var nombreB = (b.nombre || '').toLowerCase().trim();
+						
+						// Primero comparar por apellido
+						if (apellidoA < apellidoB) return -1;
+						if (apellidoA > apellidoB) return 1;
+						
+						// Si los apellidos son iguales, comparar por nombre
+						if (nombreA < nombreB) return -1;
+						if (nombreA > nombreB) return 1;
+						
+						return 0;
+					});
+					
+					console.log('✅ Usuarios ordenados:', $scope.dataset.length);
+				} else {
+					console.warn('⚠️ No hay usuarios en la respuesta');
+				}
+				
 				$scope.searchText = '';
 				$scope.isLoading = false;
 			})
 			.catch(function (error) {
+				console.error('❌ Error al cargar usuarios:', error);
+				console.error('   Status:', error.status);
+				console.error('   StatusText:', error.statusText);
+				console.error('   Data:', error.data);
+				console.error('   URL:', $scope.base + 'getAll');
 				$scope.isLoading = false;
-				$scope.showError('Ha ocurrido un error', 'Api no presente');
+				$scope.showError('Ha ocurrido un error', 'No se pudieron cargar los usuarios. Verifique la conexión con el servidor.');
 			});
 	};
 

@@ -22,8 +22,13 @@ app.filter('formatDateArg', function () {
 });
 
 app.controller('Proyecto', function ($scope, $sce, $http, $window) {
-	// Usar la variable de configuración global API_BASE_URL
-	var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+	// Siempre usar puerto 8000, detectando el hostname automáticamente
+	function getApiBaseUrl() {
+		var protocol = window.location.protocol;
+		var hostname = window.location.hostname;
+		return protocol + '//' + hostname + ':8000';
+	}
+	var apiBaseUrl = getApiBaseUrl();
 	$scope.titulo = 'Proyecto';  // Título inicial
 	$scope.base = apiBaseUrl + '/api/proyecto/';
 	$scope.baseCentrodecostos = apiBaseUrl + '/api/centrodecosto/';

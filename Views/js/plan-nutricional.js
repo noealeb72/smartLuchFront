@@ -16,8 +16,13 @@ app.filter('startFrom', function () {
 
 app.controller('PlanNutricional', function ($scope, $http) {
     // -------- Config ----------
-    // Usar la variable de configuración global API_BASE_URL
-    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+    // Siempre usar puerto 8000, detectando el hostname automáticamente
+    function getApiBaseUrl() {
+        var protocol = window.location.protocol;
+        var hostname = window.location.hostname;
+        return protocol + '//' + hostname + ':8000';
+    }
+    var apiBaseUrl = getApiBaseUrl();
     $scope.user_Rol = localStorage.getItem('role') || '';
     $scope.base = apiBaseUrl + '/api/plannutricional/';
     
@@ -161,7 +166,15 @@ app.controller('PlanNutricional', function ($scope, $http) {
             return; 
         }
         $http.post($scope.base + 'Create', payload, { headers: { 'Content-Type': 'application/json; charset=utf-8' } })
-            .then(function () { Swal.fire({ title: 'Operación Correcta', icon: 'success' }); $scope.ModelReadAll(); })
+            .then(function () { 
+                Swal.fire({ 
+                    title: 'Operación Correcta', 
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#F34949'
+                }); 
+                $scope.ModelReadAll(); 
+            })
             .catch(function (err) { Swal.fire({ title: 'Operación Incorrecta', text: msgError(err), icon: 'error' }); });
     };
 
@@ -207,7 +220,8 @@ app.controller('PlanNutricional', function ($scope, $http) {
                 Swal.fire({
                     title: 'Operación Correcta',
                     icon: 'success',
-                    confirmButtonText: 'Aceptar' // <— texto del botón
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#F34949'
                 });
                 $scope.ModelReadAll();
             })
