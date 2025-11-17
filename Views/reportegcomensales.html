@@ -50,9 +50,23 @@
             border: none;
         }
         
+        /* Quitar efecto hover de las cards */
+        .card:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            transform: none !important;
+        }
+        
         .card-header {
             border-radius: 8px 8px 0 0 !important;
             border: none;
+        }
+        
+        /* Quitar efecto hover del card-header */
+        .card-header:hover {
+            background-color: inherit !important;
+            color: inherit !important;
+            transform: none !important;
+            transition: none !important;
         }
         
         .btn-primary {
@@ -224,6 +238,49 @@
             background-color: #6c757d;
             border-color: #6c757d;
             color: white;
+        }
+        
+        /* Mantener color fijo en el card-header de Información del Comensal y Historial de Pedidos */
+        .card-header[style*="background-color: #6c757d"],
+        .card-header[style*="background-color: #6c757d"]:hover,
+        .card-header[style*="background-color: #6c757d"]:focus,
+        .card-header[style*="background-color: #6c757d"]:active {
+            background-color: #6c757d !important;
+            color: white !important;
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+            box-shadow: none !important;
+        }
+        
+        .card-header[style*="background-color: #6c757d"] h5,
+        .card-header[style*="background-color: #6c757d"] h6,
+        .card-header[style*="background-color: #6c757d"]:hover h5,
+        .card-header[style*="background-color: #6c757d"]:hover h6,
+        .card-header[style*="background-color: #6c757d"]:focus h5,
+        .card-header[style*="background-color: #6c757d"]:focus h6,
+        .card-header[style*="background-color: #6c757d"]:active h5,
+        .card-header[style*="background-color: #6c757d"]:active h6 {
+            color: white !important;
+            opacity: 1 !important;
+        }
+        
+        .card-header[style*="background-color: #6c757d"] i,
+        .card-header[style*="background-color: #6c757d"]:hover i,
+        .card-header[style*="background-color: #6c757d"]:focus i,
+        .card-header[style*="background-color: #6c757d"]:active i {
+            color: white !important;
+            opacity: 1 !important;
+        }
+        
+        /* Desactivar cualquier efecto hover en las cards que contienen estos headers */
+        .card:has(.card-header[style*="background-color: #6c757d"]):hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            transform: none !important;
+        }
+        
+        .card:has(.card-header[style*="background-color: #6c757d"]) .card-header {
+            pointer-events: none;
         }
         
         .page-size-select {
@@ -714,7 +771,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     
     <!-- Configuración centralizada - DEBE CARGARSE ANTES DE LOS SCRIPTS QUE USAN API_BASE_URL -->
-    <script src="js/config.js"></script>
 
     <script src="js/reportegcomensales.js"></script>
 </body>

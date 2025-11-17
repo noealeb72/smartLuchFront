@@ -246,6 +246,23 @@
             justify-content: center !important;
         }
         
+        /* Estilos para la columna de acciones en la tabla */
+        td.text-center.col-1 {
+            white-space: nowrap !important;
+            width: auto !important;
+            min-width: 100px !important;
+        }
+        
+        /* Contenedor de botones de acción */
+        td.text-center.col-1 .d-flex {
+            gap: 8px !important;
+        }
+        
+        /* Asegurar que los botones de acción no se rompan */
+        td.text-center.col-1 .btn-link {
+            flex-shrink: 0 !important;
+        }
+        
         /* óconos de los botones en color blanco */
         .btn-primary i.fa-save,
         .btn-cancelar i.fa-times,
@@ -395,13 +412,13 @@
      </style>
  </head>
 
- <body data-spy="scroll" data-target="#navbar" class="static-layout ng-cloak" ng-controller="Usuario" style="min-height: 100vh; display: flex; flex-direction: column;">
-     <!-- Loading spinner -->
-     <div ng-hide="!isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido">
-         <span class="sr-only">Cargando contenido, por favor espere...</span>
-     </div>
-     <div class="container-fluid" style="flex: 1; display: flex; flex-direction: column;">
-         <div class="solid-background" style="flex: 1;">
+<body data-spy="scroll" data-target="#navbar" class="static-layout ng-cloak" ng-controller="Usuario" style="min-height: 100vh; display: flex; flex-direction: column;">
+    <!-- Loading spinner -->
+    <div ng-hide="!isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido">
+        <span class="sr-only">Cargando contenido, por favor espere...</span>
+    </div>
+    <div class="container-fluid" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="solid-background" style="flex: 1;">
              <!-- Menu -->
              <div ng-include="'navbar.html'"> </div>
              <!-- Tótulo y Breadcrumbs -->
@@ -453,17 +470,17 @@
                          <label for="buscarUsuario">Buscar</label>
                          <div class="input-group">
                              <input type="text" class="form-control" ng-model="searchText" id="buscarUsuario" title="Buscar Usuario" placeholder="Filtrar por nombre, apellido, legajo...">
-                             <div class="input-group-append">
-                                 <button type="button" class="btn" style="background-color: #5c636a; border-color: #5c636a; color: white;" title="Limpiar" ng-click="searchText=''">
-                                     <i class="fas fa-times"></i>
-                                 </button>
-                             </div>
+                            <div class="input-group-append">
+                                <button type="button" class="btn" style="background-color: #5c636a; border-color: #5c636a; color: white;" title="Limpiar" ng-click="searchText=''">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                          </div>
                      </div>
                  </div>
 
 
-                 <div class="container-fluid mr-3" style="min-height: 428px">
+                <div class="container-fluid mr-3" style="min-height: 428px">
                      <div ng-if="ViewAction==='Lista de Items'">
                          <div class="table-responsive">
                              <table class="table table-hover table-sm">
@@ -478,8 +495,8 @@
                                          <th class="d-none d-md-table-cell">Planta</th>
                                          <th class="d-none d-md-table-cell">DNI</th>
                                          <!--<th class="d-none d-md-table-cell">Domicilio</th>
-                                        <th class="d-none d-md-table-cell">Fecha de ingreso</th>
-                                        <th class="d-none d-md-table-cell">Contrato</th>-->
+                                <th class="d-none d-md-table-cell">Fecha de ingreso</th>
+                                <th class="d-none d-md-table-cell">Contrato</th>-->
                                          <th class="text-center col-1">Acciones</th>
                                      </tr>
                                  </thead>
@@ -494,79 +511,81 @@
                                          <td class="d-none d-md-table-cell">{{item.planta}}</td>
                                          <td class="d-none d-md-table-cell">{{item.dni}}</td>
                                          <!-- <td class="d-none d-md-table-cell">{{item.domicilio}}</td>
-                                        <td class="d-none d-md-table-cell">{{item.fechaingreso | formatDateArg}}</td>
-                                        <td class="d-none d-md-table-cell">{{item.contrato}}</td>-->
+                                <td class="d-none d-md-table-cell">{{item.fechaingreso | formatDateArg}}</td>
+                                <td class="d-none d-md-table-cell">{{item.contrato}}</td>-->
                                          <td class="text-center col-1">
-                                             <button type="button" class="btn btn-link p-0 align-middle"
-                                                     ng-click="ViewUpdate(item.id)" title="Editar" style="cursor: pointer;">
-                                                 <i class="fa fa-edit" style="color:white"></i>
-                                             </button>
-                                             <button type="button" class="btn btn-link p-0 align-middle ml-2"
-                                                     ng-click="ViewDelete(item.id)" title="Eliminar" aria-label="Eliminar" style="cursor: pointer;">
-                                                 <i class="fa fa-trash" style="color:white"></i>
-                                             </button>
+                                             <div class="d-flex justify-content-center align-items-center gap-2" style="flex-wrap: nowrap;">
+                                                 <button type="button" class="btn btn-link p-0 align-middle"
+                                                         ng-click="ViewUpdate(item.id)" title="Editar" style="cursor: pointer; margin: 0;">
+                                                     <i class="fa fa-edit" style="color:white"></i>
+                                                 </button>
+                                                 <button type="button" class="btn btn-link p-0 align-middle"
+                                                         ng-click="ViewDelete(item.id)" title="Eliminar" aria-label="Eliminar" style="cursor: pointer; margin: 0;">
+                                                     <i class="fa fa-trash" style="color:white"></i>
+                                                 </button>
+                                             </div>
                                          </td>
                                      </tr>
                                  </tbody>
                              </table>
                          </div>
-                         <!-- Paginación tipo DataTable -->
-                         <div class="datatable-pagination mt-3" ng-if="((filteredData || dataset) || []).length >= 5">
-                             <div class="d-flex justify-content-between align-items-center">
-                                 <!-- Información de registros -->
-                                 <div class="d-flex align-items-center">
-                                     <div class="pagination-info mr-3">
-                                         Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, ((filteredData || dataset) || []).length)}} de {{((filteredData || dataset) || []).length}} registros
-                                     </div>
-                                     <div class="d-flex align-items-center">
-                                         <label class="text-muted small mr-2">Filas por página:</label>
-                                         <select class="form-control form-control-sm page-size-select" ng-model="pageSize" ng-init="pageSize = pageSize || 5" ng-change="changePageSize(pageSize)">
-                                             <option ng-value="5">5</option>
-                                             <option ng-value="10">10</option>
-                                             <option ng-value="20">20</option>
-                                             <option ng-value="50">50</option>
-                                             <option ng-value="100">100</option>
-                                         </select>
-                                     </div>
-                                 </div>
-
-                                 <!-- Navegación de páginas -->
-                                 <div class="pagination-controls">
-                                     <!-- Botones de navegación -->
-                                     <div class="btn-group mr-3" role="group">
-                                         <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(0)" title="Primera página">
-                                             <i class="fa fa-angle-double-left"></i>
-                                         </button>
-                                         <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(currentPage-1)" title="Página anterior">
-                                             <i class="fa fa-angle-left"></i>
-                                         </button>
-
-                                         <!-- Números de página -->
-                                         <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
-                                             <button class="btn page-number-btn"
-                                                     ng-repeat="page in getPageNumbers() track by $index"
-                                                     ng-click="goToPage(page)"
-                                                     ng-class="{'btn-secondary': currentPage === page, 'btn-outline-secondary': currentPage !== page}"
-                                                     ng-disabled="page === '...'">
-                                                 {{page}}
-                                             </button>
-                                         </div>
-
-                                         <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(currentPage+1)" title="Página siguiente">
-                                             <i class="fa fa-angle-right"></i>
-                                         </button>
-                                         <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(numberOfPages()-1)" title="Última página">
-                                             <i class="fa fa-angle-double-right"></i>
-                                         </button>
-                                     </div>
-
-                                     <!-- Información de página -->
-                                     <div class="pagination-info">
-                                         Página {{currentPage+1}} de {{numberOfPages()}}
-                                     </div>
-                                 </div>
-                             </div>
-                         </div>
+                        <!-- Paginación tipo DataTable -->
+                        <div class="datatable-pagination mt-3" ng-if="((filteredData || dataset) || []).length >= 5">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <!-- Información de registros -->
+                                <div class="d-flex align-items-center">
+                                    <div class="pagination-info mr-3">
+                                        Mostrando {{(currentPage * pageSize) + 1}} - {{Math.min((currentPage + 1) * pageSize, ((filteredData || dataset) || []).length)}} de {{((filteredData || dataset) || []).length}} registros
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <label class="text-muted small mr-2">Filas por página:</label>
+                                        <select class="form-control form-control-sm page-size-select" ng-model="pageSize" ng-init="pageSize = pageSize || 5" ng-change="changePageSize(pageSize)">
+                                            <option ng-value="5">5</option>
+                                            <option ng-value="10">10</option>
+                                            <option ng-value="20">20</option>
+                                            <option ng-value="50">50</option>
+                                            <option ng-value="100">100</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Navegación de páginas -->
+                                <div class="pagination-controls">
+                                    <!-- Botones de navegación -->
+                                    <div class="btn-group mr-3" role="group">
+                                        <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(0)" title="Primera página">
+                                            <i class="fa fa-angle-double-left"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage == 0" ng-click="goToPage(currentPage-1)" title="Página anterior">
+                                            <i class="fa fa-angle-left"></i>
+                                        </button>
+                                        
+                                        <!-- Números de página -->
+                                        <div class="btn-group" role="group" ng-if="numberOfPages() > 1">
+                                            <button class="btn page-number-btn" 
+                                                    ng-repeat="page in getPageNumbers() track by $index"
+                                                    ng-click="goToPage(page)"
+                                                    ng-class="{'btn-secondary': currentPage === page, 'btn-outline-secondary': currentPage !== page}"
+                                                    ng-disabled="page === '...'">
+                                                {{page}}
+                                            </button>
+                                        </div>
+                                        
+                                        <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(currentPage+1)" title="Página siguiente">
+                                            <i class="fa fa-angle-right"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm" ng-disabled="currentPage+1 == numberOfPages()" ng-click="goToPage(numberOfPages()-1)" title="Última página">
+                                            <i class="fa fa-angle-double-right"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Información de página -->
+                                    <div class="pagination-info">
+                                        Página {{currentPage+1}} de {{numberOfPages()}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                      </div>
 
                      <div ng-if="ViewAction==='Nuevo Usuario'">
@@ -585,18 +604,18 @@
                                              <span ng-show="userForm.view_user.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_user.$error.required || userForm.view_user.$dirty && userForm.view_user.$error.required" class="text-danger">Usuario requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_pass"><span class="text-danger">*</span> Contraseóa</label>
+                                             <label for="view_pass"><span class="text-danger">*</span> Contraseña</label>
                                              <input ng-pattern="/^[a-zA-Z0-9._%+\-\sóóóóóóóóóóóóóó]*$/" ng-minlength="8" ng-maxlength="20" class="col-8 form-control" type="password" id="view_pass" name="view_pass" ng-model="view_pass" placeholder="Ingrese contraseóa" required>
                                              <span ng-show="userForm.view_pass.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_pass.$error.required || userForm.view_pass.$dirty && userForm.view_pass.$error.required" class="text-danger">Contraseóa requerida.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                             <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç\s]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                             <input ng-pattern="/^[a-zA-Zóóóóóóóóóóóó ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                              <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_nombre.$error.required || userForm.view_nombre.$dirty && userForm.view_nombre.$error.required" class="text-danger">Nombre requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_apellido"><span class="text-danger">*</span> Apellido</label>
-                                             <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç\s]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
+                                             <input ng-pattern="/^[a-zA-Zóóóóóóóóóóóó ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
                                              <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_apellido.$error.required || userForm.view_apellido.$dirty && userForm.view_apellido.$error.required" class="text-danger">Apellido requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -616,18 +635,7 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_cuil">CUIL</label>
-                                             <input class="col-8 form-control"
-                                                    type="text"
-                                                    id="view_cuil"
-                                                    name="view_cuil"
-                                                    ng-model="view_cuil"
-                                                    placeholder="XX-XXXXXXXXX-X"
-                                                    maxlength="13"
-                                                    ng-pattern="/^[0-9]{2}-[0-9]{8}-[0-9]{1}$/"
-                                                    onkeypress="return (event.charCode >= 48 && event.charCode <= 57)"
-                                                    oninput="formatCUIL(this)"
-                                                    required>
-                                             <span ng-show="userForm.view_cuil.$error.pattern" class="text-danger">Formato inválido. Use: XX-XXXXXXXXX-X</span>
+                                             <input class="col-8 form-control" type="text" id="view_cuil" name="view_cuil" ng-model="view_cuil" placeholder="Ingrese cuil" required>
                                              <span ng-show="userForm.$submitted && userForm.view_cuil.$error.required || userForm.view_cuil.$dirty && userForm.view_cuil.$error.required" class="text-danger">CUIL requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -639,11 +647,11 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_contrato">Contrato</label>
-                                             <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.\s]*$/" ng-maxlength="20" class="col-8 form-control" type="text" id="view_contrato" name="view_contrato" ng-model="view_contrato" placeholder="Ingrese tipo de contrato" required>
+                                             <input ng-pattern="/^[a-zA-Z0-9ó. ]*$/" ng-maxlength="20" class="col-8 form-control" type="text" id="view_contrato" name="view_contrato" ng-model="view_contrato" placeholder="Ingrese tipo de contrato" required>
                                              <span ng-show="userForm.view_contrato.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_contrato.$error.required || userForm.view_contrato.$dirty && userForm.view_contrato.$error.required" class="text-danger">Contrato requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_bonificacion">Bonificacion</label>
+                                             <label for="view_bonificacion">Bonificación</label>
                                              <input class="col-8 form-control" type="number" id="view_bonificacion" name="view_bonificacion" ng-model="view_bonificacion" placeholder="Ingrese bonificacion" min="0" value="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
                                              <span ng-show="userForm.$submitted && userForm.view_bonificacion.$error.required || userForm.view_bonificacion.$dirty && userForm.view_bonificacion.$error.required" class="text-danger">Bonificacion requerida, aclarar 0 si no tiene</span>
                                          </div>
@@ -676,7 +684,7 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_domicilio"><span class="text-danger">*</span> Domicilio</label>
-                                             <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.,;:()_%+\-\s]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
+                                             <input ng-pattern="/^[a-zA-Z0-9óóóóóóóóóóóó \.]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
                                              <span ng-show="userForm.view_domicilio.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_domicilio.$error.required || userForm.view_domicilio.$dirty && userForm.view_domicilio.$error.required" class="text-danger">Domicilio requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -713,10 +721,10 @@
                      <div ng-if="ViewAction==='Editar Usuario'">
                          <div class="container-fluid">
                              <!-- Indicador de sección -->
-                             <div class="alert alert-info mb-3" role="alert">
-                                 <i class="fa fa-edit mr-2"></i>
-                                 <strong>Editando usuario</strong> - Modifique los campos necesarios y guarde los cambios.
-                             </div>
+                            <div class="alert alert-info mb-3" role="alert">
+                                <i class="fa fa-edit mr-2"></i>
+                                <strong>Editando usuario</strong> - Modifique los campos necesarios y guarde los cambios.
+                            </div>
                              <div class="dishes-text col-12">
                                  <form class="form-group row" name="userForm" ng-submit="ModelUpdate(userForm.$valid,view_id)" novalidate>
                                      <div class="col-6">
@@ -732,12 +740,12 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_nombre"><span class="text-danger">*</span> Nombre</label>
-                                             <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç\s]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
+                                             <input ng-pattern="/^[a-zA-Zóóóóóóóóóóóó ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_nombre" name="view_nombre" ng-model="view_nombre" placeholder="Ingrese nombre" required>
                                              <span ng-show="userForm.view_nombre.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_nombre.$error.required || userForm.view_nombre.$dirty && userForm.view_nombre.$error.required" class="text-danger">Nombre requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_apellido"><span class="text-danger">*</span> Apellido</label>
-                                             <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç\s]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
+                                             <input ng-pattern="/^[a-zA-Zóóóóóóóóóóóó ]*$/" ng-minlength="2" ng-maxlength="20" class="col-8 form-control" type="text" id="view_apellido" name="view_apellido" ng-model="view_apellido" placeholder="Ingrese apellido" required>
                                              <span ng-show="userForm.view_apellido.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_apellido.$error.required || userForm.view_apellido.$dirty && userForm.view_apellido.$error.required" class="text-danger">Apellido requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -756,18 +764,7 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_cuil">CUIL</label>
-                                             <input class="col-8 form-control"
-                                                    type="text"
-                                                    id="view_cuil"
-                                                    name="view_cuil"
-                                                    ng-model="view_cuil"
-                                                    placeholder="XX-XXXXXXXXX-X"
-                                                    maxlength="13"
-                                                    ng-pattern="/^[0-9]{2}-[0-9]{8}-[0-9]{1}$/"
-                                                    onkeypress="return (event.charCode >= 48 && event.charCode <= 57)"
-                                                    oninput="formatCUIL(this)"
-                                                    required>
-                                             <span ng-show="userForm.view_cuil.$error.pattern" class="text-danger">Formato inválido. Use: XX-XXXXXXXXX-X</span>
+                                             <input class="col-8 form-control" type="text" id="view_cuil" name="view_cuil" ng-model="view_cuil" placeholder="Ingrese cuil" required>
                                              <span ng-show="userForm.$submitted && userForm.view_cuil.$error.required || userForm.view_cuil.$dirty && userForm.view_cuil.$error.required" class="text-danger">CUIL requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -778,7 +775,7 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_contrato">Contrato</label>
-                                             <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.\s]*$/" ng-maxlength="20" class="col-8 form-control" type="text" id="view_contrato" name="view_contrato" ng-model="view_contrato" placeholder="Ingrese tipo de contrato" required>
+                                             <input ng-pattern="/^[a-zA-Z0-9ó. ]*$/" ng-maxlength="20" class="col-8 form-control" type="text" id="view_contrato" name="view_contrato" ng-model="view_contrato" placeholder="Ingrese tipo de contrato" required>
                                              <span ng-show="userForm.view_contrato.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_contrato.$error.required || userForm.view_contrato.$dirty && userForm.view_contrato.$error.required" class="text-danger">Contrato requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -813,7 +810,7 @@
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_domicilio"><span class="text-danger">*</span> Domicilio</label>
-                                             <input ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.,;:()_%+\-\s]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
+                                             <input ng-pattern="/^[a-zA-Z0-9óóóóóóóóóóóó \.]*$/" ng-maxlength="100" class="col-8 form-control" type="text" id="view_domicilio" name="view_domicilio" ng-model="view_domicilio" placeholder="Ingrese domicilio" required>
                                              <span ng-show="userForm.view_domicilio.$error.pattern" class="text-danger">Caracteres invólidos.</span><span ng-show="userForm.$submitted && userForm.view_domicilio.$error.required || userForm.view_domicilio.$dirty && userForm.view_domicilio.$error.required" class="text-danger">Domicilio requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
@@ -848,10 +845,10 @@
                  </div>
 
              </div>
+             </div>
          </div>
-     </div>
-     <!-- Footer -->
-     <div ng-include="'footer.html'" class="footer-sticky" style="margin-top: auto;"></div>
+         <!-- Footer -->
+    <div ng-include="'footer.html'" class="footer-sticky" style="margin-top: auto;"></div>
      <!-- External JS -->
      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
      <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
@@ -866,50 +863,10 @@
      <!-- Main JS -->
      <!-- Main JS -->
      <!-- Configuración centralizada - DEBE CARGARSE PRIMERO -->
-     <script src="js/config.js"></script>
      <script src="js/angular.min.js"></script>
      <!-- SweetAlert2 v11 -->
      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
      <script src="js/usuario.js?v=3.5"></script>
-
-     <!-- Función para formatear CUIL/CUIT automáticamente -->
-     <script>
-         function formatCUIL(input) {
-             // Remover todos los caracteres que no sean números
-             var value = input.value.replace(/[^0-9]/g, '');
-
-             // Limitar a 11 dígitos (formato CUIL/CUIT: XX-XXXXXXXXX-X)
-             if (value.length > 11) {
-                 value = value.substring(0, 11);
-             }
-
-             // Formatear según la longitud
-             var formatted = '';
-             if (value.length > 0) {
-                 formatted = value.substring(0, 2);
-                 if (value.length > 2) {
-                     formatted += '-' + value.substring(2, 10);
-                 }
-                 if (value.length > 10) {
-                     formatted += '-' + value.substring(10, 11);
-                 }
-             }
-
-             // Actualizar el valor del input
-             input.value = formatted;
-
-             // Actualizar el modelo de AngularJS si existe
-             if (input.attributes['ng-model']) {
-                 var scope = angular.element(input).scope();
-                 if (scope) {
-                     var modelName = input.attributes['ng-model'].value;
-                     scope.$apply(function () {
-                         scope[modelName] = formatted;
-                     });
-                 }
-             }
-         }
-     </script>
  </body>
-</html>
+ </html>

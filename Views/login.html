@@ -623,7 +623,8 @@
         }
         
         /* Ocultar cuando isLoading sea false */
-        .se-pre-con[ng-hide] {
+        .se-pre-con[ng-hide],
+        .se-pre-con.ng-hide {
             display: none !important;
         }
 
@@ -665,7 +666,7 @@
 
 <body ng-controller="Login">
     <!-- Loading spinner -->
-    <div ng-hide="!isLoading" class="se-pre-con"></div>
+    <div ng-show="isLoading" class="se-pre-con"></div>
     
     <div class="container" style="padding-top: 0; height: 100%; width: 100%; display: flex; align-items: center; justify-content: center;">
         <div class="d-flex justify-content-center" style="width: 100%; height: 100%; align-items: center; padding: 20px;">
@@ -753,7 +754,6 @@
     
     
     <!-- Configuración centralizada -->
-    <script src="js/config.js"></script>
     
     <!-- Servicio de bloqueo de usuarios -->
     <script src="js/bloqueo-usuarios-service.js"></script>

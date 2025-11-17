@@ -67,23 +67,6 @@
             margin-top: auto;
         }
         
-        /* Estilos para la columna de acciones en la tabla */
-        td.text-center {
-            white-space: nowrap !important;
-            width: auto !important;
-            min-width: 120px !important;
-        }
-        
-        /* Contenedor de botones de acción */
-        td.text-center .d-flex {
-            gap: 8px !important;
-        }
-        
-        /* Asegurar que los botones de acción no se rompan */
-        td.text-center .btn-sm {
-            flex-shrink: 0 !important;
-        }
-        
         /* Forzar color celeste para la barra de edición */
         .alert-info {
             background-color: #d1ecf1 !important;
@@ -457,10 +440,10 @@
                                     <th>Plato</th>
                                     <th>Turno</th>
                                     <th>Jerarquia</th>
-                                    <th ng-class="{'d-none d-md-table-cell': isMobile}">Plan Nutricional</th>
                                     <th ng-class="{'d-none d-md-table-cell': isMobile}">Proyecto</th>
                                     <th ng-class="{'d-none d-md-table-cell': isMobile}">Centro de costo</th>
                                     <th ng-class="{'d-none d-md-table-cell': isMobile}">Planta</th>
+                                    <th ng-class="{'d-none d-md-table-cell': isMobile}">Plan Nutricional</th>
                                     <th ng-class="{'d-none d-md-table-cell': isMobile}">Estado</th>
                                     <th ng-class="{'d-none d-md-table-cell': isMobile}">Cantidad</th>
                                     <th>Fecha</th>
@@ -472,32 +455,23 @@
                                     <td>{{item.plato}}</td>
                                     <td>{{item.turno}}</td>
                                     <td>{{item.jerarquia}}</td>
-                                    <td ng-class="{'d-none d-md-table-cell': isMobile}">
-                                        <span ng-if="getPlanNutricional(item.plato)" class="badge badge-info">
-                                            {{getPlanNutricional(item.plato)}}
-                                        </span>
-                                        <span ng-if="!getPlanNutricional(item.plato)" class="text-muted">
-                                            <i class="fa fa-minus"></i> Sin plan
-                                        </span>
-                                    </td>
                                     <td ng-class="{'d-none d-md-table-cell': isMobile}">{{item.proyecto}}</td>
                                     <td ng-class="{'d-none d-md-table-cell': isMobile}">{{item.centrodecosto}}</td>
                                     <td ng-class="{'d-none d-md-table-cell': isMobile}">{{item.planta}}</td>
+                                    <td ng-class="{'d-none d-md-table-cell': isMobile}">{{item.plannutricional || item.PlanNutricional || item.plan_nutricional || '-'}}</td>
                                     <td ng-class="{'d-none d-md-table-cell': isMobile}">{{ item.deletemark ? 'Baja' : 'Activo' }}</td>
                                     <td ng-class="{'d-none d-md-table-cell': isMobile}">{{item.cantidad}}</td>
                                     <td>{{item.fechadeldia | formatDateArg}}</td>
                                     <td class="text-center">
-                                        <div class="d-flex justify-content-center align-items-center gap-2" style="flex-wrap: nowrap;">
-                                            <button type="button" class="btn btn-sm" ng-click="ViewUpdate(item.id)" title="Editar" style="background-color: #4A5568; border-color: #4A5568; color: white; width: 35px; height: 35px; padding: 0; border-radius: 4px; margin: 0; flex-shrink: 0;">
-                                                <i class="fa fa-edit"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm" ng-if="item.deletemark" ng-click="ViewActive(item.id, $event)" title="Activar" style="background-color: #10B981; border-color: #10B981; color: white; width: 35px; height: 35px; padding: 0; border-radius: 4px; margin: 0; flex-shrink: 0;">
-                                                <i class="fa fa-check"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm" ng-if="!item.deletemark" ng-click="ViewDelete(item.id, $event)" title="Eliminar" style="background-color: #EF4444; border-color: #EF4444; color: white; width: 35px; height: 35px; padding: 0; border-radius: 4px; margin: 0; flex-shrink: 0;">
-                                                <i class="fa fa-trash"></i>
-                                            </button>
-                                        </div>
+                                        <button type="button" class="btn btn-sm mr-1" ng-click="ViewUpdate(item.id)" title="Editar" style="background-color: #4A5568; border-color: #4A5568; color: white; width: 35px; height: 35px; padding: 0; border-radius: 4px;">
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm" ng-if="item.deletemark" ng-click="ViewActive(item.id, $event)" title="Activar" style="background-color: #10B981; border-color: #10B981; color: white; width: 35px; height: 35px; padding: 0; border-radius: 4px;">
+                                            <i class="fa fa-check"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm" ng-if="!item.deletemark" ng-click="ViewDelete(item.id, $event)" title="Eliminar" style="background-color: #EF4444; border-color: #EF4444; color: white; width: 35px; height: 35px; padding: 0; border-radius: 4px;">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -518,12 +492,12 @@
                                     </div>
                                     <div class="d-flex align-items-center">
                                         <label class="text-muted small mr-2">Filas por página:</label>
-                                        <select class="form-control form-control-sm page-size-select" ng-model="pageSize" ng-change="changePageSize(pageSize)" ng-init="pageSize = 5">
-                                            <option value="5">5</option>
-                                            <option value="10">10</option>
-                                            <option value="20">20</option>
-                                            <option value="50">50</option>
-                                            <option value="100">100</option>
+                                        <select class="form-control form-control-sm page-size-select" ng-model="pageSize" ng-init="pageSize = pageSize || 5" ng-change="changePageSize(pageSize)">
+                                            <option ng-value="5">5</option>
+                                            <option ng-value="10">10</option>
+                                            <option ng-value="20">20</option>
+                                            <option ng-value="50">50</option>
+                                            <option ng-value="100">100</option>
                                         </select>
                                     </div>
                                 </div>
@@ -628,7 +602,7 @@
                                     <div class="pb-3 form-group">
                                         <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del día</label>
                                         <input class="col-8 form-control" type="date" id="view_fechadeldia" name="view_fechadeldia" ng-model="view_fechadeldia" placeholder="Fecha automatica" required>
-                                        <span ng-show="showValidationErrors && !view_fechadeldia" class="text-danger">Campo Fecha del día requerido</span>
+                                        <span ng-show="(!view_fechadeldia || view_fechadeldia.trim() === '') && showValidationErrors" class="text-danger">Campo Fecha del día requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_plato"> Plato</label>
@@ -714,7 +688,7 @@
                                     <div class="pb-3 form-group">
                                         <label for="view_fechadeldia"><span class="text-danger">*</span> Fecha del día</label>
                                         <input class="col-8 form-control" type="date" id="view_fechadeldia" name="view_fechadeldia" ng-model="view_fechadeldia" placeholder="Fecha automatica" required>
-                                        <span ng-show="showValidationErrors && !view_fechadeldia" class="text-danger">Campo Fecha del día requerido</span>
+                                        <span ng-show="(!view_fechadeldia || view_fechadeldia.trim() === '') && showValidationErrors" class="text-danger">Campo Fecha del día requerido</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_plato">Plato</label>
@@ -768,8 +742,8 @@
     <!-- SweetAlert2 JS (antes de tus controladores) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
-    <!-- Configuración centralizada - DEBE CARGARSE ANTES DE LOS SCRIPTS QUE USAN API_BASE_URL -->
-
+    <!-- Configuración centralizada - DEBE CARGARSE ANTES DE LOS SCRIPTS QUE USAN API_BASE_URL
+    <script src="js/config.js"></script>-->
     <!-- Modal para seleccionar platos -->
     <div class="modal fade" id="modalSeleccionarPlato" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalSeleccionarPlatoLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
@@ -788,7 +762,7 @@
                         <div class="col-md-12">
                             <div class="input-group">
                                 <input type="text" class="form-control" ng-model="busquedaPlato"
-                                       placeholder="Buscar plato por nombre, código o plan nutricional...">
+                                       placeholder="Buscar plato por nombre (descripción) o código...">
                                 <div class="input-group-append">
                                     <button class="btn btn-outline-secondary" type="button" ng-click="busquedaPlato = ''">
                                         <i class="fa fa-times"></i>
@@ -805,7 +779,6 @@
                                 <tr>
                                     <th>Código</th>
                                     <th>Descripción</th>
-                                    <th>Plan Nutricional</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>
@@ -816,21 +789,13 @@
                                     <td>{{plato.codigo}}</td>
                                     <td><strong>{{plato.descripcion}}</strong></td>
                                     <td>
-                                        <span ng-if="plato.plannutricional" class="badge badge-info">
-                                            {{plato.plannutricional}}
-                                        </span>
-                                        <span ng-if="!plato.plannutricional" class="text-muted">
-                                            <i class="fa fa-minus"></i> Sin plan
-                                        </span>
-                                    </td>
-                                    <td>
                                         <button class="btn btn-sm btn-outline-primary" ng-click="seleccionarPlato(plato)">
                                             <i class="fa fa-check"></i> Seleccionar
                                         </button>
                                     </td>
                                 </tr>
                                 <tr ng-if="(platosDisponibles | filter:busquedaPlato).length === 0">
-                                    <td colspan="4" class="text-center text-muted">
+                                    <td colspan="3" class="text-center text-muted">
                                         <i class="fa fa-info-circle"></i> No se encontraron platos
                                     </td>
                                 </tr>

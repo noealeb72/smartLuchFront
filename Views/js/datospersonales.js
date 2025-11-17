@@ -2,8 +2,13 @@
 
 app.controller('DatosPersonales', function ($scope, $http, $window) {
     alert("paso datos personales")
-    // Usar la variable de configuración global API_BASE_URL
-    var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+    // Siempre usar puerto 8000, detectando el hostname automáticamente
+    function getApiBaseUrl() {
+        var protocol = window.location.protocol;
+        var hostname = window.location.hostname;
+        return protocol + '//' + hostname + ':8000';
+    }
+    var apiBaseUrl = getApiBaseUrl();
     $scope.base = apiBaseUrl + '/api/usuario/'; // URL base para la API de usuarios
     $scope.user_DNI = localStorage.getItem('dni'); // Obtener el DNI del usuario logueado desde localStorage
 
@@ -75,11 +80,13 @@ app.controller('DatosPersonales', function ($scope, $http, $window) {
                 url: $scope.base + 'Update', // Endpoint de actualización
                 data: jsonForm
             }).then(function (success) {
-                Swal.fire(
-                    'Operación Correcta',
-                    'Los datos personales fueron actualizados con éxito.',
-                    'success'
-                );
+                Swal.fire({
+                    title: 'Operación Correcta',
+                    text: 'Los datos personales fueron actualizados con éxito.',
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#F34949'
+                });
             }).catch(function (error) {
                 console.error('Error al actualizar los datos personales:', error);
                 Swal.fire(

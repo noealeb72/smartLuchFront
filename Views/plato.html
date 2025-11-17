@@ -28,6 +28,28 @@
 
     <!-- Modernizr -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+    
+    <!-- Suprimir warning de Modernizr -->
+    <script>
+        // Suprimir el warning de Modernizr sobre el diseño forzado
+        (function() {
+            if (window.console && window.console.warn) {
+                var originalWarn = window.console.warn;
+                window.console.warn = function() {
+                    var message = arguments[0];
+                    // Suprimir warnings de Modernizr sobre diseño forzado (en español e inglés)
+                    if (typeof message === 'string' && (
+                        message.indexOf('El diseño se forzó') !== -1 ||
+                        message.indexOf('The design was forced') !== -1 ||
+                        message.indexOf('modernizr.js') !== -1 && message.indexOf('stylesheet') !== -1
+                    )) {
+                        return; // Suprimir este warning específico
+                    }
+                    originalWarn.apply(window.console, arguments);
+                };
+            }
+        })();
+    </script>
 
     <style>
         .breadcrumb {
@@ -737,7 +759,6 @@
 
     <!-- App -->
     <!-- Configuración centralizada - DEBE CARGARSE PRIMERO -->
-    <script src="js/config.js"></script>
     <script src="js/angular-base64.js"></script>
 
     <script src="js/plato.js"></script>

@@ -30,6 +30,26 @@
     <link rel="stylesheet" href="css/smartstyle.css" />
     <!-- Modernizr JS for IE8 support of HTML5 elements and media queries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+    <script>
+        // Suprimir el warning de Modernizr sobre el diseño forzado
+        (function() {
+            if (window.console && window.console.warn) {
+                var originalWarn = window.console.warn;
+                window.console.warn = function() {
+                    var message = arguments[0];
+                    // Suprimir warnings de Modernizr sobre diseño forzado (en español e inglés)
+                    if (typeof message === 'string' && (
+                        message.indexOf('El diseño se forzó') !== -1 ||
+                        message.indexOf('The design was forced') !== -1 ||
+                        message.indexOf('modernizr.js') !== -1 && message.indexOf('stylesheet') !== -1
+                    )) {
+                        return; // Suprimir este warning específico
+                    }
+                    originalWarn.apply(window.console, arguments);
+                };
+            }
+        })();
+    </script>
     <style>
         /* Footer siempre abajo */
         html, body {
@@ -441,12 +461,8 @@
             <!-- Navbar -->
             <div ng-include="'navbar.html'"></div>
 
-            <!-- Loading spinner inicial - se muestra antes de AngularJS -->
-            <div id="initial-loading" class="se-pre-con" style="display: flex !important;" role="status" aria-live="polite" aria-label="Cargando contenido">
-                <span class="sr-only">Cargando contenido, por favor espere...</span>
-            </div>
             <!-- Main Content -->
-            <div ng-show="isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido" ng-cloak>
+            <div ng-show="isLoading" class="se-pre-con" role="status" aria-live="polite" aria-label="Cargando contenido">
                 <span class="sr-only">Cargando contenido, por favor espere...</span>
             </div>
             <!-- Welcome Section -->
@@ -599,9 +615,8 @@
                                                 </small>
                                             </div>
                                             <label for="pedidoCalificacion" class="sr-only">Califica tu pedido</label>
-                                            <select class="form-control" id="pedidoCalificacion" ng-model="pedidoCalificacion" aria-label="Selecciona una calificación de 1 a 5 estrellas" style="font-size: 18px; border: 1px solid #ddd; box-shadow: none; background-color: #fff;">
-                                                <option value="" selected disabled>Califica tu pedido!</option>
-                                                <option value="1" style="color: #ffc107; background-color: #fff;">⭐ 1 estrella</option>
+                                            <select class="form-control" id="pedidoCalificacion" ng-model="pedidoCalificacion" ng-init="pedidoCalificacion = 1" aria-label="Selecciona una calificación de 1 a 5 estrellas" style="font-size: 18px; border: 1px solid #ddd; box-shadow: none; background-color: #fff;">
+                                                <option value="1" selected style="color: #ffc107; background-color: #fff;">⭐ 1 estrella</option>
                                                 <option value="2" style="color: #ffc107; background-color: #fff;">⭐⭐ 2 estrellas</option>
                                                 <option value="3" style="color: #ffc107; background-color: #fff;">⭐⭐⭐ 3 estrellas</option>
                                                 <option value="4" style="color: #ffc107; background-color: #fff;">⭐⭐⭐⭐ 4 estrellas</option>
@@ -736,9 +751,11 @@
                                                 </div>
 
                                                 <div class="col-sm-6">
-                                                    <qr ng-if="tipoVisualizacionCodigo === 'QR' && pedido.datoQR" correction-level="'M'" size="200" text="pedido.datoQR" class="ng-isolate-scope"></qr>
+                                                    <div style="display: flex; justify-content: center; align-items: center; max-width: 100%; overflow: hidden;">
+                                                        <qr ng-if="tipoVisualizacionCodigo === 'QR' && pedido.datoQR" correction-level="'M'" size="150" text="pedido.datoQR" class="ng-isolate-scope" style="max-width: 100%; height: auto;"></qr>
+                                                    </div>
 
-                                                    <svg ng-if="tipoVisualizacionCodigo === 'Barra' && pedido.datoQR" id="barcode-{{pedido.user_npedido}}"></svg>
+                                                    <svg ng-if="tipoVisualizacionCodigo === 'Barra' && pedido.datoQR" id="barcode-{{pedido.user_npedido}}" style="max-width: 100%; height: auto;"></svg>
 
                                                 </div>
                                             </div>
@@ -935,8 +952,7 @@
         <script src="js/qrcode.min.js"></script>
         <script src="js/angular-qr.min.js"></script>
         <!-- Configuración centralizada - DEBE CARGARSE PRIMERO -->
-        <script src="js/config.js"></script>
-        <script src="js/index.js"></script>
+        <script src="js/index-n.js"></script>
 
 
     </div>

@@ -8,8 +8,13 @@ app.filter('startFrom', function () {
 });
 
 app.controller('Calificacion', function ($scope, $sce, $http, $window) {
-	// Usar la variable de configuración global API_BASE_URL
-	var apiBaseUrl = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000';
+	// Siempre usar puerto 8000, detectando el hostname automáticamente
+	function getApiBaseUrl() {
+		var protocol = window.location.protocol;
+		var hostname = window.location.hostname;
+		return protocol + '//' + hostname + ':8000';
+	}
+	var apiBaseUrl = getApiBaseUrl();
 	$scope.base = apiBaseUrl + '/api/plannutricional/';
 	
 	// -------- Loading State ----------
@@ -45,11 +50,13 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				Swal.fire(
-					'Operación Correcta',
-					'',
-					'success'
-				);
+				Swal.fire({
+					title: 'Operación Correcta',
+					text: '',
+					icon: 'success',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#F34949'
+				});
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
@@ -131,11 +138,13 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				Swal.fire(
-					'Operación Correcta',
-					'',
-					'success'
-				);
+				Swal.fire({
+					title: 'Operación Correcta',
+					text: '',
+					icon: 'success',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#F34949'
+				});
 				$scope.ModelReadAll();
 			}
 		}, function (error) {
@@ -160,11 +169,13 @@ app.controller('Calificacion', function ($scope, $sce, $http, $window) {
 			data: jsonForm
 		}).then(function (success) {
 			if (success) {
-				Swal.fire(
-					'Operación Correcta',
-					'',
-					'success'
-				);
+				Swal.fire({
+					title: 'Operación Correcta',
+					text: '',
+					icon: 'success',
+					confirmButtonText: 'Aceptar',
+					confirmButtonColor: '#F34949'
+				});
 				$scope.ModelReadAll();
 			}
 		}, function (error) {

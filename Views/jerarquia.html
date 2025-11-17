@@ -25,7 +25,8 @@
     <style>
         /* Estilos para mantener el footer en la parte inferior */
         html, body {
-            height: 100%;
+            height: auto;
+            min-height: 100%;
             margin: 0;
             padding: 0;
         }
@@ -323,34 +324,40 @@
             background-color: white !important;
         }
 
-        /* Eliminar scroll horizontal y vertical */
+        /* Permitir scroll vertical, ocultar scroll horizontal */
         html, body {
             overflow-x: hidden !important;
-            overflow-y: hidden !important;
+            overflow-y: auto !important;
+            height: auto !important;
+            min-height: 100vh !important;
         }
 
-        /* Asegurar que no haya scroll en el contenedor principal */
+        /* Permitir scroll en el contenedor principal */
         .container-fluid {
-            overflow: hidden !important;
-            max-height: 100vh !important;
+            overflow-x: hidden !important;
+            overflow-y: visible !important;
+            min-height: calc(100vh - 200px) !important;
         }
 
-            /* Asegurar que no haya scroll en el contenedor de la tabla */
+            /* Permitir scroll en el contenedor de la tabla */
             .container-fluid.mr-3 {
-                overflow: hidden !important;
-                max-height: calc(100vh - 200px) !important;
+                overflow-x: hidden !important;
+                overflow-y: visible !important;
+                min-height: calc(100vh - 200px) !important;
             }
 
-        /* Asegurar que la tabla use solo paginado, sin scroll */
+        /* Permitir scroll en la tabla si es necesario */
         .table-responsive {
-            overflow: hidden !important;
-            max-height: 60vh !important;
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+            max-height: none !important;
         }
 
-        /* Asegurar que el contenido no cause scroll */
+        /* Permitir scroll en el contenido */
         .solid-background {
-            overflow: hidden !important;
-            max-height: 100vh !important;
+            overflow-x: hidden !important;
+            overflow-y: visible !important;
+            min-height: 100vh !important;
         }
     </style>
 
@@ -371,7 +378,7 @@
             <div class="heading-section bg-dark text-white pt-2 pl-3">
                 <div class="row">
                     <div class="col-md-8">
-                        <h3 class="mb-0">Jerarquia</h3>
+                        <h3 class="mb-0">Jerarquía</h3>
                     </div>
                     <div class="col-md-4">
                         <nav aria-label="breadcrumb" ng-if="ViewAction !== 'Lista de Items'">
@@ -513,7 +520,7 @@
                         <div class="container-fluid">
                             <div class="alert alert-info mb-3" role="alert">
                                 <i class="fa fa-info-circle mr-2"></i>
-                                <strong>Creando nueva jerarquóa</strong> - Complete los campos obligatorios para guardar.
+                                <strong>Creando nueva jerarquía</strong> - Complete los campos obligatorios para guardar.
                             </div>
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="jerarquiaForm" ng-submit="ModelCreate(jerarquiaForm.$valid, jerarquiaForm)" novalidate>
@@ -586,7 +593,7 @@
                         <div class="container-fluid">
                             <div class="alert alert-info mb-3" role="alert">
                                 <i class="fa fa-edit mr-2"></i>
-                                <strong>Editando jerarquóa</strong> - Modifique los campos necesarios y guarde los cambios.
+                                <strong>Editando jerarquía</strong> - Modifique los campos necesarios y guarde los cambios.
                             </div>
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="jerarquiaForm" ng-submit="ModelUpdate(jerarquiaForm.$valid, view_id, jerarquiaForm)" novalidate>
@@ -687,7 +694,6 @@
 
     <!-- Main JS -->
     <!-- Configuración centralizada - DEBE CARGARSE PRIMERO -->
-    <script src="js/config.js"></script>
     <script src="js/angular.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 

@@ -201,7 +201,7 @@ function showInfoToast(msg) {
 
 app.controller('Index', function ($scope, $sce, $http, $window, $timeout) {
 	////////////////////////////////////////////////HTTP////////////////////////////////////////////////
-	$scope.isLoading = true;
+	$scope.isLoading = false;
 
 	// Fecha y hora actual para navbar
 	$scope.currentDateTime = new Date().toLocaleString('es-AR');
