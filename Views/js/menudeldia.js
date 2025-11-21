@@ -136,6 +136,14 @@ app.controller('Menudeldia', function ($scope, $sce, $http, $window, $timeout) {
     $scope.filtroDesde = null;
     $scope.filtroHasta = null;
     $scope.filtroTurno = '';
+    
+    // Debounced filter function
+    $scope.debouncedFilter = window.debounce ? window.debounce(function() {
+        // Trigger digest cycle
+        if (!$scope.$$phase) {
+            $scope.$apply();
+        }
+    }, 300) : function() {};
 
     // Bases para combos
     $scope.basePlatos = apiBaseUrl + '/api/plato/';

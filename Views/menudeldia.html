@@ -468,7 +468,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-repeat="item in getFilteredDataset() | startFrom:currentPage*pageSize | limitTo:pageSize">
+                                <tr ng-repeat="item in getFilteredDataset() | startFrom:currentPage*pageSize | limitTo:pageSize track by item.id">
                                     <td>{{item.plato}}</td>
                                     <td>{{item.turno}}</td>
                                     <td>{{item.jerarquia}}</td>
@@ -489,14 +489,14 @@
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center align-items-center gap-2" style="flex-wrap: nowrap;">
                                             <button type="button" class="btn btn-sm" ng-click="ViewUpdate(item.id)" title="Editar" style="background-color: #4A5568; border-color: #4A5568; color: white; width: 35px; height: 35px; padding: 0; border-radius: 4px; margin: 0; flex-shrink: 0;">
-                                                <i class="fa fa-edit"></i>
-                                            </button>
+                                            <i class="fa fa-edit"></i>
+                                        </button>
                                             <button type="button" class="btn btn-sm" ng-if="item.deletemark" ng-click="ViewActive(item.id, $event)" title="Activar" style="background-color: #10B981; border-color: #10B981; color: white; width: 35px; height: 35px; padding: 0; border-radius: 4px; margin: 0; flex-shrink: 0;">
-                                                <i class="fa fa-check"></i>
-                                            </button>
+                                            <i class="fa fa-check"></i>
+                                        </button>
                                             <button type="button" class="btn btn-sm" ng-if="!item.deletemark" ng-click="ViewDelete(item.id, $event)" title="Eliminar" style="background-color: #EF4444; border-color: #EF4444; color: white; width: 35px; height: 35px; padding: 0; border-radius: 4px; margin: 0; flex-shrink: 0;">
-                                                <i class="fa fa-trash"></i>
-                                            </button>
+                                            <i class="fa fa-trash"></i>
+                                        </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -810,7 +810,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-repeat="plato in platosDisponibles | filter:busquedaPlato"
+                                <tr ng-repeat="plato in platosDisponibles | filter:busquedaPlato track by plato.codigo"
                                     ng-click="seleccionarPlato(plato)"
                                     style="cursor: pointer;">
                                     <td>{{plato.codigo}}</td>

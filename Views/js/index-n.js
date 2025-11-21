@@ -134,6 +134,12 @@ app.controller('Index', function ($scope, $http, $timeout, $window) {
 		return; // Detener la ejecución del controlador
 	}
 	
+	// Helper para escapar saltos de línea en strings (previene errores de sintaxis)
+	function escapeString(str) {
+		if (!str || typeof str !== 'string') return str || '';
+		return str.replace(/\r\n/g, '\\n').replace(/\n/g, '\\n').replace(/\r/g, '\\n');
+	}
+	
 	// === Función para cargar turnos disponibles ===
 	$scope.cargarTurnos = function() {
 		console.log('🔄 Iniciando carga de turnos...');
@@ -173,9 +179,9 @@ app.controller('Index', function ($scope, $http, $timeout, $window) {
 					mensajeError = 'Error de conexión';
 					detalleError = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:8000.';
 				} else if (error.data) {
-					detalleError = typeof error.data === 'string' ? error.data : JSON.stringify(error.data);
+					detalleError = typeof error.data === 'string' ? escapeString(error.data) : JSON.stringify(error.data);
 				} else {
-					detalleError = error.statusText || 'Error desconocido';
+					detalleError = escapeString(error.statusText || 'Error desconocido');
 				}
 				
 				if (typeof Swal !== 'undefined' && Swal.fire) {
@@ -411,9 +417,9 @@ app.controller('Index', function ($scope, $http, $timeout, $window) {
 				mensajeError = 'Error del servidor';
 				detalleError = 'El servidor respondió con un error. Status: ' + error.status;
 			} else if (error.data) {
-				detalleError = typeof error.data === 'string' ? error.data : JSON.stringify(error.data);
+				detalleError = typeof error.data === 'string' ? escapeString(error.data) : JSON.stringify(error.data);
 			} else {
-				detalleError = error.statusText || 'Error desconocido';
+				detalleError = escapeString(error.statusText || 'Error desconocido');
 			}
 			
 			// Mostrar error con SweetAlert si está disponible
@@ -600,7 +606,7 @@ app.controller('Index', function ($scope, $http, $timeout, $window) {
 							if (typeof Swal !== 'undefined' && Swal.fire) {
 								Swal.fire({
 									title: 'Error',
-									text: mensajeSmatTime || "El usuario no tiene fichadas en SmarTime",
+									text: escapeString(mensajeSmatTime || "El usuario no tiene fichadas en SmarTime"),
 									icon: 'error',
 									confirmButtonText: 'Aceptar',
 									confirmButtonColor: '#F34949'
@@ -612,7 +618,7 @@ app.controller('Index', function ($scope, $http, $timeout, $window) {
 						if (typeof Swal !== 'undefined' && Swal.fire) {
 							Swal.fire({
 								title: 'Error',
-								text: "Error al obtener SmarTime: " + error.statusText,
+								text: "Error al obtener SmarTime: " + escapeString(error.statusText || ''),
 								icon: 'error',
 								confirmButtonText: 'Aceptar',
 								confirmButtonColor: '#F34949'

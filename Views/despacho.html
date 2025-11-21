@@ -299,6 +299,7 @@
                         <label for="buscarPlato">Buscar</label>
                         <div class="input-group">
                             <input type="text" class="form-control" ng-model="searchText"
+                                   ng-change="debouncedSearch()"
                                    title="Buscar pedidos"
                                    id="buscarPlato"
                                    placeholder="Buscar pedidos...">

@@ -132,6 +132,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controllers\ConfigController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Controllers\MenuddController.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
@@ -148,6 +149,10 @@
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Content\Site.css" />
     <Content Include="Views\footer.html" />
+    <Content Include="Views\js\auth.helper.js" />
+    <Content Include="Views\js\auth.service.js" />
+    <Content Include="Views\js\config.service.js" />
+    <Content Include="Views\js\index-n.js" />
     <Content Include="Views\navbar.html" />
     <Content Include="Views\img\loading.gif" />
     <Content Include="Views\js\angular-qr.min.js" />
@@ -231,6 +236,7 @@
     <Content Include="Views\vendor\stellar\jquery.stellar.js" />
     <Content Include="Web.config" />
     <Content Include="Global.asax" />
+    <Content Include="Views\config.json" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -240,8 +246,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="App_Start\" />
-    <Folder Include="Controllers\" />
     <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>

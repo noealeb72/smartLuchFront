@@ -405,8 +405,8 @@
             <div class="container-fluid" style="margin-top: 0 !important;">
 
                 <!-- Agregar -->
-                <div class="dishes-text row mb-2" style="display: none;">
-                    <div class="col text-right" ng-show="ViewAction !== 'Nueva Jerarquia' && ViewAction !== 'Editar Jerarquia'">
+                <div class="dishes-text row mb-2">
+                    <div class="col text-right" ng-show="ViewAction === 'Lista de Items'">
                         <button type="button" class="btn btn-primary mb-2 mr-3"
                                 ng-click="ViewCreate()"
                                 style="padding: 0.25rem 0.75rem;">
@@ -438,7 +438,7 @@
                             <table class="table table-hover table-sm">
                                 <thead style="font-size: 14px;">
                                     <tr class="bg-dark text-white">
-                                        <th class="col-3">Perfil</th>
+                                        <th class="col-3">Jerarquía</th>
                                         <th class="col-5">Descripción</th>
                                         <th class="col-2">Bonificación (%)</th>
                                         <th class="text-center col-2">Acciones</th>
@@ -454,12 +454,14 @@
                                                     ng-click="ViewUpdate(item.id)" title="Editar" style="cursor: pointer;">
                                                 <i class="fa fa-edit" style="color:white"></i>
                                             </button>
-                                            <!-- Eliminar
                                             <button type="button" class="btn btn-link p-0 align-middle ml-2"
-                                                    ng-click="ViewDelete(item.id)" title="Eliminar" aria-label="Eliminar" style="cursor: pointer;">
+                                                    ng-click="ViewDelete(item.id)" 
+                                                    title="Eliminar" 
+                                                    aria-label="Eliminar" 
+                                                    style="cursor: pointer;"
+                                                    ng-show="!esPerfilFijo(item.nombre)">
                                                 <i class="fa fa-trash" style="color:white"></i>
-                                            </button>-->
-
+                                            </button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -525,16 +527,23 @@
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="jerarquiaForm" ng-submit="ModelCreate(jerarquiaForm.$valid, jerarquiaForm)" novalidate>
                                     <div class="pb-3 form-group">
-                                        <label for="view_perfil">Perfil</label>
-                                        <select class="col-8 form-control"
-                                                id="view_perfil"
-                                                name="view_perfil"
-                                                ng-model="view_perfil">
-                                            <option value="Admin">Admin</option>
-                                            <option value="Cocina">Cocina</option>
-                                            <option value="Comensal">Comensal</option>
-                                            <option value="Gerencia">Gerencia</option>
-                                        </select>
+                                        <label for="view_perfil"><span class="text-danger">*</span> Jerarquía</label>
+                                        <input type="text"
+                                               class="col-8 form-control"
+                                               id="view_perfil"
+                                               name="view_perfil"
+                                               ng-model="view_perfil"
+                                               ng-pattern="/^[A-Za-zÁÉÍÓÚáéíóúÑñÜüÀàÈèÌìÒòÙùÂâÊêÎîÔôÛûÃãÕõÇç0-9.,;:()_%+\-\s]*$/"
+                                               ng-minlength="2"
+                                               ng-maxlength="50"
+                                               placeholder="Ingrese nombre de jerarquía"
+                                               required />
+                                        <small class="text-muted">
+                                            <strong>No se puede usar:</strong> Admin, Cocina, Comensal, Gerencia (nombres reservados del sistema).
+                                        </small>
+                                        <span ng-show="jerarquiaForm.view_perfil.$error.pattern" class="text-danger">Caracteres inválidos.</span>
+                                        <span ng-show="showValidationErrors && (!view_perfil || view_perfil.trim() === '')" class="text-danger">Campo Jerarquía requerido</span>
+                                        <span ng-show="showValidationErrors && esPerfilFijo(view_perfil)" class="text-danger">No se puede usar este nombre porque es una jerarquía reservada del sistema.</span>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
@@ -561,7 +570,7 @@
                                                required />
 
                                         <!-- Mensajes -->
-                                        <span ng-show="showValidationErrors && (!view_bonificacion || view_bonificacion === '' || view_bonificacion === null)" class="text-danger">Campo Porcentaje de bonificación requerido</span>
+                                        <span ng-show="showValidationErrors && (view_bonificacion === '' || view_bonificacion === null || view_bonificacion === undefined)" class="text-danger">Campo Porcentaje de bonificación requerido</span>
                                         <small class="text-danger"
                                                ng-show="jerarquiaForm.view_bonificacion.$submitted && (jerarquiaForm.view_bonificacion.$error.min || view_bonificacion < 0)">
                                             Debe ser un nómero entre 0 y 100.
@@ -598,16 +607,18 @@
                             <div class="dishes-text col-12">
                                 <form class="form-group" name="jerarquiaForm" ng-submit="ModelUpdate(jerarquiaForm.$valid, view_id, jerarquiaForm)" novalidate>
                                     <div class="pb-3 form-group">
-                                        <label for="view_perfil">Perfil</label>
-                                        <select class="col-8 form-control"
-                                                id="view_perfil"
-                                                name="view_perfil"
-                                                ng-model="view_perfil">
-                                            <option value="Admin">Admin</option>
-                                            <option value="Cocina">Cocina</option>
-                                            <option value="Comensal">Comensal</option>
-                                            <option value="Gerencia">Gerencia</option>
-                                        </select>
+                                        <label for="view_perfil">Jerarquía</label>
+                                        <input type="text"
+                                               class="col-8 form-control"
+                                               id="view_perfil"
+                                               name="view_perfil"
+                                               ng-model="view_perfil"
+                                               ng-readonly="esPerfilFijo(view_perfil)"
+                                               placeholder="Jerarquía" />
+
+                                        <small class="text-muted" ng-if="esPerfilFijo(view_perfil)">
+                                            Este valor no puede ser modificado.
+                                        </small>
                                     </div>
                                     <div class="pb-3 form-group">
                                         <label for="view_descripcion"><span class="text-danger">*</span> Descripción</label>
@@ -634,7 +645,7 @@
                                                required />
 
                                         <!-- Mensajes -->
-                                        <span ng-show="showValidationErrors && (!view_bonificacion || view_bonificacion === '' || view_bonificacion === null)" class="text-danger">Campo Porcentaje de bonificación requerido</span>
+                                        <span ng-show="showValidationErrors && (view_bonificacion === '' || view_bonificacion === null || view_bonificacion === undefined)" class="text-danger">Campo Porcentaje de bonificación requerido</span>
                                         <small class="text-danger"
                                                ng-show="jerarquiaForm.view_bonificacion.$submitted && (jerarquiaForm.view_bonificacion.$error.min || view_bonificacion < 0)">
                                             Debe ser un nómero entre 0 y 100.
@@ -704,3 +715,14 @@
 
 </body>
 </html>
+<script>
+    // Perfiles fijos que NO se pueden editar ni eliminar
+    var perfilesFijos = ['Admin', 'Cocina', 'Comensal', 'Gerencia'];
+
+    // Creamos una función global para usarla desde el HTML (como respaldo)
+    // La función principal está en el scope de Angular (jerarquia.js)
+    function esPerfilFijo(valor) {
+        if (!valor) return false;
+        return perfilesFijos.includes(valor.toString().trim());
+    }
+</script>

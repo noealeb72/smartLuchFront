@@ -450,6 +450,14 @@ app.controller('Despacho', function ($scope, $sce, $http, $window) {
 	$scope.currentPage = 0;
 	$scope.pageSize = 5; // Por defecto 5 filas (número)
 	$scope.searchText = '';
+	
+	// Debounced search function
+	$scope.debouncedSearch = window.debounce ? window.debounce(function() {
+		// Trigger digest cycle
+		if (!$scope.$$phase) {
+			$scope.$apply();
+		}
+	}, 300) : function() {};
 
 	$scope.numberOfPages = function () {
 		var arr = ($scope.dataset || []);

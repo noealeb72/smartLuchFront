@@ -489,7 +489,7 @@
                                          <th class="col-1">Nombre</th>
                                          <th class="col-1">Apellido</th>
                                          <th class="col-1">Legajo</th>
-                                         <th class="d-none d-md-table-cell">Perfil</th>
+                                         <th class="d-none d-md-table-cell">Jerarquía</th>
                                          <!-- <th class="d-none d-md-table-cell">Cuil</th>-->
                                          <th class="d-none d-md-table-cell">Plan Nutricional</th>
                                          <th class="d-none d-md-table-cell">Planta</th>
@@ -624,14 +624,11 @@
                                              <span ng-show="userForm.$submitted && userForm.view_legajo.$error.required || userForm.view_legajo.$dirty && userForm.view_legajo.$error.required" class="text-danger">Legajo requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_perfil">Perfil</label>
+                                             <label for="view_perfil">Jerarquía</label>
                                              <select class="col-8 form-control" id="view_perfil" ng-model="view_perfil" required>
-                                                 <option value="Admin">Admin</option>
-                                                 <option value="Cocina">Cocina</option>
-                                                 <option value="Comensal">Comensal</option>
-                                                 <option value="Gerencia">Gerencia</option>
+                                                 <option ng-repeat="jerarquia in jerarquias" value="{{jerarquia.perfil || jerarquia.nombre}}">{{jerarquia.perfil || jerarquia.nombre}}</option>
                                              </select>
-                                             <span ng-show="(userForm.$submitted || userForm.view_perfil.$dirty) && !view_perfil" class="text-danger">Perfil requerido.</span>
+                                             <span ng-show="(userForm.$submitted || userForm.view_perfil.$dirty) && !view_perfil" class="text-danger">Jerarquía requerida.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_cuil">CUIL</label>
@@ -754,13 +751,11 @@
                                              <span ng-show="userForm.$submitted && userForm.view_legajo.$error.required || userForm.view_legajo.$dirty && userForm.view_legajo.$error.required" class="text-danger">Legajo requerido.</span>
                                          </div>
                                          <div class="pb-3 form-group">
-                                             <label for="view_perfil">Perfil</label>
+                                             <label for="view_perfil">Jerarquía</label>
                                              <select class="col-8 form-control" id="view_perfil" ng-model="view_perfil" required>
-                                                 <option value="Admin">Admin</option>
-                                                 <option value="Gerencia">Gerencia</option>
-                                                 <option value="Cocina">Cocina</option>
-                                                 <option value="Comensal">Comensal</option>
+                                                 <option ng-repeat="jerarquia in jerarquias" value="{{jerarquia.perfil || jerarquia.nombre}}">{{jerarquia.perfil || jerarquia.nombre}}</option>
                                              </select>
+                                             <span ng-show="(userForm.$submitted || userForm.view_perfil.$dirty) && !view_perfil" class="text-danger">Jerarquía requerida.</span>
                                          </div>
                                          <div class="pb-3 form-group">
                                              <label for="view_cuil">CUIL</label>

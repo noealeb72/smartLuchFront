@@ -1,53 +1,53 @@
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Configuration;
 using System.Web.Http;
-using System.Web.Http.Cors;
 
 namespace smartlunch_web.Controllers
 {
-    [EnableCors(origins: "*", headers: "*", methods: "*")]
+    [RoutePrefix("api/config")]
     public class ConfigController : ApiController
     {
         [HttpGet]
-        [Route("api/config/get")]
+        [Route("get")]
         public IHttpActionResult GetConfig()
         {
             try
             {
-                // IMPORTANTE: ConfigurationManager.AppSettings lee del Web.config del proyecto
-                // donde está corriendo la aplicación (raíz del proyecto)
-                
-                // Obtener la URL base del servidor actual
-                var request = Request;
-                var baseUrl = request.RequestUri.GetLeftPart(System.UriPartial.Authority);
-                
-                // Leer API_BASE_URL desde Web.config del proyecto
-                // Si está configurado en Web.config, usarlo; si no, usar la URL actual
+                // 1) API_BASE_URL
                 var apiBaseUrl = ConfigurationManager.AppSettings["API_BASE_URL"];
                 if (string.IsNullOrWhiteSpace(apiBaseUrl))
                 {
-                    // Usar la URL del servidor actual (puerto 80 en producción, 8000 en desarrollo)
-                    apiBaseUrl = baseUrl;
+                    return BadRequest("No está definido 'API_BASE_URL' en el Web.config de smartlunch-web.");
                 }
 
-                // Obtener configuración de bloqueo de usuarios desde Web.config del proyecto
-                var bloqueoUsuarios = new Dictionary<string, bool>
+                // 2) URL_HOME
+                var urlHome = ConfigurationManager.AppSettings["URL_HOME"];
+                if (string.IsNullOrWhiteSpace(urlHome))
                 {
-                    { "Admin", GetBoolConfig("BLOQUEO_USUARIOS_Admin", false) },
-                    { "Cocina", GetBoolConfig("BLOQUEO_USUARIOS_Cocina", false) },
-                    { "Comensal", GetBoolConfig("BLOQUEO_USUARIOS_Comensal", false) },
-                    { "Gerencia", GetBoolConfig("BLOQUEO_USUARIOS_Gerencia", false) }
+                    return BadRequest("No está definido 'URL_HOME' en el Web.config de smartlunch-web.");
+                }
+
+                // Normalizamos: sin / al final para API, con / al final para HOME
+                apiBaseUrl = apiBaseUrl.TrimEnd('/');
+                urlHome = urlHome.TrimEnd('/') + "/";
+
+                // 3) Bloqueos
+                var bloqueos = new
+                {
+                    Admin = GetBool("BLOQUEO_USUARIOS_Admin"),
+                    Cocina = GetBool("BLOQUEO_USUARIOS_Cocina"),
+                    Comensal = GetBool("BLOQUEO_USUARIOS_Comensal"),
+                    Gerencia = GetBool("BLOQUEO_USUARIOS_Gerencia")
                 };
 
-                var config = new
+                var response = new
                 {
                     API_BASE_URL = apiBaseUrl,
-                    API_BASE = apiBaseUrl + "/api/",
-                    BLOQUEO_USUARIOS = bloqueoUsuarios
+                    URL_HOME = urlHome,
+                    BLOQUEO_USUARIOS = bloqueos
                 };
 
-                return Ok(config);
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -55,25 +55,11 @@ namespace smartlunch_web.Controllers
             }
         }
 
-        /// <summary>
-        /// Lee un valor booleano desde Web.config del proyecto
-        /// </summary>
-        private bool GetBoolConfig(string key, bool defaultValue)
+        private bool GetBool(string key)
         {
-            try
-            {
-                // ConfigurationManager.AppSettings lee del Web.config del proyecto
-                var value = ConfigurationManager.AppSettings[key];
-                if (string.IsNullOrWhiteSpace(value))
-                    return defaultValue;
-                
-                return value.ToLower() == "true" || value == "1";
-            }
-            catch
-            {
-                return defaultValue;
-            }
+            var val = ConfigurationManager.AppSettings[key];
+            return string.Equals(val, "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(val, "1", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
-

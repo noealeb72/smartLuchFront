@@ -56,6 +56,8 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	$scope.centros = '';
 	$scope.baseProyectos = apiBaseUrl + '/api/proyecto/';
 	$scope.proyectos = '';
+	$scope.baseJerarquias = apiBaseUrl + '/api/jerarquia/';
+	$scope.jerarquias = '';
 
 	// Función helper para mostrar popup
 	$scope.showPopup = function(title, text, icon) {
@@ -228,25 +230,25 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 			return;
 		}
 
-		// Rellenar modelos vacíos desde el DOM visible (fallback)
-		var ensure = function(modelKey, inputId){ if (!toStringT($scope[modelKey])) { $scope[modelKey] = getVal(inputId); } };
-		ensure('view_user','view_user');
-		ensure('view_pass','view_pass');
-		ensure('view_nombre','view_nombre');
-		ensure('view_apellido','view_apellido');
-		ensure('view_legajo','view_legajo');
-		ensure('view_perfil','view_perfil');
-		ensure('view_cuil','view_cuil');
-		ensure('view_plannutricional','view_plannutricional');
-		ensure('view_planta','view_planta');
-		ensure('view_dni','view_dni');
-		ensure('view_domicilio','view_domicilio');
-		ensure('view_fechaingreso','view_fechaingreso');
-		ensure('view_contrato','view_contrato');
-		ensure('view_proyecto','view_proyecto');
-		ensure('view_centrodecosto','view_centrodecosto');
-		ensure('view_bonificacion','view_bonificacion');
-		ensure('view_bonificacion_invitado','view_bonificacion_invitado');
+		// Leer valores directamente del DOM (siempre, para obtener los valores actuales)
+		// Esto asegura que obtenemos los valores que el usuario ingresó, no los valores antiguos del scope
+		$scope.view_user = getVal('view_user');
+		$scope.view_pass = getVal('view_pass');
+		$scope.view_nombre = getVal('view_nombre');
+		$scope.view_apellido = getVal('view_apellido');
+		$scope.view_legajo = getVal('view_legajo');
+		$scope.view_perfil = getVal('view_perfil');
+		$scope.view_cuil = getVal('view_cuil');
+		$scope.view_plannutricional = getVal('view_plannutricional');
+		$scope.view_planta = getVal('view_planta');
+		$scope.view_dni = getVal('view_dni');
+		$scope.view_domicilio = getVal('view_domicilio');
+		$scope.view_fechaingreso = getVal('view_fechaingreso');
+		$scope.view_contrato = getVal('view_contrato');
+		$scope.view_proyecto = getVal('view_proyecto');
+		$scope.view_centrodecosto = getVal('view_centrodecosto');
+		$scope.view_bonificacion = getVal('view_bonificacion');
+		$scope.view_bonificacion_invitado = getVal('view_bonificacion_invitado');
 
 		// Log final de valores capturados (post-fallback)
 		console.table({
@@ -440,7 +442,22 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 				console.error('   Data:', error.data);
 				console.error('   URL:', $scope.base + 'getAll');
 				$scope.isLoading = false;
-				$scope.showError('Ha ocurrido un error', 'No se pudieron cargar los usuarios. Verifique la conexión con el servidor.');
+				
+				// Mensaje más específico según el tipo de error
+				var mensajeError = 'No se pudieron cargar los usuarios. ';
+				if (error.status === -1) {
+					mensajeError += 'El servidor backend no está respondiendo. Verifique que el servidor esté corriendo en el puerto 8000.';
+				} else if (error.status === 0) {
+					mensajeError += 'Error de conexión. Verifique su conexión a internet o que el servidor esté accesible.';
+				} else if (error.status === 404) {
+					mensajeError += 'El endpoint no fue encontrado. Verifique la configuración del servidor.';
+				} else if (error.status >= 500) {
+					mensajeError += 'Error del servidor. Contacte al administrador.';
+				} else {
+					mensajeError += 'Verifique la conexión con el servidor.';
+				}
+				
+				$scope.showError('Error al cargar usuarios', mensajeError);
 			});
 	};
 
@@ -611,8 +628,8 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 					return a.nombre.localeCompare(b.nombre);
 				});
 				
-				// Si estamos en modo "Nuevo Usuario" y hay planes disponibles, seleccionar el primero
-				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.planes.length > 0) {
+				// Si estamos en modo "Nuevo Usuario" y hay planes disponibles, seleccionar el primero solo si está vacío
+				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.planes.length > 0 && (!$scope.view_plannutricional || $scope.view_plannutricional === '')) {
 					$scope.view_plannutricional = $scope.planes[0].nombre;
 					//console.log('Plan nutricional seleccionado automáticamente:', $scope.view_plannutricional);
 				}
@@ -632,8 +649,8 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 					return a.nombre.localeCompare(b.nombre);
 				});
 				
-				// Si estamos en modo "Nuevo Usuario" y hay plantas disponibles, seleccionar el primero
-				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.plantas.length > 0) {
+				// Si estamos en modo "Nuevo Usuario" y hay plantas disponibles, seleccionar el primero solo si está vacío
+				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.plantas.length > 0 && (!$scope.view_planta || $scope.view_planta === '')) {
 					$scope.view_planta = $scope.plantas[0].nombre;
 					//console.log('Planta seleccionada automáticamente:', $scope.view_planta);
 				}
@@ -666,9 +683,8 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 		$scope.view_centrodecosto = '';
 		$scope.view_proyecto = '';
 		
-		// Seleccionar automáticamente el primer perfil (Admin)
-		$scope.view_perfil = 'Admin';
-		//console.log('Perfil seleccionado automáticamente:', $scope.view_perfil);
+		// No seleccionar automáticamente, esperar a que se carguen las jerarquías
+		// El ModelReadJerarquias() se encargará de seleccionar la primera si es necesario
 		
 		/*console.log('ViewCreate - Inicializando selects:', {
 			perfil: $scope.view_perfil,
@@ -682,32 +698,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 		$scope.ModelReadPlantas();
 		$scope.ModelReadCentros();
 		$scope.ModelReadProyectos();
-		
-		// Asegurar que los selects mantengan el valor por defecto después de cargar datos
-		setTimeout(function() {
-			
-			if (!$scope.view_perfil || $scope.view_perfil === '') {
-				$scope.view_perfil = '-- Seleccionar --';
-				//console.log('Restaurando perfil a -- Seleccionar --');
-			}
-			if (!$scope.view_plannutricional || $scope.view_plannutricional === '') {
-				$scope.view_plannutricional = '-- Seleccionar --';
-				//console.log('Restaurando plannutricional a -- Seleccionar --');
-			}
-			if (!$scope.view_planta || $scope.view_planta === '') {
-				$scope.view_planta = '-- Seleccionar --';
-				//console.log('Restaurando planta a -- Seleccionar --');
-			}
-			if (!$scope.view_centrodecosto || $scope.view_centrodecosto === '') {
-				$scope.view_centrodecosto = '-- Seleccionar --';
-				//console.log('Restaurando centrodecosto a -- Seleccionar --');
-			}
-			if (!$scope.view_proyecto || $scope.view_proyecto === '') {
-				$scope.view_proyecto = '-- Seleccionar --';
-				//console.log('Restaurando proyecto a -- Seleccionar --');
-			}
-			$scope.$apply();
-		}, 200);
+		$scope.ModelReadJerarquias();
 	};
 
 	$scope.ModelReadProyectos = function () {
@@ -720,8 +711,8 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 					return a.nombre.localeCompare(b.nombre);
 				});
 				
-				// Si estamos en modo "Nuevo Usuario" y hay proyectos disponibles, seleccionar el primero
-				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.proyectos.length > 0) {
+				// Si estamos en modo "Nuevo Usuario" y hay proyectos disponibles, seleccionar el primero solo si está vacío
+				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.proyectos.length > 0 && (!$scope.view_proyecto || $scope.view_proyecto === '')) {
 					$scope.view_proyecto = $scope.proyectos[0].nombre;
 					//console.log('Proyecto seleccionado automáticamente:', $scope.view_proyecto);
 				}
@@ -741,14 +732,38 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 					return a.nombre.localeCompare(b.nombre);
 				});
 				
-				// Si estamos en modo "Nuevo Usuario" y hay centros disponibles, seleccionar el primero
-				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.centros.length > 0) {
+				// Si estamos en modo "Nuevo Usuario" y hay centros disponibles, seleccionar el primero solo si está vacío
+				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.centros.length > 0 && (!$scope.view_centrodecosto || $scope.view_centrodecosto === '')) {
 					$scope.view_centrodecosto = $scope.centros[0].nombre;
 					//console.log('Centro de costo seleccionado automáticamente:', $scope.view_centrodecosto);
 				}
 			})
 			.error(function (data, status) {
 				$scope.showError('Ha ocurrido un error', 'Error al obtener centros de costo');
+			});
+	};
+
+	$scope.ModelReadJerarquias = function () {
+		$http.get($scope.baseJerarquias + 'getAll')
+			.success(function (data) {
+				$scope.jerarquias = Array.isArray(data) ? data : [];
+				
+				// Ordenar jerarquías alfabéticamente por nombre (usar perfil o nombre según lo que tenga)
+				$scope.jerarquias.sort(function(a, b) {
+					var nombreA = (a.perfil || a.nombre || '').toLowerCase();
+					var nombreB = (b.perfil || b.nombre || '').toLowerCase();
+					return nombreA.localeCompare(nombreB);
+				});
+				
+				// Si estamos en modo "Nuevo Usuario" y hay jerarquías disponibles, seleccionar el primero solo si está vacío
+				if ($scope.ViewAction === 'Nuevo Usuario' && $scope.jerarquias.length > 0 && (!$scope.view_perfil || $scope.view_perfil === '')) {
+					var primeraJerarquia = $scope.jerarquias[0];
+					$scope.view_perfil = primeraJerarquia.perfil || primeraJerarquia.nombre || '';
+					//console.log('Jerarquía seleccionada automáticamente:', $scope.view_perfil);
+				}
+			})
+			.error(function (data, status) {
+				$scope.showError('Ha ocurrido un error', 'Error al obtener jerarquías');
 			});
 	};
 
@@ -762,6 +777,7 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 		$scope.ModelReadPlantas();
 		$scope.ModelReadCentros();
 		$scope.ModelReadProyectos();
+		$scope.ModelReadJerarquias();
 	};
 
 	$scope.ViewDelete = function (view_id) {
@@ -806,6 +822,8 @@ app.controller('Usuario', function ($scope, $sce, $http, $window) {
 	}
 
 	$scope.ModelReadAll();
+	// Cargar jerarquías al iniciar
+	$scope.ModelReadJerarquias();
 	$scope.data = [];
 	for (var i = 0; i < 45; i++) {
 		$scope.data.push("Item " + i);
