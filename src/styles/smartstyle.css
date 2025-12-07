@@ -1,0 +1,173 @@
+/* Copiado de Views/css/smartstyle.css - Estilos principales de SmartLunch */
+/* ============================================
+   PALETA DE COLORES DEL APLICATIVO
+   ============================================ */
+:root {
+    --smart-primary: #F34949;
+    --smart-primary-dark: #E63939;
+    --smart-primary-darker: #C92A2A;
+    --smart-primary-light: #FF6B6B;
+    --smart-primary-lighter: #FF9999;
+    --smart-primary-bg: #ffe5e5;
+    --smart-success: #28a745;
+    --smart-success-dark: #218838;
+    --smart-gray-dark: #343a40;
+    --smart-gray: #495057;
+    --smart-gray-medium: #6c757d;
+    --smart-gray-light: #adb5bd;
+    --smart-gray-lighter: #e9ecef;
+    --smart-gray-lightest: #f8f9fa;
+}
+
+.smart-bg {
+    background-color: var(--smart-primary) !important;
+    color: white !important;
+}
+
+.smart-title {
+    margin: 0px 0px 0px 0px;
+    padding: 0px 0px 0px 0px;
+    font-size: 26px;
+    color: white !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.solid-background {
+    background-color: #ffffff;
+    padding-bottom: 20px;
+    min-height: calc(100vh - 60px);
+}
+
+.sticky-image {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    width: 200px;
+}
+
+.rised-image {
+    box-shadow: 1px 1px 5px 0px rgba(50, 50, 50, 0.75) !important;
+    border-radius: 8px !important;
+}
+
+.round-img {
+    border-radius: 50%;
+}
+
+/* Estilos para checkbox de bonificación */
+.bonificacion-container {
+    margin: 0.5rem 0;
+}
+
+.custom-checkbox-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.custom-checkbox {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.custom-checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    min-width: 160px;
+}
+
+.custom-checkbox-label:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.custom-checkbox:checked + .custom-checkbox-label {
+    background: #f8f9fa;
+    border-color: #28a745;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.15);
+}
+
+.custom-checkbox:checked + .custom-checkbox-label .discount-icon {
+    background: #28a745;
+    color: white;
+}
+
+.custom-checkbox:checked + .custom-checkbox-label .discount-percentage {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.checkbox-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.discount-icon {
+    width: 20px;
+    height: 20px;
+    background: #6c757d;
+    color: white;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    transition: all 0.2s ease;
+    font-size: 0.7em;
+}
+
+.discount-text {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 0.25rem;
+}
+
+.discount-label {
+    font-size: 0.85em;
+    color: #6c757d;
+    font-weight: 400;
+}
+
+.discount-percentage {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #495057;
+    transition: all 0.2s ease;
+}
+
+.discount-word {
+    font-size: 0.85em;
+    color: #28a745;
+    font-weight: 500;
+}
+
+/* Responsive para móviles */
+@media (max-width: 576px) {
+    .custom-checkbox-label {
+        min-width: 140px;
+        padding: 0.4rem 0.6rem;
+    }
+
+    .discount-icon {
+        width: 18px;
+        height: 18px;
+        margin-right: 0.4rem;
+    }
+
+    .discount-text {
+        gap: 0.2rem;
+    }
+}
+

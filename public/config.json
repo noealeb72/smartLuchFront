@@ -1,0 +1,11 @@
+{
+  "apiBaseUrl": "http://localhost:8000",
+  "totemId": "T001",
+  "bloqueos": {
+    "Admin": false,
+    "Cocina": false,
+    "Comensal": false,
+    "Gerencia": false
+  }
+}
+

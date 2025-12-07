@@ -1,0 +1,266 @@
+/* Estilos globales de la aplicación */
+html, body {
+  height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden;
+  border: none !important;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden; /* Solo ocultar scroll horizontal */
+  overflow-y: auto; /* Permitir scroll vertical en toda la página */
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* Asegurar que no haya espacios después del footer */
+body > *:last-child,
+#root > *:last-child,
+.solid-background > *:last-child {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Loading spinner */
+.se-pre-con {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(2px);
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.se-pre-con::before {
+  content: '';
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(243, 73, 73, 0.2);
+  border-top-color: var(--smart-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  box-shadow: 0 2px 10px rgba(243, 73, 73, 0.15);
+}
+
+.se-pre-con::after {
+  content: 'Cargando...';
+  position: absolute;
+  top: calc(50% + 40px);
+  color: var(--smart-gray);
+  font-size: 14px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Estilos para imágenes de platos */
+.card-img {
+  width: 100% !important;
+  height: 200px !important;
+  object-fit: cover !important;
+  border-radius: 8px !important;
+}
+
+.no-border {
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* Botones */
+.btn-danger {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: white !important;
+}
+
+.btn-danger:hover {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: white !important;
+}
+
+.btn-dark {
+  background-color: #343a40 !important;
+  border-color: #343a40 !important;
+  color: white !important;
+  box-shadow: none !important;
+}
+
+.btn-dark:hover {
+  background-color: #343a40 !important;
+  border-color: #343a40 !important;
+  color: white !important;
+  box-shadow: none !important;
+}
+
+/* Footer siempre abajo */
+.container-fluid {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.solid-background {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  position: relative;
+}
+
+.solid-background footer {
+  margin-bottom: 0 !important;
+  padding-bottom: 0.75rem !important;
+}
+
+.solid-background > section {
+  flex: 1 0 auto;
+}
+
+/* Estilos para smart-bg (solo para elementos que no sean footer) */
+.smart-bg:not(footer) {
+  margin-top: auto;
+  padding-top: 1rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-top: auto !important;
+  background-color: var(--smart-gray-dark);
+  color: white;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.smart-bg .container {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.smart-bg h4 {
+  font-size: 1.1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.smart-bg p {
+  font-size: 0.85rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.smart-bg .nav-link {
+  font-size: 0.9rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+  .imagen-escondida {
+    display: none;
+  }
+
+  .ocultar-en-movil {
+    display: none !important;
+  }
+
+  .bienvenida {
+    text-align: left;
+    padding: 10px;
+  }
+
+  .bienvenida h3 {
+    font-size: 1.5rem;
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+
+  .bienvenida h5 {
+    font-size: 1.2rem;
+    line-height: 1.4;
+  }
+
+  .ocultar-en-computadora {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .mostrar-en-celular {
+    display: block !important;
+  }
+}
+
+/* Estilos globales para elementos select - evitar que se corten */
+select.form-control,
+select {
+  min-height: calc(1.5em + 0.75rem + 2px) !important;
+  height: auto !important;
+  padding: 0.375rem 0.75rem !important;
+  padding-right: 2.25rem !important;
+  line-height: 1.5 !important;
+  vertical-align: middle !important;
+  overflow: visible !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+  -moz-appearance: menulist !important;
+  box-sizing: border-box !important;
+}
+
+select.form-control:focus,
+select:focus {
+  outline: none !important;
+  border-color: var(--smart-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.25) !important;
+}
+
+select.form-control option,
+select option {
+  padding: 0.5rem !important;
+  line-height: 1.5 !important;
+  min-height: 1.5em !important;
+  display: block !important;
+}
+
+/* Asegurar que los selects tengan suficiente espacio en desktop */
+@media (min-width: 992px) {
+  select.form-control,
+  select {
+    min-height: calc(1.5em + 0.875rem + 2px) !important;
+    padding: 0.4375rem 0.875rem !important;
+    padding-right: 2.5rem !important;
+    font-size: 1.05em !important;
+  }
+}
+

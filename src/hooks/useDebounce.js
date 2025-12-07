@@ -1,0 +1,24 @@
+import { useState, useEffect } from 'react';
+
+/**
+ * Hook personalizado para debounce de valores
+ * Útil para optimizar búsquedas y filtros
+ */
+export const useDebounce = (value, delay = 500) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+export default useDebounce;
+

@@ -1,0 +1,173 @@
+/* Estilos del Navbar */
+.navbar {
+  margin: 0 !important;
+  padding: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  width: 100%;
+  position: relative;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.navbar.smart-bg {
+  background-color: var(--smart-primary) !important;
+  color: white !important;
+  margin: 0 !important;
+  padding: 0.5rem 0 !important;
+}
+
+.smart-title {
+  margin: 0px 0px 0px 0px;
+  padding: 0px 0px 0px 0px;
+  font-size: 150px; /* Tamaño base para móvil - aumentado más */
+  color: white !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  font-weight: 900; /* Más bold (máximo válido) */
+  margin-left: 3rem !important; /* Margen izquierdo aumentado */
+}
+
+.smart-title i {
+  color: white !important;
+  font-size: 2.2em; /* Icono más grande - aumentado */
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+.smart-title span {
+  margin-left: -0.2rem !important;
+  padding-left: 0 !important;
+  letter-spacing: 0 !important;
+}
+
+/* Logo más grande en desktop */
+@media (min-width: 992px) {
+  .smart-title {
+    font-size: 220px !important; /* Más grande en desktop - aumentado más */
+    margin-left: 3rem !important; /* Margen izquierdo aumentado en desktop */
+  }
+
+  .smart-title i {
+    font-size: 2.5em !important; /* Icono más grande en desktop - aumentado */
+  }
+}
+
+.smart-bg .text-white,
+.smart-bg .navbar-brand,
+.smart-bg .nav-link {
+  color: #ffffff !important;
+}
+
+/* Espaciado mejorado para los links del menú */
+.smart-bg .nav-link {
+  padding: 0.5rem 1rem !important; /* Más padding horizontal */
+  display: flex !important;
+  align-items: center !important;
+  white-space: nowrap !important;
+}
+
+.smart-bg .nav-link i {
+  margin-right: 0.5rem !important; /* Espacio entre icono y texto */
+  flex-shrink: 0 !important; /* Evitar que el icono se comprima */
+}
+
+.smart-bg .dropdown-menu {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0.25rem !important;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  min-width: 180px !important;
+  padding: 0.5rem 0 !important;
+  margin-top: 0.5rem !important;
+  z-index: 1050 !important;
+}
+
+.smart-bg .dropdown-item {
+  color: #212529 !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  display: block !important;
+  width: 100% !important;
+  clear: both !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out !important;
+}
+
+.smart-bg .dropdown-item:hover,
+.smart-bg .dropdown-item:focus {
+  color: #16181b !important;
+  text-decoration: none !important;
+  background-color: #f8f9fa !important;
+}
+
+.smart-bg .dropdown-item.active,
+.smart-bg .dropdown-item:active {
+  color: #ffffff !important;
+  text-decoration: none !important;
+  background-color: var(--smart-primary) !important;
+}
+
+.navbar-nav .dropdown-menu {
+  position: absolute !important;
+  right: 0 !important;
+  left: auto !important;
+  margin-top: 0.125rem !important;
+}
+
+/* Mostrar dropdown cuando tiene clase 'show' */
+.dropdown-menu.show {
+  display: block !important;
+}
+
+/* Asegurar que el dropdown esté posicionado correctamente */
+.nav-item.dropdown {
+  position: relative !important;
+}
+
+/* Estilos para desktop - layout horizontal */
+@media (min-width: 992px) {
+  .navbar {
+    position: relative !important;
+  }
+  
+  .navbar > div:first-of-type {
+    position: relative !important;
+  }
+}
+
+/* Estilos responsive para móvil */
+@media (max-width: 991.98px) {
+  .navbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .smart-title {
+    font-size: 130px !important; /* Aumentado más para móvil */
+    margin-left: 3rem !important; /* Margen izquierdo aumentado en móvil */
+  }
+
+  .smart-title i {
+    font-size: 2em !important; /* Icono más grande en móvil */
+  }
+
+  /* Ocultar menú hamburguesa en móvil */
+  .navbar-toggler {
+    display: none !important;
+  }
+
+  /* Ocultar menú colapsable en móvil */
+  .navbar-collapse {
+    display: none !important;
+  }
+}
+

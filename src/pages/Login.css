@@ -1,0 +1,435 @@
+/* Layout base centrado con fondo mejorado */
+.login-container {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  max-width: 100%;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
+  background-attachment: fixed;
+  color: #212529;
+  overflow: hidden; /* Sin scroll */
+  position: fixed; /* Fijo para ocupar toda la pantalla */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Centrar verticalmente */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Decoraciones de fondo sutiles */
+.login-container::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(243, 73, 73, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.login-container::after {
+  content: '';
+  position: fixed;
+  bottom: -30%;
+  left: -5%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(243, 73, 73, 0.06) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.user_card {
+  background: #ffffff;
+  border-radius: 20px; /* Más redondeado */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 520px; /* Aumentado de 450px */
+  max-height: 90vh; /* Máximo 90% de la altura de la pantalla */
+  padding: 40px; /* Aumentado de 20px */
+  padding-top: 130px; /* Aumentado para el logo más grande */
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(243, 73, 73, 0.1);
+  margin: 0 auto; /* Centrar horizontalmente */
+  box-sizing: border-box;
+  overflow: visible !important; /* Asegurar que el logo no se corte */
+  display: flex;
+  flex-direction: column;
+}
+
+.brand_logo_container {
+  text-align: center;
+  margin-bottom: 15px; /* Aumentado */
+  position: absolute;
+  height: 180px; /* Aumentado de 130px */
+  width: 180px; /* Aumentado de 130px */
+  top: -90px; /* Mitad del logo arriba del contenedor (180px/2) */
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #F34949 0%, #E63939 100%);
+  padding: 18px; /* Aumentado */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 25px rgba(243, 73, 73, 0.3), 0 4px 10px rgba(243, 73, 73, 0.2);
+  border: 5px solid #ffffff; /* Borde más grueso */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  z-index: 10; /* Asegurar que esté por encima de todo */
+  box-sizing: border-box; /* Incluir border en el tamaño */
+}
+
+.brand_logo_container:hover {
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 12px 35px rgba(243, 73, 73, 0.4), 0 6px 15px rgba(243, 73, 73, 0.3);
+}
+
+.brand_logo_container .login-logo {
+  font-size: 4rem; /* Aumentado de 2.5rem */
+  color: white !important;
+  margin-top: 12px; /* Aumentado */
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.brand_logo_container h5 {
+  margin-top: 10px; /* Aumentado */
+  margin-bottom: 0;
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 600;
+  font-size: 1.2rem; /* Aumentado de 0.95rem */
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Mensaje de error en el form */
+.error-msg {
+  display: block;
+  margin-bottom: 1rem; /* Aumentado */
+  color: #F34949;
+  font-weight: 600;
+  font-size: 0.95rem; /* Aumentado */
+  padding: 0.85rem; /* Aumentado */
+  background-color: rgba(243, 73, 73, 0.1);
+  border-left: 3px solid #F34949;
+  border-radius: 4px;
+}
+
+/* Título de bienvenida */
+.welcome-title {
+  text-align: center;
+  margin-bottom: 1.5rem; /* Aumentado de 1rem */
+  margin-top: 0.5rem;
+}
+
+.welcome-title h4 {
+  color: var(--smart-gray);
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 600;
+  font-size: 1.75rem; /* Aumentado de 1.3rem */
+  margin-bottom: 0.5rem; /* Aumentado */
+}
+
+.welcome-title p {
+  color: var(--smart-gray-medium);
+  font-size: 1rem; /* Aumentado de 0.85rem */
+  margin-bottom: 0;
+}
+
+/* Botón deshabilitado */
+.btn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+.btn:disabled:hover {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3) !important;
+  transform: none !important;
+}
+
+/* Estilos mejorados para inputs */
+.input-group-text {
+  background: var(--smart-primary) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px 0 0 8px !important;
+  padding: 0.85rem 1.2rem; /* Aumentado */
+  transition: all 0.3s ease;
+  font-size: 1rem; /* Aumentado */
+}
+
+.form-control {
+  border: 1px solid #dee2e6;
+  border-left: none;
+  border-radius: 0 8px 8px 0 !important;
+  padding: 0.85rem 1.2rem; /* Aumentado */
+  font-size: 1rem; /* Aumentado de 0.9rem */
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  border-color: var(--smart-primary);
+  box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.15);
+  outline: none;
+}
+
+.input-group:hover .input-group-text {
+  background: var(--smart-primary-dark) !important;
+}
+
+.input-group:hover .form-control {
+  border-color: var(--smart-primary-light);
+}
+
+/* Botón de login mejorado */
+.login_btn {
+  background: linear-gradient(135deg, var(--smart-primary) 0%, var(--smart-primary-dark) 100%) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(243, 73, 73, 0.3);
+  transition: all 0.3s ease;
+  padding: 0.9rem 2.5rem !important; /* Aumentado */
+  font-size: 1.1rem !important; /* Aumentado */
+}
+
+.login_btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--smart-primary-dark) 0%, var(--smart-primary-darker) 100%) !important;
+  box-shadow: 0 6px 20px rgba(243, 73, 73, 0.4);
+}
+
+.login_btn:active:not(:disabled) {
+  box-shadow: 0 2px 10px rgba(243, 73, 73, 0.3);
+}
+
+.login_btn:focus {
+  box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.5) !important;
+  outline: none !important;
+}
+
+/* Mejoras para checkbox */
+.custom-control-input:checked ~ .custom-control-label::before {
+  background-color: var(--smart-primary) !important;
+  border-color: var(--smart-primary) !important;
+}
+
+.custom-control-input:focus ~ .custom-control-label::before {
+  box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.25);
+}
+
+.custom-control-label {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .login-container {
+    height: 100vh;
+    width: 100vw;
+    padding: 0; /* Sin padding para ocupar todo el ancho */
+    padding-top: 70px; /* Espacio suficiente para el logo */
+    padding-bottom: 20px;
+    overflow: hidden; /* Sin scroll */
+    align-items: center;
+  }
+
+  .login-container::before,
+  .login-container::after {
+    display: none; /* Ocultar decoraciones en móvil para mejor rendimiento */
+  }
+
+  .user_card {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh; /* Máximo 90% de la altura en móvil */
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    padding: 15px;
+    padding-top: 70px; /* Ajustado para el logo */
+    margin: 0; /* Sin margin para ocupar todo el ancho */
+    margin-left: 10px; /* Pequeño margen lateral */
+    margin-right: 10px; /* Pequeño margen lateral */
+    overflow: visible !important;
+    box-sizing: border-box;
+  }
+
+  .brand_logo_container {
+    height: 120px; /* Reducido para móvil */
+    width: 120px; /* Reducido para móvil */
+    top: -60px; /* Mitad del logo arriba (120px/2) */
+    padding: 10px;
+    z-index: 10;
+  }
+
+  .brand_logo_container .login-logo {
+    font-size: 2rem; /* Reducido para móvil */
+    margin-top: 8px;
+  }
+
+  .brand_logo_container h5 {
+    font-size: 0.95rem;
+    margin-top: 5px;
+  }
+
+  .welcome-title {
+    margin-bottom: 0.75rem; /* Reducido */
+    margin-top: 0.3rem; /* Reducido */
+  }
+
+  .welcome-title h4 {
+    font-size: 1.1rem; /* Reducido */
+    margin-bottom: 0.25rem; /* Reducido */
+  }
+
+  .welcome-title p {
+    font-size: 0.8rem; /* Reducido */
+  }
+
+  .input-group-text {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .form-control {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .form-control::placeholder {
+    font-size: 0.85rem;
+  }
+
+  .login_btn {
+    width: 100%;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 0.95rem !important;
+  }
+
+  .custom-control-label {
+    font-size: 0.85rem;
+  }
+
+  .error-msg {
+    font-size: 0.8rem;
+    padding: 0.6rem;
+  }
+
+  .login_container {
+    margin-top: 2rem !important;
+  }
+}
+
+/* Responsive para móviles pequeños */
+@media (max-width: 480px) {
+  .login-container {
+    height: 100vh;
+    width: 100vw;
+    padding: 0; /* Sin padding para ocupar todo el ancho */
+    padding-top: 60px; /* Espacio suficiente para el logo */
+    padding-bottom: 15px;
+    overflow: hidden; /* Sin scroll */
+    align-items: center;
+  }
+
+  .user_card {
+    max-height: 95vh; /* Máximo 95% de la altura en móvil pequeño */
+    padding: 12px;
+    padding-top: 60px; /* Ajustado para el logo */
+    margin: 0; /* Sin margin para ocupar todo el ancho */
+    margin-left: 8px; /* Pequeño margen lateral */
+    margin-right: 8px; /* Pequeño margen lateral */
+    border-radius: 10px;
+    overflow: visible !important;
+    box-sizing: border-box;
+  }
+
+  .brand_logo_container {
+    height: 100px; /* Más reducido para móvil pequeño */
+    width: 100px; /* Más reducido para móvil pequeño */
+    top: -50px; /* Mitad del logo arriba (100px/2) */
+    padding: 8px;
+    z-index: 10;
+  }
+
+  .brand_logo_container .login-logo {
+    font-size: 1.75rem; /* Más reducido para móvil pequeño */
+    margin-top: 6px;
+  }
+
+  .brand_logo_container .login-logo {
+    font-size: 2rem;
+    margin-top: 8px;
+  }
+
+  .brand_logo_container h5 {
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+
+  .welcome-title h4 {
+    font-size: 1.1rem;
+  }
+
+  .welcome-title p {
+    font-size: 0.8rem;
+  }
+
+  .input-group-text {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .form-control {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .login_btn {
+    padding: 0.7rem 1.25rem !important;
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Estilos para el panel de configuración del servidor */
+.server-config-panel {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.server-config-panel .form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.server-config-panel .alert {
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.server-config-panel .btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+

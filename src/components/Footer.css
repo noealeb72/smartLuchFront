@@ -1,0 +1,70 @@
+/* Estilos del Footer */
+footer {
+  margin: 0 !important;
+  padding: 0 !important;
+  margin-top: auto !important;
+  margin-bottom: 0 !important;
+  width: 100%;
+  flex-shrink: 0;
+  position: relative;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border: none !important;
+}
+
+footer.smart-bg {
+  margin-top: auto !important;
+  padding-top: 1rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  background-color: var(--smart-gray-dark);
+  color: white;
+  width: 100%;
+  flex-shrink: 0;
+  border: none !important;
+}
+
+footer.smart-bg .container {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0 !important;
+}
+
+footer.smart-bg h4 {
+  font-size: 1.1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+footer.smart-bg p {
+  font-size: 0.85rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+footer.smart-bg .nav-link {
+  font-size: 0.9rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+.footer-widget {
+  margin-bottom: 1rem;
+}
+
+.open-hours li {
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Estilos para footer simple (páginas que no sean Index) */
+footer.smart-bg[style*="padding: 0.5rem"] {
+  padding: 0.5rem 0 !important;
+  min-height: auto !important;
+}
+
+footer.smart-bg[style*="padding: 0.5rem"] .container {
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+}
+

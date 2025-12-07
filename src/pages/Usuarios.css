@@ -1,0 +1,437 @@
+/* Estilos para la página de Usuarios */
+.usuarios-container {
+  padding: 20px;
+}
+
+.table-responsive {
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+  border: 1px solid #dee2e6;
+  width: 100%;
+  max-width: 100%;
+}
+
+.table {
+  width: 100%;
+  max-width: 100%;
+}
+
+.table {
+  margin-bottom: 0;
+  background-color: white;
+}
+
+.table thead th {
+  background-color: #343a40;
+  color: white;
+  border: none;
+  font-weight: normal;
+  text-transform: none;
+  font-size: 0.9rem;
+  letter-spacing: normal;
+  padding: 0.75rem;
+  border-bottom: 2px solid #212529;
+}
+
+.table tbody tr {
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.table tbody tr:nth-child(odd) {
+  background-color: white;
+}
+
+.table tbody tr:hover {
+  background-color: #e9ecef;
+}
+
+.table tbody td {
+  vertical-align: middle;
+  padding: 0.75rem;
+  border-top: none;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.btn-dark {
+  background-color: #343a40;
+  border-color: #343a40;
+}
+
+.btn-dark:hover {
+  background-color: #23272b;
+  border-color: #1d2124;
+}
+
+/* Estilos para el modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1050;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  outline: 0;
+}
+
+.modal.show {
+  display: block !important;
+}
+
+.modal-dialog {
+  position: relative;
+  width: auto;
+  margin: 1.75rem auto;
+  max-width: 900px;
+  pointer-events: none;
+}
+
+.modal-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  pointer-events: auto;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.3rem;
+  outline: 0;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1040;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000;
+}
+
+.modal-backdrop.fade {
+  opacity: 0;
+}
+
+.modal-backdrop.show {
+  opacity: 0.5;
+}
+
+/* Prevenir scroll del body cuando el modal está abierto */
+body.modal-open {
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+  border-top-left-radius: calc(0.3rem - 1px);
+  border-top-right-radius: calc(0.3rem - 1px);
+}
+
+.modal-body {
+  position: relative;
+  flex: 1 1 auto;
+  padding: 1rem;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem;
+  border-top: 1px solid #dee2e6;
+  border-bottom-right-radius: calc(0.3rem - 1px);
+  border-bottom-left-radius: calc(0.3rem - 1px);
+}
+
+.modal-lg {
+  max-width: 900px;
+}
+
+.modal-body .form-group label {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.modal-body .form-control:focus {
+  border-color: var(--smart-primary);
+  box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.25);
+}
+
+.input-group-text {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+/* Estilos para el input de búsqueda */
+#buscar {
+  border-radius: 0.25rem 0 0 0.25rem;
+}
+
+.input-group-append .btn {
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+/* Estilos para el formulario de edición/creación de usuarios */
+.form-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 0.5rem;
+  border: 1px solid #e9ecef;
+}
+
+.form-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #343a40;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #dee2e6;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.form-section-title i:first-child {
+  color: #F34949;
+}
+
+.form-section-toggle {
+  user-select: none;
+}
+
+.form-section-toggle:hover {
+  color: #F34949;
+  border-bottom-color: #F34949;
+}
+
+.form-section-content {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+  }
+  to {
+    opacity: 1;
+    max-height: 2000px;
+    overflow: visible;
+  }
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  display: block;
+  font-weight: 500;
+  color: #495057;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: ellipsis;
+}
+
+.form-group .form-control {
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  height: auto;
+  min-height: calc(1.5em + 1rem + 2px);
+  line-height: 1.5;
+  overflow: visible;
+  text-overflow: ellipsis;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+}
+
+.form-group .form-control:focus {
+  border-color: #F34949;
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.25);
+}
+
+.form-group select.form-control {
+  padding-right: 2.5rem;
+  appearance: auto;
+  -webkit-appearance: menulist;
+  -moz-appearance: menulist;
+  background-image: none;
+  min-height: calc(1.5em + 1rem + 2px);
+}
+
+.form-group select.form-control option {
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  min-height: 1.5em;
+}
+
+/* Asegurar que los elementos no se corten */
+.row {
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.row > [class*="col-"] {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .row > .col-md-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+/* Contenedor del formulario */
+.usuarios-form-container {
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Estilos para botones de exportación */
+.btn-export-pdf {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: white !important;
+}
+
+.btn-export-pdf:hover:not(:disabled) {
+  background-color: #c82333 !important;
+  border-color: #bd2130 !important;
+}
+
+.btn-export-excel {
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+  color: white !important;
+}
+
+.btn-export-excel:hover:not(:disabled) {
+  background-color: #218838 !important;
+  border-color: #1e7e34 !important;
+}
+
+.btn-export-pdf:disabled,
+.btn-export-excel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Estilos globales para el scrollbar de toda la página */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
+  border: 2px solid #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Para Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f1;
+}
+
+/* Barra informativa de edición */
+.usuarios-info-bar {
+  background-color: #E3F2FD;
+  color: #1565C0;
+  padding: 0.75rem 1.5rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  border-radius: 0.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  box-sizing: border-box;
+}
+
+.usuarios-info-bar i {
+  margin-right: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.usuarios-info-bar span {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+
+  .table thead th {
+    font-size: 0.75rem;
+    padding: 0.5rem;
+  }
+
+  .table tbody td {
+    padding: 0.5rem;
+  }
+
+  .btn-sm {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .form-group label {
+    font-size: 0.85rem;
+  }
+
+  .form-group .form-control {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.5rem;
+  }
+}
+

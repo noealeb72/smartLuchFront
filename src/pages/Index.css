@@ -1,0 +1,65 @@
+/* Estilos específicos de la página Index */
+.solid-background {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#gtco-welcome {
+  flex: 1 0 auto;
+  padding-bottom: 2rem;
+  margin-bottom: 0;
+}
+
+.bienvenida {
+  text-align: left;
+  padding: 10px;
+}
+
+.bienvenida h3 {
+  font-size: 1.5rem;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.bienvenida h5 {
+  font-size: 1.2rem;
+  line-height: 1.4;
+}
+
+/* Estilos para el select de calificación */
+#pedidoCalificacion {
+  font-size: 18px !important;
+  border: 1px solid #ddd !important;
+  box-shadow: none !important;
+  background-color: #fff !important;
+}
+
+#pedidoCalificacion option {
+  color: #ffc107 !important;
+  background-color: #fff !important;
+  border: none !important;
+  text-shadow: none !important;
+}
+
+#pedidoCalificacion:focus {
+  border-color: #ffc107 !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1040;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000;
+  opacity: 0.5;
+}
+
+.modal.show {
+  display: block;
+}
+
