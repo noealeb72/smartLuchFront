@@ -23,14 +23,8 @@ const Usuarios = () => {
   const [jerarquias, setJerarquias] = useState([]);
   const [planesNutricionales, setPlanesNutricionales] = useState([]);
   
-  // Estado para controlar qué secciones están abiertas (acordeón)
-  const [seccionesAbiertas, setSeccionesAbiertas] = useState({
-    personal: true,
-    identificacion: true,
-    contacto: false,
-    organizacion: true,
-    seguridad: false,
-  });
+  // Estado para controlar qué tab está activa (solapas)
+  const [tabActivo, setTabActivo] = useState('personal');
   
   // Estado de paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -872,12 +866,9 @@ const Usuarios = () => {
     }
   };
 
-  // Toggle para abrir/cerrar secciones del acordeón
-  const toggleSeccion = (seccion) => {
-    setSeccionesAbiertas((prev) => ({
-      ...prev,
-      [seccion]: !prev[seccion],
-    }));
+  // Cambiar tab activa
+  const cambiarTab = (tab) => {
+    setTabActivo(tab);
   };
 
   // Cuando cambia el filtro o filtroActivo, resetear a página 1
@@ -942,20 +933,119 @@ const Usuarios = () => {
           margin: '0 auto'
         }}>
           <form style={{ width: '100%' }}>
-            {/* Sección: Información Personal */}
-            <div className="form-section">
-              <h5 
-                className="form-section-title form-section-toggle"
-                onClick={() => toggleSeccion('personal')}
-                style={{ cursor: 'pointer' }}
-              >
-                <i className="fa fa-user mr-2"></i>Información Personal
-                <i 
-                  className={`fa fa-chevron-${seccionesAbiertas.personal ? 'down' : 'right'} ml-auto`}
-                  style={{ fontSize: '0.9rem' }}
-                ></i>
-              </h5>
-              {seccionesAbiertas.personal && (
+            {/* Navegación de Tabs */}
+            <div style={{ 
+              borderBottom: '2px solid #dee2e6',
+              marginBottom: '1.5rem'
+            }}>
+              <ul style={{
+                display: 'flex',
+                listStyle: 'none',
+                margin: 0,
+                padding: 0,
+                flexWrap: 'wrap'
+              }}>
+                <li style={{ marginRight: '0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => cambiarTab('personal')}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      border: 'none',
+                      borderBottom: tabActivo === 'personal' ? '3px solid #F34949' : '3px solid transparent',
+                      backgroundColor: 'transparent',
+                      color: tabActivo === 'personal' ? '#F34949' : '#6c757d',
+                      fontWeight: tabActivo === 'personal' ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <i className="fa fa-user mr-2"></i>Información Personal
+                  </button>
+                </li>
+                <li style={{ marginRight: '0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => cambiarTab('identificacion')}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      border: 'none',
+                      borderBottom: tabActivo === 'identificacion' ? '3px solid #F34949' : '3px solid transparent',
+                      backgroundColor: 'transparent',
+                      color: tabActivo === 'identificacion' ? '#F34949' : '#6c757d',
+                      fontWeight: tabActivo === 'identificacion' ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <i className="fa fa-id-card mr-2"></i>Identificación
+                  </button>
+                </li>
+                <li style={{ marginRight: '0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => cambiarTab('contacto')}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      border: 'none',
+                      borderBottom: tabActivo === 'contacto' ? '3px solid #F34949' : '3px solid transparent',
+                      backgroundColor: 'transparent',
+                      color: tabActivo === 'contacto' ? '#F34949' : '#6c757d',
+                      fontWeight: tabActivo === 'contacto' ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <i className="fa fa-envelope mr-2"></i>Contacto
+                  </button>
+                </li>
+                <li style={{ marginRight: '0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => cambiarTab('organizacion')}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      border: 'none',
+                      borderBottom: tabActivo === 'organizacion' ? '3px solid #F34949' : '3px solid transparent',
+                      backgroundColor: 'transparent',
+                      color: tabActivo === 'organizacion' ? '#F34949' : '#6c757d',
+                      fontWeight: tabActivo === 'organizacion' ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <i className="fa fa-building mr-2"></i>Organización
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => cambiarTab('seguridad')}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      border: 'none',
+                      borderBottom: tabActivo === 'seguridad' ? '3px solid #F34949' : '3px solid transparent',
+                      backgroundColor: 'transparent',
+                      color: tabActivo === 'seguridad' ? '#F34949' : '#6c757d',
+                      fontWeight: tabActivo === 'seguridad' ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <i className="fa fa-lock mr-2"></i>Seguridad
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contenido de Tabs */}
+            {/* Tab: Información Personal */}
+            {tabActivo === 'personal' && (
               <div className="form-section-content">
               <div className="row">
                 <div className="col-md-6">
@@ -1120,23 +1210,10 @@ const Usuarios = () => {
                 </div>
               </div>
               </div>
-              )}
-            </div>
+            )}
 
-            {/* Sección: Información de Identificación */}
-            <div className="form-section">
-              <h5 
-                className="form-section-title form-section-toggle"
-                onClick={() => toggleSeccion('identificacion')}
-                style={{ cursor: 'pointer' }}
-              >
-                <i className="fa fa-id-card mr-2"></i>Identificación
-                <i 
-                  className={`fa fa-chevron-${seccionesAbiertas.identificacion ? 'down' : 'right'} ml-auto`}
-                  style={{ fontSize: '0.9rem' }}
-                ></i>
-              </h5>
-              {seccionesAbiertas.identificacion && (
+            {/* Tab: Identificación */}
+            {tabActivo === 'identificacion' && (
               <div className="form-section-content">
               <div className="row">
                 <div className="col-md-4">
@@ -1189,23 +1266,10 @@ const Usuarios = () => {
                 </div>
               </div>
               </div>
-              )}
-            </div>
+            )}
 
-            {/* Sección: Información de Contacto */}
-            <div className="form-section">
-              <h5 
-                className="form-section-title form-section-toggle"
-                onClick={() => toggleSeccion('contacto')}
-                style={{ cursor: 'pointer' }}
-              >
-                <i className="fa fa-envelope mr-2"></i>Contacto
-                <i 
-                  className={`fa fa-chevron-${seccionesAbiertas.contacto ? 'down' : 'right'} ml-auto`}
-                  style={{ fontSize: '0.9rem' }}
-                ></i>
-              </h5>
-              {seccionesAbiertas.contacto && (
+            {/* Tab: Contacto */}
+            {tabActivo === 'contacto' && (
               <div className="form-section-content">
               <div className="row">
                 <div className="col-md-6">
@@ -1236,23 +1300,10 @@ const Usuarios = () => {
                 </div>
               </div>
               </div>
-              )}
-            </div>
+            )}
 
-            {/* Sección: Información Organizacional */}
-            <div className="form-section">
-              <h5 
-                className="form-section-title form-section-toggle"
-                onClick={() => toggleSeccion('organizacion')}
-                style={{ cursor: 'pointer' }}
-              >
-                <i className="fa fa-building mr-2"></i>Organización
-                <i 
-                  className={`fa fa-chevron-${seccionesAbiertas.organizacion ? 'down' : 'right'} ml-auto`}
-                  style={{ fontSize: '0.9rem' }}
-                ></i>
-              </h5>
-              {seccionesAbiertas.organizacion && (
+            {/* Tab: Organización */}
+            {tabActivo === 'organizacion' && (
               <div className="form-section-content">
               <div className="row">
                 <div className="col-md-6">
@@ -1461,23 +1512,10 @@ const Usuarios = () => {
                 </div>
               </div>
               </div>
-              )}
-            </div>
+            )}
 
-            {/* Sección: Seguridad */}
-            <div className="form-section">
-              <h5 
-                className="form-section-title form-section-toggle"
-                onClick={() => toggleSeccion('seguridad')}
-                style={{ cursor: 'pointer' }}
-              >
-                <i className="fa fa-lock mr-2"></i>Seguridad
-                <i 
-                  className={`fa fa-chevron-${seccionesAbiertas.seguridad ? 'down' : 'right'} ml-auto`}
-                  style={{ fontSize: '0.9rem' }}
-                ></i>
-              </h5>
-              {seccionesAbiertas.seguridad && (
+            {/* Tab: Seguridad */}
+            {tabActivo === 'seguridad' && (
               <div className="form-section-content">
                 {/* Campos señuelo para que el navegador use el autocompletado */}
                 <input
@@ -1535,10 +1573,9 @@ const Usuarios = () => {
                   </div>
                 </div>
               </div>
-              )}
+            )}
 
-            </div>
-
+            {/* Botones de acción */}
             <div className="row mt-3">
               <div className="col-12">
                 <button
