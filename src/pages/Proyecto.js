@@ -128,7 +128,20 @@ const Proyecto = () => {
         centrosArray = data.items;
       }
       
-      setCentrosDeCosto(centrosArray);
+      // Normalizar los datos del DTO (PascalCase a minúsculas) para consistencia
+      // Asegurar que todos los IDs sean consistentes (convertir a número y luego a string para el select)
+      const centrosNormalizados = centrosArray.map(centro => {
+        const id = centro.Id || centro.id;
+        return {
+          ...centro,
+          id: id ? Number(id) : null,
+          nombre: centro.Nombre || centro.nombre || '',
+          descripcion: centro.Descripcion || centro.descripcion || '',
+          planta_id: centro.PlantaId || centro.plantaId || centro.planta_id || centro.planta?.id || centro.planta || null,
+        };
+      }).filter(centro => centro.id !== null && centro.id !== undefined); // Filtrar centros sin ID válido
+      
+      setCentrosDeCosto(centrosNormalizados);
     } catch (error) {
       console.error('Error al cargar centros de costo:', error);
       setCentrosDeCosto([]);
@@ -158,10 +171,10 @@ const Proyecto = () => {
   useEffect(() => {
     if (vista === 'crear' && !proyectoEditando) {
       if (plantas.length === 1 && !formData.planta_id) {
-        setFormData(prev => ({ ...prev, planta_id: plantas[0].id }));
+        setFormData(prev => ({ ...prev, planta_id: String(plantas[0].id) }));
       }
       if (centrosDeCosto.length === 1 && !formData.centrodecosto_id) {
-        setFormData(prev => ({ ...prev, centrodecosto_id: centrosDeCosto[0].id }));
+        setFormData(prev => ({ ...prev, centrodecosto_id: String(centrosDeCosto[0].id) }));
       }
     }
   }, [vista, plantas, centrosDeCosto, proyectoEditando, formData.planta_id, formData.centrodecosto_id]);
@@ -230,10 +243,10 @@ const Proyecto = () => {
     // Asignar automáticamente planta_id y centrodecosto_id si solo hay una opción disponible
     const datosActualizados = { ...formData };
     if (plantas.length === 1 && (!datosActualizados.planta_id || datosActualizados.planta_id === '')) {
-      datosActualizados.planta_id = plantas[0].id;
+      datosActualizados.planta_id = String(plantas[0].id);
     }
     if (centrosDeCosto.length === 1 && (!datosActualizados.centrodecosto_id || datosActualizados.centrodecosto_id === '')) {
-      datosActualizados.centrodecosto_id = centrosDeCosto[0].id;
+      datosActualizados.centrodecosto_id = String(centrosDeCosto[0].id);
     }
 
     // Actualizar formData temporalmente para validación
@@ -342,8 +355,10 @@ const Proyecto = () => {
           title: 'Éxito',
           text: 'Proyecto actualizado correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       } else {
         await apiService.crearProyecto(proyectoData);
@@ -351,8 +366,10 @@ const Proyecto = () => {
           title: 'Éxito',
           text: 'Proyecto creado correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       }
 
@@ -416,18 +433,33 @@ const Proyecto = () => {
     // Extraer centrodecosto_id de diferentes posibles formatos
     let centrodecostoId = '';
     if (proyecto.centrodecosto_id) {
-      centrodecostoId = proyecto.centrodecosto_id;
+      centrodecostoId = String(proyecto.centrodecosto_id);
+    } else if (proyecto.CentroCostoId || proyecto.centroCostoId) {
+      centrodecostoId = String(proyecto.CentroCostoId || proyecto.centroCostoId);
     } else if (proyecto.centrodecosto) {
-      centrodecostoId = typeof proyecto.centrodecosto === 'object' ? proyecto.centrodecosto.id : proyecto.centrodecosto;
+      const id = typeof proyecto.centrodecosto === 'object' ? proyecto.centrodecosto.id : proyecto.centrodecosto;
+      centrodecostoId = id ? String(id) : '';
     } else if (proyecto.centroDeCosto) {
-      centrodecostoId = typeof proyecto.centroDeCosto === 'object' ? proyecto.centroDeCosto.id : proyecto.centroDeCosto;
+      const id = typeof proyecto.centroDeCosto === 'object' ? proyecto.centroDeCosto.id : proyecto.centroDeCosto;
+      centrodecostoId = id ? String(id) : '';
+    }
+    
+    // Extraer planta_id de diferentes posibles formatos
+    let plantaId = '';
+    if (proyecto.planta_id) {
+      plantaId = String(proyecto.planta_id);
+    } else if (proyecto.PlantaId || proyecto.plantaId) {
+      plantaId = String(proyecto.PlantaId || proyecto.plantaId);
+    } else if (proyecto.planta) {
+      const id = typeof proyecto.planta === 'object' ? proyecto.planta.id : proyecto.planta;
+      plantaId = id ? String(id) : '';
     }
     
     setFormData({
       id: proyecto.id,
       nombre: proyecto.nombre || '',
       descripcion: proyecto.descripcion || '',
-      planta_id: proyecto.planta_id || (proyecto.planta && typeof proyecto.planta === 'object' ? proyecto.planta.id : proyecto.planta) || '',
+      planta_id: plantaId,
       centrodecosto_id: centrodecostoId,
     });
     setVista('editar');
@@ -675,12 +707,12 @@ const Proyecto = () => {
                         {centrosDeCosto.length === 0 ? (
                           <option key="loading-centros" value="">Cargando centros de costo...</option>
                         ) : centrosDeCosto.length === 1 ? (
-                          <option key={`centro-${centrosDeCosto[0].id}`} value={centrosDeCosto[0].id}>{centrosDeCosto[0].nombre || centrosDeCosto[0].Nombre || ''}</option>
+                          <option key={`centro-${centrosDeCosto[0].id}`} value={String(centrosDeCosto[0].id)}>{centrosDeCosto[0].nombre || centrosDeCosto[0].Nombre || ''}</option>
                         ) : (
                           <>
                             <option key="select-centro" value="">Seleccionar centro de costo</option>
                             {centrosDeCosto.map((centro) => (
-                              <option key={centro.id} value={centro.id}>
+                              <option key={centro.id} value={String(centro.id)}>
                                 {centro.nombre || centro.Nombre || ''}
                               </option>
                             ))}
@@ -901,20 +933,153 @@ const Proyecto = () => {
           }
           onEdit={handleEditarProyecto}
           onDelete={(proyecto) => {
-            // Siempre mostrar mensaje de que no se puede eliminar
+            // No permitir eliminar si solo hay un proyecto
+            if (proyectos.length === 1) {
+              Swal.fire({
+                title: 'No permitido',
+                text: 'No se puede dar de baja el único proyecto disponible. Debe haber al menos uno en el sistema.',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#F34949',
+              });
+              return;
+            }
+            
+            // Si hay más de un proyecto, permitir la eliminación
             Swal.fire({
-              title: 'No permitido',
-              text: 'No se puede eliminar el proyecto. Los proyectos no pueden ser eliminados del sistema.',
+              title: '¿Está seguro?',
+              text: `¿Desea dar de baja el proyecto ${proyecto.nombre || proyecto.Nombre || 'este proyecto'}?`,
               icon: 'warning',
-              confirmButtonText: 'Aceptar',
+              showCancelButton: true,
               confirmButtonColor: '#F34949',
+              cancelButtonColor: '#6c757d',
+              confirmButtonText: 'Sí, dar de baja',
+              cancelButtonText: 'Cancelar',
+            }).then(async (result) => {
+              if (result.isConfirmed) {
+                try {
+                  const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
+                  await apiService.eliminarProyecto(proyectoId);
+                  Swal.fire({
+                    title: 'Éxito',
+                    text: 'Proyecto dado de baja correctamente',
+                    icon: 'success',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: true,
+                  });
+                  const soloActivos = filtroActivo === 'activo';
+                  cargarProyectos(currentPage, filtro, soloActivos);
+                } catch (error) {
+                  if (!error.redirectToLogin) {
+                    Swal.fire({
+                      title: 'Error',
+                      text: error.message || 'Error al dar de baja el proyecto',
+                      icon: 'error',
+                      confirmButtonText: 'Aceptar',
+                      confirmButtonColor: '#F34949',
+                    });
+                  }
+                }
+              }
             });
           }}
+          canEdit={(proyecto) => {
+            // Si estamos en el filtro de "Inactivos", no mostrar el botón de editar
+            if (filtroActivo === 'inactivo') {
+              return false;
+            }
+            // Si estamos en el filtro de "Activos", todos los proyectos mostrados están activos
+            if (filtroActivo === 'activo') {
+              return true;
+            }
+            // Por defecto, usar el campo normalizado 'activo'
+            const isActivo = proyecto.activo === true || proyecto.activo === 1 || proyecto.activo === 'true' || proyecto.activo === '1';
+            return isActivo; // Solo se puede editar si está activo
+          }}
           canDelete={(proyecto) => {
-            // Siempre mostrar el icono de eliminar
+            // Si estamos en el filtro de "Inactivos", no mostrar el botón de eliminar
+            if (filtroActivo === 'inactivo') {
+              return false;
+            }
+            // Si estamos en el filtro de "Activos", todos los proyectos mostrados están activos
+            if (filtroActivo === 'activo') {
+              // No permitir eliminar si solo hay un proyecto
+              if (proyectos.length === 1) {
+                return false;
+              }
+              return true;
+            }
+            // Por defecto, usar el campo normalizado 'activo'
+            const isActivo = proyecto.activo === true || proyecto.activo === 1 || proyecto.activo === 'true' || proyecto.activo === '1';
+            if (!isActivo) {
+              return false; // No se puede eliminar si está inactivo
+            }
+            // No permitir eliminar si solo hay un proyecto
+            if (proyectos.length === 1) {
+              return false;
+            }
             return true;
           }}
           renderActions={(proyecto) => {
+            // Si estamos en el filtro de "Inactivos", mostrar el botón verde de activar
+            if (filtroActivo === 'inactivo') {
+              // Todos los proyectos mostrados están inactivos, mostrar botón verde
+              return (
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={() => {
+                    Swal.fire({
+                      title: '¿Está seguro?',
+                      text: `¿Desea activar el proyecto ${proyecto.nombre || proyecto.Nombre || 'este proyecto'}?`,
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonColor: '#28a745',
+                      cancelButtonColor: '#6c757d',
+                      confirmButtonText: 'Sí, activar',
+                      cancelButtonText: 'Cancelar',
+                    }).then(async (result) => {
+                      if (result.isConfirmed) {
+                        try {
+                          const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
+                          await apiService.activarProyecto(proyectoId);
+                          Swal.fire({
+                            title: 'Activado',
+                            text: 'Proyecto activado correctamente',
+                            icon: 'success',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            allowOutsideClick: true,
+                          });
+                          const soloActivos = filtroActivo === 'activo';
+                          cargarProyectos(currentPage, filtro, soloActivos);
+                        } catch (error) {
+                          if (!error.redirectToLogin) {
+                            Swal.fire({
+                              title: 'Error',
+                              text: error.message || 'Error al activar el proyecto',
+                              icon: 'error',
+                              confirmButtonText: 'Aceptar',
+                              confirmButtonColor: '#F34949',
+                            });
+                          }
+                        }
+                      }
+                    });
+                  }}
+                  title="Activar"
+                  style={{ marginRight: '0.5rem' }}
+                >
+                  <i className="fa fa-check"></i>
+                </button>
+              );
+            }
+            // Si está activo, no mostrar nada adicional (los botones de editar y eliminar se muestran automáticamente)
+            return null;
+          }}
+          renderActionsOld={(proyecto) => {
             const rawActivo = proyecto.activo !== undefined ? proyecto.activo :
                              proyecto.isActive !== undefined ? proyecto.isActive :
                              proyecto.Activo !== undefined ? proyecto.Activo :

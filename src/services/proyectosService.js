@@ -65,7 +65,23 @@ export const proyectosService = {
    */
   crearProyecto: async (proyectoData) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.post(`${baseUrl}/api/proyecto/crear`, proyectoData, {
+    // El backend espera los datos en PascalCase: Nombre, Descripcion, PlantaId, CentroCostoId
+    const dataToSend = {
+      Nombre: proyectoData.nombre || proyectoData.Nombre || '',
+      Descripcion: proyectoData.descripcion || proyectoData.Descripcion || null,
+      PlantaId: proyectoData.planta_id ? parseInt(proyectoData.planta_id) : (proyectoData.PlantaId ? parseInt(proyectoData.PlantaId) : 0),
+      CentroCostoId: proyectoData.centrodecosto_id ? parseInt(proyectoData.centrodecosto_id) : (proyectoData.CentroCostoId ? parseInt(proyectoData.CentroCostoId) : 0),
+    };
+    
+    // Validar que los IDs sean números válidos
+    if (!dataToSend.PlantaId || dataToSend.PlantaId <= 0) {
+      throw new Error('PlantaId es requerido y debe ser un número válido');
+    }
+    if (!dataToSend.CentroCostoId || dataToSend.CentroCostoId <= 0) {
+      throw new Error('CentroCostoId es requerido y debe ser un número válido');
+    }
+    
+    const response = await api.post(`${baseUrl}/api/proyecto/crear`, dataToSend, {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
       },
@@ -86,13 +102,30 @@ export const proyectosService = {
     }
     // El ID va como query parameter, los datos en el body
     const url = `${baseUrl}/api/proyecto/actualizar?id=${id}`;
+    // El backend espera los datos en PascalCase: Id, Nombre, Descripcion, PlantaId, CentroCostoId
     const dataToSend = {
-      id: id,
-      nombre: proyectoData.nombre || '',
-      descripcion: proyectoData.descripcion || null,
-      planta_id: proyectoData.planta_id || null,
-      centrodecosto_id: proyectoData.centrodecosto_id || null,
+      Id: id,
+      Nombre: proyectoData.nombre || proyectoData.Nombre || '',
+      Descripcion: proyectoData.descripcion || proyectoData.Descripcion || null,
+      PlantaId: proyectoData.planta_id ? parseInt(proyectoData.planta_id) : (proyectoData.PlantaId ? parseInt(proyectoData.PlantaId) : 0),
+      CentroCostoId: proyectoData.centrodecosto_id ? parseInt(proyectoData.centrodecosto_id) : (proyectoData.CentroCostoId ? parseInt(proyectoData.CentroCostoId) : 0),
     };
+    
+    // Validar que los IDs sean números válidos
+    if (!dataToSend.PlantaId || dataToSend.PlantaId <= 0) {
+      throw new Error('PlantaId es requerido y debe ser un número válido');
+    }
+    if (!dataToSend.CentroCostoId || dataToSend.CentroCostoId <= 0) {
+      throw new Error('CentroCostoId es requerido y debe ser un número válido');
+    }
+    
+    // Log temporal para debug
+    console.log('🔍 Proyecto - Actualizar - Datos a enviar:', {
+      url,
+      dataToSend,
+      proyectoData_original: proyectoData
+    });
+    
     const response = await api.put(url, dataToSend, {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',

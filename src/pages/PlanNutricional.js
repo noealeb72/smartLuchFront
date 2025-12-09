@@ -44,16 +44,6 @@ const PlanNutricional = () => {
       
       const data = await apiService.getPlanesNutricionalesLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
       
-      // Log para ver qué devuelve el backend
-      console.log('🔍 Plan Nutricional - Respuesta del backend:', {
-        mostrarActivos_enviado: mostrarActivos,
-        data_completa: data,
-        totalItems: data.totalItems,
-        totalPages: data.totalPages,
-        items_count: data.items ? data.items.length : 0,
-        items_ejemplo: data.items && data.items.length > 0 ? data.items[0] : null
-      });
-      
       // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
       let planesData = [];
       
@@ -64,17 +54,6 @@ const PlanNutricional = () => {
       } else if (data.data && Array.isArray(data.data)) {
         planesData = data.data;
       }
-      
-      console.log('🔍 Plan Nutricional - PlanesData extraídos:', {
-        cantidad: planesData.length,
-        primeros_3: planesData.slice(0, 3).map(p => ({
-          id: p.Id || p.id,
-          nombre: p.Nombre || p.nombre,
-          Activo: p.Activo,
-          activo: p.activo,
-          Deletemark: p.Deletemark
-        }))
-      });
       
       // Normalizar los datos del DTO (PascalCase a minúsculas) para consistencia
       // El backend devuelve Nombre, Descripcion, Activo, Deletemark
@@ -121,13 +100,6 @@ const PlanNutricional = () => {
   // Cargar planes cuando cambia la página, el filtro o el filtroActivo
   useEffect(() => {
     const soloActivos = filtroActivo === 'activo';
-    console.log('🔍 Plan Nutricional Page - useEffect:', {
-      filtroActivo,
-      soloActivos,
-      tipo_soloActivos: typeof soloActivos,
-      currentPage,
-      filtro
-    });
     cargarPlanes(currentPage, filtro, soloActivos);
   }, [currentPage, filtro, filtroActivo, cargarPlanes]);
 

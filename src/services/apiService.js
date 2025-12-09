@@ -75,7 +75,7 @@ export const apiService = {
   getProyectos: catalogosService.getProyectos,
   getPlanesNutricionales: catalogosService.getPlanesNutricionales,
 
-      // Plantas
+  // Plantas
       getPlantasLista: plantasService.getPlantasLista,
       getPlantaPorId: plantasService.getPlantaPorId,
       buscarPlantas: plantasService.buscarPlantas,
@@ -84,7 +84,7 @@ export const apiService = {
       eliminarPlanta: plantasService.eliminarPlanta,
       activarPlanta: plantasService.activarPlanta,
 
-      // Centros de Costo
+  // Centros de Costo
       getCentrosDeCostoLista: centrosDeCostoService.getCentrosDeCostoLista,
       crearCentroDeCosto: centrosDeCostoService.crearCentroDeCosto,
       actualizarCentroDeCosto: centrosDeCostoService.actualizarCentroDeCosto,
@@ -100,7 +100,7 @@ export const apiService = {
   eliminarProyecto: proyectosService.eliminarProyecto,
   activarProyecto: proyectosService.activarProyecto,
 
-      // Planes Nutricionales
+  // Planes Nutricionales
       getPlanesNutricionalesLista: planesNutricionalesService.getPlanesNutricionalesLista,
       getPlanNutricionalPorId: planesNutricionalesService.getPlanNutricionalPorId,
       crearPlanNutricional: planesNutricionalesService.crearPlanNutricional,
