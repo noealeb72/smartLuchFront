@@ -660,6 +660,19 @@ const Planta = () => {
                   : 'No hay plantas registradas'
           }
           onEdit={handleEditarPlanta}
+          canEdit={(planta) => {
+            // Si estamos en el filtro de "Inactivos", no mostrar el botón de editar
+            if (filtroActivo === 'inactivo') {
+              return false;
+            }
+            // Si estamos en el filtro de "Activos", todos las plantas mostradas están activas
+            if (filtroActivo === 'activo') {
+              return true;
+            }
+            // Por defecto, usar el campo normalizado 'activo'
+            const isActivo = planta.activo === true || planta.activo === 1 || planta.activo === 'true' || planta.activo === '1';
+            return isActivo; // Solo se puede editar si está activo
+          }}
           onDelete={(planta) => {
             // No permitir eliminar si solo hay una planta
             if (plantas.length === 1) {
