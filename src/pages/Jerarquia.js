@@ -710,6 +710,26 @@ const Jerarquia = () => {
                 : 'No hay jerarquías registradas Inactivas'
           }
           onEdit={handleEditarJerarquia}
+          canEdit={(jerarquia) => {
+            // No permitir editar si la jerarquía está inactiva
+            const rawActivo = jerarquia.activo !== undefined ? jerarquia.activo :
+                             jerarquia.isActive !== undefined ? jerarquia.isActive :
+                             jerarquia.Activo !== undefined ? jerarquia.Activo :
+                             jerarquia.deletemark !== undefined ? !jerarquia.deletemark :
+                             jerarquia.Deletemark !== undefined ? !jerarquia.Deletemark :
+                             jerarquia.deleteMark !== undefined ? !jerarquia.deleteMark :
+                             undefined;
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          rawActivo === 'false' ||
+                          rawActivo === '0' ||
+                          String(rawActivo).toLowerCase() === 'false';
+            }
+            // Solo permitir editar si está activa
+            return !isInactivo;
+          }}
           onDelete={(jerarquia) => {
             // Verificar si es una jerarquía protegida
             if (esJerarquiaProtegida(jerarquia)) {
