@@ -14,25 +14,45 @@ export const planesNutricionalesService = {
    */
   getPlanesNutricionalesLista: async (page = 1, pageSize = 10, searchTerm = '', mostrarActivos = true) => {
     const baseUrl = getApiBaseUrl();
+    
+    // SIEMPRE enviar el parámetro activo explícitamente
+    // No usar el valor por defecto de la función, usar el valor que se pasa
     const params = {
       page,
       pageSize,
+      activo: mostrarActivos, // Asignar directamente el valor recibido (true o false)
     };
-    
-    // El backend espera el parámetro 'activo':
-    // - Si queremos mostrar activos: activo = true
-    // - Si queremos mostrar inactivos: activo = false
-    if (mostrarActivos !== undefined) {
-      params.activo = mostrarActivos;
-    }
     
     // Siempre enviar el parámetro search, incluso si está vacío (el backend lo maneja)
     if (searchTerm !== undefined && searchTerm !== null) {
       params.search = searchTerm.trim();
     }
+    
+    // Log temporal para debug
+    console.log('🔍 Plan Nutricional Service - Parámetros:', {
+      mostrarActivos,
+      tipo: typeof mostrarActivos,
+      params_activo: params.activo,
+      tipo_params_activo: typeof params.activo,
+      url: `${baseUrl}/api/plannutricional/lista`,
+      todos_los_params: params
+    });
+    
+    // Agregar timestamp para evitar caché
+    params._t = Date.now();
+    
     const response = await api.get(`${baseUrl}/api/plannutricional/lista`, {
       params,
     });
+    
+    console.log('🔍 Plan Nutricional Service - Respuesta recibida:', {
+      status: response.status,
+      data_keys: Object.keys(response.data),
+      items_count: response.data.items ? response.data.items.length : 0,
+      totalItems: response.data.totalItems,
+      primer_item: response.data.items && response.data.items.length > 0 ? response.data.items[0] : null
+    });
+    
     return response.data;
   },
 

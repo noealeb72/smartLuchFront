@@ -940,6 +940,25 @@ const Turno = () => {
                 : 'No hay turnos registrados Inactivos'
           }
           onEdit={handleEditarTurno}
+          canEdit={(turno) => {
+            // Solo se puede editar si el turno está activo
+            const rawActivo = turno.activo !== undefined ? turno.activo :
+                             turno.isActive !== undefined ? turno.isActive :
+                             turno.Activo !== undefined ? turno.Activo :
+                             turno.deletemark !== undefined ? !turno.deletemark :
+                             turno.Deletemark !== undefined ? !turno.Deletemark :
+                             turno.deleteMark !== undefined ? !turno.deleteMark :
+                             undefined;
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          rawActivo === 'false' ||
+                          rawActivo === '0' ||
+                          String(rawActivo).toLowerCase() === 'false';
+            }
+            return !isInactivo; // Solo se puede editar si NO está inactivo
+          }}
           onDelete={(turno) => {
             Swal.fire({
               title: '¿Está seguro?',

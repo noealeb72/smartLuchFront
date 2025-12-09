@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../services/apiService';
+import { clearApiCache } from '../services/apiClient';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
@@ -20,8 +21,6 @@ const PlanNutricional = () => {
   // Estado de paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -35,12 +34,25 @@ const PlanNutricional = () => {
     try {
       setIsLoading(true);
       
+      // Limpiar caché antes de cargar para asegurar datos frescos
+      clearApiCache();
+      
       // Si hay término de búsqueda, usar pageSize=100 y page=1 para obtener todos los resultados
       // Si no hay búsqueda, usar la paginación normal
       const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
       const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
       
       const data = await apiService.getPlanesNutricionalesLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
+      
+      // Log para ver qué devuelve el backend
+      console.log('🔍 Plan Nutricional - Respuesta del backend:', {
+        mostrarActivos_enviado: mostrarActivos,
+        data_completa: data,
+        totalItems: data.totalItems,
+        totalPages: data.totalPages,
+        items_count: data.items ? data.items.length : 0,
+        items_ejemplo: data.items && data.items.length > 0 ? data.items[0] : null
+      });
       
       // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
       let planesData = [];
@@ -53,13 +65,37 @@ const PlanNutricional = () => {
         planesData = data.data;
       }
       
-      // Usar los valores de paginación del backend
-      const totalItemsBackend = data.totalItems || planesData.length;
-      const totalPagesBackend = data.totalPages || Math.ceil(totalItemsBackend / pageSize);
+      console.log('🔍 Plan Nutricional - PlanesData extraídos:', {
+        cantidad: planesData.length,
+        primeros_3: planesData.slice(0, 3).map(p => ({
+          id: p.Id || p.id,
+          nombre: p.Nombre || p.nombre,
+          Activo: p.Activo,
+          activo: p.activo,
+          Deletemark: p.Deletemark
+        }))
+      });
       
-      setPlanes(planesData);
-      setTotalPages(totalPagesBackend);
-      setTotalItems(totalItemsBackend);
+      // Normalizar los datos del DTO (PascalCase a minúsculas) para consistencia
+      // El backend devuelve Nombre, Descripcion, Activo, Deletemark
+      const planesNormalizados = planesData.map(plan => ({
+        ...plan,
+        id: plan.Id || plan.id,
+        nombre: plan.Nombre || plan.nombre || '',
+        descripcion: plan.Descripcion || plan.descripcion || '',
+        // Normalizar el campo activo: puede venir como Activo (PascalCase), activo (camelCase), o Deletemark (inverso)
+        activo: plan.Activo !== undefined ? plan.Activo : 
+               (plan.activo !== undefined ? plan.activo : 
+               (plan.Deletemark !== undefined ? !plan.Deletemark : 
+               (plan.deletemark !== undefined ? !plan.deletemark : true))),
+        // Mantener también los campos originales para compatibilidad
+        Activo: plan.Activo !== undefined ? plan.Activo : 
+               (plan.activo !== undefined ? plan.activo : 
+               (plan.Deletemark !== undefined ? !plan.Deletemark : 
+               (plan.deletemark !== undefined ? !plan.deletemark : true))),
+      }));
+      
+      setPlanes(planesNormalizados);
     } catch (error) {
       if (!error.redirectToLogin) {
         Swal.fire({
@@ -72,8 +108,6 @@ const PlanNutricional = () => {
       }
       
       setPlanes([]);
-      setTotalPages(1);
-      setTotalItems(0);
     } finally {
       setIsLoading(false);
     }
@@ -87,6 +121,13 @@ const PlanNutricional = () => {
   // Cargar planes cuando cambia la página, el filtro o el filtroActivo
   useEffect(() => {
     const soloActivos = filtroActivo === 'activo';
+    console.log('🔍 Plan Nutricional Page - useEffect:', {
+      filtroActivo,
+      soloActivos,
+      tipo_soloActivos: typeof soloActivos,
+      currentPage,
+      filtro
+    });
     cargarPlanes(currentPage, filtro, soloActivos);
   }, [currentPage, filtro, filtroActivo, cargarPlanes]);
 
@@ -207,11 +248,6 @@ const PlanNutricional = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Manejar cambio de página
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
   };
 
   // Crear nuevo plan nutricional
@@ -613,6 +649,37 @@ const PlanNutricional = () => {
                 : 'No hay planes nutricionales registrados Inactivos'
           }
           onEdit={handleEditarPlan}
+          canEdit={(plan) => {
+            // Si estamos en el filtro de "Inactivos", ningún plan se puede editar
+            if (filtroActivo === 'inactivo') {
+              return false;
+            }
+            
+            // Si estamos en el filtro de "Activos", todos los planes se pueden editar
+            if (filtroActivo === 'activo') {
+              return true;
+            }
+            
+            // Por defecto, verificar el estado del plan
+            // Verificar múltiples campos posibles para asegurar detección correcta
+            const rawActivo = plan.activo !== undefined ? plan.activo :
+                             plan.isActive !== undefined ? plan.isActive :
+                             plan.Activo !== undefined ? plan.Activo :
+                             plan.deletemark !== undefined ? !plan.deletemark :
+                             plan.Deletemark !== undefined ? !plan.Deletemark :
+                             plan.deleteMark !== undefined ? !plan.deleteMark :
+                             undefined;
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          rawActivo === 'false' ||
+                          rawActivo === '0' ||
+                          String(rawActivo).toLowerCase() === 'false';
+            }
+            
+            return !isInactivo; // Solo se puede editar si NO está inactivo
+          }}
           onDelete={(plan) => {
             Swal.fire({
               title: '¿Está seguro?',
@@ -681,45 +748,23 @@ const PlanNutricional = () => {
             });
           }}
           canDelete={(plan) => {
-            // No permitir eliminar si solo hay un plan nutricional
-            if (planes.length <= 1) {
+            // Usar el campo normalizado 'activo' que ya viene del mapeo
+            // Si estamos en el filtro de "Activos", todos los planes mostrados están activos
+            if (filtroActivo === 'activo') {
+              return true;
+            }
+            // Si estamos en el filtro de "Inactivos", no mostrar el botón de eliminar
+            if (filtroActivo === 'inactivo') {
               return false;
             }
-            // No permitir eliminar si el plan está inactivo
-            const rawActivo = plan.activo !== undefined ? plan.activo :
-                             plan.isActive !== undefined ? plan.isActive :
-                             plan.Activo !== undefined ? plan.Activo :
-                             plan.deletemark !== undefined ? !plan.deletemark :
-                             plan.Deletemark !== undefined ? !plan.Deletemark :
-                             plan.deleteMark !== undefined ? !plan.deleteMark :
-                             undefined;
-            let isInactivo = false;
-            if (rawActivo !== undefined) {
-              isInactivo = rawActivo === false ||
-                          rawActivo === 0 ||
-                          rawActivo === 'false' ||
-                          rawActivo === '0' ||
-                          String(rawActivo).toLowerCase() === 'false';
-            }
-            return !isInactivo;
+            // Por defecto, usar el campo normalizado 'activo'
+            const isActivo = plan.activo === true || plan.activo === 1 || plan.activo === 'true' || plan.activo === '1';
+            return isActivo; // Solo se puede eliminar si está activo
           }}
           renderActions={(plan) => {
-            const rawActivo = plan.activo !== undefined ? plan.activo :
-                             plan.isActive !== undefined ? plan.isActive :
-                             plan.Activo !== undefined ? plan.Activo :
-                             plan.deletemark !== undefined ? !plan.deletemark :
-                             plan.Deletemark !== undefined ? !plan.Deletemark :
-                             plan.deleteMark !== undefined ? !plan.deleteMark :
-                             undefined;
-            let isInactivo = false;
-            if (rawActivo !== undefined) {
-              isInactivo = rawActivo === false ||
-                          rawActivo === 0 ||
-                          rawActivo === 'false' ||
-                          rawActivo === '0' ||
-                          String(rawActivo).toLowerCase() === 'false';
-            }
-            if (isInactivo) {
+            // Si estamos en el filtro de "Inactivos", mostrar el botón verde de activar
+            if (filtroActivo === 'inactivo') {
+              // Todos los planes mostrados están inactivos, mostrar botón verde
               return (
                 <button
                   className="btn btn-sm btn-success"
@@ -770,6 +815,9 @@ const PlanNutricional = () => {
                 </button>
               );
             }
+            
+            // Si estamos en el filtro de "Activos", no mostrar botón verde
+            // (los botones de editar y eliminar se muestran automáticamente)
             return null;
           }}
           pageSize={pageSize}
