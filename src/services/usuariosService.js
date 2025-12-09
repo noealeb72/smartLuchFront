@@ -26,11 +26,10 @@ export const usuariosService = {
       params.activo = mostrarActivos;
     }
     
-    if (searchTerm && searchTerm.trim()) {
+    // Siempre enviar el parámetro search, incluso si está vacío (el backend lo maneja)
+    if (searchTerm !== undefined && searchTerm !== null) {
       params.search = searchTerm.trim();
     }
-    
-    console.log('📤 Parámetros enviados al backend:', params);
     
     const response = await api.get(`${baseUrl}/api/usuario/lista`, {
       params,
@@ -39,17 +38,36 @@ export const usuariosService = {
   },
 
   /**
+   * Obtiene un usuario por su ID
+   */
+  getUsuarioPorId: async (usuarioId) => {
+    const baseUrl = getApiBaseUrl();
+    // Asegurar que el ID sea número entero
+    const id = Number(usuarioId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de usuario no válido: ' + JSON.stringify(usuarioId));
+    }
+    const response = await api.get(`${baseUrl}/api/usuario/${id}`);
+    return response.data;
+  },
+
+  /**
    * Crea un nuevo usuario
    */
   crearUsuario: async (usuarioData) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.post(`${baseUrl}/api/usuario/Create`, usuarioData, {
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    });
-    clearApiCache();
-    return response.data;
+    const url = `${baseUrl}/api/usuario/crear`;
+    try {
+      const response = await api.post(url, usuarioData, {
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+      });
+      clearApiCache();
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   },
 
   /**
@@ -57,13 +75,18 @@ export const usuariosService = {
    */
   actualizarUsuario: async (usuarioData) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.put(`${baseUrl}/api/usuario/Update`, usuarioData, {
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    });
-    clearApiCache();
-    return response.data;
+    const url = `${baseUrl}/api/usuario/actualizar`;
+    try {
+      const response = await api.put(url, usuarioData, {
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+      });
+      clearApiCache();
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   },
 
   /**
@@ -71,30 +94,21 @@ export const usuariosService = {
    */
   eliminarUsuario: async (usuarioId) => {
     const baseUrl = getApiBaseUrl();
-    
-    console.log('🗑️ Intentando dar de baja usuario ID:', usuarioId);
-    console.log('🔗 Base URL:', baseUrl);
-    
-    // El backend espera el ID como query parameter según el patrón del LoginController
-    const url = `${baseUrl}/api/usuario/baja?id=${usuarioId}`;
-    console.log('🔗 URL completa:', url);
-    
+    // Asegurar que el ID sea número entero
+    const id = Number(usuarioId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de usuario no válido: ' + JSON.stringify(usuarioId));
+    }
+    const url = `${baseUrl}/api/usuario/baja?id=${id}`;
     try {
       const response = await api.post(url, null, {
         headers: {
           'Content-Type': 'application/json; charset=utf-8',
         },
       });
-      console.log('✅ Usuario dado de baja exitosamente');
-      console.log('📥 Respuesta:', response.data);
       clearApiCache();
       return response.data;
     } catch (error) {
-      console.error('❌ Error al dar de baja usuario');
-      console.error('❌ Status:', error.response?.status);
-      console.error('❌ Status Text:', error.response?.statusText);
-      console.error('❌ Response Data:', error.response?.data);
-      console.error('❌ URL intentada:', url);
       throw error;
     }
   },
@@ -104,30 +118,21 @@ export const usuariosService = {
    */
   activarUsuario: async (usuarioId) => {
     const baseUrl = getApiBaseUrl();
-    
-    console.log('✅ Intentando activar usuario ID:', usuarioId);
-    console.log('🔗 Base URL:', baseUrl);
-    
-    // El backend espera el ID como query parameter
-    const url = `${baseUrl}/api/usuario/activar?id=${usuarioId}`;
-    console.log('🔗 URL completa:', url);
-    
+    // Asegurar que el ID sea número entero
+    const id = Number(usuarioId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de usuario no válido: ' + JSON.stringify(usuarioId));
+    }
+    const url = `${baseUrl}/api/usuario/activar?id=${id}`;
     try {
       const response = await api.post(url, null, {
         headers: {
           'Content-Type': 'application/json; charset=utf-8',
         },
       });
-      console.log('✅ Usuario activado exitosamente');
-      console.log('📥 Respuesta:', response.data);
       clearApiCache();
       return response.data;
     } catch (error) {
-      console.error('❌ Error al activar usuario');
-      console.error('❌ Status:', error.response?.status);
-      console.error('❌ Status Text:', error.response?.statusText);
-      console.error('❌ Response Data:', error.response?.data);
-      console.error('❌ URL intentada:', url);
       throw error;
     }
   },

@@ -56,65 +56,49 @@ const Usuarios = () => {
     fotoPreview: null,
   });
 
-  // Cargar usuarios con paginación y búsqueda
+  // Cargar usuarios usando /api/usuario/lista con paginación
   const cargarUsuarios = useCallback(async (page = 1, searchTerm = '', soloActivos = true) => {
     try {
       setIsLoading(true);
+      
+      // Si hay término de búsqueda, usar pageSize=100 y page=1 para obtener todos los resultados
+      // Si no hay búsqueda, usar la paginación normal
+      const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
+      const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
+      
       // Convertir el filtro a boolean para el backend
-      // true = solo activos, false = todos (activos e inactivos)
+      // true = solo activos, false = inactivos
       const soloActivosParam = soloActivos === true;
-      const data = await apiService.getUsuarios(page, pageSize, searchTerm, soloActivosParam);
       
-      console.log('📥 Datos recibidos del backend (getUsuarios):', data);
-      console.log('📋 Tipo de datos:', typeof data);
-      console.log('📋 Es array?', Array.isArray(data));
-      console.log('📋 Keys del objeto:', data && typeof data === 'object' ? Object.keys(data) : 'N/A');
+      const data = await apiService.getUsuarios(pageToUse, pageSizeToUse, searchTerm, soloActivosParam);
       
-      // El backend puede devolver los datos de diferentes formas
-      // Opción 1: { data: [...], totalPages: X, totalItems: Y }
-      // Opción 2: { items: [...], totalPages: X, totalItems: Y }
-      // Opción 3: Array directo [...]
-      
+      // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
       let usuariosArray = [];
       
-      if (Array.isArray(data)) {
+      if (data.items && Array.isArray(data.items)) {
+        usuariosArray = data.items;
+      } else if (Array.isArray(data)) {
         usuariosArray = data;
-        setTotalPages(1);
-        setTotalItems(data.length);
       } else if (data.data && Array.isArray(data.data)) {
         usuariosArray = data.data;
-        setTotalPages(data.totalPages || data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.data.length);
-      } else if (data.items && Array.isArray(data.items)) {
-        usuariosArray = data.items;
-        setTotalPages(data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.items.length);
-      } else {
-        usuariosArray = [];
-        setTotalPages(1);
-        setTotalItems(0);
       }
       
-      console.log('👥 Usuarios procesados:', usuariosArray);
+      // Usar los valores de paginación del backend
+      const totalItemsBackend = data.totalItems || usuariosArray.length;
+      const totalPagesBackend = data.totalPages || Math.ceil(totalItemsBackend / pageSize);
+      
       if (usuariosArray.length > 0) {
-        console.log('📝 Primer usuario (ejemplo):', usuariosArray[0]);
-        console.log('📝 Keys del primer usuario:', Object.keys(usuariosArray[0]));
-        
         // Mapear usuarios del formato del backend al formato esperado
         const usuariosMapeados = mapUsuarios(usuariosArray);
-        
-        console.log('🔄 Usuarios mapeados:', usuariosMapeados);
-        if (usuariosMapeados.length > 0) {
-          console.log('📝 Primer usuario mapeado:', usuariosMapeados[0]);
-          console.log('📝 Keys del usuario mapeado:', Object.keys(usuariosMapeados[0]));
-        }
-        
         setUsuarios(usuariosMapeados);
       } else {
         setUsuarios(usuariosArray);
       }
+      
+      setTotalPages(totalPagesBackend);
+      setTotalItems(totalItemsBackend);
     } catch (error) {
-      console.error('Error al cargar usuarios:', error);
+      // Error al cargar usuarios
       
       // Si hay error de conexión, el interceptor ya redirige automáticamente
       if (!error.redirectToLogin) {
@@ -187,12 +171,54 @@ const Usuarios = () => {
         });
       }
     } catch (error) {
-      console.error('Error al cargar datos de referencia:', error);
+      // Error al cargar datos de referencia
       // Opcional: mostrar Swal si querés
       // Swal.fire({ ... });
     }
   }, [vista, usuarioEditando]);
   
+  // Asignar automáticamente valores únicos cuando hay una sola opción disponible
+  // Esto se ejecuta cuando cambian los arrays de opciones o cuando cambia formData
+  useEffect(() => {
+    if (vista === 'crear' || vista === 'editar') {
+      setFormData((prev) => {
+        const updated = { ...prev };
+        let hasChanges = false;
+
+        // Asignar jerarquía si hay una sola opción y no está asignada
+        if (jerarquias.length === 1 && (!prev.jerarquia_id || prev.jerarquia_id === '' || prev.jerarquia_id === 0)) {
+          updated.jerarquia_id = jerarquias[0].id;
+          hasChanges = true;
+        }
+
+        // Asignar planta si hay una sola opción y no está asignada
+        if (plantas.length === 1 && (!prev.planta_id || prev.planta_id === '' || prev.planta_id === 0)) {
+          updated.planta_id = plantas[0].id;
+          hasChanges = true;
+        }
+
+        // Asignar centro de costo si hay una sola opción y no está asignada
+        if (centrosDeCosto.length === 1 && (!prev.centrodecosto_id || prev.centrodecosto_id === '' || prev.centrodecosto_id === 0)) {
+          updated.centrodecosto_id = centrosDeCosto[0].id;
+          hasChanges = true;
+        }
+
+        // Asignar proyecto si hay una sola opción y no está asignada
+        if (proyectos.length === 1 && (!prev.proyecto_id || prev.proyecto_id === '' || prev.proyecto_id === 0)) {
+          updated.proyecto_id = proyectos[0].id;
+          hasChanges = true;
+        }
+
+        // Asignar plan nutricional si hay una sola opción y no está asignada
+        if (planesNutricionales.length === 1 && (!prev.plannutricional_id || prev.plannutricional_id === '' || prev.plannutricional_id === 0)) {
+          updated.plannutricional_id = planesNutricionales[0].id;
+          hasChanges = true;
+        }
+
+        return hasChanges ? updated : prev;
+      });
+    }
+  }, [jerarquias, plantas, centrosDeCosto, proyectos, planesNutricionales, vista]);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -232,8 +258,11 @@ const Usuarios = () => {
   // Abrir página para crear nuevo usuario
   const handleCrearUsuario = () => {
     setUsuarioEditando(null);
-    setFormData({
+    
+    // Preparar formData inicial con valores automáticos si hay una sola opción disponible
+    const nuevoFormData = {
       id: null,
+      username: '',
       nombre: '',
       apellido: '',
       legajo: '',
@@ -241,14 +270,18 @@ const Usuarios = () => {
       cuil: '',
       email: '',
       telefono: '',
-      planta_id: '',
-      centrodecosto_id: '',
-      proyecto_id: '',
-      jerarquia_id: '',
-      plannutricional_id: '',
+      planta_id: plantas.length === 1 ? plantas[0].id : '',
+      centrodecosto_id: centrosDeCosto.length === 1 ? centrosDeCosto[0].id : '',
+      proyecto_id: proyectos.length === 1 ? proyectos[0].id : '',
+      jerarquia_id: jerarquias.length === 1 ? jerarquias[0].id : '',
+      plannutricional_id: planesNutricionales.length === 1 ? planesNutricionales[0].id : '',
       contraseña: '',
       confirmarContraseña: '',
-    });
+      foto: null,
+      fotoPreview: null,
+    };
+    
+    setFormData(nuevoFormData);
     setVista('crear');
   };
 
@@ -287,16 +320,6 @@ const Usuarios = () => {
     const centroId = obtenerId(usuario.centrodecosto_id, centrosDeCosto, 'centrodecosto');
     const proyectoId = obtenerId(usuario.proyecto_id, proyectos, 'proyecto');
     
-    console.log('DEBUG handleEditarUsuario - Valores cargados:', {
-      usuario,
-      planta_id_original: usuario.planta_id,
-      planta_id_formateado: plantaId,
-      plantas_disponibles: plantas.map(p => ({ id: p.id, nombre: p.nombre })),
-      centrodecosto_id_original: usuario.centrodecosto_id,
-      centrodecosto_id_formateado: centroId,
-      centros_disponibles: centrosDeCosto.map(c => ({ id: c.id, nombre: c.nombre })),
-    });
-    
     setFormData({
       id: usuario.id,
       username: usuario.username || '',
@@ -325,6 +348,14 @@ const Usuarios = () => {
   // Manejar cambios en el formulario
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    // Debug: verificar cuando se cambia centro de costo
+    if (name === 'centrodecosto_id') {
+      console.log('DEBUG centrodecosto_id cambiado:', {
+        name,
+        value,
+        valueType: typeof value,
+      });
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -388,7 +419,7 @@ const Usuarios = () => {
         allowOutsideClick: true,
       });
     } catch (error) {
-      console.error('Error al exportar PDF:', error);
+      // Error al exportar PDF
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a PDF',
@@ -446,7 +477,7 @@ const Usuarios = () => {
         allowOutsideClick: true,
       });
     } catch (error) {
-      console.error('Error al exportar Excel:', error);
+      // Error al exportar Excel
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a Excel',
@@ -513,66 +544,85 @@ const Usuarios = () => {
   };
 
   // Validar formulario
-  const validarFormulario = () => {
+  const validarFormulario = (datosAValidar = formData) => {
     const errores = [];
     let primerCampoConError = null;
 
+    // Asegurarse de que datosAValidar tenga todas las propiedades necesarias
+    const datos = {
+      username: datosAValidar?.username || '',
+      nombre: datosAValidar?.nombre || '',
+      apellido: datosAValidar?.apellido || '',
+      legajo: datosAValidar?.legajo || '',
+      dni: datosAValidar?.dni || '',
+      cuil: datosAValidar?.cuil || '',
+      jerarquia_id: datosAValidar?.jerarquia_id || '',
+      plannutricional_id: datosAValidar?.plannutricional_id || '',
+      planta_id: datosAValidar?.planta_id || '',
+      centrodecosto_id: datosAValidar?.centrodecosto_id || '',
+      proyecto_id: datosAValidar?.proyecto_id || '',
+      contraseña: datosAValidar?.contraseña || '',
+      confirmarContraseña: datosAValidar?.confirmarContraseña || '',
+    };
+
     // Validar username solo al crear
-    if (!usuarioEditando && !formData.username.trim()) {
+    if (!usuarioEditando && !datos.username.trim()) {
       errores.push('El username es requerido');
       if (!primerCampoConError) primerCampoConError = 'username';
     }
 
     // Validar nombre
-    if (!formData.nombre.trim()) {
+    if (!datos.nombre.trim()) {
       errores.push('El nombre es requerido');
       if (!primerCampoConError) primerCampoConError = 'nombre';
     }
 
     // Validar apellido
-    if (!formData.apellido.trim()) {
+    if (!datos.apellido.trim()) {
       errores.push('El apellido es requerido');
       if (!primerCampoConError) primerCampoConError = 'apellido';
     }
 
     // Validar legajo
-    if (!formData.legajo || formData.legajo.toString().trim() === '') {
+    if (!datos.legajo || datos.legajo.toString().trim() === '') {
       errores.push('El legajo es requerido');
       if (!primerCampoConError) primerCampoConError = 'legajo';
     }
 
     // Validar DNI
-    if (!formData.dni || formData.dni.toString().trim() === '') {
+    if (!datos.dni || datos.dni.toString().trim() === '') {
       errores.push('El DNI es requerido');
       if (!primerCampoConError) primerCampoConError = 'dni';
     }
 
     // Validar CUIL
-    if (!formData.cuil || formData.cuil.trim() === '') {
+    if (!datos.cuil || datos.cuil.trim() === '') {
       errores.push('El CUIL es requerido');
       if (!primerCampoConError) primerCampoConError = 'cuil';
     }
 
     // Validar jerarquía (solo si hay más de una opción disponible y no es root)
-    if (!formData.jerarquia_id || formData.jerarquia_id === '') {
+    if (!datos.jerarquia_id || datos.jerarquia_id === '') {
       // Si solo hay una opción, no validar (se seleccionará automáticamente)
-      if (jerarquias.length > 1 && formData.username !== 'root') {
+      if (jerarquias.length > 1 && datos.username !== 'root') {
         errores.push('La jerarquía es requerida');
         if (!primerCampoConError) primerCampoConError = 'jerarquia_id';
       }
     }
 
     // Validar plan nutricional (solo si hay más de una opción disponible)
-    if (!formData.plannutricional_id || formData.plannutricional_id === '') {
-      // Si solo hay una opción, no validar (se seleccionará automáticamente)
-      if (planesNutricionales.length > 1) {
+    // Si hay un solo plan nutricional, no validar porque se asignará automáticamente
+    if (planesNutricionales.length > 1) {
+      // Convertir a string para comparación consistente (los valores de select vienen como string)
+      const planNutricionalValue = String(datos.plannutricional_id || '').trim();
+      if (!planNutricionalValue || planNutricionalValue === '' || planNutricionalValue === '0' || planNutricionalValue === 'null' || planNutricionalValue === 'undefined') {
         errores.push('El plan nutricional es requerido');
         if (!primerCampoConError) primerCampoConError = 'plannutricional_id';
       }
     }
 
     // Validar planta (solo si hay más de una opción disponible)
-    if (!formData.planta_id || formData.planta_id === '') {
+    if (!datos.planta_id || datos.planta_id === '') {
       // Si solo hay una opción, no validar (se seleccionará automáticamente)
       if (plantas.length > 1) {
         errores.push('La planta es requerida');
@@ -581,16 +631,19 @@ const Usuarios = () => {
     }
 
     // Validar centro de costo (solo si hay más de una opción disponible)
-    if (!formData.centrodecosto_id || formData.centrodecosto_id === '') {
-      // Si solo hay una opción, no validar (se seleccionará automáticamente)
-      if (centrosDeCosto.length > 1) {
+    // Si hay un solo centro de costo, no validar porque se asignará automáticamente
+    if (centrosDeCosto.length > 1) {
+      // Convertir a string para comparación consistente (los valores de select vienen como string)
+      const centroCostoValue = String(datos.centrodecosto_id || '').trim();
+      if (!centroCostoValue || centroCostoValue === '' || centroCostoValue === '0' || centroCostoValue === 'null' || centroCostoValue === 'undefined') {
         errores.push('El centro de costo es requerido');
         if (!primerCampoConError) primerCampoConError = 'centrodecosto_id';
       }
     }
+    // Si hay un solo centro de costo, asegurarse de que esté asignado (se hará automáticamente en handleGuardar)
 
     // Validar proyecto (solo si hay más de una opción disponible)
-    if (!formData.proyecto_id || formData.proyecto_id === '') {
+    if (!datos.proyecto_id || datos.proyecto_id === '') {
       // Si solo hay una opción, no validar (se seleccionará automáticamente)
       if (proyectos.length > 1) {
         errores.push('El proyecto es requerido');
@@ -601,7 +654,7 @@ const Usuarios = () => {
       // Validar contraseña solo si es nuevo usuario o si se está cambiando
     if (!usuarioEditando) {
       // Al crear, la contraseña es obligatoria
-      const passwordValue = formData.contraseña?.trim() || '';
+      const passwordValue = datos.contraseña?.trim() || '';
       if (!passwordValue || passwordValue.length < 6) {
         errores.push('La contraseña es requerida y debe tener al menos 6 caracteres');
         if (!primerCampoConError) primerCampoConError = 'contraseña';
@@ -609,9 +662,9 @@ const Usuarios = () => {
     }
 
     // Validar que las contraseñas coincidan si se está creando o cambiando
-    if (formData.contraseña && formData.contraseña.trim() !== '') {
-      const passwordValue = formData.contraseña.trim();
-      const confirmPasswordValue = formData.confirmarContraseña?.trim() || '';
+    if (datos.contraseña && datos.contraseña.trim() !== '') {
+      const passwordValue = datos.contraseña.trim();
+      const confirmPasswordValue = datos.confirmarContraseña?.trim() || '';
       if (passwordValue !== confirmPasswordValue) {
         errores.push('Las contraseñas no coinciden');
         if (!primerCampoConError) primerCampoConError = 'confirmarContraseña';
@@ -671,14 +724,34 @@ const Usuarios = () => {
     if ((!datosActualizados.jerarquia_id || datosActualizados.jerarquia_id === '' || datosActualizados.jerarquia_id === 0) && jerarquias.length > 0) {
       datosActualizados.jerarquia_id = formData.jerarquia_id || jerarquias[0].id;
     }
-    if (planesNutricionales.length === 1) {
-      datosActualizados.plannutricional_id = planesNutricionales[0].id;
+    // Plan nutricional: SIEMPRE usar el valor seleccionado en el formulario si existe
+    // Prioridad: 1) Valor seleccionado en formData (SIEMPRE tiene prioridad), 2) Valor único disponible, 3) null
+    // Convertir a string para comparación consistente (los valores de select vienen como string)
+    const planNutricionalFormValue = String(formData.plannutricional_id || '').trim();
+    
+    // SIEMPRE priorizar el valor del select si existe (incluso si hay múltiples opciones)
+    if (planNutricionalFormValue && planNutricionalFormValue !== '' && planNutricionalFormValue !== '0' && planNutricionalFormValue !== 'null' && planNutricionalFormValue !== 'undefined') {
+      // Si hay un valor seleccionado en el formulario, SIEMPRE usarlo (sin importar si hay uno o múltiples)
+      datosActualizados.plannutricional_id = planNutricionalFormValue;
+    } else if (planesNutricionales.length === 1) {
+      // Si no hay valor seleccionado pero hay solo uno disponible, asignarlo automáticamente
+      datosActualizados.plannutricional_id = String(planesNutricionales[0].id);
     }
     if ((!datosActualizados.planta_id || datosActualizados.planta_id === '' || datosActualizados.planta_id === 0) && plantas.length === 1) {
       datosActualizados.planta_id = plantas[0].id;
     }
-    if ((!datosActualizados.centrodecosto_id || datosActualizados.centrodecosto_id === '' || datosActualizados.centrodecosto_id === 0) && centrosDeCosto.length === 1) {
-      datosActualizados.centrodecosto_id = centrosDeCosto[0].id;
+    // Centro de costo: SIEMPRE usar el valor seleccionado en el formulario si existe
+    // Prioridad: 1) Valor seleccionado en formData (SIEMPRE tiene prioridad), 2) Valor único disponible, 3) null
+    // Convertir a string para comparación consistente (los valores de select vienen como string)
+    const centroCostoFormValue = String(formData.centrodecosto_id || '').trim();
+    
+    // SIEMPRE priorizar el valor del select si existe (incluso si hay múltiples opciones)
+    if (centroCostoFormValue && centroCostoFormValue !== '' && centroCostoFormValue !== '0' && centroCostoFormValue !== 'null' && centroCostoFormValue !== 'undefined') {
+      // Si hay un valor seleccionado en el formulario, SIEMPRE usarlo (sin importar si hay uno o múltiples)
+      datosActualizados.centrodecosto_id = centroCostoFormValue;
+    } else if (centrosDeCosto.length === 1) {
+      // Si no hay valor seleccionado pero hay solo uno disponible, asignarlo automáticamente
+      datosActualizados.centrodecosto_id = String(centrosDeCosto[0].id);
     }
     if ((!datosActualizados.proyecto_id || datosActualizados.proyecto_id === '' || datosActualizados.proyecto_id === 0) && proyectos.length === 1) {
       datosActualizados.proyecto_id = proyectos[0].id;
@@ -687,23 +760,23 @@ const Usuarios = () => {
     // Actualizar el estado con los valores automáticos
     setFormData(datosActualizados);
     
-    // Validar con los datos actualizados
-    if (!validarFormulario()) {
+    // Debug: verificar valores antes de validar
+    console.log('DEBUG antes de validar:', {
+      formData_plannutricional_id: formData.plannutricional_id,
+      formData_centrodecosto_id: formData.centrodecosto_id,
+      datosActualizados_plannutricional_id: datosActualizados.plannutricional_id,
+      datosActualizados_centrodecosto_id: datosActualizados.centrodecosto_id,
+      planesNutricionales_length: planesNutricionales.length,
+      centrosDeCosto_length: centrosDeCosto.length,
+    });
+    
+    // Validar con los datos actualizados (pasar datosActualizados como parámetro)
+    if (!validarFormulario(datosActualizados)) {
       return;
     }
 
     try {
       setIsLoading(true);
-
-      // Debug: verificar valores antes de construir usuarioData
-      console.log('DEBUG antes de enviar:', {
-        datosActualizados_jerarquia_id: datosActualizados.jerarquia_id,
-        formData_jerarquia_id: formData.jerarquia_id,
-        datosActualizados_planta_id: datosActualizados.planta_id,
-        formData_planta_id: formData.planta_id,
-        jerarquias: jerarquias,
-        plantas: plantas
-      });
 
       const usuarioData = {
         id: datosActualizados.id,
@@ -716,10 +789,46 @@ const Usuarios = () => {
         email: datosActualizados.email || null,
         telefono: datosActualizados.telefono || null,
         planta_id: datosActualizados.planta_id ? parseInt(datosActualizados.planta_id) : null,
-        centrodecosto_id: datosActualizados.centrodecosto_id ? parseInt(datosActualizados.centrodecosto_id) : null,
+        centrodecosto_id: (() => {
+          // Usar directamente datosActualizados que ya tiene el valor procesado correctamente
+          const valorActualizado = String(datosActualizados.centrodecosto_id || '').trim();
+          
+          if (valorActualizado && valorActualizado !== '' && valorActualizado !== '0' && valorActualizado !== 'null' && valorActualizado !== 'undefined') {
+            const valor = parseInt(valorActualizado);
+            if (!isNaN(valor)) {
+              return valor;
+            }
+          }
+          // Si hay solo un centro de costo disponible, usar ese
+          if (centrosDeCosto.length === 1) {
+            const valor = parseInt(centrosDeCosto[0].id);
+            if (!isNaN(valor)) {
+              return valor;
+            }
+          }
+          return null;
+        })(),
         proyecto_id: datosActualizados.proyecto_id ? parseInt(datosActualizados.proyecto_id) : null,
         jerarquia_id: datosActualizados.jerarquia_id ? parseInt(datosActualizados.jerarquia_id) : null,
-        plannutricional_id: datosActualizados.plannutricional_id ? parseInt(datosActualizados.plannutricional_id) : null,
+        plannutricional_id: (() => {
+          // Usar directamente datosActualizados que ya tiene el valor procesado correctamente
+          const valorActualizado = String(datosActualizados.plannutricional_id || '').trim();
+          
+          if (valorActualizado && valorActualizado !== '' && valorActualizado !== '0' && valorActualizado !== 'null' && valorActualizado !== 'undefined') {
+            const valor = parseInt(valorActualizado);
+            if (!isNaN(valor)) {
+              return valor;
+            }
+          }
+          // Si hay solo un plan nutricional disponible, usar ese
+          if (planesNutricionales.length === 1) {
+            const valor = parseInt(planesNutricionales[0].id);
+            if (!isNaN(valor)) {
+              return valor;
+            }
+          }
+          return null;
+        })(),
         fecha_ingreso: datosActualizados.fecha_ingreso || null,
         contrato: datosActualizados.contrato || null,
       };
@@ -780,21 +889,8 @@ const Usuarios = () => {
         usuarioData.contraseña = passwordValue;
       }
       
-      // Debug: verificar usuarioData antes de enviar (con el valor real de la contraseña para debugging)
-      console.log('DEBUG usuarioData completo antes de enviar:', JSON.stringify({
-        ...usuarioData,
-        contraseña: usuarioData.contraseña || null, // Mostrar el valor real para debugging
-      }, null, 2));
-      
       // Verificar que la contraseña esté presente si es necesario
       if (!usuarioEditando && !usuarioData.contraseña) {
-        console.error('ERROR: La contraseña NO está presente en usuarioData al crear usuario');
-        console.error('Valores de debug:', {
-          passwordValue,
-          datosActualizados_contraseña: datosActualizados.contraseña,
-          formData_contraseña: formData.contraseña,
-          usuarioData_contraseña: usuarioData.contraseña,
-        });
         Swal.fire({
           title: 'Error',
           text: 'Error interno: La contraseña no se capturó correctamente. Por favor, intente nuevamente.',
@@ -806,12 +902,6 @@ const Usuarios = () => {
         return;
       }
       
-      // Log adicional para verificar el objeto exacto que se enviará (con el valor real de la contraseña)
-      console.log('DEBUG objeto exacto a enviar al backend:', {
-        ...usuarioData,
-        contraseña: usuarioData.contraseña || null, // Mostrar el valor real para debugging
-      });
-
       if (usuarioEditando) {
         await apiService.actualizarUsuario(usuarioData);
         Swal.fire({
@@ -839,8 +929,6 @@ const Usuarios = () => {
       handleVolverALista();
       cargarUsuarios(currentPage, filtro, filtroActivo === 'activo');
     } catch (error) {
-      console.error('Error al guardar usuario:', error);
-      
       // Si hay error de conexión, el interceptor ya redirige automáticamente
       // Solo mostrar el error si no es un error de conexión
       if (!error.redirectToLogin) {
@@ -860,7 +948,6 @@ const Usuarios = () => {
   // Manejar cambio de página
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
-      console.log('📄 Cambiando a página:', newPage);
       setCurrentPage(newPage);
       // El useEffect se encargará de recargar los datos automáticamente
     }
@@ -916,13 +1003,19 @@ const Usuarios = () => {
           </div>
         </div>
         
+        {/* Barra informativa para creación */}
+        {vista === 'crear' && (
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
+            <i className="fa fa-info-circle" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Creando nuevo usuario - Complete los campos obligatorios para guardar.</span>
+          </div>
+        )}
+
         {/* Barra informativa para edición */}
         {vista === 'editar' && (
-          <div className="usuarios-info-bar" style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
-            <i className="fa fa-pencil"></i>
-            <span>
-              Editando usuario - Modifique los campos necesarios y guarde los cambios.
-            </span>
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
+            <i className="fa fa-pencil-alt" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Editando usuario - Modifique los campos necesarios y guarde los cambios.</span>
           </div>
         )}
         
@@ -1046,7 +1139,8 @@ const Usuarios = () => {
             {/* Contenido de Tabs */}
             {/* Tab: Información Personal */}
             {tabActivo === 'personal' && (
-              <div className="form-section-content">
+              <div className="form-section">
+                <div className="form-section-content">
               <div className="row">
                 <div className="col-md-6">
                   <div className="form-group">
@@ -1209,12 +1303,14 @@ const Usuarios = () => {
                   </div>
                 </div>
               </div>
+                </div>
               </div>
             )}
 
             {/* Tab: Identificación */}
             {tabActivo === 'identificacion' && (
-              <div className="form-section-content">
+              <div className="form-section">
+                <div className="form-section-content">
               <div className="row">
                 <div className="col-md-4">
                   <div className="form-group">
@@ -1265,12 +1361,14 @@ const Usuarios = () => {
                   </div>
                 </div>
               </div>
+                </div>
               </div>
             )}
 
             {/* Tab: Contacto */}
             {tabActivo === 'contacto' && (
-              <div className="form-section-content">
+              <div className="form-section">
+                <div className="form-section-content">
               <div className="row">
                 <div className="col-md-6">
                   <div className="form-group">
@@ -1299,12 +1397,14 @@ const Usuarios = () => {
                   </div>
                 </div>
               </div>
+                </div>
               </div>
             )}
 
             {/* Tab: Organización */}
             {tabActivo === 'organizacion' && (
-              <div className="form-section-content">
+              <div className="form-section">
+                <div className="form-section-content">
               <div className="row">
                 <div className="col-md-6">
                   <div className="form-group">
@@ -1340,7 +1440,7 @@ const Usuarios = () => {
                       className="form-control"
                       id="plannutricional_id"
                       name="plannutricional_id"
-                      value={formData.plannutricional_id || ''}
+                      value={formData.plannutricional_id || (planesNutricionales.length === 1 ? planesNutricionales[0].id : '')}
                       onChange={handleInputChange}
                       disabled={planesNutricionales.length <= 1}
                       required
@@ -1416,7 +1516,7 @@ const Usuarios = () => {
                       className="form-control"
                       id="centrodecosto_id"
                       name="centrodecosto_id"
-                      value={formData.centrodecosto_id || ''}
+                      value={formData.centrodecosto_id || (centrosDeCosto.length === 1 ? centrosDeCosto[0].id : '')}
                       onChange={handleInputChange}
                       disabled={centrosDeCosto.length <= 1}
                       required
@@ -1510,13 +1610,15 @@ const Usuarios = () => {
                     />
                   </div>
                 </div>
+                </div>
               </div>
               </div>
             )}
 
             {/* Tab: Seguridad */}
             {tabActivo === 'seguridad' && (
-              <div className="form-section-content">
+              <div className="form-section">
+                <div className="form-section-content">
                 {/* Campos señuelo para que el navegador use el autocompletado */}
                 <input
                   type="text"
@@ -1572,6 +1674,7 @@ const Usuarios = () => {
                     </div>
                   </div>
                 </div>
+              </div>
               </div>
             )}
 

@@ -20,15 +20,6 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      // Log solo en desarrollo para no saturar la consola
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔑 Token agregado al header Authorization para:', config.url);
-      }
-    } else {
-      // Solo loguear si no hay token y la petición requiere autenticación
-      if (config.url && !config.url.includes('/login')) {
-        console.warn('⚠️ No hay token disponible para la petición:', config.url);
-      }
     }
     
     // Agregar timestamp para cache busting si es necesario

@@ -20,65 +20,23 @@ export const AuthProvider = ({ children }) => {
   // Memoizar la función de carga de usuario
   const loadUserFromStorage = useCallback(() => {
     try {
-      const storedUser = {
-        // Campos principales del DTO
-        id: localStorage.getItem('id'),
-        nombre: localStorage.getItem('nombre'),
-        apellido: localStorage.getItem('apellido'),
-        legajo: localStorage.getItem('legajo'),
-        dni: localStorage.getItem('dni'),
-        cuil: localStorage.getItem('cuil'),
-        plannutricional_id: localStorage.getItem('plannutricional_id'),
-        plannutricional_nombre: localStorage.getItem('plannutricional_nombre'),
-        planta_id: localStorage.getItem('planta_id'),
-        planta_nombre: localStorage.getItem('planta_nombre'),
-        centrodecosto_id: localStorage.getItem('centrodecosto_id'),
-        centrodecosto_nombre: localStorage.getItem('centrodecosto_nombre'),
-        proyecto_id: localStorage.getItem('proyecto_id'),
-        proyecto_nombre: localStorage.getItem('proyecto_nombre'),
-        jerarquia_id: localStorage.getItem('jerarquia_id'),
-        jerarquia_nombre: localStorage.getItem('jerarquia_nombre'),
-        pedidos: localStorage.getItem('pedidos'),
-        bonificaciones_invitado: localStorage.getItem('bonificaciones_invitado'),
-        bonificaciones: localStorage.getItem('bonificaciones'),
-        // Campos adicionales para compatibilidad
-        role: localStorage.getItem('role') || localStorage.getItem('jerarquia_nombre'),
-        plannutricional: localStorage.getItem('plannutricional') || localStorage.getItem('plannutricional_id'),
-        planta: localStorage.getItem('planta') || localStorage.getItem('planta_id'),
-        centrodecosto: localStorage.getItem('centrodecosto') || localStorage.getItem('centrodecosto_id'),
-        proyecto: localStorage.getItem('proyecto') || localStorage.getItem('proyecto_id'),
-        jerarquia: localStorage.getItem('jerarquia') || localStorage.getItem('jerarquia_id'),
-        bonificacion: localStorage.getItem('bonificacion') || localStorage.getItem('bonificaciones'),
-        bonificacion_invitado: localStorage.getItem('bonificacion_invitado') || localStorage.getItem('bonificaciones_invitado'),
-        // Configuración adicional
-        smarTime: localStorage.getItem('smarTime'),
-        usuarioSmatTime: localStorage.getItem('usuarioSmatTime'),
-        tipoVisualizacionCodigo: localStorage.getItem('tipoVisualizacionCodigo') || 'QR',
-      };
-
-      // Validar que los datos necesarios estén presentes
-      const hasRequiredData =
-        (storedUser.planta_id || storedUser.planta) &&
-        storedUser.planta_id !== 'null' &&
-        storedUser.planta_id !== 'undefined' &&
-        (storedUser.centrodecosto_id || storedUser.centrodecosto) &&
-        storedUser.centrodecosto_id !== 'null' &&
-        storedUser.centrodecosto_id !== 'undefined' &&
-        (storedUser.proyecto_id || storedUser.proyecto) &&
-        storedUser.proyecto_id !== 'null' &&
-        storedUser.proyecto_id !== 'undefined' &&
-        (storedUser.jerarquia_id || storedUser.jerarquia) &&
-        storedUser.jerarquia_id !== 'null' &&
-        storedUser.jerarquia_id !== 'undefined' &&
-        (storedUser.plannutricional_id || storedUser.plannutricional) &&
-        storedUser.plannutricional_id !== 'null' &&
-        storedUser.plannutricional_id !== 'undefined';
-
-      if (hasRequiredData) {
+      const id = localStorage.getItem('id');
+      const token = localStorage.getItem('token');
+      
+      // Solo validar que existan id y token (datos mínimos requeridos)
+      if (id && token && id !== 'null' && id !== 'undefined' && token !== 'null' && token !== 'undefined') {
+        const storedUser = {
+          id: id,
+          token: token,
+          // Campos adicionales si existen (para compatibilidad)
+          jerarquia: localStorage.getItem('jerarquia') || localStorage.getItem('jerarquia_nombre') || '',
+          jerarquia_nombre: localStorage.getItem('jerarquia_nombre') || localStorage.getItem('jerarquia') || '',
+          role: localStorage.getItem('role') || localStorage.getItem('jerarquia_nombre') || localStorage.getItem('jerarquia') || '',
+        };
         setUser(storedUser);
       }
     } catch (error) {
-      console.error('Error cargando usuario desde localStorage:', error);
+      // Error silencioso al cargar usuario desde localStorage
     } finally {
       setLoading(false);
     }
@@ -95,42 +53,35 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await apiService.login(username, password);
 
-      // Debug: ver qué devuelve el backend
-      console.log('🔐 Respuesta completa del backend:', JSON.stringify(response, null, 2));
-
-      // El backend devuelve { token: string, UsuarioDto: {...} } o { token: string, usuario: {...} }
-      // Intentar diferentes nombres posibles para el DTO
       if (!response) {
         throw new Error('Usuario o contraseña incorrectos');
       }
 
-      // Buscar el token (puede venir como token, Token, etc.)
-      const token = response.token || response.Token || response.data?.token;
+      // Validar el campo Ok (debe ser true para continuar)
+      const ok = response.Ok || response.ok || response.success;
+      if (ok !== true) {
+        const mensaje = response.Mensaje || response.mensaje || response.message || 'Usuario o contraseña incorrectos';
+        throw new Error(mensaje);
+      }
+
+      // Obtener el token
+      const token = response.Token || response.token;
       if (!token) {
-        console.error('❌ No se encontró token en la respuesta. Estructura recibida:', Object.keys(response));
-        console.error('❌ Respuesta completa:', response);
         throw new Error('No se recibió token del servidor. Verifica la configuración del backend.');
       }
 
-      console.log('✅ Token recibido:', token.substring(0, 20) + '...');
-
-      // Buscar el usuario (puede venir como UsuarioDto, usuarioDto, Usuario, usuario, etc.)
-      const usuario = response.UsuarioDto || response.usuarioDto || response.Usuario || response.usuario || response.data?.UsuarioDto || response.data?.usuario;
-      
-      if (!usuario || !usuario.id) {
-        console.error('No se encontró usuario en la respuesta:', response);
-        throw new Error('Usuario o contraseña incorrectos');
+      // Obtener el ID del usuario
+      const usuarioId = response.UsuarioId || response.usuarioId || response.id;
+      if (!usuarioId) {
+        throw new Error('No se recibió el ID del usuario del servidor.');
       }
 
-      // Guardar token
-      localStorage.setItem('token', token);
-      console.log('✅ Token guardado en localStorage');
+      // Obtener la jerarquía para la redirección
+      const jerarquia = response.Jerarquia || response.jerarquia || response.JerarquiaNombre || '';
 
-      // Verificar bloqueo de usuarios (si existe jerarquia_nombre, usarla como perfil)
-      if (config && config.bloqueos) {
-        const tipoUsuario = usuario.jerarquia_nombre
-          ? usuario.jerarquia_nombre.charAt(0).toUpperCase() + usuario.jerarquia_nombre.slice(1).toLowerCase()
-          : '';
+      // Verificar bloqueo de usuarios
+      if (config && config.bloqueos && jerarquia) {
+        const tipoUsuario = jerarquia.charAt(0).toUpperCase() + jerarquia.slice(1).toLowerCase();
         const estaBloqueado = config.bloqueos[tipoUsuario] === true;
 
         if (estaBloqueado) {
@@ -140,60 +91,23 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // Guardar datos en localStorage de forma optimizada
-      // Solo guardar los campos que vienen en el DTO
+      // Guardar SOLO id y token en localStorage
+      localStorage.setItem('id', String(usuarioId));
+      localStorage.setItem('token', token);
+
+      // Crear objeto userData con la información mínima necesaria
       const userData = {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        apellido: usuario.apellido,
-        legajo: usuario.legajo,
-        dni: usuario.dni,
-        cuil: usuario.cuil,
-        plannutricional_id: usuario.plannutricional_id,
-        plannutricional_nombre: usuario.plannutricional_nombre,
-        planta_id: usuario.planta_id,
-        planta_nombre: usuario.planta_nombre,
-        centrodecosto_id: usuario.centrodecosto_id,
-        centrodecosto_nombre: usuario.centrodecosto_nombre,
-        proyecto_id: usuario.proyecto_id,
-        proyecto_nombre: usuario.proyecto_nombre,
-        jerarquia_id: usuario.jerarquia_id,
-        jerarquia_nombre: usuario.jerarquia_nombre,
-        pedidos: usuario.pedidos,
-        bonificaciones_invitado: usuario.bonificaciones_invitado,
-        bonificaciones: usuario.bonificaciones,
-        // Campos adicionales para compatibilidad
-        role: usuario.jerarquia_nombre || '', // Usar jerarquia_nombre como role
-        plannutricional: usuario.plannutricional_id, // Alias para compatibilidad
-        planta: usuario.planta_id, // Alias para compatibilidad
-        centrodecosto: usuario.centrodecosto_id, // Alias para compatibilidad
-        proyecto: usuario.proyecto_id, // Alias para compatibilidad
-        jerarquia: usuario.jerarquia_id, // Alias para compatibilidad
-        bonificacion: usuario.bonificaciones, // Alias para compatibilidad
-        bonificacion_invitado: usuario.bonificaciones_invitado, // Alias para compatibilidad
+        id: usuarioId,
+        username: response.Username || response.username || '',
+        jerarquia: jerarquia,
+        nombreCompleto: response.NombreCompleto || response.nombreCompleto || '',
+        activo: response.Activo || response.activo || true,
+        role: jerarquia, // Para compatibilidad con código existente
       };
-
-      // Batch update de localStorage para mejor performance
-      Object.keys(userData).forEach((key) => {
-        if (userData[key] !== null && userData[key] !== undefined) {
-          localStorage.setItem(key, String(userData[key]).trim());
-        }
-      });
-
-      if (config && config.smarTime !== undefined) {
-        localStorage.setItem('smarTime', String(config.smarTime));
-      }
-      if (config && config.usuarioSmatTime) {
-        localStorage.setItem('usuarioSmatTime', config.usuarioSmatTime);
-      }
 
       setUser(userData);
       return userData;
     } catch (error) {
-      console.error('❌ Error en login:', error);
-      console.error('❌ Error response:', error.response);
-      console.error('❌ Error response data:', error.response?.data);
-      
       // Mejorar mensaje de error para el usuario
       if (error.response) {
         const status = error.response.status;
@@ -212,8 +126,6 @@ export const AuthProvider = ({ children }) => {
           error.message = backendMessage || 'Credenciales incorrectas. Verifica tu usuario y contraseña.';
         } else if (status === 401) {
           error.message = backendMessage || 'Credenciales inválidas. Verifica tu usuario y contraseña.';
-          console.error('❌ 401 Unauthorized - El servidor rechazó las credenciales');
-          console.error('❌ Respuesta del servidor:', responseData);
         } else if (status === 404) {
           const baseUrl = config?.apiBaseUrl || 'http://localhost:8000';
           error.message = backendMessage || `Servicio no encontrado (404). Verifica que el backend esté corriendo en ${baseUrl} y que el endpoint /api/login/Autentificar exista.`;
@@ -249,6 +161,14 @@ export const AuthProvider = ({ children }) => {
     return user && roles.includes(user.role);
   }, [user]);
 
+  // Función para actualizar el usuario (usada por DashboardContext)
+  const updateUser = useCallback((userData) => {
+    setUser((prevUser) => ({
+      ...prevUser,
+      ...userData,
+    }));
+  }, []);
+
   // Memoizar el valor del contexto para evitar re-renders innecesarios
   const contextValue = useMemo(
     () => ({
@@ -259,8 +179,9 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated,
       hasRole,
       hasAnyRole,
+      setUser: updateUser,
     }),
-    [user, loading, login, logout, isAuthenticated, hasRole, hasAnyRole]
+    [user, loading, login, logout, isAuthenticated, hasRole, hasAnyRole, updateUser]
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

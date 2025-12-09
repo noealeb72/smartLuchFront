@@ -14,6 +14,7 @@ const Planta = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [plantaEditando, setPlantaEditando] = useState(null);
   const [filtro, setFiltro] = useState('');
+  const [filtroActivo, setFiltroActivo] = useState('activo'); // 'activo' o 'inactivo'
   const [vista, setVista] = useState('lista'); // 'lista' o 'editar' o 'crear'
   
   // Estado de paginación
@@ -29,38 +30,47 @@ const Planta = () => {
     descripcion: '',
   });
 
-  // Cargar plantas (el backend devuelve todo el listado)
-  const cargarPlantas = useCallback(async (page = 1, searchTerm = '') => {
+  // Cargar plantas usando /api/planta/lista con paginación
+  const cargarPlantas = useCallback(async (page = 1, searchTerm = '', mostrarActivos = true) => {
     try {
       setIsLoading(true);
-      const data = await apiService.getPlantasLista(page, pageSize, searchTerm);
       
-      // El backend devuelve un array completo
+      // Siempre usar pageSize=100 para obtener todos los resultados
+      // page=1 siempre para búsquedas
+      const data = await apiService.getPlantasLista(
+        1,              // page siempre 1 para búsquedas
+        100,            // pageSize máximo
+        searchTerm,     // término de búsqueda
+        mostrarActivos  // activo = true o false según el combo
+      );
+      
+      // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
       let plantasData = [];
-      if (Array.isArray(data)) {
+      if (data.items && Array.isArray(data.items)) {
+        plantasData = data.items;
+      } else if (Array.isArray(data)) {
         plantasData = data;
       } else if (data.data && Array.isArray(data.data)) {
         plantasData = data.data;
-      } else if (data.items && Array.isArray(data.items)) {
-        plantasData = data.items;
       }
       
-      // Aplicar filtro local si hay búsqueda
-      let plantasFiltradas = plantasData;
-      if (searchTerm && searchTerm.trim()) {
-        const termino = searchTerm.toLowerCase().trim();
-        plantasFiltradas = plantasData.filter(planta => 
-          (planta.nombre && planta.nombre.toLowerCase().includes(termino)) ||
-          (planta.descripcion && planta.descripcion.toLowerCase().includes(termino))
-        );
-      }
+      // Normalizar los datos del DTO (PascalCase a minúsculas) para consistencia
+      const plantasNormalizadas = plantasData.map(planta => ({
+        id: planta.Id || planta.id,
+        nombre: planta.Nombre || planta.nombre || '',
+        descripcion: planta.Descripcion || planta.descripcion || '',
+        activo: planta.Deletemark !== undefined ? !planta.Deletemark : (planta.activo !== undefined ? planta.activo : true),
+        Deletemark: planta.Deletemark,
+      }));
       
-      setPlantas(plantasFiltradas);
-      setTotalPages(Math.ceil(plantasFiltradas.length / pageSize));
-      setTotalItems(plantasFiltradas.length);
+      // Usar los valores de paginación del backend
+      const totalItemsBackend = data.totalItems || plantasNormalizadas.length;
+      const totalPagesBackend = data.totalPages || Math.ceil(totalItemsBackend / pageSize);
+      
+      setPlantas(plantasNormalizadas);
+      setTotalPages(totalPagesBackend);
+      setTotalItems(totalItemsBackend);
     } catch (error) {
-      console.error('Error al cargar plantas:', error);
-      
       if (!error.redirectToLogin) {
         Swal.fire({
           title: 'Error',
@@ -79,10 +89,16 @@ const Planta = () => {
     }
   }, [pageSize]);
 
-  // Cargar plantas cuando cambia la página o el filtro
+  // Cuando cambia el filtro o filtroActivo, resetear a página 1
   useEffect(() => {
-    cargarPlantas(currentPage, filtro);
-  }, [currentPage, filtro, cargarPlantas]);
+    setCurrentPage(1);
+  }, [filtro, filtroActivo]);
+
+  // Cargar plantas cuando cambia la página, el filtro o el filtroActivo
+  useEffect(() => {
+    const soloActivos = filtroActivo === 'activo';
+    cargarPlantas(currentPage, filtro, soloActivos);
+  }, [currentPage, filtro, filtroActivo, cargarPlantas]);
 
   // Manejar cambio de input
   const handleInputChange = (e) => {
@@ -152,8 +168,10 @@ const Planta = () => {
           title: 'Éxito',
           text: 'Planta actualizada correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       } else {
         await apiService.crearPlanta(plantaData);
@@ -161,15 +179,18 @@ const Planta = () => {
           title: 'Éxito',
           text: 'Planta creada correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       }
 
       handleVolverALista();
-      cargarPlantas(currentPage, filtro);
+      const soloActivos = filtroActivo === 'activo';
+      cargarPlantas(currentPage, filtro, soloActivos);
     } catch (error) {
-      console.error('Error al guardar planta:', error);
+      // Error al guardar planta
       
       if (!error.redirectToLogin) {
         // Extraer el mensaje del error del backend
@@ -217,14 +238,47 @@ const Planta = () => {
   };
 
   // Editar planta
-  const handleEditarPlanta = (planta) => {
-    setPlantaEditando(planta);
-    setFormData({
-      id: planta.id,
-      nombre: planta.nombre || '',
-      descripcion: planta.descripcion || '',
-    });
-    setVista('editar');
+  const handleEditarPlanta = async (planta) => {
+    try {
+      setIsLoading(true);
+      // Obtener el ID de la planta
+      const plantaId = planta.id || planta.Id || planta.ID || planta.planta_id || planta.PlantaId;
+      
+      if (!plantaId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo obtener el ID de la planta',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+      
+      // Cargar los datos completos desde el endpoint
+      const plantaData = await apiService.getPlantaPorId(plantaId);
+      
+      // El backend devuelve datos en PascalCase, extraer solo id, nombre y descripcion
+      setPlantaEditando(plantaData);
+      setFormData({
+        id: plantaData.Id || plantaData.id || plantaId,
+        nombre: plantaData.Nombre || plantaData.nombre || '',
+        descripcion: plantaData.Descripcion || plantaData.descripcion || '',
+      });
+      setVista('editar');
+    } catch (error) {
+      if (!error.redirectToLogin) {
+        Swal.fire({
+          title: 'Error',
+          text: error.message || 'Error al cargar los datos de la planta',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Volver a la lista
@@ -282,7 +336,7 @@ const Planta = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar PDF:', error);
+      // Error al exportar PDF
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a PDF',
@@ -322,7 +376,7 @@ const Planta = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar Excel:', error);
+      // Error al exportar Excel
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a Excel',
@@ -364,11 +418,19 @@ const Planta = () => {
           </div>
         </div>
         
+        {/* Barra informativa para creación */}
+        {vista === 'crear' && (
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-info-circle" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Creando nueva planta - Complete los campos obligatorios para guardar.</span>
+          </div>
+        )}
+
         {/* Barra informativa para edición */}
         {vista === 'editar' && (
-          <div className="usuarios-info-bar">
-            <i className="fa fa-pencil-alt"></i>
-            <span>Editando planta - Modifique los campos necesarios y guarde los cambios.</span>
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-pencil-alt" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Editando planta - Modifique los campos necesarios y guarde los cambios.</span>
           </div>
         )}
 
@@ -498,6 +560,40 @@ const Planta = () => {
             />
           </div>
           
+          {/* Filtro de estado (Activos/Inactivos) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label
+              htmlFor="filtroActivo"
+              style={{
+                fontSize: '0.9rem',
+                fontWeight: 'normal',
+                color: '#495057',
+                margin: 0,
+                whiteSpace: 'nowrap'
+              }}
+            >
+              Estado:
+            </label>
+            <select
+              id="filtroActivo"
+              value={filtroActivo}
+              onChange={(e) => setFiltroActivo(e.target.value)}
+              style={{
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.9rem',
+                border: '1px solid #ced4da',
+                borderRadius: '0.25rem',
+                backgroundColor: 'white',
+                color: '#495057',
+                cursor: 'pointer',
+                minWidth: '120px'
+              }}
+            >
+              <option value="activo">Activos</option>
+              <option value="inactivo">Inactivos</option>
+            </select>
+          </div>
+          
           {/* Botones de exportación (solo iconos) */}
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
@@ -554,7 +650,15 @@ const Planta = () => {
           ]}
           data={plantas}
           isLoading={isLoading}
-          emptyMessage={filtro ? 'No se encontraron plantas que coincidan con la búsqueda' : 'No hay plantas registradas'}
+          emptyMessage={
+            filtro 
+              ? 'No se encontraron plantas que coincidan con la búsqueda' 
+              : filtroActivo === 'activo' 
+                ? 'No hay plantas registradas Activas' 
+                : filtroActivo === 'inactivo' 
+                  ? 'No hay plantas registradas Inactivas' 
+                  : 'No hay plantas registradas'
+          }
           onEdit={handleEditarPlanta}
           onDelete={(planta) => {
             // No permitir eliminar si solo hay una planta
@@ -571,30 +675,46 @@ const Planta = () => {
             
             Swal.fire({
               title: '¿Está seguro?',
-              text: `¿Desea eliminar la planta ${planta.nombre}?`,
+              text: `¿Desea dar de baja la planta ${planta.nombre}?`,
               icon: 'warning',
               showCancelButton: true,
               confirmButtonColor: '#F34949',
               cancelButtonColor: '#6c757d',
-              confirmButtonText: 'Sí, eliminar',
+              confirmButtonText: 'Sí, dar de baja',
               cancelButtonText: 'Cancelar',
             }).then(async (result) => {
               if (result.isConfirmed) {
                 try {
-                  await apiService.eliminarPlanta(planta.id);
+                  // Intentar obtener el ID de diferentes formas posibles
+                  const plantaId = planta.id || planta.Id || planta.ID || planta.planta_id || planta.PlantaId;
+                  
+                  if (!plantaId && plantaId !== 0) {
+                    Swal.fire({
+                      title: 'Error',
+                      text: 'No se pudo obtener el ID de la planta. Por favor, intente nuevamente.',
+                      icon: 'error',
+                      confirmButtonText: 'Aceptar',
+                      confirmButtonColor: '#F34949',
+                    });
+                    return;
+                  }
+                  
+                  await apiService.eliminarPlanta(plantaId);
                   Swal.fire({
-                    title: 'Eliminado',
-                    text: 'Planta eliminada correctamente',
+                    title: 'Éxito',
+                    text: 'Planta dada de baja correctamente',
                     icon: 'success',
-                    confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#F34949',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
                   });
-                  cargarPlantas(currentPage, filtro);
+                  const soloActivos = filtroActivo === 'activo';
+                  cargarPlantas(currentPage, filtro, soloActivos);
                 } catch (error) {
                   if (!error.redirectToLogin) {
                     Swal.fire({
                       title: 'Error',
-                      text: error.message || 'Error al eliminar la planta',
+                      text: error.message || 'Error al dar de baja la planta',
                       icon: 'error',
                       confirmButtonText: 'Aceptar',
                       confirmButtonColor: '#F34949',
@@ -604,10 +724,107 @@ const Planta = () => {
               }
             });
           }}
-          canDelete={(planta) => {
-            // No permitir eliminar si solo hay una planta
-            return plantas.length > 1;
-          }}
+              canDelete={(planta) => {
+                // No permitir eliminar si la planta está inactiva
+                // Función helper para determinar si una planta está inactiva
+                const rawActivo = planta.activo !== undefined ? planta.activo :
+                                 planta.isActive !== undefined ? planta.isActive :
+                                 planta.Activo !== undefined ? planta.Activo :
+                                 planta.deletemark !== undefined ? !planta.deletemark :
+                                 planta.Deletemark !== undefined ? !planta.Deletemark :
+                                 planta.deleteMark !== undefined ? !planta.deleteMark :
+                                 undefined;
+                
+                // Convertir a boolean si viene como string o número
+                let isInactivo = false;
+                if (rawActivo !== undefined) {
+                  isInactivo = rawActivo === false ||
+                              rawActivo === 0 ||
+                              rawActivo === 'false' ||
+                              rawActivo === '0' ||
+                              String(rawActivo).toLowerCase() === 'false';
+                } else {
+                  // Si no hay información, asumir activo (mostrar botón eliminar)
+                  isInactivo = false;
+                }
+                
+                // Si está inactivo, no mostrar botón de eliminar
+                return !isInactivo;
+              }}
+              renderActions={(planta) => {
+                // Función helper para determinar si una planta está inactiva
+                const rawActivo = planta.activo !== undefined ? planta.activo :
+                                 planta.isActive !== undefined ? planta.isActive :
+                                 planta.Activo !== undefined ? planta.Activo :
+                                 planta.deletemark !== undefined ? !planta.deletemark :
+                                 planta.Deletemark !== undefined ? !planta.Deletemark :
+                                 planta.deleteMark !== undefined ? !planta.deleteMark :
+                                 undefined;
+                
+                // Convertir a boolean si viene como string o número
+                let isInactivo = false;
+                if (rawActivo !== undefined) {
+                  isInactivo = rawActivo === false ||
+                              rawActivo === 0 ||
+                              rawActivo === 'false' ||
+                              rawActivo === '0' ||
+                              String(rawActivo).toLowerCase() === 'false';
+                }
+                
+                // Si está inactivo, mostrar botón de activar
+                if (isInactivo) {
+                  return (
+                    <button
+                      className="btn btn-sm btn-success"
+                      onClick={() => {
+                        Swal.fire({
+                          title: '¿Está seguro?',
+                          text: `¿Desea activar la planta ${planta.nombre}?`,
+                          icon: 'question',
+                          showCancelButton: true,
+                          confirmButtonColor: '#28a745',
+                          cancelButtonColor: '#6c757d',
+                          confirmButtonText: 'Sí, activar',
+                          cancelButtonText: 'Cancelar',
+                        }).then(async (result) => {
+                          if (result.isConfirmed) {
+                            try {
+                              const plantaId = planta.id || planta.Id || planta.ID || planta.planta_id || planta.PlantaId;
+                              await apiService.activarPlanta(plantaId);
+                              Swal.fire({
+                                title: 'Activado',
+                                text: 'Planta activada correctamente',
+                                icon: 'success',
+                                timer: 3000,
+                                timerProgressBar: true,
+                                showConfirmButton: false,
+                                allowOutsideClick: true,
+                              });
+                              const soloActivos = filtroActivo === 'activo';
+                              cargarPlantas(currentPage, filtro, soloActivos);
+                            } catch (error) {
+                              if (!error.redirectToLogin) {
+                                Swal.fire({
+                                  title: 'Error',
+                                  text: error.message || 'Error al activar la planta',
+                                  icon: 'error',
+                                  confirmButtonText: 'Aceptar',
+                                  confirmButtonColor: '#F34949',
+                                });
+                              }
+                            }
+                          }
+                        });
+                      }}
+                      title="Activar"
+                      style={{ marginRight: '0.5rem' }}
+                    >
+                      <i className="fa fa-check"></i>
+                    </button>
+                  );
+                }
+                return null;
+              }}
           pageSize={pageSize}
           enablePagination={true}
         />

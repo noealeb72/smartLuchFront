@@ -48,6 +48,7 @@ export const apiService = {
   crearTurno: turnosService.crearTurno,
   actualizarTurno: turnosService.actualizarTurno,
   eliminarTurno: turnosService.eliminarTurno,
+  activarTurno: turnosService.activarTurno,
 
   // Comandas/Pedidos
   getPedidosVigentes: comandasService.getPedidosVigentes,
@@ -61,6 +62,7 @@ export const apiService = {
 
   // Usuarios
   getUsuarios: usuariosService.getUsuarios,
+  getUsuarioPorId: usuariosService.getUsuarioPorId,
   crearUsuario: usuariosService.crearUsuario,
   actualizarUsuario: usuariosService.actualizarUsuario,
   eliminarUsuario: usuariosService.eliminarUsuario,
@@ -73,39 +75,51 @@ export const apiService = {
   getProyectos: catalogosService.getProyectos,
   getPlanesNutricionales: catalogosService.getPlanesNutricionales,
 
-  // Plantas
-  getPlantasLista: plantasService.getPlantasLista,
-  crearPlanta: plantasService.crearPlanta,
-  actualizarPlanta: plantasService.actualizarPlanta,
-  eliminarPlanta: plantasService.eliminarPlanta,
+      // Plantas
+      getPlantasLista: plantasService.getPlantasLista,
+      getPlantaPorId: plantasService.getPlantaPorId,
+      buscarPlantas: plantasService.buscarPlantas,
+      crearPlanta: plantasService.crearPlanta,
+      actualizarPlanta: plantasService.actualizarPlanta,
+      eliminarPlanta: plantasService.eliminarPlanta,
+      activarPlanta: plantasService.activarPlanta,
 
-  // Centros de Costo
-  getCentrosDeCostoLista: centrosDeCostoService.getCentrosDeCostoLista,
-  crearCentroDeCosto: centrosDeCostoService.crearCentroDeCosto,
-  actualizarCentroDeCosto: centrosDeCostoService.actualizarCentroDeCosto,
-  eliminarCentroDeCosto: centrosDeCostoService.eliminarCentroDeCosto,
+      // Centros de Costo
+      getCentrosDeCostoLista: centrosDeCostoService.getCentrosDeCostoLista,
+      crearCentroDeCosto: centrosDeCostoService.crearCentroDeCosto,
+      actualizarCentroDeCosto: centrosDeCostoService.actualizarCentroDeCosto,
+      eliminarCentroDeCosto: centrosDeCostoService.eliminarCentroDeCosto,
+      activarCentroDeCosto: centrosDeCostoService.activarCentroDeCosto,
 
   // Proyectos
   getProyectosLista: proyectosService.getProyectosLista,
+  getProyectoPorId: proyectosService.getProyectoPorId,
+  getProyectosActivosCombo: proyectosService.getProyectosActivosCombo,
   crearProyecto: proyectosService.crearProyecto,
   actualizarProyecto: proyectosService.actualizarProyecto,
   eliminarProyecto: proyectosService.eliminarProyecto,
+  activarProyecto: proyectosService.activarProyecto,
 
-  // Planes Nutricionales
-  getPlanesNutricionalesLista: planesNutricionalesService.getPlanesNutricionalesLista,
-  crearPlanNutricional: planesNutricionalesService.crearPlanNutricional,
-  actualizarPlanNutricional: planesNutricionalesService.actualizarPlanNutricional,
-  eliminarPlanNutricional: planesNutricionalesService.eliminarPlanNutricional,
+      // Planes Nutricionales
+      getPlanesNutricionalesLista: planesNutricionalesService.getPlanesNutricionalesLista,
+      getPlanNutricionalPorId: planesNutricionalesService.getPlanNutricionalPorId,
+      crearPlanNutricional: planesNutricionalesService.crearPlanNutricional,
+      actualizarPlanNutricional: planesNutricionalesService.actualizarPlanNutricional,
+      eliminarPlanNutricional: planesNutricionalesService.eliminarPlanNutricional,
+      activarPlanNutricional: planesNutricionalesService.activarPlanNutricional,
 
   // Jerarquías
   getJerarquiasLista: jerarquiasService.getJerarquiasLista,
+  getJerarquiaPorId: jerarquiasService.getJerarquiaPorId,
   crearJerarquia: jerarquiasService.crearJerarquia,
   actualizarJerarquia: jerarquiasService.actualizarJerarquia,
   eliminarJerarquia: jerarquiasService.eliminarJerarquia,
+  activarJerarquia: jerarquiasService.activarJerarquia,
 
   // Platos
   getPlatosLista: platosService.getPlatosLista,
   getPlatoPorId: platosService.getPlatoPorId,
+  buscarPlatos: platosService.buscarPlatos,
   crearPlato: platosService.crearPlato,
   actualizarPlato: platosService.actualizarPlato,
   eliminarPlato: platosService.eliminarPlato,

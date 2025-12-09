@@ -14,6 +14,7 @@ const CentroDeCosto = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [centroEditando, setCentroEditando] = useState(null);
   const [filtro, setFiltro] = useState('');
+  const [filtroActivo, setFiltroActivo] = useState('activo'); // 'activo' o 'inactivo'
   const [vista, setVista] = useState('lista'); // 'lista' o 'editar' o 'crear'
   const [plantas, setPlantas] = useState([]);
   
@@ -31,32 +32,56 @@ const CentroDeCosto = () => {
     planta_id: '',
   });
 
-  // Cargar centros de costo con paginación y búsqueda
-  const cargarCentros = useCallback(async (page = 1, searchTerm = '') => {
+  // Cargar centros de costo usando /api/centrodecosto/lista con paginación
+  const cargarCentros = useCallback(async (page = 1, searchTerm = '', mostrarActivos = true) => {
     try {
       setIsLoading(true);
-      const data = await apiService.getCentrosDeCostoLista(page, pageSize, searchTerm);
       
-      if (Array.isArray(data)) {
-        setCentros(data);
-        setTotalPages(1);
-        setTotalItems(data.length);
+      // Si hay término de búsqueda, usar pageSize=100 y page=1 para obtener todos los resultados
+      // Si no hay búsqueda, usar la paginación normal
+      const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
+      const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
+      
+      const data = await apiService.getCentrosDeCostoLista(
+        pageToUse,      // page: 1 si hay búsqueda, sino usar el page actual
+        pageSizeToUse,  // pageSize: 100 si hay búsqueda, sino usar 5
+        searchTerm,     // término de búsqueda
+        mostrarActivos  // activo = true o false según el combo
+      );
+      
+      // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
+      let centrosData = [];
+      
+      if (data.items && Array.isArray(data.items)) {
+        centrosData = data.items;
+      } else if (Array.isArray(data)) {
+        centrosData = data;
       } else if (data.data && Array.isArray(data.data)) {
-        setCentros(data.data);
-        setTotalPages(data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.data.length);
-      } else if (data.items && Array.isArray(data.items)) {
-        setCentros(data.items);
-        setTotalPages(data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.items.length);
-      } else {
-        setCentros([]);
-        setTotalPages(1);
-        setTotalItems(0);
+        centrosData = data.data;
       }
-    } catch (error) {
-      console.error('Error al cargar centros de costo:', error);
       
+      // Normalizar los datos del DTO (PascalCase a minúsculas) para consistencia
+      // El backend devuelve PlantaNombre y PlantaId, mapearlos para facilitar el acceso
+      const centrosNormalizados = centrosData.map(centro => ({
+        ...centro,
+        id: centro.Id || centro.id,
+        nombre: centro.Nombre || centro.nombre || '',
+        descripcion: centro.Descripcion || centro.descripcion || '',
+        planta_id: centro.PlantaId || centro.plantaId || centro.planta_id || centro.planta?.id || centro.planta || null,
+        planta_nombre: centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '',
+        PlantaNombre: centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '',
+        PlantaId: centro.PlantaId || centro.plantaId || centro.planta_id || centro.planta?.id || centro.planta || null,
+        activo: centro.Deletemark !== undefined ? !centro.Deletemark : (centro.activo !== undefined ? centro.activo : true),
+      }));
+      
+      // Usar los valores de paginación del backend
+      const totalItemsBackend = data.totalItems || centrosNormalizados.length;
+      const totalPagesBackend = data.totalPages || Math.ceil(totalItemsBackend / pageSize);
+      
+      setCentros(centrosNormalizados);
+      setTotalPages(totalPagesBackend);
+      setTotalItems(totalItemsBackend);
+    } catch (error) {
       if (!error.redirectToLogin) {
         Swal.fire({
           title: 'Error',
@@ -86,10 +111,17 @@ const CentroDeCosto = () => {
     }
   }, []);
 
-  // Cargar centros cuando cambia la página o el filtro
+  // Cuando cambia el filtro o filtroActivo, resetear a página 1
   useEffect(() => {
-    cargarCentros(currentPage, filtro);
-  }, [currentPage, filtro, cargarCentros]);
+    setCurrentPage(1);
+  }, [filtro, filtroActivo]);
+
+  // Cargar centros cuando cambia la página, el filtro o el filtroActivo
+  useEffect(() => {
+    const soloActivos = filtroActivo === 'activo';
+    // Forzar recarga cuando cambia el filtroActivo
+    cargarCentros(currentPage, filtro, soloActivos);
+  }, [currentPage, filtro, filtroActivo, cargarCentros]);
 
   // Cargar plantas cuando se abre el formulario
   useEffect(() => {
@@ -223,7 +255,8 @@ const CentroDeCosto = () => {
       }
 
       handleVolverALista();
-      cargarCentros(currentPage, filtro);
+      const soloActivos = filtroActivo === 'activo';
+      cargarCentros(currentPage, filtro, soloActivos);
     } catch (error) {
       console.error('Error al guardar centro de costo:', error);
       
@@ -276,11 +309,18 @@ const CentroDeCosto = () => {
   // Editar centro de costo
   const handleEditarCentro = (centro) => {
     setCentroEditando(centro);
+    
+    // Obtener el planta_id del centro normalizado
+    // El backend devuelve PlantaId (PascalCase), que ya está mapeado en la normalización
+    const plantaId = centro.planta_id || centro.PlantaId || centro.plantaId || centro.planta?.id || centro.planta || '';
+    
     setFormData({
-      id: centro.id,
-      nombre: centro.nombre || '',
-      descripcion: centro.descripcion || '',
-      planta_id: centro.planta_id || centro.planta || '',
+      id: centro.id || centro.Id || centro.ID,
+      nombre: centro.nombre || centro.Nombre || '',
+      descripcion: centro.descripcion || centro.Descripcion || '',
+      // Asegurar que planta_id sea string y tenga un valor válido
+      // Si no hay planta_id pero solo hay una planta disponible, asignarla automáticamente
+      planta_id: plantaId ? String(plantaId) : (plantas.length === 1 ? String(plantas[0].id) : ''),
     });
     setVista('editar');
   };
@@ -315,11 +355,11 @@ const CentroDeCosto = () => {
       doc.setFontSize(10);
       doc.text(`Exportado el: ${fecha}`, 14, 22);
       
-      const tableData = centros.map(centro => [
-        centro.nombre || '-',
-        centro.planta_nombre || centro.plantaNombre || centro.planta?.nombre || centro.planta?.Nombre || '-',
-        centro.descripcion || '-'
-      ]);
+          const tableData = centros.map(centro => [
+            centro.nombre || '-',
+            centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '-',
+            centro.descripcion || '-'
+          ]);
       
       doc.autoTable({
         startY: 28,
@@ -356,11 +396,11 @@ const CentroDeCosto = () => {
   // Exportar a Excel
   const handleExportarExcel = () => {
     try {
-      const datosExcel = centros.map(centro => ({
-        'Nombre': centro.nombre || '',
-        'Planta': centro.planta_nombre || centro.plantaNombre || centro.planta?.nombre || centro.planta?.Nombre || '',
-        'Descripción': centro.descripcion || ''
-      }));
+          const datosExcel = centros.map(centro => ({
+            'Nombre': centro.nombre || '',
+            'Planta': centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '',
+            'Descripción': centro.descripcion || ''
+          }));
       
       const ws = XLSX.utils.json_to_sheet(datosExcel);
       const wb = XLSX.utils.book_new();
@@ -426,11 +466,19 @@ const CentroDeCosto = () => {
           </div>
         </div>
         
+        {/* Barra informativa para creación */}
+        {vista === 'crear' && (
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-info-circle" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Creando nuevo centro de costo - Complete los campos obligatorios para guardar.</span>
+          </div>
+        )}
+
         {/* Barra informativa para edición */}
         {vista === 'editar' && (
-          <div className="usuarios-info-bar">
-            <i className="fa fa-pencil-alt"></i>
-            <span>Editando centro de costo - Modifique los campos necesarios y guarde los cambios.</span>
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-pencil-alt" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Editando centro de costo - Modifique los campos necesarios y guarde los cambios.</span>
           </div>
         )}
 
@@ -472,7 +520,7 @@ const CentroDeCosto = () => {
                         value={formData.planta_id || ''}
                         onChange={handleInputChange}
                         disabled={plantas.length === 1}
-                        required
+                        required={plantas.length > 1}
                       >
                         {plantas.length === 0 ? (
                           <option value="">Cargando plantas...</option>
@@ -480,7 +528,10 @@ const CentroDeCosto = () => {
                           <option value={plantas[0].id}>{plantas[0].nombre || plantas[0].Nombre || plantas[0].descripcion || plantas[0].Descripcion}</option>
                         ) : (
                           <>
-                            <option value="">Seleccionar planta</option>
+                            {/* Solo mostrar "Seleccionar planta" si estamos creando y no hay valor seleccionado */}
+                            {!centroEditando && !formData.planta_id && (
+                              <option value="">Seleccionar planta</option>
+                            )}
                             {plantas.map((planta) => (
                               <option key={planta.id} value={planta.id}>
                                 {planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion}
@@ -598,6 +649,34 @@ const CentroDeCosto = () => {
             />
           </div>
           
+          {/* Filtro de estado Activo/Inactivo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ margin: 0, fontSize: '0.9rem', color: '#495057', whiteSpace: 'nowrap' }}>
+              Estado:
+            </label>
+            <select
+              id="filtroActivo"
+              value={filtroActivo}
+              onChange={(e) => {
+                const nuevoValor = e.target.value;
+                setFiltroActivo(nuevoValor);
+              }}
+              style={{
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.9rem',
+                border: '1px solid #ced4da',
+                borderRadius: '0.25rem',
+                backgroundColor: 'white',
+                color: '#495057',
+                cursor: 'pointer',
+                minWidth: '120px'
+              }}
+            >
+              <option value="activo">Activos</option>
+              <option value="inactivo">Inactivos</option>
+            </select>
+          </div>
+          
           {/* Botones de exportación (solo iconos) */}
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
@@ -652,41 +731,62 @@ const CentroDeCosto = () => {
             { key: 'nombre', field: 'nombre', label: 'Nombre' },
             { key: 'planta', field: 'planta', label: 'Planta', render: (value, centro) => {
               if (!centro) return '-';
-              return centro.planta_nombre || centro.plantaNombre || centro.planta?.nombre || centro.planta?.Nombre || '-';
+              return centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '-';
             }},
             { key: 'descripcion', field: 'descripcion', label: 'Descripción' },
           ]}
           data={centros}
           isLoading={isLoading}
-          emptyMessage={filtro ? 'No se encontraron centros de costo que coincidan con la búsqueda' : 'No hay centros de costo registrados'}
+          emptyMessage={
+            filtro 
+              ? 'No se encontraron centros de costo que coincidan con la búsqueda' 
+              : filtroActivo === 'activo' 
+                ? 'No hay centros de costo registrados Activos' 
+                : 'No hay centros de costo registrados Inactivos'
+          }
           onEdit={handleEditarCentro}
           onDelete={(centro) => {
+            // No permitir eliminar si solo hay un centro de costo
+            if (centros.length === 1) {
+              Swal.fire({
+                title: 'No permitido',
+                text: 'No se puede dar de baja el único centro de costo disponible. Debe haber al menos uno en el sistema.',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#F34949',
+              });
+              return;
+            }
+            
             Swal.fire({
               title: '¿Está seguro?',
-              text: `¿Desea eliminar el centro de costo ${centro.nombre}?`,
+              text: `¿Desea dar de baja el centro de costo ${centro.nombre}?`,
               icon: 'warning',
               showCancelButton: true,
               confirmButtonColor: '#F34949',
               cancelButtonColor: '#6c757d',
-              confirmButtonText: 'Sí, eliminar',
+              confirmButtonText: 'Sí, dar de baja',
               cancelButtonText: 'Cancelar',
             }).then(async (result) => {
               if (result.isConfirmed) {
                 try {
                   await apiService.eliminarCentroDeCosto(centro.id);
                   Swal.fire({
-                    title: 'Eliminado',
-                    text: 'Centro de costo eliminado correctamente',
+                    title: 'Éxito',
+                    text: 'Centro de costo dado de baja correctamente',
                     icon: 'success',
-                    confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#F34949',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: true,
                   });
-                  cargarCentros(currentPage, filtro);
+                  const soloActivos = filtroActivo === 'activo';
+                  cargarCentros(currentPage, filtro, soloActivos);
                 } catch (error) {
                   if (!error.redirectToLogin) {
                     Swal.fire({
                       title: 'Error',
-                      text: error.message || 'Error al eliminar el centro de costo',
+                      text: error.message || 'Error al dar de baja el centro de costo',
                       icon: 'error',
                       confirmButtonText: 'Aceptar',
                       confirmButtonColor: '#F34949',
@@ -697,8 +797,93 @@ const CentroDeCosto = () => {
             });
           }}
           canDelete={(centro) => {
-            // No permitir eliminar si solo hay un centro de costo
-            return centros.length > 1;
+            // Función helper para determinar si un centro está inactivo
+            const rawActivo = centro.activo !== undefined ? centro.activo :
+                             centro.isActive !== undefined ? centro.isActive :
+                             centro.Activo !== undefined ? centro.Activo :
+                             centro.deletemark !== undefined ? !centro.deletemark :
+                             centro.Deletemark !== undefined ? !centro.Deletemark :
+                             centro.deleteMark !== undefined ? !centro.deleteMark :
+                             undefined;
+            
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          (typeof rawActivo === 'string' && rawActivo.toLowerCase() === 'false');
+            }
+            
+            // Si está inactivo, no mostrar botón de eliminar
+            return !isInactivo;
+          }}
+          renderActions={(centro) => {
+            const rawActivo = centro.activo !== undefined ? centro.activo :
+                             centro.isActive !== undefined ? centro.isActive :
+                             centro.Activo !== undefined ? centro.Activo :
+                             centro.deletemark !== undefined ? !centro.deletemark :
+                             centro.Deletemark !== undefined ? !centro.Deletemark :
+                             centro.deleteMark !== undefined ? !centro.deleteMark :
+                             undefined;
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          rawActivo === 'false' ||
+                          rawActivo === '0' ||
+                          String(rawActivo).toLowerCase() === 'false';
+            }
+            if (isInactivo) {
+              return (
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={() => {
+                    Swal.fire({
+                      title: '¿Está seguro?',
+                      text: `¿Desea activar el centro de costo ${centro.nombre}?`,
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonColor: '#28a745',
+                      cancelButtonColor: '#6c757d',
+                      confirmButtonText: 'Sí, activar',
+                      cancelButtonText: 'Cancelar',
+                    }).then(async (result) => {
+                      if (result.isConfirmed) {
+                        try {
+                          const centroId = centro.id || centro.Id || centro.ID;
+                          await apiService.activarCentroDeCosto(centroId);
+                          Swal.fire({
+                            title: 'Activado',
+                            text: 'Centro de costo activado correctamente',
+                            icon: 'success',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            allowOutsideClick: true,
+                          });
+                          const soloActivos = filtroActivo === 'activo';
+                          cargarCentros(currentPage, filtro, soloActivos);
+                        } catch (error) {
+                          if (!error.redirectToLogin) {
+                            Swal.fire({
+                              title: 'Error',
+                              text: error.message || 'Error al activar el centro de costo',
+                              icon: 'error',
+                              confirmButtonText: 'Aceptar',
+                              confirmButtonColor: '#F34949',
+                            });
+                          }
+                        }
+                      }
+                    });
+                  }}
+                  title="Activar"
+                  style={{ marginRight: '0.5rem' }}
+                >
+                  <i className="fa fa-check"></i>
+                </button>
+              );
+            }
+            return null;
           }}
           pageSize={pageSize}
           enablePagination={true}

@@ -23,9 +23,7 @@ export const ConfigProvider = ({ children }) => {
       const loadedConfig = await loadConfig(false);
       setConfig(loadedConfig);
       setError(null);
-      console.log('✅ ConfigContext: Configuración cargada desde public/config.json');
     } catch (err) {
-      console.error('❌ Error cargando configuración en ConfigContext:', err);
       setError(err.message);
       // Configuración por defecto solo si hay un error crítico
       // loadConfig() ya maneja los valores por defecto, así que esto no debería ejecutarse normalmente
@@ -52,7 +50,6 @@ export const ConfigProvider = ({ children }) => {
       setError(null);
       return loadedConfig;
     } catch (err) {
-      console.error('Error recargando configuración:', err);
       setError(err.message);
       throw err;
     } finally {

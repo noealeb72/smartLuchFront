@@ -7,20 +7,15 @@ import { getApiBaseUrl } from './configService';
 export const dashboardService = {
   /**
    * Obtiene datos del dashboard de inicio
+   * Endpoint: /api/inicio/web/
+   * Devuelve: { PlatosPedidos: [], Usuario: {...}, Turnos: [...], MenuDelDia: [...] }
    */
   getDashboardInicio: async () => {
     const baseUrl = getApiBaseUrl();
-    const token = localStorage.getItem('token');
-    console.log('Llamando a dashboard/inicio:', `${baseUrl}/api/dashboard/inicio`);
-    console.log('Token disponible:', token ? 'Sí' : 'No');
     try {
-      const response = await api.get(`${baseUrl}/api/dashboard/inicio`);
-      console.log('Respuesta dashboard/inicio:', response.data);
+      const response = await api.get(`${baseUrl}/api/inicio/web`);
       return response.data;
     } catch (error) {
-      console.error('Error en getDashboardInicio:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
       throw error;
     }
   },

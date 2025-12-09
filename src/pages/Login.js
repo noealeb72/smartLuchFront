@@ -66,8 +66,8 @@ const Login = () => {
 
     try {
       const userData = await login(username.trim(), password.trim());
-      // Redirección por rol
-      if (userData && userData.role === 'Cocina') {
+      // Redirección por jerarquía
+      if (userData && (userData.jerarquia === 'Cocina' || userData.role === 'Cocina')) {
         navigate('/despacho');
       } else {
         navigate('/');

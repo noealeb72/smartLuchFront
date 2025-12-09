@@ -14,6 +14,7 @@ const Jerarquia = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [jerarquiaEditando, setJerarquiaEditando] = useState(null);
   const [filtro, setFiltro] = useState('');
+  const [filtroActivo, setFiltroActivo] = useState('activo'); // 'activo' o 'inactivo'
   const [vista, setVista] = useState('lista'); // 'lista' o 'editar' o 'crear'
   
   // Estado de paginación
@@ -22,39 +23,67 @@ const Jerarquia = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
+  // Jerarquías protegidas que no se pueden eliminar ni modificar el nombre
+  const jerarquiasProtegidas = ['Admin', 'Cocina', 'Comensal', 'Gerencia'];
+  
+  // Verificar si una jerarquía está protegida
+  const esJerarquiaProtegida = (jerarquia) => {
+    const nombre = jerarquia?.nombre || jerarquia?.Nombre || '';
+    return jerarquiasProtegidas.includes(nombre);
+  };
+
   // Estado del formulario
   const [formData, setFormData] = useState({
     id: null,
     nombre: '',
     descripcion: '',
+    bonificacion: '0',
   });
 
-  // Cargar jerarquías con paginación y búsqueda
-  const cargarJerarquias = useCallback(async (page = 1, searchTerm = '') => {
+  // Cargar jerarquías usando /api/jerarquia/lista con paginación
+  const cargarJerarquias = useCallback(async (page = 1, searchTerm = '', mostrarActivos = true) => {
     try {
       setIsLoading(true);
-      const data = await apiService.getJerarquiasLista(page, pageSize, searchTerm);
       
-      if (Array.isArray(data)) {
-        setJerarquias(data);
-        setTotalPages(1);
-        setTotalItems(data.length);
+      // Si hay término de búsqueda, usar pageSize=100 y page=1 para obtener todos los resultados
+      // Si no hay búsqueda, usar la paginación normal
+      const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
+      const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
+      
+      const data = await apiService.getJerarquiasLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
+      
+      // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
+      let jerarquiasData = [];
+      
+      if (data.items && Array.isArray(data.items)) {
+        jerarquiasData = data.items;
+      } else if (Array.isArray(data)) {
+        jerarquiasData = data;
       } else if (data.data && Array.isArray(data.data)) {
-        setJerarquias(data.data);
-        setTotalPages(data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.data.length);
-      } else if (data.items && Array.isArray(data.items)) {
-        setJerarquias(data.items);
-        setTotalPages(data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.items.length);
-      } else {
-        setJerarquias([]);
-        setTotalPages(1);
-        setTotalItems(0);
+        jerarquiasData = data.data;
       }
-    } catch (error) {
-      console.error('Error al cargar jerarquías:', error);
       
+      // Normalizar los datos del DTO (PascalCase a camelCase) para consistencia
+      const jerarquiasNormalizadas = jerarquiasData.map(jerarquia => ({
+        id: jerarquia.Id || jerarquia.id || jerarquia.ID || null,
+        nombre: jerarquia.Nombre || jerarquia.nombre || '',
+        descripcion: jerarquia.Descripcion || jerarquia.descripcion || '',
+        bonificacion: jerarquia.Bonificacion !== undefined ? jerarquia.Bonificacion : (jerarquia.bonificacion !== undefined ? jerarquia.bonificacion : null),
+        activo: jerarquia.Activo !== undefined ? jerarquia.Activo : (jerarquia.activo !== undefined ? jerarquia.activo : (jerarquia.Deletemark !== undefined ? !jerarquia.Deletemark : true)),
+        // Mantener también los valores originales para compatibilidad
+        Nombre: jerarquia.Nombre || jerarquia.nombre || '',
+        Descripcion: jerarquia.Descripcion || jerarquia.descripcion || '',
+        Bonificacion: jerarquia.Bonificacion !== undefined ? jerarquia.Bonificacion : (jerarquia.bonificacion !== undefined ? jerarquia.bonificacion : null),
+      }));
+      
+      // Usar los valores de paginación del backend
+      const totalItemsBackend = data.totalItems || jerarquiasNormalizadas.length;
+      const totalPagesBackend = data.totalPages || Math.ceil(totalItemsBackend / pageSize);
+      
+      setJerarquias(jerarquiasNormalizadas);
+      setTotalPages(totalPagesBackend);
+      setTotalItems(totalItemsBackend);
+    } catch (error) {
       if (!error.redirectToLogin) {
         Swal.fire({
           title: 'Error',
@@ -73,10 +102,16 @@ const Jerarquia = () => {
     }
   }, [pageSize]);
 
-  // Cargar jerarquías cuando cambia la página o el filtro
+  // Cuando cambia el filtro o filtroActivo, resetear a página 1
   useEffect(() => {
-    cargarJerarquias(currentPage, filtro);
-  }, [currentPage, filtro, cargarJerarquias]);
+    setCurrentPage(1);
+  }, [filtro, filtroActivo]);
+
+  // Cargar jerarquías cuando cambia la página, el filtro o el filtroActivo
+  useEffect(() => {
+    const soloActivos = filtroActivo === 'activo';
+    cargarJerarquias(currentPage, filtro, soloActivos);
+  }, [currentPage, filtro, filtroActivo, cargarJerarquias]);
 
   // Manejar cambio de input
   const handleInputChange = (e) => {
@@ -134,10 +169,24 @@ const Jerarquia = () => {
     try {
       setIsLoading(true);
 
+      // Si es una jerarquía protegida, usar el nombre original (no permitir modificar)
+      let nombreFinal = formData.nombre.trim();
+      if (jerarquiaEditando && esJerarquiaProtegida(jerarquiaEditando)) {
+        // Mantener el nombre original de la jerarquía protegida
+        nombreFinal = jerarquiaEditando.nombre || jerarquiaEditando.Nombre || formData.nombre.trim();
+      }
+
+      // Preparar datos para el backend
+      // El backend espera Bonificacion como decimal (no null), usar 0 si está vacío
+      const bonificacionValue = formData.bonificacion && formData.bonificacion.trim() !== '' 
+        ? parseFloat(formData.bonificacion) 
+        : 0;
+      
       const jerarquiaData = {
         id: formData.id,
-        nombre: formData.nombre.trim(),
+        nombre: nombreFinal,
         descripcion: formData.descripcion?.trim() || null,
+        bonificacion: isNaN(bonificacionValue) ? 0 : bonificacionValue,
       };
 
       if (jerarquiaEditando) {
@@ -146,8 +195,10 @@ const Jerarquia = () => {
           title: 'Éxito',
           text: 'Jerarquía actualizada correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       } else {
         await apiService.crearJerarquia(jerarquiaData);
@@ -155,13 +206,16 @@ const Jerarquia = () => {
           title: 'Éxito',
           text: 'Jerarquía creada correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       }
 
       handleVolverALista();
-      cargarJerarquias(currentPage, filtro);
+      const soloActivos = filtroActivo === 'activo';
+      cargarJerarquias(currentPage, filtro, soloActivos);
     } catch (error) {
       console.error('Error al guardar jerarquía:', error);
       
@@ -191,6 +245,7 @@ const Jerarquia = () => {
       id: null,
       nombre: '',
       descripcion: '',
+      bonificacion: '0',
     });
     setVista('crear');
   };
@@ -198,10 +253,22 @@ const Jerarquia = () => {
   // Editar jerarquía
   const handleEditarJerarquia = (jerarquia) => {
     setJerarquiaEditando(jerarquia);
+    
+    // Obtener valores con múltiples variantes de nombres (PascalCase y camelCase)
+    const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID || null;
+    const nombre = jerarquia.nombre || jerarquia.Nombre || '';
+    const descripcion = jerarquia.descripcion || jerarquia.Descripcion || '';
+    const bonificacion = jerarquia.bonificacion !== undefined && jerarquia.bonificacion !== null 
+      ? jerarquia.bonificacion 
+      : (jerarquia.Bonificacion !== undefined && jerarquia.Bonificacion !== null 
+          ? jerarquia.Bonificacion 
+          : null);
+    
     setFormData({
-      id: jerarquia.id,
-      nombre: jerarquia.nombre || '',
-      descripcion: jerarquia.descripcion || '',
+      id: jerarquiaId,
+      nombre: nombre,
+      descripcion: descripcion,
+      bonificacion: bonificacion !== null && bonificacion !== undefined ? String(bonificacion) : '0',
     });
     setVista('editar');
   };
@@ -213,6 +280,7 @@ const Jerarquia = () => {
       id: null,
       nombre: '',
       descripcion: '',
+      bonificacion: '0',
     });
     setVista('lista');
   };
@@ -343,11 +411,19 @@ const Jerarquia = () => {
           </div>
         </div>
         
+        {/* Barra informativa para creación */}
+        {vista === 'crear' && (
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-info-circle" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Creando nueva jerarquía - Complete los campos obligatorios para guardar.</span>
+          </div>
+        )}
+
         {/* Barra informativa para edición */}
         {vista === 'editar' && (
-          <div className="usuarios-info-bar">
-            <i className="fa fa-pencil-alt"></i>
-            <span>Editando jerarquía - Modifique los campos necesarios y guarde los cambios.</span>
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-pencil-alt" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Editando jerarquía - Modifique los campos necesarios y guarde los cambios.</span>
           </div>
         )}
 
@@ -364,6 +440,11 @@ const Jerarquia = () => {
                     <div className="form-group">
                       <label htmlFor="nombre">
                         Nombre <span style={{ color: '#F34949' }}>*</span>
+                        {vista === 'editar' && jerarquiaEditando && esJerarquiaProtegida(jerarquiaEditando) && (
+                          <span style={{ fontSize: '0.875rem', color: '#6c757d', marginLeft: '0.5rem', fontStyle: 'italic' }}>
+                            (No se puede modificar)
+                          </span>
+                        )}
                       </label>
                       <input
                         type="text"
@@ -373,7 +454,12 @@ const Jerarquia = () => {
                         value={formData.nombre || ''}
                         onChange={handleInputChange}
                         required
+                        disabled={vista === 'editar' && jerarquiaEditando && esJerarquiaProtegida(jerarquiaEditando)}
                         placeholder="Ingrese el nombre de la jerarquía"
+                        style={vista === 'editar' && jerarquiaEditando && esJerarquiaProtegida(jerarquiaEditando) ? {
+                          backgroundColor: '#e9ecef',
+                          cursor: 'not-allowed'
+                        } : {}}
                       />
                     </div>
                   </div>
@@ -389,6 +475,32 @@ const Jerarquia = () => {
                         onChange={handleInputChange}
                         placeholder="Ingrese una descripción (opcional)"
                       />
+                    </div>
+                  </div>
+                </div>
+                <div className="row mt-3">
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="bonificacion">Bonificación (%)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        className="form-control"
+                        id="bonificacion"
+                        name="bonificacion"
+                        value={formData.bonificacion || ''}
+                        onChange={handleInputChange}
+                        placeholder="Ingrese el porcentaje de bonificación (opcional)"
+                      />
+                      <small className="form-text text-muted" style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                        <i className="fa fa-info-circle mr-1"></i>
+                        Este porcentaje de bonificación se aplicará a los usuarios de esta jerarquía al momento de consumir un plato en el comedor.
+                      </small>
+                      <small className="form-text text-muted" style={{ fontSize: '0.8rem', marginTop: '0.75rem', fontStyle: 'italic', display: 'block' }}>
+                        <strong>Nota:</strong> La bonificación aplicada dependerá de la jerarquía asignada al comensal.
+                      </small>
                     </div>
                   </div>
                 </div>
@@ -477,6 +589,34 @@ const Jerarquia = () => {
             />
           </div>
           
+          {/* Filtro de estado Activo/Inactivo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ margin: 0, fontSize: '0.9rem', color: '#495057', whiteSpace: 'nowrap' }}>
+              Estado:
+            </label>
+            <select
+              id="filtroActivo"
+              value={filtroActivo}
+              onChange={(e) => {
+                const nuevoValor = e.target.value;
+                setFiltroActivo(nuevoValor);
+              }}
+              style={{
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.9rem',
+                border: '1px solid #ced4da',
+                borderRadius: '0.25rem',
+                backgroundColor: 'white',
+                color: '#495057',
+                cursor: 'pointer',
+                minWidth: '120px'
+              }}
+            >
+              <option value="activo">Activos</option>
+              <option value="inactivo">Inactivos</option>
+            </select>
+          </div>
+          
           {/* Botones de exportación (solo iconos) */}
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
@@ -530,38 +670,88 @@ const Jerarquia = () => {
           columns={[
             { key: 'nombre', field: 'nombre', label: 'Nombre' },
             { key: 'descripcion', field: 'descripcion', label: 'Descripción' },
+            { 
+              key: 'bonificacion', 
+              field: 'bonificacion', 
+              label: 'Bonificación',
+              render: (value, row) => {
+                const bonificacion = row?.bonificacion !== undefined && row?.bonificacion !== null 
+                  ? row.bonificacion 
+                  : (row?.Bonificacion !== undefined && row?.Bonificacion !== null 
+                      ? row.Bonificacion 
+                      : null);
+                if (bonificacion !== null && bonificacion !== undefined) {
+                  const valor = parseFloat(bonificacion);
+                  if (isNaN(valor)) {
+                    return '-';
+                  }
+                  // Si es 0 o 0.00, mostrar solo "0%"
+                  if (valor === 0) {
+                    return '0%';
+                  }
+                  // Si es un número entero, mostrarlo sin decimales
+                  if (Number.isInteger(valor)) {
+                    return `${valor}%`;
+                  }
+                  // Si tiene decimales, mostrarlos con 2 decimales
+                  return `${valor.toFixed(2)}%`;
+                }
+                return '-';
+              }
+            },
           ]}
           data={jerarquias}
           isLoading={isLoading}
-          emptyMessage={filtro ? 'No se encontraron jerarquías que coincidan con la búsqueda' : 'No hay jerarquías registradas'}
+          emptyMessage={
+            filtro 
+              ? 'No se encontraron jerarquías que coincidan con la búsqueda' 
+              : filtroActivo === 'activo' 
+                ? 'No hay jerarquías registradas Activas' 
+                : 'No hay jerarquías registradas Inactivas'
+          }
           onEdit={handleEditarJerarquia}
           onDelete={(jerarquia) => {
+            // Verificar si es una jerarquía protegida
+            if (esJerarquiaProtegida(jerarquia)) {
+              Swal.fire({
+                title: 'No permitido',
+                text: `No se puede dar de baja la jerarquía "${jerarquia.nombre || jerarquia.Nombre}" porque es una jerarquía del sistema.`,
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#F34949',
+              });
+              return;
+            }
+            
             Swal.fire({
               title: '¿Está seguro?',
-              text: `¿Desea eliminar la jerarquía ${jerarquia.nombre}?`,
+              text: `¿Desea dar de baja la jerarquía ${jerarquia.nombre || jerarquia.Nombre}?`,
               icon: 'warning',
               showCancelButton: true,
               confirmButtonColor: '#F34949',
               cancelButtonColor: '#6c757d',
-              confirmButtonText: 'Sí, eliminar',
+              confirmButtonText: 'Sí, dar de baja',
               cancelButtonText: 'Cancelar',
             }).then(async (result) => {
               if (result.isConfirmed) {
                 try {
                   await apiService.eliminarJerarquia(jerarquia.id);
                   Swal.fire({
-                    title: 'Eliminado',
-                    text: 'Jerarquía eliminada correctamente',
+                    title: 'Éxito',
+                    text: 'Jerarquía dada de baja correctamente',
                     icon: 'success',
-                    confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#F34949',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: true,
                   });
-                  cargarJerarquias(currentPage, filtro);
+                  const soloActivos = filtroActivo === 'activo';
+                  cargarJerarquias(currentPage, filtro, soloActivos);
                 } catch (error) {
                   if (!error.redirectToLogin) {
                     Swal.fire({
                       title: 'Error',
-                      text: error.message || 'Error al eliminar la jerarquía',
+                      text: error.message || 'Error al dar de baja la jerarquía',
                       icon: 'error',
                       confirmButtonText: 'Aceptar',
                       confirmButtonColor: '#F34949',
@@ -570,6 +760,98 @@ const Jerarquia = () => {
                 }
               }
             });
+          }}
+          canDelete={(jerarquia) => {
+            // No permitir eliminar jerarquías protegidas
+            if (esJerarquiaProtegida(jerarquia)) {
+              return false;
+            }
+            // No permitir eliminar si la jerarquía está inactiva
+            const rawActivo = jerarquia.activo !== undefined ? jerarquia.activo :
+                             jerarquia.isActive !== undefined ? jerarquia.isActive :
+                             jerarquia.Activo !== undefined ? jerarquia.Activo :
+                             jerarquia.deletemark !== undefined ? !jerarquia.deletemark :
+                             jerarquia.Deletemark !== undefined ? !jerarquia.Deletemark :
+                             jerarquia.deleteMark !== undefined ? !jerarquia.deleteMark :
+                             undefined;
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          rawActivo === 'false' ||
+                          rawActivo === '0' ||
+                          String(rawActivo).toLowerCase() === 'false';
+            }
+            return !isInactivo;
+          }}
+          renderActions={(jerarquia) => {
+            const rawActivo = jerarquia.activo !== undefined ? jerarquia.activo :
+                             jerarquia.isActive !== undefined ? jerarquia.isActive :
+                             jerarquia.Activo !== undefined ? jerarquia.Activo :
+                             jerarquia.deletemark !== undefined ? !jerarquia.deletemark :
+                             jerarquia.Deletemark !== undefined ? !jerarquia.Deletemark :
+                             jerarquia.deleteMark !== undefined ? !jerarquia.deleteMark :
+                             undefined;
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          rawActivo === 'false' ||
+                          rawActivo === '0' ||
+                          String(rawActivo).toLowerCase() === 'false';
+            }
+            if (isInactivo) {
+              return (
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={() => {
+                    Swal.fire({
+                      title: '¿Está seguro?',
+                      text: `¿Desea activar la jerarquía ${jerarquia.nombre}?`,
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonColor: '#28a745',
+                      cancelButtonColor: '#6c757d',
+                      confirmButtonText: 'Sí, activar',
+                      cancelButtonText: 'Cancelar',
+                    }).then(async (result) => {
+                      if (result.isConfirmed) {
+                        try {
+                          const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID;
+                          await apiService.activarJerarquia(jerarquiaId);
+                          Swal.fire({
+                            title: 'Activado',
+                            text: 'Jerarquía activada correctamente',
+                            icon: 'success',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            allowOutsideClick: true,
+                          });
+                          const soloActivos = filtroActivo === 'activo';
+                          cargarJerarquias(currentPage, filtro, soloActivos);
+                        } catch (error) {
+                          if (!error.redirectToLogin) {
+                            Swal.fire({
+                              title: 'Error',
+                              text: error.message || 'Error al activar la jerarquía',
+                              icon: 'error',
+                              confirmButtonText: 'Aceptar',
+                              confirmButtonColor: '#F34949',
+                            });
+                          }
+                        }
+                      }
+                    });
+                  }}
+                  title="Activar"
+                  style={{ marginRight: '0.5rem' }}
+                >
+                  <i className="fa fa-check"></i>
+                </button>
+              );
+            }
+            return null;
           }}
           pageSize={pageSize}
           enablePagination={true}

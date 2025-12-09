@@ -14,6 +14,7 @@ const Proyecto = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [proyectoEditando, setProyectoEditando] = useState(null);
   const [filtro, setFiltro] = useState('');
+  const [filtroActivo, setFiltroActivo] = useState('activo'); // 'activo' o 'inactivo'
   const [vista, setVista] = useState('lista'); // 'lista' o 'editar' o 'crear'
   const [plantas, setPlantas] = useState([]);
   const [centrosDeCosto, setCentrosDeCosto] = useState([]);
@@ -33,39 +34,55 @@ const Proyecto = () => {
     centrodecosto_id: '',
   });
 
-  // Cargar proyectos con paginación y búsqueda
-  const cargarProyectos = useCallback(async (page = 1, searchTerm = '') => {
+  // Cargar proyectos usando /api/proyecto/lista con paginación
+  const cargarProyectos = useCallback(async (page = 1, searchTerm = '', mostrarActivos = true) => {
     try {
       setIsLoading(true);
-      const data = await apiService.getProyectosLista(page, pageSize, searchTerm);
       
-      if (Array.isArray(data)) {
-        // Si el backend devuelve un array directo, calcular paginación del lado del cliente
-        const totalItemsCount = data.length;
-        const calculatedTotalPages = Math.ceil(totalItemsCount / pageSize);
-        const startIndex = (page - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
-        const paginatedData = data.slice(startIndex, endIndex);
-        
-        setProyectos(paginatedData);
-        setTotalPages(calculatedTotalPages);
-        setTotalItems(totalItemsCount);
+      // Si hay término de búsqueda, usar pageSize=100 y page=1 para obtener todos los resultados
+      // Si no hay búsqueda, usar la paginación normal
+      const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
+      const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
+      
+      const data = await apiService.getProyectosLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
+      
+      // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
+      let proyectosData = [];
+      
+      if (data.items && Array.isArray(data.items)) {
+        proyectosData = data.items;
+      } else if (Array.isArray(data)) {
+        proyectosData = data;
       } else if (data.data && Array.isArray(data.data)) {
-        setProyectos(data.data);
-        setTotalPages(data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.data.length);
-      } else if (data.items && Array.isArray(data.items)) {
-        setProyectos(data.items);
-        setTotalPages(data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.items.length);
-      } else {
-        setProyectos([]);
-        setTotalPages(1);
-        setTotalItems(0);
+        proyectosData = data.data;
       }
-    } catch (error) {
-      console.error('Error al cargar proyectos:', error);
       
+      // Normalizar los datos del DTO (PascalCase a minúsculas) para consistencia
+      // El backend devuelve PlantaNombre, PlantaId, CentroCostoNombre, CentroCostoId, Activo
+      const proyectosNormalizados = proyectosData.map(proyecto => ({
+        ...proyecto,
+        id: proyecto.Id || proyecto.id,
+        nombre: proyecto.Nombre || proyecto.nombre || '',
+        descripcion: proyecto.Descripcion || proyecto.descripcion || '',
+        planta_id: proyecto.PlantaId || proyecto.plantaId || proyecto.planta_id || proyecto.planta?.id || proyecto.planta || null,
+        planta_nombre: proyecto.PlantaNombre || proyecto.plantaNombre || proyecto.planta_nombre || proyecto.planta?.nombre || proyecto.planta?.Nombre || '',
+        PlantaNombre: proyecto.PlantaNombre || proyecto.plantaNombre || proyecto.planta_nombre || proyecto.planta?.nombre || proyecto.planta?.Nombre || '',
+        PlantaId: proyecto.PlantaId || proyecto.plantaId || proyecto.planta_id || proyecto.planta?.id || proyecto.planta || null,
+        centrodecosto_id: proyecto.CentroCostoId || proyecto.centroCostoId || proyecto.centrodecosto_id || proyecto.centrodecosto?.id || proyecto.centroDeCosto?.id || null,
+        centrodecosto_nombre: proyecto.CentroCostoNombre || proyecto.centroCostoNombre || proyecto.centrodecosto_nombre || proyecto.centrodecosto?.nombre || proyecto.centroDeCosto?.nombre || '',
+        CentroCostoNombre: proyecto.CentroCostoNombre || proyecto.centroCostoNombre || proyecto.centrodecosto_nombre || proyecto.centrodecosto?.nombre || proyecto.centroDeCosto?.nombre || '',
+        CentroCostoId: proyecto.CentroCostoId || proyecto.centroCostoId || proyecto.centrodecosto_id || proyecto.centrodecosto?.id || proyecto.centroDeCosto?.id || null,
+        activo: proyecto.Activo !== undefined ? proyecto.Activo : (proyecto.activo !== undefined ? proyecto.activo : (proyecto.Deletemark !== undefined ? !proyecto.Deletemark : true)),
+      }));
+      
+      // Usar los valores de paginación del backend
+      const totalItemsBackend = data.totalItems || proyectosNormalizados.length;
+      const totalPagesBackend = data.totalPages || Math.ceil(totalItemsBackend / pageSize);
+      
+      setProyectos(proyectosNormalizados);
+      setTotalPages(totalPagesBackend);
+      setTotalItems(totalItemsBackend);
+    } catch (error) {
       if (!error.redirectToLogin) {
         Swal.fire({
           title: 'Error',
@@ -118,14 +135,20 @@ const Proyecto = () => {
     }
   }, []);
 
-  // Cargar proyectos cuando cambia la página o el filtro
+  // Cuando cambia el filtro o filtroActivo, resetear a página 1
   useEffect(() => {
-    cargarProyectos(currentPage, filtro);
-  }, [currentPage, filtro, cargarProyectos]);
+    setCurrentPage(1);
+  }, [filtro, filtroActivo]);
 
-  // Cargar plantas y centros de costo cuando se abre el formulario
+  // Cargar proyectos cuando cambia la página, el filtro o el filtroActivo
   useEffect(() => {
-    if (vista === 'crear' || vista === 'editar') {
+    const soloActivos = filtroActivo === 'activo';
+    cargarProyectos(currentPage, filtro, soloActivos);
+  }, [currentPage, filtro, filtroActivo, cargarProyectos]);
+
+  // Cargar plantas y centros de costo cuando se abre el formulario o cuando se muestra la lista
+  useEffect(() => {
+    if (vista === 'crear' || vista === 'editar' || vista === 'lista') {
       cargarPlantas();
       cargarCentrosDeCosto();
     }
@@ -167,11 +190,13 @@ const Proyecto = () => {
     }
 
     // Solo validar planta_id si hay más de una opción disponible
+    // Si hay solo una, se asignará automáticamente antes de guardar
     if (plantas.length > 1 && (!formData.planta_id || formData.planta_id === '')) {
       addError('La planta es requerida', 'planta_id');
     }
 
     // Solo validar centrodecosto_id si hay más de una opción disponible
+    // Si hay solo una, se asignará automáticamente antes de guardar
     if (centrosDeCosto.length > 1 && (!formData.centrodecosto_id || formData.centrodecosto_id === '')) {
       addError('El centro de costo es requerido', 'centrodecosto_id');
     }
@@ -204,10 +229,10 @@ const Proyecto = () => {
   const handleGuardar = async () => {
     // Asignar automáticamente planta_id y centrodecosto_id si solo hay una opción disponible
     const datosActualizados = { ...formData };
-    if (plantas.length === 1 && !datosActualizados.planta_id) {
+    if (plantas.length === 1 && (!datosActualizados.planta_id || datosActualizados.planta_id === '')) {
       datosActualizados.planta_id = plantas[0].id;
     }
-    if (centrosDeCosto.length === 1 && !datosActualizados.centrodecosto_id) {
+    if (centrosDeCosto.length === 1 && (!datosActualizados.centrodecosto_id || datosActualizados.centrodecosto_id === '')) {
       datosActualizados.centrodecosto_id = centrosDeCosto[0].id;
     }
 
@@ -224,14 +249,23 @@ const Proyecto = () => {
     try {
       setIsLoading(true);
 
-      // Asegurar que planta_id y centrodecosto_id tengan valores válidos
+      // Asegurar que planta_id tenga un valor válido
       const plantaIdValue = datosActualizados.planta_id 
         ? parseInt(datosActualizados.planta_id) 
         : (plantas.length === 1 ? plantas[0].id : null);
 
-      const centrodecostoIdValue = datosActualizados.centrodecosto_id 
-        ? parseInt(datosActualizados.centrodecosto_id) 
-        : (centrosDeCosto.length === 1 ? centrosDeCosto[0].id : null);
+      // Asegurar que centrodecosto_id tenga un valor válido
+      // Priorizar el valor seleccionado en el formulario, incluso si es string
+      let centrodecostoIdValue = null;
+      if (datosActualizados.centrodecosto_id) {
+        const parsed = parseInt(datosActualizados.centrodecosto_id);
+        if (!isNaN(parsed) && parsed > 0) {
+          centrodecostoIdValue = parsed;
+        }
+      }
+      if (!centrodecostoIdValue && centrosDeCosto.length === 1) {
+        centrodecostoIdValue = centrosDeCosto[0].id;
+      }
 
       if (!plantaIdValue) {
         Swal.fire({
@@ -269,6 +303,31 @@ const Proyecto = () => {
         return;
       }
 
+      // Asegurar que los valores sean números enteros válidos
+      if (isNaN(plantaIdValue) || plantaIdValue <= 0) {
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'La planta seleccionada no es válida',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (isNaN(centrodecostoIdValue) || centrodecostoIdValue <= 0) {
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'El centro de costo seleccionado no es válido',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const proyectoData = {
         id: datosActualizados.id,
         nombre: datosActualizados.nombre.trim(),
@@ -298,7 +357,8 @@ const Proyecto = () => {
       }
 
       handleVolverALista();
-      cargarProyectos(currentPage, filtro);
+      const soloActivos = filtroActivo === 'activo';
+      cargarProyectos(currentPage, filtro, soloActivos);
     } catch (error) {
       console.error('Error al guardar proyecto:', error);
       
@@ -518,11 +578,19 @@ const Proyecto = () => {
           </div>
         </div>
         
+        {/* Barra informativa para creación */}
+        {vista === 'crear' && (
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-info-circle" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Creando nuevo proyecto - Complete los campos obligatorios para guardar.</span>
+          </div>
+        )}
+
         {/* Barra informativa para edición */}
         {vista === 'editar' && (
-          <div className="usuarios-info-bar">
-            <i className="fa fa-pencil-alt"></i>
-            <span>Editando proyecto - Modifique los campos necesarios y guarde los cambios.</span>
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-pencil-alt" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Editando proyecto - Modifique los campos necesarios y guarde los cambios.</span>
           </div>
         )}
 
@@ -567,12 +635,12 @@ const Proyecto = () => {
                         required
                       >
                         {plantas.length === 0 ? (
-                          <option value="">Cargando plantas...</option>
+                          <option key="loading-plantas" value="">Cargando plantas...</option>
                         ) : plantas.length === 1 ? (
-                          <option value={plantas[0].id}>{plantas[0].nombre || plantas[0].Nombre || plantas[0].descripcion || plantas[0].Descripcion}</option>
+                          <option key={`planta-${plantas[0].id}`} value={plantas[0].id}>{plantas[0].nombre || plantas[0].Nombre || plantas[0].descripcion || plantas[0].Descripcion}</option>
                         ) : (
                           <>
-                            <option value="">Seleccionar planta</option>
+                            <option key="select-planta" value="">Seleccionar planta</option>
                             {plantas.map((planta) => (
                               <option key={planta.id} value={planta.id}>
                                 {planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion}
@@ -605,15 +673,15 @@ const Proyecto = () => {
                         required
                       >
                         {centrosDeCosto.length === 0 ? (
-                          <option value="">Cargando centros de costo...</option>
+                          <option key="loading-centros" value="">Cargando centros de costo...</option>
                         ) : centrosDeCosto.length === 1 ? (
-                          <option value={centrosDeCosto[0].id}>{centrosDeCosto[0].nombre || centrosDeCosto[0].Nombre || centrosDeCosto[0].descripcion || centrosDeCosto[0].Descripcion}</option>
+                          <option key={`centro-${centrosDeCosto[0].id}`} value={centrosDeCosto[0].id}>{centrosDeCosto[0].nombre || centrosDeCosto[0].Nombre || ''}</option>
                         ) : (
                           <>
-                            <option value="">Seleccionar centro de costo</option>
+                            <option key="select-centro" value="">Seleccionar centro de costo</option>
                             {centrosDeCosto.map((centro) => (
                               <option key={centro.id} value={centro.id}>
-                                {centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion}
+                                {centro.nombre || centro.Nombre || ''}
                               </option>
                             ))}
                           </>
@@ -726,6 +794,31 @@ const Proyecto = () => {
             />
           </div>
           
+          {/* Filtro de estado Activo/Inactivo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ margin: 0, fontSize: '0.9rem', color: '#495057', whiteSpace: 'nowrap' }}>
+              Estado:
+            </label>
+            <select
+              id="filtroActivo"
+              value={filtroActivo}
+              onChange={(e) => setFiltroActivo(e.target.value)}
+              style={{
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.9rem',
+                border: '1px solid #ced4da',
+                borderRadius: '0.25rem',
+                backgroundColor: 'white',
+                color: '#495057',
+                cursor: 'pointer',
+                minWidth: '120px'
+              }}
+            >
+              <option value="activo">Activos</option>
+              <option value="inactivo">Inactivos</option>
+            </select>
+          </div>
+          
           {/* Botones de exportación (solo iconos) */}
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
@@ -780,57 +873,115 @@ const Proyecto = () => {
             { key: 'nombre', field: 'nombre', label: 'Nombre' },
             { key: 'planta', field: 'planta', label: 'Planta', render: (value, proyecto) => {
               if (!proyecto) return '-';
-              return proyecto.planta_nombre || proyecto.plantaNombre || proyecto.planta?.nombre || proyecto.planta?.Nombre || '-';
+              return proyecto.PlantaNombre || proyecto.plantaNombre || proyecto.planta_nombre || proyecto.planta?.nombre || proyecto.planta?.Nombre || '-';
             }},
             { key: 'centrodecosto', field: 'centrodecosto', label: 'Centro de Costo', render: (value, proyecto) => {
               if (!proyecto) return '-';
-              return proyecto.centrodecosto_nombre || proyecto.centroDeCostoNombre || proyecto.centrodecosto?.nombre || proyecto.centroDeCosto?.nombre || '-';
+              // Buscar el nombre del centro de costo desde la lista cargada
+              const centroId = proyecto.CentroCostoId || proyecto.centroCostoId || proyecto.centrodecosto_id || proyecto.centrodecosto?.id || proyecto.centroDeCosto?.id;
+              if (centroId && centrosDeCosto.length > 0) {
+                const centro = centrosDeCosto.find(c => (c.id || c.Id) === centroId);
+                if (centro) {
+                  return centro.nombre || centro.Nombre || '';
+                }
+              }
+              // Fallback a los campos del proyecto si no se encuentra en la lista
+              return proyecto.CentroCostoNombre || proyecto.centroCostoNombre || proyecto.centrodecosto_nombre || proyecto.centrodecosto?.nombre || proyecto.centroDeCosto?.nombre || '-';
             }},
             { key: 'descripcion', field: 'descripcion', label: 'Descripción' },
           ]}
           data={proyectos}
           isLoading={isLoading}
-          emptyMessage={filtro ? 'No se encontraron proyectos que coincidan con la búsqueda' : 'No hay proyectos registrados'}
+          emptyMessage={
+            filtro 
+              ? 'No se encontraron proyectos que coincidan con la búsqueda' 
+              : filtroActivo === 'activo' 
+                ? 'No hay proyectos registrados Activos' 
+                : 'No hay proyectos registrados Inactivos'
+          }
           onEdit={handleEditarProyecto}
           onDelete={(proyecto) => {
+            // Siempre mostrar mensaje de que no se puede eliminar
             Swal.fire({
-              title: '¿Está seguro?',
-              text: `¿Desea eliminar el proyecto ${proyecto.nombre}?`,
+              title: 'No permitido',
+              text: 'No se puede eliminar el proyecto. Los proyectos no pueden ser eliminados del sistema.',
               icon: 'warning',
-              showCancelButton: true,
+              confirmButtonText: 'Aceptar',
               confirmButtonColor: '#F34949',
-              cancelButtonColor: '#6c757d',
-              confirmButtonText: 'Sí, eliminar',
-              cancelButtonText: 'Cancelar',
-            }).then(async (result) => {
-              if (result.isConfirmed) {
-                try {
-                  await apiService.eliminarProyecto(proyecto.id);
-                  Swal.fire({
-                    title: 'Eliminado',
-                    text: 'Proyecto eliminado correctamente',
-                    icon: 'success',
-                    confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#F34949',
-                  });
-                  cargarProyectos(currentPage, filtro);
-                } catch (error) {
-                  if (!error.redirectToLogin) {
-                    Swal.fire({
-                      title: 'Error',
-                      text: error.message || 'Error al eliminar el proyecto',
-                      icon: 'error',
-                      confirmButtonText: 'Aceptar',
-                      confirmButtonColor: '#F34949',
-                    });
-                  }
-                }
-              }
             });
           }}
           canDelete={(proyecto) => {
-            // No permitir eliminar si solo hay un proyecto
-            return proyectos.length > 1;
+            // Siempre mostrar el icono de eliminar
+            return true;
+          }}
+          renderActions={(proyecto) => {
+            const rawActivo = proyecto.activo !== undefined ? proyecto.activo :
+                             proyecto.isActive !== undefined ? proyecto.isActive :
+                             proyecto.Activo !== undefined ? proyecto.Activo :
+                             proyecto.deletemark !== undefined ? !proyecto.deletemark :
+                             proyecto.Deletemark !== undefined ? !proyecto.Deletemark :
+                             proyecto.deleteMark !== undefined ? !proyecto.deleteMark :
+                             undefined;
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          rawActivo === 'false' ||
+                          rawActivo === '0' ||
+                          String(rawActivo).toLowerCase() === 'false';
+            }
+            if (isInactivo) {
+              return (
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={() => {
+                    Swal.fire({
+                      title: '¿Está seguro?',
+                      text: `¿Desea activar el proyecto ${proyecto.nombre}?`,
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonColor: '#28a745',
+                      cancelButtonColor: '#6c757d',
+                      confirmButtonText: 'Sí, activar',
+                      cancelButtonText: 'Cancelar',
+                    }).then(async (result) => {
+                      if (result.isConfirmed) {
+                        try {
+                          const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
+                          await apiService.activarProyecto(proyectoId);
+                          Swal.fire({
+                            title: 'Activado',
+                            text: 'Proyecto activado correctamente',
+                            icon: 'success',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            allowOutsideClick: true,
+                          });
+                          const soloActivos = filtroActivo === 'activo';
+                          cargarProyectos(currentPage, filtro, soloActivos);
+                        } catch (error) {
+                          if (!error.redirectToLogin) {
+                            Swal.fire({
+                              title: 'Error',
+                              text: error.message || 'Error al activar el proyecto',
+                              icon: 'error',
+                              confirmButtonText: 'Aceptar',
+                              confirmButtonColor: '#F34949',
+                            });
+                          }
+                        }
+                      }
+                    });
+                  }}
+                  title="Activar"
+                  style={{ marginRight: '0.5rem' }}
+                >
+                  <i className="fa fa-check"></i>
+                </button>
+              );
+            }
+            return null;
           }}
           enablePagination={false}
           pageSize={pageSize}

@@ -1240,13 +1240,19 @@ const esPlatoInactivo = (plato) => {
         </div>
       </div>
 
+      {/* Barra informativa para creación */}
+      {vista === 'crear' && (
+        <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+          <i className="fa fa-info-circle" style={{ color: '#0097A7' }}></i>
+          <span style={{ color: '#0097A7' }}>Creando nuevo plato - Complete los campos obligatorios para guardar.</span>
+        </div>
+      )}
+
+      {/* Barra informativa para edición */}
       {vista === 'editar' && (
-        <div className="usuarios-info-bar">
-          <i className="fa fa-pencil-alt"></i>
-          <span>
-            Editando plato - Modifique los campos necesarios y guarde los
-            cambios.
-          </span>
+        <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+          <i className="fa fa-pencil-alt" style={{ color: '#0097A7' }}></i>
+          <span style={{ color: '#0097A7' }}>Editando plato - Modifique los campos necesarios y guarde los cambios.</span>
         </div>
       )}
 

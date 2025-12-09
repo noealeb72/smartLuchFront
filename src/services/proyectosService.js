@@ -7,15 +7,29 @@ import { getApiBaseUrl } from './configService';
 export const proyectosService = {
   /**
    * Obtiene lista paginada de proyectos
+   * @param {number} page - Número de página
+   * @param {number} pageSize - Tamaño de página
+   * @param {string} searchTerm - Término de búsqueda
+   * @param {boolean} mostrarActivos - Si es true, mostrar proyectos activos (envía activo=true). Si es false, mostrar inactivos (envía activo=false)
    */
-  getProyectosLista: async (page = 1, pageSize = 10, searchTerm = '') => {
+  getProyectosLista: async (page = 1, pageSize = 10, searchTerm = '', mostrarActivos = true) => {
     const baseUrl = getApiBaseUrl();
     const params = {
       page,
       pageSize,
     };
-    if (searchTerm && searchTerm.trim()) {
+    
+    // El backend espera el parámetro 'activo':
+    // - Si queremos mostrar activos: activo = true
+    // - Si queremos mostrar inactivos: activo = false
+    // Siempre enviar el parámetro activo (true o false)
+    params.activo = mostrarActivos === true;
+    
+    // Siempre enviar el parámetro search, incluso si está vacío (el backend lo maneja)
+    if (searchTerm !== undefined && searchTerm !== null) {
       params.search = searchTerm.trim();
+    } else {
+      params.search = '';
     }
     const response = await api.get(`${baseUrl}/api/proyecto/lista`, {
       params,
@@ -24,11 +38,34 @@ export const proyectosService = {
   },
 
   /**
+   * Obtiene un proyecto por su ID
+   */
+  getProyectoPorId: async (proyectoId) => {
+    const baseUrl = getApiBaseUrl();
+    // Aseguramos que el ID sea número entero
+    const id = Number(proyectoId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de proyecto no válido: ' + JSON.stringify(proyectoId));
+    }
+    const response = await api.get(`${baseUrl}/api/proyecto/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Obtiene proyectos activos para combo/dropdown
+   */
+  getProyectosActivosCombo: async () => {
+    const baseUrl = getApiBaseUrl();
+    const response = await api.get(`${baseUrl}/api/proyecto/activos-combo`);
+    return response.data;
+  },
+
+  /**
    * Crea un nuevo proyecto
    */
   crearProyecto: async (proyectoData) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.post(`${baseUrl}/api/proyecto/Create`, proyectoData, {
+    const response = await api.post(`${baseUrl}/api/proyecto/crear`, proyectoData, {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
       },
@@ -42,7 +79,21 @@ export const proyectosService = {
    */
   actualizarProyecto: async (proyectoData) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.put(`${baseUrl}/api/proyecto/Update`, proyectoData, {
+    // Aseguramos que el ID sea número entero
+    const id = Number(proyectoData.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de proyecto no válido: ' + JSON.stringify(proyectoData.id));
+    }
+    // El ID va como query parameter, los datos en el body
+    const url = `${baseUrl}/api/proyecto/actualizar?id=${id}`;
+    const dataToSend = {
+      id: id,
+      nombre: proyectoData.nombre || '',
+      descripcion: proyectoData.descripcion || null,
+      planta_id: proyectoData.planta_id || null,
+      centrodecosto_id: proyectoData.centrodecosto_id || null,
+    };
+    const response = await api.put(url, dataToSend, {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
       },
@@ -56,13 +107,43 @@ export const proyectosService = {
    */
   eliminarProyecto: async (proyectoId) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.post(`${baseUrl}/api/proyecto/Delete`, { id: proyectoId }, {
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-    });
-    clearApiCache();
-    return response.data;
+    // Aseguramos que sea número entero
+    const id = Number(proyectoId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de proyecto no válido: ' + JSON.stringify(proyectoId));
+    }
+    // Igual que en usuario: id por query string
+    const url = `${baseUrl}/api/proyecto/baja?id=${id}`;
+    try {
+      const response = await api.post(url, null, {
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+      });
+      clearApiCache();
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Activa un proyecto (dar de alta)
+   */
+  activarProyecto: async (proyectoId) => {
+    const baseUrl = getApiBaseUrl();
+    const url = `${baseUrl}/api/proyecto/activar?id=${proyectoId}`;
+    try {
+      const response = await api.post(url, null, {
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+      });
+      clearApiCache();
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   },
 };
 

@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
+import TimePicker from '../components/TimePicker';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -14,6 +15,7 @@ const Turno = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [turnoEditando, setTurnoEditando] = useState(null);
   const [filtro, setFiltro] = useState('');
+  const [filtroActivo, setFiltroActivo] = useState('activo'); // 'activo' o 'inactivo'
   const [vista, setVista] = useState('lista'); // 'lista' o 'editar' o 'crear'
   
   // Estado de paginación
@@ -30,11 +32,17 @@ const Turno = () => {
     hora_hasta: '',
   });
 
-  // Cargar turnos con paginación y búsqueda
-  const cargarTurnos = useCallback(async (page = 1, searchTerm = '') => {
+  // Cargar turnos usando /api/turno/lista con paginación
+  const cargarTurnos = useCallback(async (page = 1, searchTerm = '', mostrarActivos = true) => {
     try {
       setIsLoading(true);
-      const data = await apiService.getTurnosLista(page, pageSize, searchTerm);
+      
+      // Si hay término de búsqueda, usar pageSize=100 y page=1 para obtener todos los resultados
+      // Si no hay búsqueda, usar la paginación normal
+      const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
+      const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
+      
+      const data = await apiService.getTurnosLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
       
       // Función auxiliar para convertir hora a minutos para comparación numérica
       const horaAMinutos = (horaString) => {
@@ -77,36 +85,28 @@ const Turno = () => {
         });
       };
 
-      if (Array.isArray(data)) {
-        // Si el backend devuelve un array directo, calcular paginación del lado del cliente
-        const turnosOrdenados = ordenarTurnos(data);
-        const totalItemsCount = turnosOrdenados.length;
-        const calculatedTotalPages = Math.ceil(totalItemsCount / pageSize);
-        const startIndex = (page - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
-        const paginatedData = turnosOrdenados.slice(startIndex, endIndex);
-        
-        setTurnos(paginatedData);
-        setTotalPages(calculatedTotalPages);
-        setTotalItems(totalItemsCount);
-      } else if (data.data && Array.isArray(data.data)) {
-        const turnosOrdenados = ordenarTurnos(data.data);
-        setTurnos(turnosOrdenados);
-        setTotalPages(data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.data.length);
-      } else if (data.items && Array.isArray(data.items)) {
-        const turnosOrdenados = ordenarTurnos(data.items);
-        setTurnos(turnosOrdenados);
-        setTotalPages(data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.items.length);
-      } else {
-        setTurnos([]);
-        setTotalPages(1);
-        setTotalItems(0);
-      }
-    } catch (error) {
-      console.error('Error al cargar turnos:', error);
+      // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
+      let turnosData = [];
       
+      if (data.items && Array.isArray(data.items)) {
+        turnosData = data.items;
+      } else if (Array.isArray(data)) {
+        turnosData = data;
+      } else if (data.data && Array.isArray(data.data)) {
+        turnosData = data.data;
+      }
+      
+      // Ordenar los turnos por hora
+      const turnosOrdenados = ordenarTurnos(turnosData);
+      
+      // Usar los valores de paginación del backend
+      const totalItemsBackend = data.totalItems || turnosOrdenados.length;
+      const totalPagesBackend = data.totalPages || Math.ceil(totalItemsBackend / pageSize);
+      
+      setTurnos(turnosOrdenados);
+      setTotalPages(totalPagesBackend);
+      setTotalItems(totalItemsBackend);
+    } catch (error) {
       if (!error.redirectToLogin) {
         Swal.fire({
           title: 'Error',
@@ -125,10 +125,17 @@ const Turno = () => {
     }
   }, [pageSize]);
 
-  // Cargar turnos cuando cambia la página o el filtro
+  // Cuando cambia el filtro o filtroActivo, resetear a página 1
   useEffect(() => {
-    cargarTurnos(currentPage, filtro);
-  }, [currentPage, filtro, cargarTurnos]);
+    setCurrentPage(1);
+  }, [filtro, filtroActivo]);
+
+  // Cargar turnos cuando cambia la página, el filtro o el filtroActivo
+  useEffect(() => {
+    const soloActivos = filtroActivo === 'activo';
+    cargarTurnos(currentPage, filtro, soloActivos);
+  }, [currentPage, filtro, filtroActivo, cargarTurnos]);
+
 
   // Manejar cambio de input
   const handleInputChange = (e) => {
@@ -138,6 +145,7 @@ const Turno = () => {
       [name]: value,
     }));
   };
+
 
   // Validar formulario
   const validarFormulario = () => {
@@ -153,32 +161,61 @@ const Turno = () => {
       addError('El nombre es requerido', 'nombre');
     }
 
-    if (!formData.hora_desde) {
+    // Validar hora de inicio
+    if (!formData.hora_desde || formData.hora_desde.trim() === '') {
       addError('La hora de inicio es requerida', 'hora_desde');
+    } else {
+      // Validar formato de hora de inicio (HH:mm)
+      const horaDesdeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!horaDesdeRegex.test(formData.hora_desde.trim())) {
+        addError('La hora de inicio debe tener el formato HH:mm (ej: 20:00)', 'hora_desde');
+      }
     }
 
-    if (!formData.hora_hasta) {
+    // Validar hora de fin
+    if (!formData.hora_hasta || formData.hora_hasta.trim() === '') {
       addError('La hora de fin es requerida', 'hora_hasta');
+    } else {
+      // Validar formato de hora de fin (HH:mm)
+      const horaHastaRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!horaHastaRegex.test(formData.hora_hasta.trim())) {
+        addError('La hora de fin debe tener el formato HH:mm (ej: 00:00)', 'hora_hasta');
+      }
     }
 
-    if (formData.hora_desde && formData.hora_hasta) {
-      // Convertir horas a minutos para comparación numérica
-      const convertirHoraAMinutos = (horaString) => {
-        if (!horaString) return 0;
-        const parts = horaString.split(':');
-        if (parts.length >= 2) {
-          const horas = parseInt(parts[0]) || 0;
-          const minutos = parseInt(parts[1]) || 0;
-          return horas * 60 + minutos;
+    // Si ambas horas están presentes y tienen formato válido, validar lógica
+    if (formData.hora_desde && formData.hora_desde.trim() !== '' && 
+        formData.hora_hasta && formData.hora_hasta.trim() !== '') {
+      const horaDesdeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      const horaHastaRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      
+      if (horaDesdeRegex.test(formData.hora_desde.trim()) && 
+          horaHastaRegex.test(formData.hora_hasta.trim())) {
+        // Convertir horas a minutos para comparación numérica
+        const convertirHoraAMinutos = (horaString) => {
+          if (!horaString) return 0;
+          const parts = horaString.trim().split(':');
+          if (parts.length >= 2) {
+            const horas = parseInt(parts[0]) || 0;
+            const minutos = parseInt(parts[1]) || 0;
+            return horas * 60 + minutos;
+          }
+          return 0;
+        };
+        
+        const minutosDesde = convertirHoraAMinutos(formData.hora_desde);
+        const minutosHasta = convertirHoraAMinutos(formData.hora_hasta);
+        
+        // Permitir turnos que cruzan la medianoche (ej: 20:00 a 00:00)
+        // Si minutosHasta < minutosDesde, significa que el turno cruza la medianoche y es válido
+        // Si minutosHasta > minutosDesde, es un turno normal dentro del mismo día y es válido
+        // Solo rechazar si son iguales (no tiene sentido un turno de 0 minutos)
+        if (minutosDesde === minutosHasta) {
+          addError('La hora de inicio no puede ser igual a la hora de fin', 'hora_desde');
         }
-        return 0;
-      };
-      
-      const minutosDesde = convertirHoraAMinutos(formData.hora_desde);
-      const minutosHasta = convertirHoraAMinutos(formData.hora_hasta);
-      
-      if (minutosDesde >= minutosHasta) {
-        addError('La hora de inicio debe ser menor que la hora de fin', 'hora_desde');
+        // Si minutosHasta < minutosDesde, el turno cruza la medianoche (válido)
+        // Si minutosHasta > minutosDesde, el turno es normal (válido)
+        // No necesitamos validar más, ambos casos son válidos
       }
     }
 
@@ -215,19 +252,69 @@ const Turno = () => {
     try {
       setIsLoading(true);
 
-      // Asegurar que las horas tengan el formato HH:mm:ss para el backend
+      // Asegurar que las horas tengan el formato HH:mm:ss para el backend (TimeSpan en C#)
       const formatearHoraParaBackend = (horaString) => {
-        if (!horaString) return '';
-        // Si ya tiene segundos, devolverlo tal cual
-        if (horaString.split(':').length === 3) {
-          return horaString;
+        if (!horaString || horaString.trim() === '') {
+          throw new Error('La hora es obligatoria');
         }
-        // Si solo tiene HH:mm, agregar :00 para los segundos
-        if (horaString.split(':').length === 2) {
-          return `${horaString}:00`;
+        
+        // Validar formato básico
+        const parts = horaString.trim().split(':');
+        if (parts.length < 2) {
+          throw new Error('Formato de hora inválido. Debe ser HH:mm');
         }
-        return horaString;
+        
+        const horas = parseInt(parts[0]) || 0;
+        const minutos = parseInt(parts[1]) || 0;
+        
+        // Validar rangos
+        if (horas < 0 || horas > 23) {
+          throw new Error('Las horas deben estar entre 00 y 23');
+        }
+        if (minutos < 0 || minutos > 59) {
+          throw new Error('Los minutos deben estar entre 00 y 59');
+        }
+        
+        // Formatear como HH:mm:ss (TimeSpan en C# acepta este formato)
+        const horasFormateadas = String(horas).padStart(2, '0');
+        const minutosFormateados = String(minutos).padStart(2, '0');
+        
+        // Si ya tiene segundos, mantenerlos, sino agregar :00
+        if (parts.length === 3) {
+          const segundos = parseInt(parts[2]) || 0;
+          if (segundos < 0 || segundos > 59) {
+            throw new Error('Los segundos deben estar entre 00 y 59');
+          }
+          return `${horasFormateadas}:${minutosFormateados}:${String(segundos).padStart(2, '0')}`;
+        }
+        
+        return `${horasFormateadas}:${minutosFormateados}:00`;
       };
+
+      // Validar que las horas estén presentes antes de formatear
+      if (!formData.hora_desde || formData.hora_desde.trim() === '') {
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'La hora de inicio es obligatoria',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!formData.hora_hasta || formData.hora_hasta.trim() === '') {
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'La hora de fin es obligatoria',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
 
       // El backend espera un DTO con los campos en formato PascalCase (común en C#)
       // Asegurar que el ID se envíe correctamente cuando se está editando
@@ -235,47 +322,102 @@ const Turno = () => {
         ? (formData.id || turnoEditando.id || turnoEditando.Id || turnoEditando.ID)
         : null;
       
-      const turnoData = {
-        Id: turnoId ? parseInt(turnoId) : null,
-        Nombre: formData.nombre.trim(),
-        HoraDesde: formatearHoraParaBackend(formData.hora_desde),
-        HoraHasta: formatearHoraParaBackend(formData.hora_hasta),
-      };
+      // Formatear las horas para el backend
+      let horaDesdeFormateada;
+      let horaHastaFormateada;
+      
+      try {
+        horaDesdeFormateada = formatearHoraParaBackend(formData.hora_desde);
+        horaHastaFormateada = formatearHoraParaBackend(formData.hora_hasta);
+      } catch (error) {
+        Swal.fire({
+          title: 'Error de validación',
+          text: error.message || 'Error al formatear las horas',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Validación final antes de enviar (doble verificación)
+      if (!horaDesdeFormateada || horaDesdeFormateada.trim() === '') {
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'La hora de inicio es obligatoria para ' + (turnoEditando ? 'actualizar' : 'crear') + ' el turno',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
 
-      // Debug: verificar valores antes de enviar
-      console.log('DEBUG turnoData antes de enviar:', {
-        turnoEditando,
-        formData_id: formData.id,
-        turnoId,
-        turnoData,
-        hora_desde_original: formData.hora_desde,
-        hora_hasta_original: formData.hora_hasta,
-        hora_desde_formateada: turnoData.HoraDesde,
-        hora_hasta_formateada: turnoData.HoraHasta,
-      });
+      if (!horaHastaFormateada || horaHastaFormateada.trim() === '') {
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'La hora de fin es obligatoria para ' + (turnoEditando ? 'actualizar' : 'crear') + ' el turno',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
 
+      // Preparar datos según si es crear o actualizar
+      let turnoData;
+      
       if (turnoEditando) {
+        // Para actualizar, incluir el ID
+        turnoData = {
+          Id: parseInt(turnoId),
+          Nombre: formData.nombre.trim(),
+          HoraDesde: horaDesdeFormateada,
+          HoraHasta: horaHastaFormateada,
+        };
         await apiService.actualizarTurno(turnoData);
         Swal.fire({
           title: 'Éxito',
           text: 'Turno actualizado correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       } else {
+        // Para crear, NO incluir el ID
+        turnoData = {
+          Nombre: formData.nombre.trim(),
+          HoraDesde: horaDesdeFormateada,
+          HoraHasta: horaHastaFormateada,
+        };
+        
+        // Log para debug: mostrar los datos antes de enviar
+        console.log('=== TURNO - Datos preparados para crear ===');
+        console.log('turnoData:', turnoData);
+        console.log('Nombre:', turnoData.Nombre);
+        console.log('HoraDesde:', turnoData.HoraDesde);
+        console.log('HoraHasta:', turnoData.HoraHasta);
+        console.log('===========================================');
+        
         await apiService.crearTurno(turnoData);
         Swal.fire({
           title: 'Éxito',
           text: 'Turno creado correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       }
 
       handleVolverALista();
-      cargarTurnos(currentPage, filtro);
+      const soloActivos = filtroActivo === 'activo';
+      cargarTurnos(currentPage, filtro, soloActivos);
     } catch (error) {
       console.error('Error al guardar turno:', error);
       
@@ -314,7 +456,7 @@ const Turno = () => {
   const handleEditarTurno = (turno) => {
     setTurnoEditando(turno);
     
-    // Formatear horas para el input type="time" (debe ser HH:mm)
+    // Formatear horas para mantener formato 24h (HH:mm)
     const formatearHoraParaInput = (horaValue) => {
       if (!horaValue) return '';
       
@@ -325,17 +467,17 @@ const Turno = () => {
         return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
       }
       
-      // Si es string, parsear y formatear
+      // Si es string, parsear y formatear manteniendo formato 24h
       if (typeof horaValue === 'string') {
         // Remover espacios
         const horaLimpia = horaValue.trim();
         
-        // Si contiene ':', extraer solo horas y minutos
+        // Si contiene ':', extraer solo horas y minutos (mantener formato 24h)
         if (horaLimpia.includes(':')) {
           const parts = horaLimpia.split(':');
           const horas = parseInt(parts[0]) || 0;
           const minutos = parseInt(parts[1]) || 0;
-          // Asegurar formato HH:mm con padding
+          // Mantener formato 24h: 20:00 sigue siendo 20:00, no convertir a 08:00 PM
           return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
         }
         
@@ -353,21 +495,17 @@ const Turno = () => {
     // Obtener el ID con múltiples variantes de nombres
     const turnoId = turno.id || turno.Id || turno.ID || null;
     
-    console.log('DEBUG handleEditarTurno - Valores originales:', {
-      turno,
-      turnoId,
-      horaDesdeRaw,
-      horaHastaRaw,
-      horaDesdeFormateada: formatearHoraParaInput(horaDesdeRaw),
-      horaHastaFormateada: formatearHoraParaInput(horaHastaRaw),
-    });
+    // Formatear horas en formato 24h para el backend (mantener formato HH:mm)
+    const horaDesde24hString = formatearHoraParaInput(horaDesdeRaw);
+    const horaHasta24hString = formatearHoraParaInput(horaHastaRaw);
     
     setFormData({
       id: turnoId,
       nombre: turno.nombre || turno.Nombre || '',
-      hora_desde: formatearHoraParaInput(horaDesdeRaw),
-      hora_hasta: formatearHoraParaInput(horaHastaRaw),
+      hora_desde: horaDesde24hString,
+      hora_hasta: horaHasta24hString,
     });
+    
     setVista('editar');
   };
 
@@ -532,11 +670,19 @@ const Turno = () => {
           </div>
         </div>
         
+        {/* Barra informativa para creación */}
+        {vista === 'crear' && (
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-info-circle" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Creando nuevo turno - Complete los campos obligatorios para guardar.</span>
+          </div>
+        )}
+
         {/* Barra informativa para edición */}
         {vista === 'editar' && (
-          <div className="usuarios-info-bar">
-            <i className="fa fa-pencil-alt"></i>
-            <span>Editando turno - Modifique los campos necesarios y guarde los cambios.</span>
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-pencil-alt" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Editando turno - Modifique los campos necesarios y guarde los cambios.</span>
           </div>
         )}
 
@@ -549,7 +695,7 @@ const Turno = () => {
               </div>
               <div className="form-section-content">
                 <div className="row">
-                  <div className="col-md-6">
+                  <div className="col-md-4">
                     <div className="form-group">
                       <label htmlFor="nombre">
                         Nombre <span style={{ color: '#F34949' }}>*</span>
@@ -566,36 +712,32 @@ const Turno = () => {
                       />
                     </div>
                   </div>
-                </div>
-                <div className="row">
-                  <div className="col-md-6">
+                  <div className="col-md-3">
                     <div className="form-group">
                       <label htmlFor="hora_desde">
                         Hora Desde <span style={{ color: '#F34949' }}>*</span>
                       </label>
-                      <input
-                        type="time"
-                        className="form-control"
+                      <TimePicker
                         id="hora_desde"
                         name="hora_desde"
                         value={formData.hora_desde || ''}
                         onChange={handleInputChange}
+                        placeholder="HH:mm (ej: 20:00)"
                         required
                       />
                     </div>
                   </div>
-                  <div className="col-md-6">
+                  <div className="col-md-3">
                     <div className="form-group">
                       <label htmlFor="hora_hasta">
                         Hora Hasta <span style={{ color: '#F34949' }}>*</span>
                       </label>
-                      <input
-                        type="time"
-                        className="form-control"
+                      <TimePicker
                         id="hora_hasta"
                         name="hora_hasta"
                         value={formData.hora_hasta || ''}
                         onChange={handleInputChange}
+                        placeholder="HH:mm (ej: 00:00)"
                         required
                       />
                     </div>
@@ -686,6 +828,31 @@ const Turno = () => {
             />
           </div>
           
+          {/* Filtro de estado Activo/Inactivo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ margin: 0, fontSize: '0.9rem', color: '#495057', whiteSpace: 'nowrap' }}>
+              Estado:
+            </label>
+            <select
+              id="filtroActivo"
+              value={filtroActivo}
+              onChange={(e) => setFiltroActivo(e.target.value)}
+              style={{
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.9rem',
+                border: '1px solid #ced4da',
+                borderRadius: '0.25rem',
+                backgroundColor: 'white',
+                color: '#495057',
+                cursor: 'pointer',
+                minWidth: '120px'
+              }}
+            >
+              <option value="activo">Activos</option>
+              <option value="inactivo">Inactivos</option>
+            </select>
+          </div>
+          
           {/* Botones de exportación (solo iconos) */}
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
@@ -765,17 +932,23 @@ const Turno = () => {
           ]}
           data={turnos}
           isLoading={isLoading}
-          emptyMessage={filtro ? 'No se encontraron turnos que coincidan con la búsqueda' : 'No hay turnos registrados'}
+          emptyMessage={
+            filtro 
+              ? 'No se encontraron turnos que coincidan con la búsqueda' 
+              : filtroActivo === 'activo' 
+                ? 'No hay turnos registrados Activos' 
+                : 'No hay turnos registrados Inactivos'
+          }
           onEdit={handleEditarTurno}
           onDelete={(turno) => {
             Swal.fire({
               title: '¿Está seguro?',
-              text: `¿Desea eliminar el turno ${turno.nombre || turno.Nombre}?`,
+              text: `¿Desea dar de baja el turno ${turno.nombre || turno.Nombre}?`,
               icon: 'warning',
               showCancelButton: true,
               confirmButtonColor: '#F34949',
               cancelButtonColor: '#6c757d',
-              confirmButtonText: 'Sí, eliminar',
+              confirmButtonText: 'Sí, dar de baja',
               cancelButtonText: 'Cancelar',
             }).then(async (result) => {
               if (result.isConfirmed) {
@@ -794,16 +967,18 @@ const Turno = () => {
                     return;
                   }
                   
-                  console.log('Eliminando turno con ID:', turnoId);
                   await apiService.eliminarTurno(turnoId);
                   Swal.fire({
-                    title: 'Eliminado',
-                    text: 'Turno eliminado correctamente',
+                    title: 'Éxito',
+                    text: 'Turno dado de baja correctamente',
                     icon: 'success',
-                    confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#F34949',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: true,
                   });
-                  cargarTurnos(currentPage, filtro);
+                  const soloActivos = filtroActivo === 'activo';
+                  cargarTurnos(currentPage, filtro, soloActivos);
                 } catch (error) {
                   console.error('Error al eliminar turno:', error);
                   if (!error.redirectToLogin) {
@@ -835,7 +1010,95 @@ const Turno = () => {
           }}
           canDelete={(turno) => {
             // No permitir eliminar si solo hay un turno
-            return turnos.length > 1;
+            if (turnos.length <= 1) {
+              return false;
+            }
+            // No permitir eliminar si el turno está inactivo
+            const rawActivo = turno.activo !== undefined ? turno.activo :
+                             turno.isActive !== undefined ? turno.isActive :
+                             turno.Activo !== undefined ? turno.Activo :
+                             turno.deletemark !== undefined ? !turno.deletemark :
+                             turno.Deletemark !== undefined ? !turno.Deletemark :
+                             turno.deleteMark !== undefined ? !turno.deleteMark :
+                             undefined;
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          rawActivo === 'false' ||
+                          rawActivo === '0' ||
+                          String(rawActivo).toLowerCase() === 'false';
+            }
+            return !isInactivo;
+          }}
+          renderActions={(turno) => {
+            const rawActivo = turno.activo !== undefined ? turno.activo :
+                             turno.isActive !== undefined ? turno.isActive :
+                             turno.Activo !== undefined ? turno.Activo :
+                             turno.deletemark !== undefined ? !turno.deletemark :
+                             turno.Deletemark !== undefined ? !turno.Deletemark :
+                             turno.deleteMark !== undefined ? !turno.deleteMark :
+                             undefined;
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          rawActivo === 'false' ||
+                          rawActivo === '0' ||
+                          String(rawActivo).toLowerCase() === 'false';
+            }
+            if (isInactivo) {
+              return (
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={() => {
+                    Swal.fire({
+                      title: '¿Está seguro?',
+                      text: `¿Desea activar el turno ${turno.nombre || turno.Nombre}?`,
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonColor: '#28a745',
+                      cancelButtonColor: '#6c757d',
+                      confirmButtonText: 'Sí, activar',
+                      cancelButtonText: 'Cancelar',
+                    }).then(async (result) => {
+                      if (result.isConfirmed) {
+                        try {
+                          const turnoId = turno.id || turno.Id || turno.ID;
+                          await apiService.activarTurno(turnoId);
+                          Swal.fire({
+                            title: 'Activado',
+                            text: 'Turno activado correctamente',
+                            icon: 'success',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            allowOutsideClick: true,
+                          });
+                          const soloActivos = filtroActivo === 'activo';
+                          cargarTurnos(currentPage, filtro, soloActivos);
+                        } catch (error) {
+                          if (!error.redirectToLogin) {
+                            Swal.fire({
+                              title: 'Error',
+                              text: error.message || 'Error al activar el turno',
+                              icon: 'error',
+                              confirmButtonText: 'Aceptar',
+                              confirmButtonColor: '#F34949',
+                            });
+                          }
+                        }
+                      }
+                    });
+                  }}
+                  title="Activar"
+                  style={{ marginRight: '0.5rem' }}
+                >
+                  <i className="fa fa-check"></i>
+                </button>
+              );
+            }
+            return null;
           }}
           enablePagination={false}
           pageSize={pageSize}

@@ -63,8 +63,8 @@ const Footer = memo(({ variant = 'full' }) => {
                       return hora;
                     };
                     
-                    const horaDesde = formatearHora(item.hora_desde || item.horaDesde || item.horadesde);
-                    const horaHasta = formatearHora(item.hora_hasta || item.horaHasta || item.horahasta);
+                    const horaDesde = formatearHora(item.HoraDesde || item.hora_desde || item.horaDesde || item.horadesde);
+                    const horaHasta = formatearHora(item.HoraHasta || item.hora_hasta || item.horaHasta || item.horahasta);
                     
                     return (
                       <li key={item.id || index} className="d-flex justify-content-between text-white">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import MenuItem from '../components/MenuItem';
 import PedidoVigente from '../components/PedidoVigente';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,7 +10,8 @@ import '../styles/smartstyle.css';
 
 const Index = () => {
   const { user } = useAuth();
-  const { turnos, pedidosHoy, loading: dashboardLoading, error: dashboardError, recargar: recargarDashboard } = useDashboard();
+  const { turnos, pedidosHoy, menuDelDia, usuarioData, actualizarDatos } = useDashboard();
+  const datosCargadosRef = useRef(false); // Ref para rastrear si ya se cargaron los datos
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTurno, setSelectedTurno] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
@@ -28,24 +29,89 @@ const Index = () => {
   const [turnoDisponible, setTurnoDisponible] = useState(true);
   const defaultImage = '/Views/img/logo-preview.png';
 
+  // Cargar datos desde /api/inicio/web solo una vez después del login
+  useEffect(() => {
+    // Solo cargar si el usuario está autenticado y aún no se han cargado los datos
+    if (!user?.id || datosCargadosRef.current) {
+      return;
+    }
+
+    let isMounted = true;
+    let requestInProgress = false;
+    
+    const cargarDatosInicio = async () => {
+      // Evitar múltiples llamadas simultáneas
+      if (requestInProgress) {
+        return;
+      }
+      
+      requestInProgress = true;
+      // Marcar como cargando antes de hacer la petición
+      datosCargadosRef.current = true;
+      
+      try {
+        setIsLoading(true);
+        const data = await apiService.getDashboardInicio();
+        
+        if (!isMounted) {
+          datosCargadosRef.current = false; // Resetear si el componente se desmontó
+          requestInProgress = false;
+          return;
+        }
+        
+        // Actualizar el contexto con los datos recibidos
+        actualizarDatos(data);
+        
+        // Sincronizar pedidosHoy con el estado local
+        const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
+        setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
+      } catch (error) {
+        if (!isMounted) {
+          datosCargadosRef.current = false; // Resetear si el componente se desmontó
+          requestInProgress = false;
+          return;
+        }
+        
+        datosCargadosRef.current = false; // Resetear en caso de error para permitir reintento
+        requestInProgress = false;
+        
+        Swal.fire({
+          title: 'Error al cargar datos',
+          text: error.message || 'Error al cargar los datos iniciales',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+          requestInProgress = false;
+        }
+      }
+    };
+
+    cargarDatosInicio();
+    
+    return () => {
+      isMounted = false;
+      // NO resetear datosCargadosRef aquí porque queremos que persista durante la sesión
+      // Solo se reseteará cuando el componente se desmonte completamente (logout)
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Solo ejecutar cuando el ID del usuario cambie (después del login)
+
+  // Resetear el ref cuando el usuario se desmonta (logout)
+  useEffect(() => {
+    return () => {
+      // Cuando el componente se desmonta, resetear el ref para permitir carga en la próxima sesión
+      datosCargadosRef.current = false;
+    };
+  }, []);
+
   // Sincronizar pedidosHoy del contexto con el estado local
   useEffect(() => {
     setPedidosVigentes(pedidosHoy);
   }, [pedidosHoy]);
-
-  // Mostrar error del dashboard si ocurre
-  useEffect(() => {
-    if (dashboardError) {
-      console.error('Error del dashboard:', dashboardError);
-      Swal.fire({
-        title: 'Error al cargar datos',
-        text: dashboardError,
-        icon: 'error',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
-      });
-    }
-  }, [dashboardError]);
 
   // Seleccionar primer turno si hay turnos disponibles y no hay uno seleccionado
   useEffect(() => {
@@ -90,39 +156,22 @@ const Index = () => {
     inicializarBonificaciones();
   }, [inicializarBonificaciones]);
 
+  // Usar MenuDelDia del contexto cuando se selecciona un turno
   useEffect(() => {
-    if (selectedTurno) {
-      cargarMenu();
-    }
-  }, [selectedTurno]); // eslint-disable-line react-hooks/exhaustive-deps
-
-
-  const cargarMenu = useCallback(async () => {
-    if (!selectedTurno) return;
-
-    try {
-      setIsLoading(true);
-      
-      // Obtener el ID del turno seleccionado
+    if (selectedTurno && menuDelDia && menuDelDia.length > 0) {
+      // Si hay MenuDelDia en el contexto, usarlo directamente
       const turnoId = selectedTurno.id || selectedTurno.Id || selectedTurno.ID;
+      const menuFiltrado = menuDelDia.filter(item => {
+        const itemTurnoId = item.turnoId || item.turno_id || item.TurnoId || item.Turno_Id;
+        return itemTurnoId === turnoId;
+      });
       
-      if (!turnoId) {
-        console.error('El turno seleccionado no tiene ID');
-        setMenuItems([]);
-        return;
-      }
-
-      // Opcional: pasar fecha si se necesita (por defecto es hoy)
-      // const fecha = new Date().toISOString().split('T')[0]; // formato: YYYY-MM-DD
-      
-      const data = await apiService.getMenuDelDia(turnoId);
-
-      if (Array.isArray(data)) {
-        // Procesar datos del menú de forma optimizada
+      if (menuFiltrado.length > 0) {
+        // Procesar datos del menú
         const platosMap = new Map();
         const platos = [];
 
-        for (const menuItem of data) {
+        for (const menuItem of menuFiltrado) {
           const codigo = menuItem.codigo || menuItem.cod_plato || menuItem.Codigo || menuItem.Cod_Plato;
           if (!codigo || platosMap.has(codigo)) continue;
 
@@ -144,27 +193,19 @@ const Index = () => {
         }
 
         setMenuItems(platos);
+        setIsLoading(false);
       } else {
+        // Si no hay menú para este turno, dejar vacío
         setMenuItems([]);
       }
-    } catch (error) {
-      console.error('Error al cargar menú:', error);
-      // Si hay error de conexión, el interceptor ya redirige automáticamente
-      if (!error.redirectToLogin) {
-        const errorMessage = error.message || 'Error al cargar el menú del día';
-        Swal.fire({
-          title: 'Error',
-          text: errorMessage,
-          icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
-        });
-      }
+    } else if (selectedTurno && (!menuDelDia || menuDelDia.length === 0)) {
+      // Si no hay MenuDelDia en el contexto, dejar vacío
       setMenuItems([]);
-    } finally {
-      setIsLoading(false);
     }
-  }, [selectedTurno, defaultImage]);
+  }, [selectedTurno, menuDelDia]);
+
+
+  // Ya no se necesita cargarMenu, se usa MenuDelDia del contexto
 
 
   const calcularPrecioConBonificacion = useCallback((precio, aplicar) => {
@@ -285,13 +326,20 @@ const Index = () => {
         confirmButtonColor: '#F34949',
         allowOutsideClick: false,
         allowEscapeKey: false,
-      }).then(() => {
+      }).then(async () => {
         setShowConfirmModal(false);
         setPedidoComentario('');
-        // Recargar datos del dashboard (pedidos y menú si hay turno seleccionado)
-        recargarDashboard();
-        if (selectedTurno) {
-          cargarMenu();
+        // Recargar datos desde /api/inicio/web
+        try {
+          setIsLoading(true);
+          const data = await apiService.getDashboardInicio();
+          actualizarDatos(data);
+          const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
+          setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
+        } catch (error) {
+          // Error silencioso, ya se mostrará en el siguiente render
+        } finally {
+          setIsLoading(false);
         }
       });
     } catch (error) {
@@ -306,7 +354,7 @@ const Index = () => {
         });
       }
     }
-  }, [pedidoSeleccionado, user, pedidoComentario, bonificacionDisponible, cantidadBonificacionesHoy, porcentajeBonificacion, selectedTurno, recargarDashboard, cargarMenu]);
+  }, [pedidoSeleccionado, user, pedidoComentario, bonificacionDisponible, cantidadBonificacionesHoy, porcentajeBonificacion, selectedTurno, actualizarDatos]);
 
   const actualizaPedido = useCallback(async (nuevoEstado) => {
     if (!pedidoSeleccionado || !pedidoSeleccionado.user_Pedido) {
@@ -334,14 +382,21 @@ const Index = () => {
         icon: 'success',
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#F34949',
-      }).then(() => {
+      }).then(async () => {
         setShowCancelModal(false);
         setShowReceiveModal(false);
         setPedidoCalificacion(1);
-        // Recargar datos del dashboard (pedidos y menú si hay turno seleccionado)
-        recargarDashboard();
-        if (selectedTurno) {
-          cargarMenu();
+        // Recargar datos desde /api/inicio/web después de actualizar pedido
+        try {
+          setIsLoading(true);
+          const data = await apiService.getDashboardInicio();
+          actualizarDatos(data);
+          const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
+          setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
+        } catch (error) {
+          // Error silencioso, ya se mostrará en el siguiente render
+        } finally {
+          setIsLoading(false);
         }
       });
     } catch (error) {
@@ -356,7 +411,7 @@ const Index = () => {
         });
       }
     }
-  }, [pedidoSeleccionado, pedidoCalificacion, selectedTurno, recargarDashboard, cargarMenu]);
+  }, [pedidoSeleccionado, pedidoCalificacion, selectedTurno, actualizarDatos]);
 
   const onTurnoChanged = useCallback((e) => {
     const turnoId = parseInt(e.target.value);
@@ -403,7 +458,7 @@ const Index = () => {
                 <div className="container-fluid mt-4 pr-0 mr-0 row ocultar-en-movil">
                   <div className="col-sm-6 col-12 bienvenida">
                     <h3>
-                      Bienvenido {user?.nombre} {user?.apellido}
+                      Bienvenido {usuarioData?.nombre || localStorage.getItem('nombre') || user?.nombre || ''} {usuarioData?.apellido || localStorage.getItem('apellido') || user?.apellido || ''}
                     </h3>
                     {bonificacionDisponible && turnoDisponible && menuItems.length > 0 && (
                       <h5 style={{ color: '#6c757d' }}>
@@ -425,8 +480,8 @@ const Index = () => {
                         value={selectedTurno?.id || ''}
                         onChange={onTurnoChanged}
                       >
-                        {turnos.map((t) => (
-                          <option key={t.id} value={t.id}>
+                        {turnos.map((t, index) => (
+                          <option key={t.id || t.Id || `turno-${index}`} value={t.id || t.Id}>
                             {t.nombre || t.Nombre || t.descripcion || t.Descripcion}
                           </option>
                         ))}
@@ -441,7 +496,7 @@ const Index = () => {
                 <div className="container-fluid mt-4 pr-0 mr-0 row d-block d-md-none">
                   <div className="col-sm-12 bienvenida">
                     <h3>
-                      <i className="lnr lnr-user"></i> Bienvenido {user?.nombre} {user?.apellido}
+                      <i className="lnr lnr-user"></i> Bienvenido {usuarioData?.nombre || localStorage.getItem('nombre') || user?.nombre || ''} {usuarioData?.apellido || localStorage.getItem('apellido') || user?.apellido || ''}
                     </h3>
                     {bonificacionDisponible && turnoDisponible && menuItems.length > 0 && (
                       <h5 style={{ color: '#6c757d' }}>
@@ -463,8 +518,8 @@ const Index = () => {
                         value={selectedTurno?.id || ''}
                         onChange={onTurnoChanged}
                       >
-                        {turnos.map((t) => (
-                          <option key={t.id} value={t.id}>
+                        {turnos.map((t, index) => (
+                          <option key={t.id || t.Id || `turno-${index}`} value={t.id || t.Id}>
                             {t.nombre || t.Nombre || t.descripcion || t.Descripcion}
                           </option>
                         ))}
@@ -744,11 +799,11 @@ const Index = () => {
                     onChange={(e) => setPedidoCalificacion(parseInt(e.target.value))}
                     style={{ fontSize: '18px', border: '1px solid #ddd', boxShadow: 'none', backgroundColor: '#fff' }}
                   >
-                    <option value="1">⭐ 1 estrella</option>
-                    <option value="2">⭐⭐ 2 estrellas</option>
-                    <option value="3">⭐⭐⭐ 3 estrellas</option>
-                    <option value="4">⭐⭐⭐⭐ 4 estrellas</option>
-                    <option value="5">⭐⭐⭐⭐⭐ 5 estrellas</option>
+                    <option key="calificacion-1" value="1">⭐ 1 estrella</option>
+                    <option key="calificacion-2" value="2">⭐⭐ 2 estrellas</option>
+                    <option key="calificacion-3" value="3">⭐⭐⭐ 3 estrellas</option>
+                    <option key="calificacion-4" value="4">⭐⭐⭐⭐ 4 estrellas</option>
+                    <option key="calificacion-5" value="5">⭐⭐⭐⭐⭐ 5 estrellas</option>
                   </select>
                 </div>
                 <div className="modal-footer">

@@ -21,9 +21,6 @@ const defaultConfig = {
  * pero podemos mostrar un mensaje al usuario
  */
 const generateDefaultConfig = () => {
-  console.warn('⚠️ Archivo config.json no encontrado. Usando valores por defecto.');
-  console.warn('📝 Por favor, crea el archivo public/config.json con la siguiente estructura:');
-  console.log(JSON.stringify(defaultConfig, null, 2));
   return defaultConfig;
 };
 
@@ -115,8 +112,6 @@ export async function loadConfig(forceReload = false) {
     if (!response.ok) {
       // Si el archivo no existe (404) o hay otro error, usar valores por defecto
       if (response.status === 404) {
-        console.error('❌ Archivo /config.json no encontrado (404)');
-        console.warn('⚠️ El archivo public/config.json debe existir. Usando valores por defecto.');
         appConfig = generateDefaultConfig();
         return appConfig;
       }
@@ -128,32 +123,17 @@ export async function loadConfig(forceReload = false) {
 
     // Validar la estructura
     if (!validateConfig(rawConfig)) {
-      console.error('❌ El archivo config.json tiene una estructura inválida.');
-      console.warn('⚠️ Verifica que tenga: apiBaseUrl, totemId y bloqueos (Admin, Cocina, Comensal, Gerencia)');
       // Intentar normalizar, pero advertir
       appConfig = normalizeConfig(rawConfig);
-      console.warn('⚠️ Configuración normalizada con valores por defecto donde faltaban datos.');
     } else {
       // Configuración válida, normalizar para asegurar que todos los campos estén presentes
       appConfig = normalizeConfig(rawConfig);
     }
 
-    console.log('✅ Configuración cargada desde /config.json (public/config.json):', {
-      apiBaseUrl: appConfig.apiBaseUrl,
-      totemId: appConfig.totemId,
-      bloqueos: appConfig.bloqueos,
-      fuente: 'public/config.json'
-    });
-
     return appConfig;
 
   } catch (error) {
-    console.error('❌ Error cargando config.json:', error);
-    console.error('❌ Detalles del error:', error.message);
-    
     // Si hay un error de red o parsing, usar valores por defecto
-    console.warn('⚠️ Usando configuración por defecto debido al error');
-    console.warn('📝 Asegúrate de que el archivo public/config.json exista y sea válido');
     appConfig = generateDefaultConfig();
     return appConfig;
   }
@@ -182,7 +162,6 @@ export async function reloadConfig() {
  */
 export function getApiBaseUrl() {
   if (!appConfig) {
-    console.warn('⚠️ Configuración no cargada aún. Usando valor por defecto temporal.');
     return defaultConfig.apiBaseUrl;
   }
   return appConfig.apiBaseUrl;
@@ -194,7 +173,6 @@ export function getApiBaseUrl() {
  */
 export function getTotemId() {
   if (!appConfig) {
-    console.warn('⚠️ Configuración no cargada aún. Usando valor por defecto temporal.');
     return defaultConfig.totemId;
   }
   return appConfig.totemId;
@@ -206,7 +184,6 @@ export function getTotemId() {
  */
 export function getBloqueos() {
   if (!appConfig) {
-    console.warn('⚠️ Configuración no cargada aún. Usando valores por defecto temporales.');
     return defaultConfig.bloqueos;
   }
   return appConfig.bloqueos;

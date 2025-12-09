@@ -14,6 +14,7 @@ const PlanNutricional = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [planEditando, setPlanEditando] = useState(null);
   const [filtro, setFiltro] = useState('');
+  const [filtroActivo, setFiltroActivo] = useState('activo'); // 'activo' o 'inactivo'
   const [vista, setVista] = useState('lista'); // 'lista' o 'editar' o 'crear'
   
   // Estado de paginación
@@ -29,32 +30,37 @@ const PlanNutricional = () => {
     descripcion: '',
   });
 
-  // Cargar planes nutricionales con paginación y búsqueda
-  const cargarPlanes = useCallback(async (page = 1, searchTerm = '') => {
+  // Cargar planes nutricionales usando /api/plannutricional/lista con paginación
+  const cargarPlanes = useCallback(async (page = 1, searchTerm = '', mostrarActivos = true) => {
     try {
       setIsLoading(true);
-      const data = await apiService.getPlanesNutricionalesLista(page, pageSize, searchTerm);
       
-      if (Array.isArray(data)) {
-        setPlanes(data);
-        setTotalPages(1);
-        setTotalItems(data.length);
+      // Si hay término de búsqueda, usar pageSize=100 y page=1 para obtener todos los resultados
+      // Si no hay búsqueda, usar la paginación normal
+      const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
+      const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
+      
+      const data = await apiService.getPlanesNutricionalesLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
+      
+      // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
+      let planesData = [];
+      
+      if (data.items && Array.isArray(data.items)) {
+        planesData = data.items;
+      } else if (Array.isArray(data)) {
+        planesData = data;
       } else if (data.data && Array.isArray(data.data)) {
-        setPlanes(data.data);
-        setTotalPages(data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.data.length);
-      } else if (data.items && Array.isArray(data.items)) {
-        setPlanes(data.items);
-        setTotalPages(data.totalPages || 1);
-        setTotalItems(data.totalItems || data.total || data.items.length);
-      } else {
-        setPlanes([]);
-        setTotalPages(1);
-        setTotalItems(0);
+        planesData = data.data;
       }
-    } catch (error) {
-      console.error('Error al cargar planes nutricionales:', error);
       
+      // Usar los valores de paginación del backend
+      const totalItemsBackend = data.totalItems || planesData.length;
+      const totalPagesBackend = data.totalPages || Math.ceil(totalItemsBackend / pageSize);
+      
+      setPlanes(planesData);
+      setTotalPages(totalPagesBackend);
+      setTotalItems(totalItemsBackend);
+    } catch (error) {
       if (!error.redirectToLogin) {
         Swal.fire({
           title: 'Error',
@@ -73,10 +79,16 @@ const PlanNutricional = () => {
     }
   }, [pageSize]);
 
-  // Cargar planes cuando cambia la página o el filtro
+  // Cuando cambia el filtro o filtroActivo, resetear a página 1
   useEffect(() => {
-    cargarPlanes(currentPage, filtro);
-  }, [currentPage, filtro, cargarPlanes]);
+    setCurrentPage(1);
+  }, [filtro, filtroActivo]);
+
+  // Cargar planes cuando cambia la página, el filtro o el filtroActivo
+  useEffect(() => {
+    const soloActivos = filtroActivo === 'activo';
+    cargarPlanes(currentPage, filtro, soloActivos);
+  }, [currentPage, filtro, filtroActivo, cargarPlanes]);
 
   // Manejar cambio de input
   const handleInputChange = (e) => {
@@ -162,7 +174,8 @@ const PlanNutricional = () => {
       }
 
       handleVolverALista();
-      cargarPlanes(currentPage, filtro);
+      const soloActivos = filtroActivo === 'activo';
+      cargarPlanes(currentPage, filtro, soloActivos);
     } catch (error) {
       console.error('Error al guardar plan nutricional:', error);
       console.error('Error response:', error.response);
@@ -363,11 +376,19 @@ const PlanNutricional = () => {
           </div>
         </div>
         
+        {/* Barra informativa para creación */}
+        {vista === 'crear' && (
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-info-circle" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Creando nuevo plan nutricional - Complete los campos obligatorios para guardar.</span>
+          </div>
+        )}
+
         {/* Barra informativa para edición */}
         {vista === 'editar' && (
-          <div className="usuarios-info-bar">
-            <i className="fa fa-pencil-alt"></i>
-            <span>Editando plan nutricional - Modifique los campos necesarios y guarde los cambios.</span>
+          <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
+            <i className="fa fa-pencil-alt" style={{ color: '#0097A7' }}></i>
+            <span style={{ color: '#0097A7' }}>Editando plan nutricional - Modifique los campos necesarios y guarde los cambios.</span>
           </div>
         )}
 
@@ -497,6 +518,31 @@ const PlanNutricional = () => {
             />
           </div>
           
+          {/* Filtro de estado Activo/Inactivo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ margin: 0, fontSize: '0.9rem', color: '#495057', whiteSpace: 'nowrap' }}>
+              Estado:
+            </label>
+            <select
+              id="filtroActivo"
+              value={filtroActivo}
+              onChange={(e) => setFiltroActivo(e.target.value)}
+              style={{
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.9rem',
+                border: '1px solid #ced4da',
+                borderRadius: '0.25rem',
+                backgroundColor: 'white',
+                color: '#495057',
+                cursor: 'pointer',
+                minWidth: '120px'
+              }}
+            >
+              <option value="activo">Activos</option>
+              <option value="inactivo">Inactivos</option>
+            </select>
+          </div>
+          
           {/* Botones de exportación (solo iconos) */}
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
@@ -559,17 +605,23 @@ const PlanNutricional = () => {
           ]}
           data={planes}
           isLoading={isLoading}
-          emptyMessage={filtro ? 'No se encontraron planes nutricionales que coincidan con la búsqueda' : 'No hay planes nutricionales registrados'}
+          emptyMessage={
+            filtro 
+              ? 'No se encontraron planes nutricionales que coincidan con la búsqueda' 
+              : filtroActivo === 'activo' 
+                ? 'No hay planes nutricionales registrados Activos' 
+                : 'No hay planes nutricionales registrados Inactivos'
+          }
           onEdit={handleEditarPlan}
           onDelete={(plan) => {
             Swal.fire({
               title: '¿Está seguro?',
-              text: `¿Desea eliminar el plan nutricional ${plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || 'este plan'}?`,
+              text: `¿Desea dar de baja el plan nutricional ${plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || 'este plan'}?`,
               icon: 'warning',
               showCancelButton: true,
               confirmButtonColor: '#F34949',
               cancelButtonColor: '#6c757d',
-              confirmButtonText: 'Sí, eliminar',
+              confirmButtonText: 'Sí, dar de baja',
               cancelButtonText: 'Cancelar',
             }).then(async (result) => {
               if (result.isConfirmed) {
@@ -588,21 +640,22 @@ const PlanNutricional = () => {
                     return;
                   }
                   
-                  console.log('Eliminando plan nutricional con ID:', planId);
                   await apiService.eliminarPlanNutricional(planId);
                   Swal.fire({
-                    title: 'Eliminado',
-                    text: 'Plan nutricional eliminado correctamente',
+                    title: 'Éxito',
+                    text: 'Plan nutricional dado de baja correctamente',
                     icon: 'success',
-                    confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#F34949',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: true,
                   });
-                  cargarPlanes(currentPage, filtro);
+                  const soloActivos = filtroActivo === 'activo';
+                  cargarPlanes(currentPage, filtro, soloActivos);
                 } catch (error) {
-                  console.error('Error al eliminar plan nutricional:', error);
                   if (!error.redirectToLogin) {
                     // Extraer el mensaje del error del backend
-                    let errorMessage = 'Error al eliminar el plan nutricional';
+                    let errorMessage = 'Error al dar de baja el plan nutricional';
                     if (error.message) {
                       errorMessage = error.message;
                     } else if (error.response?.data?.message) {
@@ -629,7 +682,95 @@ const PlanNutricional = () => {
           }}
           canDelete={(plan) => {
             // No permitir eliminar si solo hay un plan nutricional
-            return planes.length > 1;
+            if (planes.length <= 1) {
+              return false;
+            }
+            // No permitir eliminar si el plan está inactivo
+            const rawActivo = plan.activo !== undefined ? plan.activo :
+                             plan.isActive !== undefined ? plan.isActive :
+                             plan.Activo !== undefined ? plan.Activo :
+                             plan.deletemark !== undefined ? !plan.deletemark :
+                             plan.Deletemark !== undefined ? !plan.Deletemark :
+                             plan.deleteMark !== undefined ? !plan.deleteMark :
+                             undefined;
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          rawActivo === 'false' ||
+                          rawActivo === '0' ||
+                          String(rawActivo).toLowerCase() === 'false';
+            }
+            return !isInactivo;
+          }}
+          renderActions={(plan) => {
+            const rawActivo = plan.activo !== undefined ? plan.activo :
+                             plan.isActive !== undefined ? plan.isActive :
+                             plan.Activo !== undefined ? plan.Activo :
+                             plan.deletemark !== undefined ? !plan.deletemark :
+                             plan.Deletemark !== undefined ? !plan.Deletemark :
+                             plan.deleteMark !== undefined ? !plan.deleteMark :
+                             undefined;
+            let isInactivo = false;
+            if (rawActivo !== undefined) {
+              isInactivo = rawActivo === false ||
+                          rawActivo === 0 ||
+                          rawActivo === 'false' ||
+                          rawActivo === '0' ||
+                          String(rawActivo).toLowerCase() === 'false';
+            }
+            if (isInactivo) {
+              return (
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={() => {
+                    Swal.fire({
+                      title: '¿Está seguro?',
+                      text: `¿Desea activar el plan nutricional ${plan.nombre || plan.Nombre || 'este plan'}?`,
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonColor: '#28a745',
+                      cancelButtonColor: '#6c757d',
+                      confirmButtonText: 'Sí, activar',
+                      cancelButtonText: 'Cancelar',
+                    }).then(async (result) => {
+                      if (result.isConfirmed) {
+                        try {
+                          const planId = plan.id || plan.Id || plan.ID;
+                          await apiService.activarPlanNutricional(planId);
+                          Swal.fire({
+                            title: 'Activado',
+                            text: 'Plan nutricional activado correctamente',
+                            icon: 'success',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            allowOutsideClick: true,
+                          });
+                          const soloActivos = filtroActivo === 'activo';
+                          cargarPlanes(currentPage, filtro, soloActivos);
+                        } catch (error) {
+                          if (!error.redirectToLogin) {
+                            Swal.fire({
+                              title: 'Error',
+                              text: error.message || 'Error al activar el plan nutricional',
+                              icon: 'error',
+                              confirmButtonText: 'Aceptar',
+                              confirmButtonColor: '#F34949',
+                            });
+                          }
+                        }
+                      }
+                    });
+                  }}
+                  title="Activar"
+                  style={{ marginRight: '0.5rem' }}
+                >
+                  <i className="fa fa-check"></i>
+                </button>
+              );
+            }
+            return null;
           }}
           pageSize={pageSize}
           enablePagination={true}

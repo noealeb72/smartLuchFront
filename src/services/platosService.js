@@ -15,7 +15,7 @@ export const platosService = {
       params.search = search.trim();
     }
 
-    const response = await api.get(`${baseUrl}/api/plato/Lista`, { params });
+    const response = await api.get(`${baseUrl}/api/plato/lista`, { params });
     return response.data; // { page, pageSize, totalItems, totalPages, items }
   },
 
@@ -24,7 +24,30 @@ export const platosService = {
    */
   getPlatoPorId: async (id) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.get(`${baseUrl}/api/plato/${id}`);
+    const platoId = Number(id);
+    if (!Number.isInteger(platoId) || platoId <= 0) {
+      throw new Error('ID de plato no válido: ' + JSON.stringify(id));
+    }
+    const response = await api.get(`${baseUrl}/api/plato/${platoId}`);
+    return response.data;
+  },
+
+  /**
+   * Busca platos por término de búsqueda
+   */
+  buscarPlatos: async (searchTerm = '', activo = true) => {
+    const baseUrl = getApiBaseUrl();
+    const params = {
+      activo: activo,
+    };
+    
+    if (searchTerm && searchTerm.trim()) {
+      params.search = searchTerm.trim();
+    }
+    
+    const response = await api.get(`${baseUrl}/api/plato/buscar`, {
+      params,
+    });
     return response.data;
   },
 
@@ -33,7 +56,7 @@ export const platosService = {
    */
   crearPlato: async (platoData) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.post(`${baseUrl}/api/plato/Create`, platoData, {
+    const response = await api.post(`${baseUrl}/api/plato/crear`, platoData, {
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
     clearApiCache();
@@ -45,7 +68,14 @@ export const platosService = {
    */
   actualizarPlato: async (platoData) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.put(`${baseUrl}/api/plato/Update`, platoData, {
+    // Asegurar que el ID sea número entero
+    const id = Number(platoData.Id || platoData.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de plato no válido: ' + JSON.stringify(platoData.Id || platoData.id));
+    }
+    // El ID va como query parameter, los datos en el body
+    const url = `${baseUrl}/api/plato/actualizar?id=${id}`;
+    const response = await api.put(url, platoData, {
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
     clearApiCache();
@@ -57,7 +87,14 @@ export const platosService = {
    */
   eliminarPlato: async (id) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.post(`${baseUrl}/api/plato/Delete`, { Id: id }, {
+    // Asegurar que el ID sea número entero
+    const platoId = Number(id);
+    if (!Number.isInteger(platoId) || platoId <= 0) {
+      throw new Error('ID de plato no válido: ' + JSON.stringify(id));
+    }
+    // El ID va como query parameter
+    const url = `${baseUrl}/api/plato/baja?id=${platoId}`;
+    const response = await api.post(url, null, {
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
     clearApiCache();
@@ -69,11 +106,14 @@ export const platosService = {
    */
   activarPlato: async (id, updateUser = null) => {
     const baseUrl = getApiBaseUrl();
-    const payload = updateUser
-      ? { Id: id, UpdateUser: updateUser }
-      : { Id: id };
-  
-    const response = await api.post(`${baseUrl}/api/plato/Activar`, payload, {
+    // Asegurar que el ID sea número entero
+    const platoId = Number(id);
+    if (!Number.isInteger(platoId) || platoId <= 0) {
+      throw new Error('ID de plato no válido: ' + JSON.stringify(id));
+    }
+    // El ID va como query parameter
+    const url = `${baseUrl}/api/plato/activar?id=${platoId}`;
+    const response = await api.post(url, null, {
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
     clearApiCache();
