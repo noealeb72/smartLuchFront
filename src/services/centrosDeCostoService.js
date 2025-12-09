@@ -32,6 +32,9 @@ export const centrosDeCostoService = {
       params.search = '';
     }
     
+    // Agregar timestamp para evitar caché del navegador
+    params._t = Date.now();
+    
     const response = await api.get(`${baseUrl}/api/centrodecosto/lista`, {
       params,
     });
@@ -43,7 +46,19 @@ export const centrosDeCostoService = {
    */
   crearCentroDeCosto: async (centroData) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.post(`${baseUrl}/api/centrodecosto/crear`, centroData, {
+    // El backend espera los datos en PascalCase: Nombre, Descripcion, PlantaId
+    const dataToSend = {
+      Nombre: centroData.nombre || centroData.Nombre || '',
+      Descripcion: centroData.descripcion || centroData.Descripcion || null,
+      PlantaId: centroData.planta_id ? parseInt(centroData.planta_id) : (centroData.PlantaId ? parseInt(centroData.PlantaId) : 0),
+    };
+    
+    // Validar que PlantaId sea un número válido
+    if (!dataToSend.PlantaId || dataToSend.PlantaId <= 0) {
+      throw new Error('PlantaId es requerido y debe ser un número válido');
+    }
+    
+    const response = await api.post(`${baseUrl}/api/centrodecosto/crear`, dataToSend, {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
       },

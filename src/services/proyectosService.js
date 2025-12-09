@@ -119,13 +119,6 @@ export const proyectosService = {
       throw new Error('CentroCostoId es requerido y debe ser un número válido');
     }
     
-    // Log temporal para debug
-    console.log('🔍 Proyecto - Actualizar - Datos a enviar:', {
-      url,
-      dataToSend,
-      proyectoData_original: proyectoData
-    });
-    
     const response = await api.put(url, dataToSend, {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',

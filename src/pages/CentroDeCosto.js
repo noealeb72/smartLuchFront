@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../services/apiService';
+import { clearApiCache } from '../services/apiClient';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
@@ -119,6 +120,8 @@ const CentroDeCosto = () => {
   // Cargar centros cuando cambia la página, el filtro o el filtroActivo
   useEffect(() => {
     const soloActivos = filtroActivo === 'activo';
+    // Limpiar caché antes de cargar para asegurar datos frescos cuando cambia el filtro
+    clearApiCache();
     // Forzar recarga cuando cambia el filtroActivo
     cargarCentros(currentPage, filtro, soloActivos);
   }, [currentPage, filtro, filtroActivo, cargarCentros]);
@@ -240,8 +243,10 @@ const CentroDeCosto = () => {
           title: 'Éxito',
           text: 'Centro de costo actualizado correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       } else {
         await apiService.crearCentroDeCosto(centroData);
@@ -249,8 +254,10 @@ const CentroDeCosto = () => {
           title: 'Éxito',
           text: 'Centro de costo creado correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       }
 
@@ -745,6 +752,19 @@ const CentroDeCosto = () => {
                 : 'No hay centros de costo registrados Inactivos'
           }
           onEdit={handleEditarCentro}
+          canEdit={(centro) => {
+            // Si estamos en el filtro de "Inactivos", no mostrar el botón de editar
+            if (filtroActivo === 'inactivo') {
+              return false;
+            }
+            // Si estamos en el filtro de "Activos", todos los centros mostrados están activos
+            if (filtroActivo === 'activo') {
+              return true;
+            }
+            // Por defecto, usar el campo normalizado 'activo'
+            const isActivo = centro.activo === true || centro.activo === 1 || centro.activo === 'true' || centro.activo === '1';
+            return isActivo; // Solo se puede editar si está activo
+          }}
           onDelete={(centro) => {
             // No permitir eliminar si solo hay un centro de costo
             if (centros.length === 1) {
@@ -797,49 +817,34 @@ const CentroDeCosto = () => {
             });
           }}
           canDelete={(centro) => {
-            // Función helper para determinar si un centro está inactivo
-            const rawActivo = centro.activo !== undefined ? centro.activo :
-                             centro.isActive !== undefined ? centro.isActive :
-                             centro.Activo !== undefined ? centro.Activo :
-                             centro.deletemark !== undefined ? !centro.deletemark :
-                             centro.Deletemark !== undefined ? !centro.Deletemark :
-                             centro.deleteMark !== undefined ? !centro.deleteMark :
-                             undefined;
-            
-            let isInactivo = false;
-            if (rawActivo !== undefined) {
-              isInactivo = rawActivo === false ||
-                          rawActivo === 0 ||
-                          (typeof rawActivo === 'string' && rawActivo.toLowerCase() === 'false');
+            // Si estamos en el filtro de "Inactivos", no mostrar el botón de eliminar
+            if (filtroActivo === 'inactivo') {
+              return false;
             }
-            
-            // Si está inactivo, no mostrar botón de eliminar
-            return !isInactivo;
+            // Si estamos en el filtro de "Activos", todos los centros mostrados están activos
+            if (filtroActivo === 'activo') {
+              // Siempre mostrar el icono de eliminar si está activo (la validación se hace en onDelete)
+              return true;
+            }
+            // Por defecto, usar el campo normalizado 'activo'
+            const isActivo = centro.activo === true || centro.activo === 1 || centro.activo === 'true' || centro.activo === '1';
+            if (!isActivo) {
+              return false; // No se puede eliminar si está inactivo
+            }
+            // Siempre mostrar el icono si está activo (la validación se hace en onDelete)
+            return true;
           }}
           renderActions={(centro) => {
-            const rawActivo = centro.activo !== undefined ? centro.activo :
-                             centro.isActive !== undefined ? centro.isActive :
-                             centro.Activo !== undefined ? centro.Activo :
-                             centro.deletemark !== undefined ? !centro.deletemark :
-                             centro.Deletemark !== undefined ? !centro.Deletemark :
-                             centro.deleteMark !== undefined ? !centro.deleteMark :
-                             undefined;
-            let isInactivo = false;
-            if (rawActivo !== undefined) {
-              isInactivo = rawActivo === false ||
-                          rawActivo === 0 ||
-                          rawActivo === 'false' ||
-                          rawActivo === '0' ||
-                          String(rawActivo).toLowerCase() === 'false';
-            }
-            if (isInactivo) {
+            // Si estamos en el filtro de "Inactivos", mostrar el botón verde de activar
+            if (filtroActivo === 'inactivo') {
+              // Todos los centros mostrados están inactivos, mostrar botón verde
               return (
                 <button
                   className="btn btn-sm btn-success"
                   onClick={() => {
                     Swal.fire({
                       title: '¿Está seguro?',
-                      text: `¿Desea activar el centro de costo ${centro.nombre}?`,
+                      text: `¿Desea activar el centro de costo ${centro.nombre || centro.Nombre || 'este centro'}?`,
                       icon: 'question',
                       showCancelButton: true,
                       confirmButtonColor: '#28a745',
@@ -883,11 +888,72 @@ const CentroDeCosto = () => {
                 </button>
               );
             }
+            // Si está activo, no mostrar nada adicional (los botones de editar y eliminar se muestran automáticamente)
             return null;
           }}
+          enablePagination={false}
           pageSize={pageSize}
-          enablePagination={true}
         />
+        
+        {/* Controles de paginación del servidor (siempre que haya más de una página) */}
+        {totalPages > 1 && (
+          <div className="d-flex justify-content-between align-items-center mt-3">
+            <div>
+              <span className="text-muted">
+                Mostrando página {currentPage} de {totalPages} ({totalItems} centros de costo)
+              </span>
+            </div>
+            <nav>
+              <ul className="pagination mb-0">
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </button>
+                </li>
+                {[...Array(totalPages)].map((_, index) => {
+                  const page = index + 1;
+                  // Mostrar solo algunas páginas alrededor de la actual
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                        <button
+                          className="page-link"
+                          onClick={() => handlePageChange(page)}
+                        >
+                          {page}
+                        </button>
+                      </li>
+                    );
+                  } else if (page === currentPage - 2 || page === currentPage + 2) {
+                    return (
+                      <li key={page} className="page-item disabled">
+                        <span className="page-link">...</span>
+                      </li>
+                    );
+                  }
+                  return null;
+                })}
+                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Siguiente
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        )}
       </div>
     </div>
   );
