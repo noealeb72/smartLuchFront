@@ -5,9 +5,10 @@
   height: 100vh;
   width: 100vw;
   max-width: 100%;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
+  background: linear-gradient(135deg, var(--smart-gray-lightest) 0%, var(--smart-gray-lighter) 50%, var(--smart-gray-lightest) 100%);
   background-attachment: fixed;
-  color: #212529;
+  color: var(--smart-gray-dark);
+  font-family: var(--smart-font-primary);
   overflow: hidden; /* Sin scroll */
   position: fixed; /* Fijo para ocupar toda la pantalla */
   top: 0;
@@ -30,6 +31,7 @@
   width: 500px;
   height: 500px;
   background: radial-gradient(circle, rgba(243, 73, 73, 0.08) 0%, transparent 70%);
+  /* Usando color primario con opacidad */
   border-radius: 50%;
   z-index: 0;
 }
@@ -47,7 +49,7 @@
 }
 
 .user_card {
-  background: #ffffff;
+  background: var(--smart-white);
   border-radius: 20px; /* Más redondeado */
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
   width: 100%;
@@ -63,6 +65,7 @@
   overflow: visible !important; /* Asegurar que el logo no se corte */
   display: flex;
   flex-direction: column;
+  font-family: var(--smart-font-primary);
 }
 
 .brand_logo_container {
@@ -75,14 +78,14 @@
   left: 50%;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: linear-gradient(135deg, #F34949 0%, #E63939 100%);
+  background: linear-gradient(135deg, var(--smart-primary) 0%, var(--smart-primary-dark) 100%);
   padding: 18px; /* Aumentado */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   box-shadow: 0 8px 25px rgba(243, 73, 73, 0.3), 0 4px 10px rgba(243, 73, 73, 0.2);
-  border: 5px solid #ffffff; /* Borde más grueso */
+  border: 5px solid var(--smart-white); /* Borde más grueso */
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   z-index: 10; /* Asegurar que esté por encima de todo */
   box-sizing: border-box; /* Incluir border en el tamaño */
@@ -95,7 +98,7 @@
 
 .brand_logo_container .login-logo {
   font-size: 4rem; /* Aumentado de 2.5rem */
-  color: white !important;
+  color: var(--smart-white) !important;
   margin-top: 12px; /* Aumentado */
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -114,12 +117,12 @@
 .error-msg {
   display: block;
   margin-bottom: 1rem; /* Aumentado */
-  color: #F34949;
+  color: var(--smart-primary);
   font-weight: 600;
   font-size: 0.95rem; /* Aumentado */
   padding: 0.85rem; /* Aumentado */
   background-color: rgba(243, 73, 73, 0.1);
-  border-left: 3px solid #F34949;
+  border-left: 3px solid var(--smart-primary);
   border-radius: 4px;
 }
 
@@ -148,13 +151,13 @@
 .btn:disabled {
   opacity: 0.6 !important;
   cursor: not-allowed !important;
-  background-color: #6c757d !important;
-  border-color: #6c757d !important;
+  background-color: var(--smart-gray-medium) !important;
+  border-color: var(--smart-gray-medium) !important;
 }
 
 .btn:disabled:hover {
-  background-color: #6c757d !important;
-  border-color: #6c757d !important;
+  background-color: var(--smart-gray-medium) !important;
+  border-color: var(--smart-gray-medium) !important;
   box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3) !important;
   transform: none !important;
 }
@@ -162,21 +165,28 @@
 /* Estilos mejorados para inputs */
 .input-group-text {
   background: var(--smart-primary) !important;
-  color: white !important;
+  color: var(--smart-white) !important;
   border: none !important;
-  border-radius: 8px 0 0 8px !important;
+  border-radius: 0 !important;
   padding: 0.85rem 1.2rem; /* Aumentado */
   transition: all 0.3s ease;
   font-size: 1rem; /* Aumentado */
+  min-height: 48px; /* Altura igual al botón del ojito (0.85rem * 2 + contenido) */
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .form-control {
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--smart-gray-lighter);
   border-left: none;
-  border-radius: 0 8px 8px 0 !important;
+  border-radius: 0 !important;
   padding: 0.85rem 1.2rem; /* Aumentado */
   font-size: 1rem; /* Aumentado de 0.9rem */
   transition: all 0.3s ease;
+  min-height: 48px; /* Altura igual al botón del ojito */
+  line-height: 1.5;
+  box-sizing: border-box;
 }
 
 .form-control:focus {
@@ -196,7 +206,7 @@
 /* Botón de login mejorado */
 .login_btn {
   background: linear-gradient(135deg, var(--smart-primary) 0%, var(--smart-primary-dark) 100%) !important;
-  color: white !important;
+  color: var(--smart-white) !important;
   border: none !important;
   box-shadow: 0 4px 15px rgba(243, 73, 73, 0.3);
   transition: all 0.3s ease;
@@ -331,6 +341,89 @@
   }
 }
 
+/* Estilos para el botón de mostrar/ocultar contraseña en Login */
+.password-toggle-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  transition: all 0.3s ease !important;
+  min-height: 48px !important; /* Altura consistente con los campos */
+  box-sizing: border-box !important;
+}
+
+.password-toggle-btn:hover {
+  background-color: var(--smart-gray-lightest) !important;
+  border-color: var(--smart-primary-light) !important;
+}
+
+.password-toggle-btn:focus {
+  box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.15) !important;
+  outline: none !important;
+}
+
+.password-toggle-btn i {
+  color: var(--smart-gray-medium) !important;
+  transition: color 0.3s ease !important;
+}
+
+.password-toggle-btn:hover i {
+  color: var(--smart-primary) !important;
+}
+
+/* Ajustes para el input de contraseña con el botón de ojo */
+.input-group .input_pass {
+  border-right: none !important;
+}
+
+.input-group .password-toggle-btn {
+  border-left: none !important;
+  border-radius: 0 !important;
+}
+
+/* Responsive para móviles - botón de ojo */
+@media (max-width: 768px) {
+  .password-toggle-btn {
+    padding: 0.65rem 0.6rem !important;
+    font-size: 0.9rem !important;
+    min-width: 40px !important;
+    min-height: 42px !important;
+  }
+
+  .password-toggle-btn i {
+    font-size: 1rem !important;
+  }
+
+  .input-group-text {
+    min-height: 42px !important;
+  }
+
+  .form-control {
+    min-height: 42px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .password-toggle-btn {
+    padding: 0.6rem 0.55rem !important;
+    font-size: 0.85rem !important;
+    min-width: 38px !important;
+    min-height: 40px !important;
+  }
+
+  .password-toggle-btn i {
+    font-size: 0.95rem !important;
+  }
+
+  .input-group-text {
+    min-height: 40px !important;
+  }
+
+  .form-control {
+    min-height: 40px !important;
+  }
+}
+
 /* Responsive para móviles pequeños */
 @media (max-width: 480px) {
   .login-container {
@@ -389,11 +482,16 @@
   .input-group-text {
     padding: 0.6rem 0.75rem;
     font-size: 0.85rem;
+    min-height: calc(0.6rem * 2 + 0.85rem + 2px);
+    display: flex;
+    align-items: center;
   }
 
   .form-control {
     padding: 0.6rem 0.75rem;
     font-size: 0.85rem;
+    min-height: calc(0.6rem * 2 + 0.85rem + 2px);
+    line-height: 1.5;
   }
 
   .login_btn {

@@ -73,14 +73,6 @@ export const turnosService = {
       throw new Error('HoraHasta es obligatoria');
     }
     
-    // Log para debug: mostrar los parámetros que se envían
-    console.log('=== CREAR TURNO - Parámetros enviados ===');
-    console.log('Endpoint:', `${baseUrl}/api/turno/crear`);
-    console.log('Datos originales recibidos:', turnoData);
-    console.log('Datos a enviar (dataToSend):', dataToSend);
-    console.log('JSON stringificado:', JSON.stringify(dataToSend));
-    console.log('==========================================');
-    
     // Llamar al endpoint /api/turno/crear con solo los campos requeridos
     const response = await api.post(`${baseUrl}/api/turno/crear`, dataToSend, {
       headers: {

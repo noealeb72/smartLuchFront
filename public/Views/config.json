@@ -4,7 +4,7 @@
   "BLOQUEO_USUARIOS": {
     "Admin": false,
     "Cocina": false,
-    "Comensal": false,
+    "Comensal": true,
     "Gerencia": false
   }
 }

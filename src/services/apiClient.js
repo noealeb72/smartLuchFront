@@ -18,8 +18,15 @@ api.interceptors.request.use(
   (config) => {
     // Agregar token de autenticación si existe
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && token !== 'null' && token !== 'undefined') {
+      // Asegurar que config.headers existe
+      if (!config.headers) {
+        config.headers = {};
+      }
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 [apiClient] Token agregado al header Authorization');
+    } else {
+      console.log('⚠️ [apiClient] No hay token válido disponible');
     }
     
     // Agregar timestamp para cache busting si es necesario
@@ -90,21 +97,24 @@ api.interceptors.response.use(
       error.message = errorMessage;
       error.redirectToLogin = true; // Marcar para redirigir al login
       
-      // Redirigir automáticamente al login si no estamos ya en la página de login
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        // Limpiar localStorage y redirigir al login
-        localStorage.clear();
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 100);
-      }
+      // NO redirigir automáticamente - dejar que el componente maneje el error
+      // El componente Index.js manejará la redirección si es necesario
     } else {
       // Manejar errores HTTP específicos
       const status = error.response.status;
       if (status === 404) {
         error.message = 'Endpoint no encontrado. Verifica que la ruta de la API sea correcta.';
       } else if (status === 400) {
-        error.message = error.response.data?.message || 'Solicitud incorrecta. Verifica los datos enviados.';
+        // Buscar el mensaje de error en diferentes campos posibles
+        const responseData = error.response.data;
+        let backendMessage = null;
+        if (responseData) {
+          backendMessage = responseData.error || responseData.Error || responseData.message || responseData.Message;
+          if (typeof responseData === 'string') {
+            backendMessage = responseData;
+          }
+        }
+        error.message = backendMessage || 'Solicitud incorrecta. Verifica los datos enviados.';
       } else if (status === 409) {
         // Conflict - Ya existe un registro con ese nombre
         error.message = error.response.data?.message || error.response.data?.Message || 'Ya existe un registro con ese nombre.';

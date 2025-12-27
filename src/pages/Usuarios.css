@@ -7,7 +7,7 @@
   border-radius: 0;
   overflow: hidden;
   box-shadow: none;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--smart-gray-lighter);
   width: 100%;
   max-width: 100%;
 }
@@ -19,32 +19,34 @@
 
 .table {
   margin-bottom: 0;
-  background-color: white;
+  background-color: var(--smart-white);
+  font-family: var(--smart-font-primary);
 }
 
 .table thead th {
-  background-color: #343a40;
-  color: white;
+  background-color: var(--smart-gray-dark);
+  color: var(--smart-white);
   border: none;
   font-weight: normal;
   text-transform: none;
   font-size: 0.9rem;
   letter-spacing: normal;
   padding: 0.75rem;
-  border-bottom: 2px solid #212529;
+  border-bottom: 2px solid var(--smart-gray-dark);
+  font-family: var(--smart-font-primary);
 }
 
 .table tbody tr {
   transition: background-color 0.2s ease;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--smart-gray-lighter);
 }
 
 .table tbody tr:nth-child(even) {
-  background-color: #f8f9fa;
+  background-color: var(--smart-gray-lightest);
 }
 
 .table tbody tr:nth-child(odd) {
-  background-color: white;
+  background-color: var(--smart-white);
 }
 
 .table tbody tr:hover {
@@ -433,5 +435,73 @@ body.modal-open {
     font-size: 0.85rem;
     padding: 0.35rem 0.5rem;
   }
+}
+
+/* Estilos para el botón de mostrar/ocultar contraseña */
+.input-group .btn-outline-secondary {
+  border-left: none;
+  border-color: #ced4da;
+  background-color: #fff;
+  color: #6c757d;
+  transition: all 0.2s ease;
+}
+
+.input-group .btn-outline-secondary:hover {
+  background-color: #f8f9fa;
+  color: #495057;
+  border-color: #ced4da;
+}
+
+.input-group .btn-outline-secondary:focus {
+  box-shadow: none;
+  border-color: #ced4da;
+}
+
+.input-group .btn-outline-secondary i {
+  font-size: 0.9rem;
+}
+
+/* Estilos específicos para campos de contraseña */
+.password-input-group {
+  max-width: 100% !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+}
+
+.password-input-group .form-control {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.password-input {
+  font-size: 0.85rem !important;
+  padding: 0.4rem 2.5rem 0.4rem 0.6rem !important;
+  min-height: calc(1.5em + 0.8rem + 2px) !important;
+  height: calc(1.5em + 0.8rem + 2px) !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.password-input-group .input-group-append {
+  flex-shrink: 0 !important;
+  margin-left: -1px !important;
+}
+
+.password-toggle-btn {
+  font-size: 0.85rem !important;
+  padding: 0.375rem 0.6rem 0.375rem 0.5rem !important;
+  min-height: calc(1.5em + 0.8rem + 2px) !important;
+  height: calc(1.5em + 0.8rem + 2px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  border-left: none !important;
+  min-width: 45px !important;
+}
+
+.password-toggle-btn i {
+  font-size: 1.1rem !important;
 }
 

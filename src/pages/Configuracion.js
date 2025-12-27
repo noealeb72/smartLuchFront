@@ -7,6 +7,7 @@ import './Configuracion.css';
 const Configuracion = () => {
   const { config, loading, reloadConfig } = useConfig();
   const [isReloading, setIsReloading] = useState(false);
+  const [tabActivo, setTabActivo] = useState('actual');
 
   const handleReload = async () => {
     setIsReloading(true);
@@ -76,139 +77,215 @@ const Configuracion = () => {
 
       <div className="row">
         <div className="col-md-8">
-          {/* Configuración actual - Solo lectura */}
-          <div className="card mb-4">
-            <div className="card-header bg-primary text-white">
-              <h5 className="mb-0">
-                <i className="fa fa-info-circle mr-2" aria-hidden="true"></i>
-                Configuración Actual
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="form-group">
-                <label htmlFor="apiUrl">
-                  <strong>URL Base del Servidor:</strong>
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="apiUrl"
-                  value={config?.apiBaseUrl || ''}
-                  readOnly
-                  style={{ backgroundColor: '#f8f9fa', cursor: 'not-allowed' }}
-                />
-                <small className="form-text text-muted">
-                  URL base donde se encuentra el backend de la aplicación.
-                </small>
-              </div>
-
-              <div className="form-group mt-3">
-                <label htmlFor="totemId">
-                  <strong>ID del Totem:</strong>
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="totemId"
-                  value={config?.totemId || ''}
-                  readOnly
-                  style={{ backgroundColor: '#f8f9fa', cursor: 'not-allowed' }}
-                />
-                <small className="form-text text-muted">
-                  Identificador único del totem.
-                </small>
-              </div>
-
-              <div className="form-group mt-3">
-                <label>
-                  <strong>Bloqueos de Usuarios:</strong>
-                </label>
-                <div className="table-responsive">
-                  <table className="table table-sm table-bordered">
-                    <thead>
-                      <tr>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>Admin</td>
-                        <td>
-                          {config?.bloqueos?.Admin ? (
-                            <span className="badge badge-danger">Bloqueado</span>
-                          ) : (
-                            <span className="badge badge-success">Activo</span>
-                          )}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Cocina</td>
-                        <td>
-                          {config?.bloqueos?.Cocina ? (
-                            <span className="badge badge-danger">Bloqueado</span>
-                          ) : (
-                            <span className="badge badge-success">Activo</span>
-                          )}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Comensal</td>
-                        <td>
-                          {config?.bloqueos?.Comensal ? (
-                            <span className="badge badge-danger">Bloqueado</span>
-                          ) : (
-                            <span className="badge badge-success">Activo</span>
-                          )}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Gerencia</td>
-                        <td>
-                          {config?.bloqueos?.Gerencia ? (
-                            <span className="badge badge-danger">Bloqueado</span>
-                          ) : (
-                            <span className="badge badge-success">Activo</span>
-                          )}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="alert alert-info mt-3">
-                <i className="fa fa-info-circle mr-2" aria-hidden="true"></i>
-                <strong>Fuente:</strong> public/config.json
-              </div>
-            </div>
+          {/* Navegación de Tabs */}
+          <div style={{ 
+            borderBottom: '2px solid #dee2e6',
+            marginBottom: '1.5rem'
+          }}>
+            <ul style={{
+              display: 'flex',
+              listStyle: 'none',
+              margin: 0,
+              padding: 0,
+              flexWrap: 'wrap'
+            }}>
+              <li style={{ marginRight: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setTabActivo('actual')}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    border: 'none',
+                    borderBottom: tabActivo === 'actual' ? '3px solid #F34949' : '3px solid transparent',
+                    backgroundColor: 'transparent',
+                    color: tabActivo === 'actual' ? '#F34949' : '#6c757d',
+                    fontWeight: tabActivo === 'actual' ? 'bold' : 'normal',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <i className="fa fa-info-circle mr-2"></i>Configuración Actual
+                </button>
+              </li>
+              <li style={{ marginRight: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setTabActivo('editar')}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    border: 'none',
+                    borderBottom: tabActivo === 'editar' ? '3px solid #F34949' : '3px solid transparent',
+                    backgroundColor: 'transparent',
+                    color: tabActivo === 'editar' ? '#F34949' : '#6c757d',
+                    fontWeight: tabActivo === 'editar' ? 'bold' : 'normal',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <i className="fa fa-edit mr-2"></i>Cómo Editar
+                </button>
+              </li>
+              <li style={{ marginRight: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setTabActivo('sistema')}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    border: 'none',
+                    borderBottom: tabActivo === 'sistema' ? '3px solid #F34949' : '3px solid transparent',
+                    backgroundColor: 'transparent',
+                    color: tabActivo === 'sistema' ? '#F34949' : '#6c757d',
+                    fontWeight: tabActivo === 'sistema' ? 'bold' : 'normal',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <i className="fa fa-info-circle mr-2"></i>Información del Sistema
+                </button>
+              </li>
+            </ul>
           </div>
 
-          {/* Instrucciones para editar */}
-          <div className="card mb-4">
-            <div className="card-header bg-warning text-dark">
-              <h5 className="mb-0">
-                <i className="fa fa-edit mr-2" aria-hidden="true"></i>
-                Cómo Editar la Configuración
-              </h5>
-            </div>
-            <div className="card-body">
-              <p>
-                La configuración se lee directamente del archivo <code>public/config.json</code>.
-                Para modificar la configuración, edita este archivo directamente.
-              </p>
-              
-              <h6 className="mt-3">Pasos para editar:</h6>
-              <ol>
-                <li>Localiza el archivo <code>public/config.json</code> en tu proyecto</li>
-                <li>Edita el archivo con un editor de texto</li>
-                <li>Guarda los cambios</li>
-                <li>Recarga la configuración usando el botón "Recargar Configuración" arriba</li>
-                <li>O recarga la página completa (F5)</li>
-              </ol>
+          {/* Contenido de Tabs */}
+          {/* Tab: Configuración Actual */}
+          {tabActivo === 'actual' && (
+            <div className="card mb-4">
+              <div className="card-header bg-primary text-white">
+                <h5 className="mb-0">
+                  <i className="fa fa-info-circle mr-2" aria-hidden="true"></i>
+                  Configuración Actual
+                </h5>
+              </div>
+              <div className="card-body">
+                <div className="form-group">
+                  <label htmlFor="apiUrl">
+                    <strong>URL Base del Servidor:</strong>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="apiUrl"
+                    value={config?.apiBaseUrl || ''}
+                    readOnly
+                    style={{ backgroundColor: '#f8f9fa', cursor: 'not-allowed' }}
+                  />
+                  <small className="form-text text-muted">
+                    URL base donde se encuentra el backend de la aplicación.
+                  </small>
+                </div>
 
-              <h6 className="mt-3">Estructura del archivo:</h6>
-              <pre className="bg-light p-3 rounded" style={{ fontSize: '0.9rem' }}>
+                <div className="form-group mt-3">
+                  <label htmlFor="totemId">
+                    <strong>ID del Totem:</strong>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="totemId"
+                    value={config?.totemId || ''}
+                    readOnly
+                    style={{ backgroundColor: '#f8f9fa', cursor: 'not-allowed' }}
+                  />
+                  <small className="form-text text-muted">
+                    Identificador único del totem.
+                  </small>
+                </div>
+
+                <div className="form-group mt-3">
+                  <label>
+                    <strong>Bloqueos de Usuarios:</strong>
+                  </label>
+                  <div className="table-responsive">
+                    <table className="table table-sm table-bordered">
+                      <thead>
+                        <tr>
+                          <th>Rol</th>
+                          <th>Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Admin</td>
+                          <td>
+                            {config?.bloqueos?.Admin ? (
+                              <span className="badge badge-danger">Bloqueado</span>
+                            ) : (
+                              <span className="badge badge-success">Activo</span>
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>Cocina</td>
+                          <td>
+                            {config?.bloqueos?.Cocina ? (
+                              <span className="badge badge-danger">Bloqueado</span>
+                            ) : (
+                              <span className="badge badge-success">Activo</span>
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>Comensal</td>
+                          <td>
+                            {config?.bloqueos?.Comensal ? (
+                              <span className="badge badge-danger">Bloqueado</span>
+                            ) : (
+                              <span className="badge badge-success">Activo</span>
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>Gerencia</td>
+                          <td>
+                            {config?.bloqueos?.Gerencia ? (
+                              <span className="badge badge-danger">Bloqueado</span>
+                            ) : (
+                              <span className="badge badge-success">Activo</span>
+                            )}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="alert alert-info mt-3">
+                  <i className="fa fa-info-circle mr-2" aria-hidden="true"></i>
+                  <strong>Fuente:</strong> public/config.json
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Cómo Editar */}
+          {tabActivo === 'editar' && (
+            <div className="card mb-4">
+              <div className="card-header bg-warning text-dark">
+                <h5 className="mb-0">
+                  <i className="fa fa-edit mr-2" aria-hidden="true"></i>
+                  Cómo Editar la Configuración
+                </h5>
+              </div>
+              <div className="card-body">
+                <p>
+                  La configuración se lee directamente del archivo <code>public/config.json</code>.
+                  Para modificar la configuración, edita este archivo directamente.
+                </p>
+                
+                <h6 className="mt-3">Pasos para editar:</h6>
+                <ol>
+                  <li>Localiza el archivo <code>public/config.json</code> en tu proyecto</li>
+                  <li>Edita el archivo con un editor de texto</li>
+                  <li>Guarda los cambios</li>
+                  <li>Recarga la configuración usando el botón "Recargar Configuración" arriba</li>
+                  <li>O recarga la página completa (F5)</li>
+                </ol>
+
+                <h6 className="mt-3">Estructura del archivo:</h6>
+                <pre className="bg-light p-3 rounded" style={{ fontSize: '0.9rem' }}>
 {`{
   "apiBaseUrl": "http://localhost:8000",
   "totemId": "T001",
@@ -219,40 +296,43 @@ const Configuracion = () => {
     "Gerencia": false
   }
 }`}
-              </pre>
+                </pre>
 
-              <div className="alert alert-warning mt-3">
-                <i className="fa fa-exclamation-triangle mr-2" aria-hidden="true"></i>
-                <strong>Importante:</strong> Asegúrate de que el JSON sea válido. Un error de sintaxis puede hacer que la aplicación use valores por defecto.
+                <div className="alert alert-warning mt-3">
+                  <i className="fa fa-exclamation-triangle mr-2" aria-hidden="true"></i>
+                  <strong>Importante:</strong> Asegúrate de que el JSON sea válido. Un error de sintaxis puede hacer que la aplicación use valores por defecto.
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Información sobre el sistema */}
-          <div className="card mb-4">
-            <div className="card-header bg-info text-white">
-              <h5 className="mb-0">
-                <i className="fa fa-info-circle mr-2" aria-hidden="true"></i>
-                Información del Sistema
-              </h5>
+          {/* Tab: Información del Sistema */}
+          {tabActivo === 'sistema' && (
+            <div className="card mb-4">
+              <div className="card-header bg-info text-white">
+                <h5 className="mb-0">
+                  <i className="fa fa-info-circle mr-2" aria-hidden="true"></i>
+                  Información del Sistema
+                </h5>
+              </div>
+              <div className="card-body">
+                <p>
+                  <strong>Ubicación del archivo:</strong> <code>public/config.json</code>
+                </p>
+                <p>
+                  <strong>Cuándo se lee:</strong> Al iniciar la aplicación y cada vez que se recarga la configuración.
+                </p>
+                <p>
+                  <strong>Validación:</strong> El sistema valida que el archivo exista y tenga la estructura correcta.
+                  Si el archivo no existe o tiene errores, se usan valores por defecto.
+                </p>
+                <p className="mb-0">
+                  <strong>En producción:</strong> El archivo se copia junto con el build. Puedes editarlo directamente
+                  en el servidor sin necesidad de recompilar la aplicación.
+                </p>
+              </div>
             </div>
-            <div className="card-body">
-              <p>
-                <strong>Ubicación del archivo:</strong> <code>public/config.json</code>
-              </p>
-              <p>
-                <strong>Cuándo se lee:</strong> Al iniciar la aplicación y cada vez que se recarga la configuración.
-              </p>
-              <p>
-                <strong>Validación:</strong> El sistema valida que el archivo exista y tenga la estructura correcta.
-                Si el archivo no existe o tiene errores, se usan valores por defecto.
-              </p>
-              <p className="mb-0">
-                <strong>En producción:</strong> El archivo se copia junto con el build. Puedes editarlo directamente
-                en el servidor sin necesidad de recompilar la aplicación.
-              </p>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Panel lateral con información */}

@@ -390,9 +390,9 @@ const Planta = () => {
   // Renderizar vista de formulario (crear/editar)
   if (vista === 'crear' || vista === 'editar') {
     return (
-      <div className="container-fluid" style={{ padding: 0 }}>
+      <div className="container-fluid" style={{ padding: 0, backgroundColor: 'white' }}>
         {/* Barra negra con título */}
-        <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
+        <div className="page-title-bar">
           <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '1.5rem' }}>
             <button
               type="button"
@@ -402,17 +402,7 @@ const Planta = () => {
             >
               <i className="fa fa-arrow-left"></i>
             </button>
-            <h3 style={{ 
-              fontSize: '1.75rem', 
-              fontWeight: 'normal', 
-              margin: 0, 
-              fontFamily: 'sans-serif', 
-              color: 'white', 
-              textAlign: 'left',
-              paddingTop: '0',
-              paddingBottom: '0',
-              lineHeight: '1.5',
-            }}>
+            <h3>
               {vista === 'editar' ? 'Editar Planta' : 'Nueva Planta'}
             </h3>
           </div>
@@ -479,7 +469,7 @@ const Planta = () => {
             </div>
 
             <div className="row mt-3">
-              <div className="col-12">
+              <div className="col-12 d-flex justify-content-end">
                 <button
                   type="button"
                   className="btn mr-2"
@@ -525,21 +515,8 @@ const Planta = () => {
   return (
     <div className="container-fluid" style={{ padding: 0 }}>
       {/* Barra negra con título Plantas */}
-      <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
-        <h3 style={{ 
-          fontSize: '1.75rem', 
-          fontWeight: 'normal', 
-          margin: 0, 
-          fontFamily: 'sans-serif', 
-          color: 'white', 
-          textAlign: 'left', 
-          paddingLeft: '1.5rem',
-          paddingTop: '0',
-          paddingBottom: '0',
-          lineHeight: '1.5',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
+      <div className="page-title-bar">
+        <h3>
           <i className="fa fa-building mr-2" aria-hidden="true"></i>Plantas
         </h3>
       </div>
@@ -678,7 +655,7 @@ const Planta = () => {
             if (plantas.length === 1) {
               Swal.fire({
                 title: 'No permitido',
-                text: 'No se puede eliminar la única planta disponible. Debe haber al menos una planta en el sistema.',
+                text: 'No se puede dar de baja la única planta disponible. Debe haber al menos una planta en el sistema.',
                 icon: 'warning',
                 confirmButtonText: 'Aceptar',
                 confirmButtonColor: '#F34949',

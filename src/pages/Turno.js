@@ -395,14 +395,6 @@ const Turno = () => {
           HoraHasta: horaHastaFormateada,
         };
         
-        // Log para debug: mostrar los datos antes de enviar
-        console.log('=== TURNO - Datos preparados para crear ===');
-        console.log('turnoData:', turnoData);
-        console.log('Nombre:', turnoData.Nombre);
-        console.log('HoraDesde:', turnoData.HoraDesde);
-        console.log('HoraHasta:', turnoData.HoraHasta);
-        console.log('===========================================');
-        
         await apiService.crearTurno(turnoData);
         Swal.fire({
           title: 'Éxito',
@@ -419,12 +411,27 @@ const Turno = () => {
       const soloActivos = filtroActivo === 'activo';
       cargarTurnos(currentPage, filtro, soloActivos);
     } catch (error) {
-      console.error('Error al guardar turno:', error);
       
       if (!error.redirectToLogin) {
+        // Extraer el mensaje del error del backend
+        let errorMessage = 'Error al guardar el turno';
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (error.response?.data?.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.data?.Message) {
+          errorMessage = error.response.data.Message;
+        } else if (error.response?.data) {
+          errorMessage = typeof error.response.data === 'string' 
+            ? error.response.data 
+            : error.response.data.message || error.response.data.Message || error.response.data.error || errorMessage;
+        }
+        
         Swal.fire({
           title: 'Error',
-          text: error.message || 'Error al guardar el turno',
+          text: errorMessage,
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -586,7 +593,6 @@ const Turno = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar PDF:', error);
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a PDF',
@@ -628,7 +634,6 @@ const Turno = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar Excel:', error);
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a Excel',
@@ -642,9 +647,9 @@ const Turno = () => {
   // Renderizar vista de formulario (crear/editar)
   if (vista === 'crear' || vista === 'editar') {
     return (
-      <div className="container-fluid" style={{ padding: 0 }}>
+      <div className="container-fluid" style={{ padding: 0, backgroundColor: 'white' }}>
         {/* Barra negra con título */}
-        <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
+        <div className="page-title-bar">
           <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '1.5rem' }}>
             <button
               type="button"
@@ -654,17 +659,7 @@ const Turno = () => {
             >
               <i className="fa fa-arrow-left"></i>
             </button>
-            <h3 style={{ 
-              fontSize: '1.75rem', 
-              fontWeight: 'normal', 
-              margin: 0, 
-              fontFamily: 'sans-serif', 
-              color: 'white', 
-              textAlign: 'left',
-              paddingTop: '0',
-              paddingBottom: '0',
-              lineHeight: '1.5',
-            }}>
+            <h3>
               {vista === 'editar' ? 'Editar Turno' : 'Nuevo Turno'}
             </h3>
           </div>
@@ -747,7 +742,7 @@ const Turno = () => {
             </div>
 
             <div className="row mt-3">
-              <div className="col-12">
+              <div className="col-12 d-flex justify-content-end">
                 <button
                   type="button"
                   className="btn mr-2"
@@ -793,21 +788,8 @@ const Turno = () => {
   return (
     <div className="container-fluid" style={{ padding: 0 }}>
       {/* Barra negra con título Turnos */}
-      <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
-        <h3 style={{ 
-          fontSize: '1.75rem', 
-          fontWeight: 'normal', 
-          margin: 0, 
-          fontFamily: 'sans-serif', 
-          color: 'white', 
-          textAlign: 'left', 
-          paddingLeft: '1.5rem',
-          paddingTop: '0',
-          paddingBottom: '0',
-          lineHeight: '1.5',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
+      <div className="page-title-bar">
+        <h3>
           <i className="fa fa-clock mr-2" aria-hidden="true"></i>Turnos
         </h3>
       </div>
@@ -913,7 +895,6 @@ const Turno = () => {
                 if (!row) return '-';
                 // Buscar en diferentes formatos posibles
                 const horaDesde = row.hora_desde || row.horaDesde || row.horadesde || row.HoraDesde || row.Hora_Desde || row.horaDesde || value;
-                console.log('Hora Desde - Row:', row, 'Valor encontrado:', horaDesde);
                 return formatearHora(horaDesde);
               }
             },
@@ -925,7 +906,6 @@ const Turno = () => {
                 if (!row) return '-';
                 // Buscar en diferentes formatos posibles
                 const horaHasta = row.hora_hasta || row.horaHasta || row.horahasta || row.HoraHasta || row.Hora_Hasta || row.horaHasta || value;
-                console.log('Hora Hasta - Row:', row, 'Valor encontrado:', horaHasta);
                 return formatearHora(horaHasta);
               }
             },
@@ -999,7 +979,6 @@ const Turno = () => {
                   const soloActivos = filtroActivo === 'activo';
                   cargarTurnos(currentPage, filtro, soloActivos);
                 } catch (error) {
-                  console.error('Error al eliminar turno:', error);
                   if (!error.redirectToLogin) {
                     // Extraer el mensaje del error del backend
                     let errorMessage = 'Error al eliminar el turno';
@@ -1125,7 +1104,7 @@ const Turno = () => {
         
         {/* Controles de paginación del servidor (siempre que haya más de una página o más de 5 registros) */}
         {totalPages > 1 && (
-          <div className="d-flex justify-content-between align-items-center mt-3">
+          <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
             <div>
               <span className="text-muted">
                 Mostrando página {currentPage} de {totalPages} ({totalItems} turnos)

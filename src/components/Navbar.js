@@ -1,12 +1,28 @@
 import React, { useState, useEffect, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useDashboard } from '../contexts/DashboardContext';
 import './Navbar.css';
 
 const Navbar = memo(() => {
   const { user, logout } = useAuth();
+  const { usuarioData } = useDashboard();
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [openDropdowns, setOpenDropdowns] = useState({});
+
+  // Obtener jerarquía desde user o usuarioData (priorizar user, pero usar usuarioData como fallback)
+  const jerarquiaNombre = user?.jerarquia_nombre || user?.role || usuarioData?.jerarquiaNombre || '';
+  const role = user?.role || user?.jerarquia_nombre || usuarioData?.jerarquiaNombre || '';
+
+  // Log para depuración
+  useEffect(() => {
+    console.log('🔍 [Navbar] ==========================================');
+    console.log('🔍 [Navbar] Usuario de AuthContext:', user);
+    console.log('🔍 [Navbar] UsuarioData de DashboardContext:', usuarioData);
+    console.log('🔍 [Navbar] Role final:', role);
+    console.log('🔍 [Navbar] Jerarquía nombre final:', jerarquiaNombre);
+    console.log('🔍 [Navbar] ==========================================');
+  }, [user, usuarioData, role, jerarquiaNombre]);
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -76,11 +92,11 @@ const Navbar = memo(() => {
 
         {/* Jerarquía y fecha/hora en el centro */}
         <div className="d-flex align-items-center" style={{ fontSize: '0.8em', fontWeight: 'normal', opacity: 0.9, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} aria-live="polite">
-          {(user?.role || user?.jerarquia_nombre) && (
+          {jerarquiaNombre && (
             <span className="mr-3 d-flex align-items-center" aria-label="Jerarquía del usuario">
               <i className="fa fa-user mr-1" style={{ fontSize: '1.1em' }} aria-hidden="true"></i>
-              <span className="badge badge-light text-dark" style={{ fontSize: '0.9em', padding: '0.3em 0.6em' }} aria-label={`Jerarquía: ${user.jerarquia_nombre || user.role}`}>
-                {user.jerarquia_nombre || user.role}
+              <span className="badge badge-light text-dark" style={{ fontSize: '0.9em', padding: '0.3em 0.6em' }} aria-label={`Jerarquía: ${jerarquiaNombre}`}>
+                {jerarquiaNombre}
               </span>
             </span>
           )}
@@ -96,11 +112,11 @@ const Navbar = memo(() => {
       {/* Mobile: Jerarquía, fecha/hora y botón Salir en la misma línea */}
       <div className="w-100 d-lg-none d-flex align-items-center justify-content-between px-3 py-2" style={{ fontSize: '0.75em', fontWeight: 'normal', opacity: 0.9 }} aria-live="polite">
         <div className="d-flex align-items-center">
-          {(user?.role || user?.jerarquia_nombre) && (
+          {jerarquiaNombre && (
             <span className="mr-2 d-flex align-items-center" aria-label="Jerarquía del usuario">
               <i className="fa fa-user mr-1" style={{ fontSize: '1em' }} aria-hidden="true"></i>
-              <span className="badge badge-light text-dark" style={{ fontSize: '0.85em', padding: '0.25em 0.5em' }} aria-label={`Jerarquía: ${user.jerarquia_nombre || user.role}`}>
-                {user.jerarquia_nombre || user.role}
+              <span className="badge badge-light text-dark" style={{ fontSize: '0.85em', padding: '0.25em 0.5em' }} aria-label={`Jerarquía: ${jerarquiaNombre}`}>
+                {jerarquiaNombre}
               </span>
             </span>
           )}
@@ -126,7 +142,7 @@ const Navbar = memo(() => {
       {/* Desktop: Menú siempre visible a la derecha (sin hamburguesa) */}
       <div className="d-none d-lg-block ml-auto" id="navbarSupportedContent" role="menu">
         <ul className="navbar-nav text-right" id="navbar-menu" role="menubar">
-          {user?.role !== 'Comensal' && (
+          {role !== 'Comensal' && (
             <li className="nav-item active" role="none">
               <Link className="nav-link" to="/" aria-label="Ir a inicio" role="menuitem">
                 <i className="fa fa-home mr-2" aria-hidden="true"></i> Inicio
@@ -134,7 +150,7 @@ const Navbar = memo(() => {
             </li>
           )}
 
-          {user?.role === 'Cocina' && (
+          {role === 'Cocina' && (
             <>
               <li className="nav-item active" role="none">
                 <Link className="nav-link" to="/despacho" aria-label="Despacho de plato" role="menuitem">
@@ -168,7 +184,7 @@ const Navbar = memo(() => {
                     role="menuitem"
                     onClick={() => setOpenDropdowns({})}
                   >
-                    Platillos
+                    Platos
                   </Link>
                   <Link 
                     className="dropdown-item" 
@@ -183,7 +199,7 @@ const Navbar = memo(() => {
             </>
           )}
 
-          {user?.role === 'Gerencia' && (
+          {role === 'Gerencia' && (
             <li className="nav-item dropdown" role="none">
               <a
                 className="nav-link dropdown-toggle active"
@@ -225,7 +241,7 @@ const Navbar = memo(() => {
             </li>
           )}
 
-          {(user?.role === 'Admin' || user?.role === 'Gerencia') && (
+          {(role === 'Admin' || role === 'Gerencia') && (
             <li className="nav-item dropdown" role="none">
               <a
                 className="nav-link dropdown-toggle active"

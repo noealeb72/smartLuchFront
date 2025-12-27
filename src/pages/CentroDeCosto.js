@@ -107,7 +107,6 @@ const CentroDeCosto = () => {
       const data = await apiService.getPlantas();
       setPlantas(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Error al cargar plantas:', error);
       setPlantas([]);
     }
   }, []);
@@ -265,7 +264,6 @@ const CentroDeCosto = () => {
       const soloActivos = filtroActivo === 'activo';
       cargarCentros(currentPage, filtro, soloActivos);
     } catch (error) {
-      console.error('Error al guardar centro de costo:', error);
       
       if (!error.redirectToLogin) {
         // Extraer el mensaje del error del backend
@@ -389,7 +387,6 @@ const CentroDeCosto = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar PDF:', error);
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a PDF',
@@ -431,7 +428,6 @@ const CentroDeCosto = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar Excel:', error);
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a Excel',
@@ -445,9 +441,9 @@ const CentroDeCosto = () => {
   // Renderizar vista de formulario (crear/editar)
   if (vista === 'crear' || vista === 'editar') {
     return (
-      <div className="container-fluid" style={{ padding: 0 }}>
+      <div className="container-fluid" style={{ padding: 0, backgroundColor: 'white' }}>
         {/* Barra negra con título */}
-        <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
+        <div className="page-title-bar">
           <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '1.5rem' }}>
             <button
               type="button"
@@ -457,17 +453,7 @@ const CentroDeCosto = () => {
             >
               <i className="fa fa-arrow-left"></i>
             </button>
-            <h3 style={{ 
-              fontSize: '1.75rem', 
-              fontWeight: 'normal', 
-              margin: 0, 
-              fontFamily: 'sans-serif', 
-              color: 'white', 
-              textAlign: 'left',
-              paddingTop: '0',
-              paddingBottom: '0',
-              lineHeight: '1.5',
-            }}>
+            <h3>
               {vista === 'editar' ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo'}
             </h3>
           </div>
@@ -575,7 +561,7 @@ const CentroDeCosto = () => {
             </div>
 
             <div className="row mt-3">
-              <div className="col-12">
+              <div className="col-12 d-flex justify-content-end">
                 <button
                   type="button"
                   className="btn mr-2"
@@ -621,21 +607,8 @@ const CentroDeCosto = () => {
   return (
     <div className="container-fluid" style={{ padding: 0 }}>
       {/* Barra negra con título Centros de Costo */}
-      <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
-        <h3 style={{ 
-          fontSize: '1.75rem', 
-          fontWeight: 'normal', 
-          margin: 0, 
-          fontFamily: 'sans-serif', 
-          color: 'white', 
-          textAlign: 'left', 
-          paddingLeft: '1.5rem',
-          paddingTop: '0',
-          paddingBottom: '0',
-          lineHeight: '1.5',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
+      <div className="page-title-bar">
+        <h3>
           <i className="fa fa-dollar-sign mr-2" aria-hidden="true"></i>Centros de Costo
         </h3>
       </div>
@@ -897,7 +870,7 @@ const CentroDeCosto = () => {
         
         {/* Controles de paginación del servidor (siempre que haya más de una página) */}
         {totalPages > 1 && (
-          <div className="d-flex justify-content-between align-items-center mt-3">
+          <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
             <div>
               <span className="text-muted">
                 Mostrando página {currentPage} de {totalPages} ({totalItems} centros de costo)

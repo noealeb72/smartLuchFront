@@ -107,7 +107,6 @@ const Proyecto = () => {
       const data = await apiService.getPlantas();
       setPlantas(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Error al cargar plantas:', error);
       setPlantas([]);
     }
   }, []);
@@ -143,7 +142,6 @@ const Proyecto = () => {
       
       setCentrosDeCosto(centrosNormalizados);
     } catch (error) {
-      console.error('Error al cargar centros de costo:', error);
       setCentrosDeCosto([]);
     }
   }, []);
@@ -377,7 +375,6 @@ const Proyecto = () => {
       const soloActivos = filtroActivo === 'activo';
       cargarProyectos(currentPage, filtro, soloActivos);
     } catch (error) {
-      console.error('Error al guardar proyecto:', error);
       
       if (!error.redirectToLogin) {
         // Extraer el mensaje del error del backend
@@ -524,7 +521,6 @@ const Proyecto = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar PDF:', error);
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a PDF',
@@ -568,7 +564,6 @@ const Proyecto = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar Excel:', error);
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a Excel',
@@ -582,9 +577,9 @@ const Proyecto = () => {
   // Renderizar vista de formulario (crear/editar)
   if (vista === 'crear' || vista === 'editar') {
     return (
-      <div className="container-fluid" style={{ padding: 0 }}>
+      <div className="container-fluid" style={{ padding: 0, backgroundColor: 'white' }}>
         {/* Barra negra con título */}
-        <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
+        <div className="page-title-bar">
           <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '1.5rem' }}>
             <button
               type="button"
@@ -594,17 +589,7 @@ const Proyecto = () => {
             >
               <i className="fa fa-arrow-left"></i>
             </button>
-            <h3 style={{ 
-              fontSize: '1.75rem', 
-              fontWeight: 'normal', 
-              margin: 0, 
-              fontFamily: 'sans-serif', 
-              color: 'white', 
-              textAlign: 'left',
-              paddingTop: '0',
-              paddingBottom: '0',
-              lineHeight: '1.5',
-            }}>
+            <h3>
               {vista === 'editar' ? 'Editar Proyecto' : 'Nuevo Proyecto'}
             </h3>
           </div>
@@ -745,7 +730,7 @@ const Proyecto = () => {
             </div>
 
             <div className="row mt-3">
-              <div className="col-12">
+              <div className="col-12 d-flex justify-content-end">
                 <button
                   type="button"
                   className="btn mr-2"
@@ -791,21 +776,8 @@ const Proyecto = () => {
   return (
     <div className="container-fluid" style={{ padding: 0 }}>
       {/* Barra negra con título Proyectos */}
-      <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
-        <h3 style={{ 
-          fontSize: '1.75rem', 
-          fontWeight: 'normal', 
-          margin: 0, 
-          fontFamily: 'sans-serif', 
-          color: 'white', 
-          textAlign: 'left', 
-          paddingLeft: '1.5rem',
-          paddingTop: '0',
-          paddingBottom: '0',
-          lineHeight: '1.5',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
+      <div className="page-title-bar">
+        <h3>
           <i className="fa fa-project-diagram mr-2" aria-hidden="true"></i>Proyectos
         </h3>
       </div>
@@ -1005,10 +977,7 @@ const Proyecto = () => {
             }
             // Si estamos en el filtro de "Activos", todos los proyectos mostrados están activos
             if (filtroActivo === 'activo') {
-              // No permitir eliminar si solo hay un proyecto
-              if (proyectos.length === 1) {
-                return false;
-              }
+              // Mostrar el botón incluso si solo hay un proyecto (la validación se hace en onDelete)
               return true;
             }
             // Por defecto, usar el campo normalizado 'activo'
@@ -1016,10 +985,7 @@ const Proyecto = () => {
             if (!isActivo) {
               return false; // No se puede eliminar si está inactivo
             }
-            // No permitir eliminar si solo hay un proyecto
-            if (proyectos.length === 1) {
-              return false;
-            }
+            // Mostrar el botón incluso si solo hay un proyecto (la validación se hace en onDelete)
             return true;
           }}
           renderActions={(proyecto) => {
@@ -1085,7 +1051,7 @@ const Proyecto = () => {
         
         {/* Controles de paginación del servidor (siempre que haya más de una página o más de 10 registros) */}
         {totalPages > 1 && (
-          <div className="d-flex justify-content-between align-items-center mt-3">
+          <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
             <div>
               <span className="text-muted">
                 Mostrando página {currentPage} de {totalPages} ({totalItems} proyectos)

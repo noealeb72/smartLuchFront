@@ -1,0 +1,546 @@
+/* ============================================
+   ESTILOS GLOBALES UNIFICADOS - SMARTLUNCH
+   ============================================ */
+
+/* Importar variables CSS desde index.css */
+@import '../index.css';
+
+/* ============================================
+   TIPOGRAFÍA UNIFICADA
+   ============================================ */
+
+/* Texto general - Open Sans */
+body,
+p,
+span,
+div,
+a,
+button,
+input,
+textarea,
+select,
+label,
+td,
+th,
+li {
+  font-family: var(--smart-font-primary) !important;
+}
+
+/* Títulos - Josefin Sans */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6,
+.page-title,
+.section-title {
+  font-family: var(--smart-font-headings) !important;
+  color: var(--smart-gray-dark) !important;
+}
+
+h1, h2, .h1, .h2 {
+  font-weight: 700 !important;
+}
+
+h3, h4, h5, h6, .h3, .h4, .h5, .h6 {
+  font-weight: 400 !important;
+  color: var(--smart-gray) !important;
+}
+
+/* Estilo unificado para títulos de página en barras negras */
+.page-title-bar {
+  background-color: #343A40 !important;
+  color: white !important;
+  padding: 0.5rem 0 !important;
+  width: 100% !important;
+  min-height: auto !important;
+}
+
+.page-title-bar h3 {
+  font-size: 1.75rem !important;
+  font-weight: normal !important;
+  margin: 0px !important;
+  font-family: sans-serif !important;
+  color: white !important;
+  text-align: left !important;
+  padding-left: 1.5rem !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+  line-height: 1.5 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Asegurar que todo el texto dentro de h3 sea blanco */
+.page-title-bar h3,
+.page-title-bar h3 * {
+  color: white !important;
+}
+
+/* Asegurar que los iconos y spans dentro de los títulos también sean blancos */
+.page-title-bar h3 i,
+.page-title-bar h3 i.fa,
+.page-title-bar h3 i[class*="fa-"],
+.page-title-bar h3 i[class^="fa-"] {
+  color: white !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  font-size: 1.75rem !important;
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free" !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  text-rendering: auto !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  line-height: 1.5 !important;
+  margin-right: 0.5rem !important;
+}
+
+/* Asegurar que los spans dentro de los títulos sean blancos */
+.page-title-bar h3 span {
+  color: white !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Asegurar que los iconos FontAwesome se muestren correctamente */
+.page-title-bar h3 i.fa::before,
+.page-title-bar h3 i[class*="fa-"]::before,
+.page-title-bar h3 i[class^="fa-"]::before {
+  color: white !important;
+  display: inline-block !important;
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free" !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+}
+
+/* Estilo unificado para títulos de página */
+.page-title-bar h3,
+.page-title-bar h3 i,
+.page-title-bar h3 span {
+  font-size: 1.75rem !important;
+  font-weight: normal !important;
+  margin: 0px !important;
+  font-family: sans-serif !important;
+  color: white !important;
+  text-align: left !important;
+  padding-left: 1.5rem !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+  line-height: 1.5 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* ============================================
+   BOTONES UNIFICADOS
+   ============================================ */
+
+/* Botón Primario */
+.btn-primary,
+.btn-smart-primary {
+  background-color: var(--smart-primary) !important;
+  border-color: var(--smart-primary) !important;
+  color: var(--smart-white) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-smart-primary:hover,
+.btn-smart-primary:focus {
+  background-color: var(--smart-primary-dark) !important;
+  border-color: var(--smart-primary-dark) !important;
+  color: var(--smart-white) !important;
+}
+
+.btn-primary:active,
+.btn-smart-primary:active {
+  background-color: var(--smart-primary-darker) !important;
+  border-color: var(--smart-primary-darker) !important;
+}
+
+/* Botón Secundario */
+.btn-secondary,
+.btn-smart-secondary {
+  background-color: var(--smart-gray) !important;
+  border-color: var(--smart-gray) !important;
+  color: var(--smart-white) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus,
+.btn-smart-secondary:hover,
+.btn-smart-secondary:focus {
+  background-color: var(--smart-gray-dark) !important;
+  border-color: var(--smart-gray-dark) !important;
+}
+
+/* Botón de Éxito */
+.btn-success,
+.btn-smart-success {
+  background-color: var(--smart-success) !important;
+  border-color: var(--smart-success) !important;
+  color: var(--smart-white) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.btn-success:hover,
+.btn-success:focus,
+.btn-smart-success:hover,
+.btn-smart-success:focus {
+  background-color: var(--smart-success-dark) !important;
+  border-color: var(--smart-success-dark) !important;
+}
+
+/* Botón de Peligro */
+.btn-danger,
+.btn-smart-danger {
+  background-color: var(--smart-danger) !important;
+  border-color: var(--smart-danger) !important;
+  color: var(--smart-white) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.btn-danger:hover,
+.btn-danger:focus,
+.btn-smart-danger:hover,
+.btn-smart-danger:focus {
+  background-color: var(--smart-danger-dark) !important;
+  border-color: var(--smart-danger-dark) !important;
+}
+
+/* Botón de Advertencia */
+.btn-warning,
+.btn-smart-warning {
+  background-color: var(--smart-warning) !important;
+  border-color: var(--smart-warning) !important;
+  color: var(--smart-gray-dark) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.btn-warning:hover,
+.btn-warning:focus,
+.btn-smart-warning:hover,
+.btn-smart-warning:focus {
+  background-color: var(--smart-warning-dark) !important;
+  border-color: var(--smart-warning-dark) !important;
+}
+
+/* Botón de Información */
+.btn-info,
+.btn-smart-info {
+  background-color: var(--smart-info) !important;
+  border-color: var(--smart-info) !important;
+  color: var(--smart-white) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.btn-info:hover,
+.btn-info:focus,
+.btn-smart-info:hover,
+.btn-smart-info:focus {
+  background-color: var(--smart-info-dark) !important;
+  border-color: var(--smart-info-dark) !important;
+}
+
+/* ============================================
+   FORMULARIOS UNIFICADOS
+   ============================================ */
+
+.form-control,
+.form-select,
+input,
+textarea,
+select {
+  font-family: var(--smart-font-primary) !important;
+  color: var(--smart-gray-dark) !important;
+  border-color: var(--smart-gray-light) !important;
+  background-color: var(--smart-white) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--smart-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.25) !important;
+  outline: none !important;
+}
+
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--smart-gray-medium) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+label,
+.form-label {
+  font-family: var(--smart-font-primary) !important;
+  color: var(--smart-gray-dark) !important;
+  font-weight: 500 !important;
+}
+
+/* ============================================
+   TABLAS UNIFICADAS
+   ============================================ */
+
+table,
+.table {
+  font-family: var(--smart-font-primary) !important;
+}
+
+.table thead th {
+  background-color: var(--smart-gray-lightest) !important;
+  color: var(--smart-gray-dark) !important;
+  font-weight: 600 !important;
+  font-family: var(--smart-font-primary) !important;
+  border-color: var(--smart-gray-lighter) !important;
+}
+
+.table tbody td {
+  color: var(--smart-gray) !important;
+  font-family: var(--smart-font-primary) !important;
+  border-color: var(--smart-gray-lighter) !important;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: var(--smart-gray-lightest) !important;
+}
+
+.table-hover tbody tr:hover {
+  background-color: var(--smart-primary-bg) !important;
+}
+
+/* ============================================
+   ALERTAS Y MENSAJES UNIFICADOS
+   ============================================ */
+
+.alert-success {
+  background-color: var(--smart-success-bg) !important;
+  border-color: var(--smart-success) !important;
+  color: var(--smart-success-dark) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.alert-danger {
+  background-color: var(--smart-danger-bg) !important;
+  border-color: var(--smart-danger) !important;
+  color: var(--smart-danger-dark) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.alert-warning {
+  background-color: var(--smart-warning-bg) !important;
+  border-color: var(--smart-warning) !important;
+  color: var(--smart-warning-dark) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.alert-info {
+  background-color: var(--smart-info-bg) !important;
+  border-color: var(--smart-info) !important;
+  color: var(--smart-info-dark) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+/* ============================================
+   BADGES Y ETIQUETAS UNIFICADAS
+   ============================================ */
+
+.badge-primary,
+.badge-smart-primary {
+  background-color: var(--smart-primary) !important;
+  color: var(--smart-white) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.badge-success,
+.badge-smart-success {
+  background-color: var(--smart-success) !important;
+  color: var(--smart-white) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.badge-danger,
+.badge-smart-danger {
+  background-color: var(--smart-danger) !important;
+  color: var(--smart-white) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.badge-warning,
+.badge-smart-warning {
+  background-color: var(--smart-warning) !important;
+  color: var(--smart-gray-dark) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.badge-info,
+.badge-smart-info {
+  background-color: var(--smart-info) !important;
+  color: var(--smart-white) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.badge-secondary,
+.badge-smart-secondary {
+  background-color: var(--smart-gray) !important;
+  color: var(--smart-white) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+/* ============================================
+   NAVBAR UNIFICADO
+   ============================================ */
+
+.navbar.smart-bg {
+  background-color: var(--smart-primary) !important;
+  color: var(--smart-white) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.navbar .nav-link {
+  font-family: var(--smart-font-primary) !important;
+  color: var(--smart-white) !important;
+  transition: none !important; /* Sin transición */
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link:focus,
+.navbar .nav-link:active {
+  color: var(--smart-white) !important; /* Mantener color blanco */
+  background-color: transparent !important; /* Sin cambio de fondo */
+  text-decoration: none !important;
+}
+
+/* ============================================
+   CARDS Y CONTENEDORES UNIFICADOS
+   ============================================ */
+
+.card {
+  border-color: var(--smart-gray-lighter) !important;
+  font-family: var(--smart-font-primary) !important;
+  background-color: var(--smart-white) !important;
+}
+
+.card-header {
+  background-color: var(--smart-gray-lightest) !important;
+  border-bottom-color: var(--smart-gray-lighter) !important;
+  color: var(--smart-gray-dark) !important;
+  font-family: var(--smart-font-headings) !important;
+  font-weight: 600 !important;
+}
+
+.card-body {
+  color: var(--smart-gray) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+/* ============================================
+   FORM SECTIONS UNIFICADAS
+   ============================================ */
+
+.form-section {
+  background-color: var(--smart-gray-lightest) !important;
+  border-color: var(--smart-gray-lighter) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.form-section-title {
+  color: var(--smart-gray-dark) !important;
+  font-family: var(--smart-font-headings) !important;
+  font-weight: 600 !important;
+  border-bottom-color: var(--smart-gray-lighter) !important;
+}
+
+.form-section-content {
+  color: var(--smart-gray) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+/* ============================================
+   LINKS UNIFICADOS
+   ============================================ */
+
+a {
+  color: var(--smart-primary) !important;
+  font-family: var(--smart-font-primary) !important;
+  text-decoration: none !important;
+}
+
+a:hover {
+  color: var(--smart-primary-dark) !important;
+  text-decoration: underline !important;
+}
+
+a:focus {
+  outline: 2px solid var(--smart-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* ============================================
+   MODALES UNIFICADOS
+   ============================================ */
+
+.modal-header {
+  background-color: var(--smart-gray-lightest) !important;
+  border-bottom-color: var(--smart-gray-lighter) !important;
+  font-family: var(--smart-font-headings) !important;
+  color: var(--smart-gray-dark) !important;
+}
+
+.modal-body {
+  font-family: var(--smart-font-primary) !important;
+  color: var(--smart-gray) !important;
+}
+
+.modal-footer {
+  border-top-color: var(--smart-gray-lighter) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+/* ============================================
+   DROPDOWNS UNIFICADOS
+   ============================================ */
+
+.dropdown-menu {
+  background-color: var(--smart-white) !important;
+  border-color: var(--smart-gray-lighter) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.dropdown-item {
+  color: var(--smart-gray-dark) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--smart-primary-bg) !important;
+  color: var(--smart-primary-dark) !important;
+}
+
+/* ============================================
+   UTILIDADES ADICIONALES
+   ============================================ */
+
+.text-muted {
+  color: var(--smart-gray-medium) !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.border {
+  border-color: var(--smart-gray-lighter) !important;
+}
+
+.shadow-sm {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+.shadow {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+

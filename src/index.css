@@ -6,19 +6,20 @@
 
 body {
   margin: 0;
-  font-family: 'Open Sans', sans-serif !important;
-  font-size: 14px !important;
+  font-family: var(--smart-font-primary) !important;
+  font-size: var(--smart-font-size-base) !important;
   font-weight: 400;
-  line-height: 1.5;
+  line-height: var(--smart-line-height-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #212529;
+  color: var(--smart-gray-dark);
+  background-color: var(--smart-bg-primary);
 }
 
 /* Aumentar tamaño de fuente en desktop */
 @media (min-width: 992px) {
   body {
-    font-size: 16px !important;
+    font-size: var(--smart-font-size-base-desktop) !important;
   }
 
   /* Aumentar texto general solo si no tiene tamaño específico */
@@ -98,35 +99,136 @@ select option {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-family: var(--smart-font-monospace);
 }
 
-/* Variables CSS globales */
+/* ============================================
+   CLASES UTILITARIAS DE COLORES
+   ============================================ */
+
+/* Colores de texto */
+.text-smart-primary { color: var(--smart-primary) !important; }
+.text-smart-primary-dark { color: var(--smart-primary-dark) !important; }
+.text-smart-success { color: var(--smart-success) !important; }
+.text-smart-danger { color: var(--smart-danger) !important; }
+.text-smart-warning { color: var(--smart-warning) !important; }
+.text-smart-info { color: var(--smart-info) !important; }
+.text-smart-gray { color: var(--smart-gray) !important; }
+.text-smart-gray-dark { color: var(--smart-gray-dark) !important; }
+.text-smart-gray-medium { color: var(--smart-gray-medium) !important; }
+
+/* Fondos de color */
+.bg-smart-primary { background-color: var(--smart-primary) !important; }
+.bg-smart-primary-dark { background-color: var(--smart-primary-dark) !important; }
+.bg-smart-primary-bg { background-color: var(--smart-primary-bg) !important; }
+.bg-smart-success { background-color: var(--smart-success) !important; }
+.bg-smart-danger { background-color: var(--smart-danger) !important; }
+.bg-smart-warning { background-color: var(--smart-warning) !important; }
+.bg-smart-info { background-color: var(--smart-info) !important; }
+.bg-smart-gray-lightest { background-color: var(--smart-gray-lightest) !important; }
+.bg-smart-gray-lighter { background-color: var(--smart-gray-lighter) !important; }
+
+/* Bordes */
+.border-smart-primary { border-color: var(--smart-primary) !important; }
+.border-smart-gray-light { border-color: var(--smart-gray-light) !important; }
+.border-smart-gray-lighter { border-color: var(--smart-gray-lighter) !important; }
+
+/* ============================================
+   VARIABLES CSS GLOBALES - PALETA SMARTLUNCH
+   ============================================ */
 :root {
+  /* Colores Primarios */
   --smart-primary: #F34949;
   --smart-primary-dark: #E63939;
   --smart-primary-darker: #C92A2A;
   --smart-primary-light: #FF6B6B;
   --smart-primary-lighter: #FF9999;
-  --smart-primary-bg: #ffe5e5;
-  --smart-success: #28a745;
+  --smart-primary-bg: #FFE5E5;
+  
+  /* Colores Secundarios */
+  --smart-orange: #FF8C42;
+  --smart-orange-dark: #E67E3A;
+  --smart-orange-light: #FFA366;
+  --smart-orange-bg: #FFF4ED;
+  --smart-yellow: #FFC107;
+  --smart-yellow-dark: #FFB300;
+  --smart-yellow-light: #FFD54F;
+  --smart-yellow-bg: #FFF9E6;
+  
+  /* Colores de Estado */
+  --smart-success: #28A745;
   --smart-success-dark: #218838;
-  --smart-gray-dark: #343a40;
+  --smart-success-light: #4CAF50;
+  --smart-success-bg: #E8F5E9;
+  --smart-danger: #DC3545;
+  --smart-danger-dark: #C82333;
+  --smart-danger-light: #F44336;
+  --smart-danger-bg: #FFEBEE;
+  --smart-warning: #FFC107;
+  --smart-warning-dark: #FFB300;
+  --smart-warning-light: #FFD54F;
+  --smart-warning-bg: #FFF9E6;
+  --smart-info: #17A2B8;
+  --smart-info-dark: #138496;
+  --smart-info-light: #03A9F4;
+  --smart-info-bg: #E0F7FA;
+  
+  /* Colores Neutros */
+  --smart-gray-dark: #343A40;
   --smart-gray: #495057;
-  --smart-gray-medium: #6c757d;
-  --smart-gray-light: #adb5bd;
-  --smart-gray-lighter: #e9ecef;
-  --smart-gray-lightest: #f8f9fa;
+  --smart-gray-medium: #6C757D;
+  --smart-gray-light: #ADB5BD;
+  --smart-gray-lighter: #E9ECEF;
+  --smart-gray-lightest: #F8F9FA;
+  --smart-white: #FFFFFF;
+  --smart-black: #000000;
+  --smart-off-white: #FAFAFA;
+  
+  /* Colores de Acento */
+  --smart-emerald: #10B981;
+  --smart-emerald-dark: #059669;
+  --smart-emerald-light: #34D399;
+  --smart-sky-blue: #0EA5E9;
+  --smart-sky-blue-dark: #0284C7;
+  --smart-sky-blue-light: #38BDF8;
+  --smart-purple: #8B5CF6;
+  --smart-purple-dark: #7C3AED;
+  --smart-purple-light: #A78BFA;
+  --smart-pink: #EC4899;
+  --smart-pink-dark: #DB2777;
+  --smart-pink-light: #F472B6;
+  
+  /* Fondos */
+  --smart-bg-primary: #FFFFFF;
+  --smart-bg-secondary: #F8F9FA;
+  --smart-bg-tertiary: #E9ECEF;
+  --smart-bg-dark: #343A40;
+  
+  /* Fuentes */
+  --smart-font-primary: 'Open Sans', sans-serif;
+  --smart-font-headings: 'Josefin Sans', sans-serif;
+  --smart-font-monospace: 'source-code-pro', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+  
+  /* Tamaños de fuente base */
+  --smart-font-size-base: 14px;
+  --smart-font-size-base-desktop: 16px;
+  --smart-line-height-base: 1.5;
 }
 
 /* Títulos con fuente Josefin Sans */
 h1, h2, h3, h4, h5, h6,
 .h1, .h2, .h3, .h4, .h5, .h6 {
-  font-family: 'Josefin Sans', sans-serif !important;
+  font-family: var(--smart-font-headings) !important;
   font-weight: 400;
+  color: var(--smart-gray-dark);
 }
 
 h1, h2, .h1, .h2 {
   font-weight: 700;
+  color: var(--smart-gray-dark);
+}
+
+h3, h4, h5, h6, .h3, .h4, .h5, .h6 {
+  color: var(--smart-gray);
 }
 

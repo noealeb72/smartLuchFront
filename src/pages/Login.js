@@ -8,6 +8,7 @@ import './Login.css';
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,21 +26,17 @@ const Login = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Redirigir si ya está autenticado
+  // Redirigir si ya está autenticado (solo si tiene id, no solo token)
   useEffect(() => {
-    if (user) {
+    if (user && user.token && user.id) {
+      // Solo redirigir si hay un token válido Y un id de usuario
       if (user.role === 'Cocina') {
-        navigate('/despacho');
+        navigate('/despacho', { replace: true });
       } else {
-        navigate('/');
+        navigate('/', { replace: true });
       }
     }
-  }, [user, navigate]);
-
-  useEffect(() => {
-    // Limpiar localStorage al cargar login
-    localStorage.clear();
-  }, []);
+  }, [user?.id, user?.token, user?.role, navigate]);
 
   useEffect(() => {
     // Ocultar error al escribir
@@ -65,13 +62,9 @@ const Login = () => {
     setShowError(false);
 
     try {
-      const userData = await login(username.trim(), password.trim());
-      // Redirección por jerarquía
-      if (userData && (userData.jerarquia === 'Cocina' || userData.role === 'Cocina')) {
-        navigate('/despacho');
-      } else {
-        navigate('/');
-      }
+      await login(username.trim(), password.trim());
+      // Siempre redirigir a index después del login
+      navigate('/', { replace: true });
     } catch (error) {
       setIsLoading(false);
       const message = error.message || 'Error de comunicación con el servidor';
@@ -165,7 +158,7 @@ const Login = () => {
                     </span>
                   </div>
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     id="view_password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -173,8 +166,28 @@ const Login = () => {
                     placeholder="Contraseña"
                     autoComplete="current-password"
                     required
-                    style={{ borderLeft: 'none', paddingLeft: '0.75rem' }}
+                    style={{ borderLeft: 'none', borderRight: 'none', paddingLeft: '0.75rem', borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
                   />
+                  <div className="input-group-append">
+                    <button
+                      className="btn btn-outline-secondary password-toggle-btn"
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        borderLeft: 'none',
+                        borderColor: '#ced4da',
+                        backgroundColor: '#fff',
+                        cursor: 'pointer',
+                        padding: '0.85rem 0.75rem',
+                        fontSize: '1rem',
+                        minWidth: '45px',
+                        borderTopRightRadius: '0',
+                        borderBottomRightRadius: '0'
+                      }}
+                    >
+                      <i className={showPassword ? "fa fa-eye-slash" : "fa fa-eye"}></i>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="form-group mb-3" style={{ marginBottom: isMobile ? '0.75rem' : '1.25rem' }}>

@@ -166,14 +166,15 @@ const PlanNutricional = () => {
       };
 
       if (planEditando) {
-        console.log('Actualizando plan nutricional - Datos:', planData);
         await apiService.actualizarPlanNutricional(planData);
         Swal.fire({
           title: 'Éxito',
           text: 'Plan nutricional actualizado correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       } else {
         await apiService.crearPlanNutricional(planData);
@@ -181,8 +182,10 @@ const PlanNutricional = () => {
           title: 'Éxito',
           text: 'Plan nutricional creado correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: true,
         });
       }
 
@@ -190,8 +193,6 @@ const PlanNutricional = () => {
       const soloActivos = filtroActivo === 'activo';
       cargarPlanes(currentPage, filtro, soloActivos);
     } catch (error) {
-      console.error('Error al guardar plan nutricional:', error);
-      console.error('Error response:', error.response);
       
       if (!error.redirectToLogin) {
         // Extraer el mensaje del error del backend
@@ -238,7 +239,6 @@ const PlanNutricional = () => {
     setPlanEditando(plan);
     // Extraer el ID del plan (puede venir en diferentes formatos)
     const planId = plan.id || plan.Id || plan.ID;
-    console.log('Editando plan nutricional - Plan completo:', plan, 'ID extraído:', planId);
     setFormData({
       id: planId,
       nombre: plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || '',
@@ -302,7 +302,6 @@ const PlanNutricional = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar PDF:', error);
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a PDF',
@@ -342,7 +341,6 @@ const PlanNutricional = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar Excel:', error);
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a Excel',
@@ -356,9 +354,9 @@ const PlanNutricional = () => {
   // Renderizar vista de formulario (crear/editar)
   if (vista === 'crear' || vista === 'editar') {
     return (
-      <div className="container-fluid" style={{ padding: 0 }}>
+      <div className="container-fluid" style={{ padding: 0, backgroundColor: 'white' }}>
         {/* Barra negra con título */}
-        <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
+        <div className="page-title-bar">
           <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '1.5rem' }}>
             <button
               type="button"
@@ -368,18 +366,8 @@ const PlanNutricional = () => {
             >
               <i className="fa fa-arrow-left"></i>
             </button>
-            <h3 style={{ 
-              fontSize: '1.75rem', 
-              fontWeight: 'normal', 
-              margin: 0, 
-              fontFamily: 'sans-serif', 
-              color: 'white', 
-              textAlign: 'left',
-              paddingTop: '0',
-              paddingBottom: '0',
-              lineHeight: '1.5',
-            }}>
-              {vista === 'editar' ? 'Editar Plan Nutricional' : 'Nuevo Plan Nutricional'}
+            <h3>
+              {vista === 'editar' ? 'Editar Perfil Nutricional' : 'Nuevo Perfil Nutricional'}
             </h3>
           </div>
         </div>
@@ -422,7 +410,7 @@ const PlanNutricional = () => {
                         value={formData.nombre || ''}
                         onChange={handleInputChange}
                         required
-                        placeholder="Ingrese el nombre del plan nutricional"
+                        placeholder="Ingrese el nombre del perfil nutricional"
                       />
                     </div>
                   </div>
@@ -445,7 +433,7 @@ const PlanNutricional = () => {
             </div>
 
             <div className="row mt-3">
-              <div className="col-12">
+              <div className="col-12 d-flex justify-content-end">
                 <button
                   type="button"
                   className="btn mr-2"
@@ -491,21 +479,8 @@ const PlanNutricional = () => {
   return (
     <div className="container-fluid" style={{ padding: 0 }}>
       {/* Barra negra con título Planes Nutricionales */}
-      <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
-        <h3 style={{ 
-          fontSize: '1.75rem', 
-          fontWeight: 'normal', 
-          margin: 0, 
-          fontFamily: 'sans-serif', 
-          color: 'white', 
-          textAlign: 'left', 
-          paddingLeft: '1.5rem',
-          paddingTop: '0',
-          paddingBottom: '0',
-          lineHeight: '1.5',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
+      <div className="page-title-bar">
+        <h3>
           <i className="fa fa-apple-alt mr-2" aria-hidden="true"></i>Perfil Nutricional
         </h3>
       </div>

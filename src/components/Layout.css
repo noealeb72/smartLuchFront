@@ -15,6 +15,7 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  padding-bottom: 1rem; /* Espacio adicional antes del footer */
 }
 
 /* Footer siempre abajo */

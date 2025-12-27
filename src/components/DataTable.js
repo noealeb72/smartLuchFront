@@ -172,7 +172,7 @@ const DataTable = ({
 
       {/* Paginación */}
       {shouldShowPagination && (
-        <div className="d-flex justify-content-between align-items-center mt-3">
+        <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
           <div>
             <span className="text-muted">
               {isServerSidePagination ? (

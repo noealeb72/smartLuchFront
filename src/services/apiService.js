@@ -16,6 +16,7 @@ import { platosService } from './platosService';
 import { turnosService } from './turnosService';
 import { comandasService } from './comandasService';
 import { dashboardService } from './dashboardService';
+import { inicioService } from './inicioService';
 import { menuService } from './menuService';
 import { catalogosService } from './catalogosService';
 import { plantasService } from './plantasService';
@@ -35,12 +36,15 @@ export const apiService = {
   // Auth
   login: authService.login,
 
-  // Dashboard
-  getDashboardInicio: dashboardService.getDashboardInicio,
+  // Dashboard (deprecated - usar inicioService.getInicioWeb)
   getMenuDelDia: dashboardService.getMenuDelDia,
+
+  // Inicio
+  getInicioWeb: inicioService.getInicioWeb,
 
   // Menú
   getMenuByTurno: menuService.getMenuByTurno,
+  getMenuByTurnoId: menuService.getMenuByTurnoId,
 
   // Turnos
   getTurnosDisponibles: turnosService.getTurnosDisponibles,

@@ -3,19 +3,22 @@ import MenuItem from '../components/MenuItem';
 import PedidoVigente from '../components/PedidoVigente';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboard } from '../contexts/DashboardContext';
-import { apiService } from '../services/apiService';
+import { inicioService } from '../services/inicioService';
+import { menuService } from '../services/menuService';
+import { comandasService } from '../services/comandasService';
 import Swal from 'sweetalert2';
 import './Index.css';
 import '../styles/smartstyle.css';
 
 const Index = () => {
   const { user } = useAuth();
-  const { turnos, pedidosHoy, menuDelDia, usuarioData, actualizarDatos } = useDashboard();
-  const datosCargadosRef = useRef(false); // Ref para rastrear si ya se cargaron los datos
+  const { turnos, pedidosHoy, usuarioData, actualizarDatos } = useDashboard();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTurno, setSelectedTurno] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
   const [pedidosVigentes, setPedidosVigentes] = useState(pedidosHoy);
+  const [usuarioNombre, setUsuarioNombre] = useState('');
+  const [usuarioApellido, setUsuarioApellido] = useState('');
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -28,52 +31,135 @@ const Index = () => {
   const [pedidosRestantes, setPedidosRestantes] = useState(0);
   const [turnoDisponible, setTurnoDisponible] = useState(true);
   const defaultImage = '/Views/img/logo-preview.png';
+  
+  // Ref para evitar múltiples llamadas simultáneas
+  const requestInProgressRef = useRef(false);
+  // Ref para rastrear si el componente está montado
+  const isMountedRef = useRef(true);
 
-  // Cargar datos desde /api/inicio/web solo una vez después del login
+  // Cargar datos desde /api/inicio/web siempre que se monte el componente o se recargue la página
   useEffect(() => {
-    // Solo cargar si el usuario está autenticado y aún no se han cargado los datos
-    if (!user?.id || datosCargadosRef.current) {
-      return;
-    }
-
-    let isMounted = true;
-    let requestInProgress = false;
+    isMountedRef.current = true;
     
-    const cargarDatosInicio = async () => {
+    const cargarDatosInicio = async (usuarioIdParam = null) => {
       // Evitar múltiples llamadas simultáneas
-      if (requestInProgress) {
+      if (requestInProgressRef.current) {
+        console.log('⚠️ [Index] Ya hay una petición en progreso, cancelando...');
         return;
       }
       
-      requestInProgress = true;
-      // Marcar como cargando antes de hacer la petición
-      datosCargadosRef.current = true;
+      // Verificar que haya token antes de hacer la petición
+      const token = localStorage.getItem('token');
+      if (!token || token === 'null' || token === 'undefined') {
+        console.error('❌ [Index] No hay token válido, no se puede cargar datos');
+        requestInProgressRef.current = false;
+        setIsLoading(false);
+        return;
+      }
+      
+      requestInProgressRef.current = true;
       
       try {
         setIsLoading(true);
-        const data = await apiService.getDashboardInicio();
         
-        if (!isMounted) {
-          datosCargadosRef.current = false; // Resetear si el componente se desmontó
-          requestInProgress = false;
+        // Obtener el id del usuario: puede venir como parámetro, del estado, o del token
+        let usuarioId = usuarioIdParam || user?.id || usuarioData?.id;
+        
+        console.log('🔍 [Index] Verificando usuarioId:', {
+          userId: user?.id,
+          usuarioDataId: usuarioData?.id,
+          usuarioIdFinal: usuarioId,
+          userCompleto: user,
+          usuarioDataCompleto: usuarioData,
+          tieneId: !!usuarioId
+        });
+        
+        // Si no hay id, no podemos hacer la llamada
+        // Esto puede pasar si se recarga la página y solo hay token en localStorage
+        if (!usuarioId) {
+          console.error('❌ [Index] No se encontró el ID del usuario');
+          console.error('❌ [Index] Objeto user:', user);
+          console.error('❌ [Index] usuarioData:', usuarioData);
+          console.error('❌ [Index] Esperando a que se cargue el ID del usuario...');
+          requestInProgressRef.current = false;
+          setIsLoading(false);
+          // NO redirigir automáticamente, solo esperar
+          return;
+        }
+        
+        // Siempre llamar a inicioService pasando el id del usuario
+        console.log('📥 [Index] Llamando a api/inicio/web con usuarioId:', usuarioId);
+        console.log('📥 [Index] Token disponible:', localStorage.getItem('token') ? '✅ Sí' : '❌ No');
+        const data = await inicioService.getInicioWeb(usuarioId);
+        console.log('✅ [Index] Datos recibidos de api/inicio/web:', data);
+        console.log('✅ [Index] Estructura de datos:', {
+          tieneUsuario: !!data.Usuario,
+          tieneTurnos: !!data.Turnos,
+          tieneMenuDelDia: !!data.MenuDelDia,
+          tienePlatosPedidos: !!data.PlatosPedidos,
+          cantidadTurnos: Array.isArray(data.Turnos) ? data.Turnos.length : 0,
+          cantidadMenuDelDia: Array.isArray(data.MenuDelDia) ? data.MenuDelDia.length : 0,
+          cantidadPlatosPedidos: Array.isArray(data.PlatosPedidos) ? data.PlatosPedidos.length : 0
+        });
+        
+        if (!isMountedRef.current) {
+          console.log('⚠️ [Index] Componente desmontado antes de actualizar estado');
+          requestInProgressRef.current = false;
+          setIsLoading(false); // Asegurar que se quite el loading
           return;
         }
         
         // Actualizar el contexto con los datos recibidos
-        actualizarDatos(data);
+        try {
+          console.log('🔄 [Index] Llamando a actualizarDatos con:', data);
+          actualizarDatos(data);
+          console.log('✅ [Index] actualizarDatos completado');
+        } catch (errorActualizar) {
+          console.error('❌ [Index] Error al actualizar datos en el contexto:', errorActualizar);
+          // Continuar aunque haya error en actualizarDatos
+        }
         
-        // Sincronizar pedidosHoy con el estado local
+        // Guardar nombre y apellido del Usuario para mostrar en "Bienvenido"
+        if (data.Usuario) {
+          console.log('👤 Datos del Usuario:', data.Usuario);
+          const nombre = data.Usuario.Nombre || data.Usuario.nombre || '';
+          const apellido = data.Usuario.Apellido || data.Usuario.apellido || '';
+          setUsuarioNombre(nombre);
+          setUsuarioApellido(apellido);
+          console.log('👤 Usuario nombre y apellido guardados:', nombre, apellido);
+        }
+        
+        // Sincronizar pedidosVigentes con PlatosPedidos de la respuesta
         const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
+        console.log('🍽️ PlatosPedidos recibidos:', pedidosData);
         setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
+        
+        // Asegurar que se quite el loading después de procesar los datos
+        console.log('✅ [Index] Procesamiento de datos completado, quitando loading...');
       } catch (error) {
-        if (!isMounted) {
-          datosCargadosRef.current = false; // Resetear si el componente se desmontó
-          requestInProgress = false;
+        console.error('❌ [Index] Error en cargarDatosInicio:', error);
+        if (!isMountedRef.current) {
+          console.log('⚠️ [Index] Componente desmontado durante error');
+          requestInProgressRef.current = false;
+          setIsLoading(false); // Asegurar que se quite el loading
           return;
         }
         
-        datosCargadosRef.current = false; // Resetear en caso de error para permitir reintento
-        requestInProgress = false;
+        // Si el error tiene redirectToLogin, evitar que se redirija automáticamente
+        // y manejar el error aquí en lugar de dejar que el interceptor lo haga
+        if (error.redirectToLogin) {
+          console.error('⚠️ [Index] Error con redirectToLogin detectado, evitando redirección automática');
+          error.redirectToLogin = false; // Evitar redirección automática
+        }
+        
+        // Solo mostrar error si no es un error de autenticación que requiere logout
+        if (error.response?.status === 401) {
+          console.error('❌ [Index] Error 401 - No autorizado, redirigiendo al login');
+          // En caso de 401, sí redirigir al login
+          localStorage.clear();
+          window.location.href = '/login';
+          return;
+        }
         
         Swal.fire({
           title: 'Error al cargar datos',
@@ -83,30 +169,131 @@ const Index = () => {
           confirmButtonColor: '#F34949',
         });
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-          requestInProgress = false;
-        }
+        console.log('🔄 [Index] Ejecutando finally, isMounted:', isMountedRef.current);
+        // Siempre quitar el loading, incluso si el componente está desmontado
+        // React puede manejar actualizaciones de estado en componentes desmontados
+        console.log('✅ [Index] Quitando loading en finally...');
+        setIsLoading(false);
+        requestInProgressRef.current = false;
+        console.log('✅ [Index] Loading quitado en finally');
       }
     };
 
-    cargarDatosInicio();
+    // Cargar datos si hay usuario autenticado con ID
+    const token = localStorage.getItem('token');
+    const tieneToken = token && token !== 'null' && token !== 'undefined';
+    const tieneUsuarioId = user?.id || usuarioData?.id; // Puede venir de user o usuarioData
+    
+    // Intentar obtener el ID del token si no está disponible
+    let usuarioIdDesdeToken = null;
+    if (tieneToken && !tieneUsuarioId) {
+      try {
+        // Decodificar el token JWT para obtener el usuario ID
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          // Intentar diferentes nombres de campo que puede tener el ID del usuario en el token
+          usuarioIdDesdeToken = payload.usuario || payload.usuarioId || payload.userId || payload.id || payload.sub || payload.nameid || null;
+          if (usuarioIdDesdeToken) {
+            console.log('✅ [Index] ID del usuario obtenido del token:', usuarioIdDesdeToken);
+            console.log('📋 [Index] Payload completo del token:', payload);
+          } else {
+            console.warn('⚠️ [Index] No se encontró ID de usuario en el token. Payload:', payload);
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ [Index] No se pudo decodificar el token:', error);
+      }
+    }
+    
+    const usuarioIdFinal = tieneUsuarioId || usuarioIdDesdeToken;
+    
+    console.log('🔍 [Index] Verificando autenticación para cargar datos:', {
+      tieneToken,
+      tieneUsuarioId: !!tieneUsuarioId,
+      usuarioIdDesdeToken,
+      usuarioIdFinal: !!usuarioIdFinal,
+      userId: user?.id,
+      usuarioDataId: usuarioData?.id,
+      requestInProgress: requestInProgressRef.current
+    });
+    
+    // Ejecutar si hay token Y (usuario con id O id desde token) Y no hay una petición en progreso
+    if (tieneToken && usuarioIdFinal && !requestInProgressRef.current) {
+      console.log('✅ [Index] Usuario autenticado con ID, cargando datos desde api/inicio/web...');
+      // Pasar el usuarioIdFinal a la función
+      cargarDatosInicio(usuarioIdFinal);
+    } else if (!usuarioIdFinal && tieneToken && !requestInProgressRef.current) {
+      // Si hay token pero no id, intentar decodificar el token nuevamente con más campos
+      console.log('⏳ [Index] Hay token pero falta ID del usuario');
+      console.log('⏳ [Index] Token (primeros 20 chars):', token.substring(0, 20) + '...');
+      console.log('⏳ [Index] Intentando decodificar token nuevamente con más campos...');
+      
+      // Intentar decodificar el token una vez más con más campos posibles
+      try {
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          console.log('📋 [Index] Payload completo del token:', payload);
+          console.log('📋 [Index] Todas las claves del payload:', Object.keys(payload));
+          
+          // Buscar el ID en diferentes campos comunes de JWT (más exhaustivo)
+          const posiblesIds = [
+            payload.usuario,
+            payload.usuarioId,
+            payload.userId,
+            payload.id,
+            payload.sub,
+            payload.nameid,
+            payload.unique_name,
+            payload.name,
+            payload.uid,
+            payload.claim,
+            payload.user_id,
+            payload.user_id_int,
+            // Intentar convertir cualquier valor numérico que parezca un ID
+            ...Object.values(payload).filter(v => typeof v === 'number' && v > 0 && v < 1000000)
+          ].filter(id => id !== undefined && id !== null && id !== '');
+          
+          console.log('🔍 [Index] Posibles IDs encontrados:', posiblesIds);
+          
+          if (posiblesIds.length > 0) {
+            const idEncontrado = posiblesIds[0];
+            console.log('✅ [Index] ID encontrado en el token, cargando datos con ID:', idEncontrado);
+            // Intentar cargar datos con este ID
+            cargarDatosInicio(idEncontrado);
+          } else {
+            console.warn('⚠️ [Index] No se pudo encontrar el ID del usuario en el token');
+            console.warn('⚠️ [Index] El backend debería poder obtener el ID del token, pero no podemos llamar sin ID');
+            console.warn('⚠️ [Index] Payload completo para depuración:', JSON.stringify(payload, null, 2));
+            setIsLoading(false);
+          }
+        } else {
+          console.error('❌ [Index] Token no tiene formato JWT válido (no tiene 3 partes)');
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('❌ [Index] Error al decodificar token:', error);
+        console.error('❌ [Index] Error details:', error.message);
+        setIsLoading(false);
+      }
+    } else if (requestInProgressRef.current) {
+      console.log('⏭️ [Index] Ya hay una petición en progreso, esperando...');
+    } else {
+      console.log('⏳ [Index] Esperando autenticación...', { 
+        tieneToken,
+        tieneUsuarioId: !!tieneUsuarioId,
+        usuarioIdDesdeToken
+      });
+      setIsLoading(false); // Asegurar que no se quede en loading
+    }
     
     return () => {
-      isMounted = false;
-      // NO resetear datosCargadosRef aquí porque queremos que persista durante la sesión
-      // Solo se reseteará cuando el componente se desmonte completamente (logout)
+      isMountedRef.current = false;
+      // No resetear requestInProgressRef aquí porque puede estar en medio de una petición
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Solo ejecutar cuando el ID del usuario cambie (después del login)
-
-  // Resetear el ref cuando el usuario se desmonta (logout)
-  useEffect(() => {
-    return () => {
-      // Cuando el componente se desmonta, resetear el ref para permitir carga en la próxima sesión
-      datosCargadosRef.current = false;
-    };
-  }, []);
+  }, [user?.id, usuarioData?.id]); // Ejecutar cuando cambie el id del usuario o usuarioData
 
   // Sincronizar pedidosHoy del contexto con el estado local
   useEffect(() => {
@@ -116,7 +303,15 @@ const Index = () => {
   // Seleccionar primer turno si hay turnos disponibles y no hay uno seleccionado
   useEffect(() => {
     if (turnos.length > 0 && !selectedTurno) {
-      setSelectedTurno(turnos[0]);
+      // Asegurar que el turno tenga la estructura correcta
+      const primerTurno = turnos[0];
+      setSelectedTurno({
+        ...primerTurno,
+        Id: primerTurno.Id || primerTurno.id,
+        id: primerTurno.Id || primerTurno.id,
+        Nombre: primerTurno.Nombre || primerTurno.nombre,
+        nombre: primerTurno.Nombre || primerTurno.nombre
+      });
     }
     
     if (turnos.length === 0) {
@@ -146,7 +341,6 @@ const Index = () => {
         setPorcentajeBonificacion(bonifData.porcentaje || 0);
         setPedidosRestantes(bonifData.cantidad || 0);
       } catch (e) {
-        console.error('Error parseando bonificación:', e);
       }
     }
     verificarBonificacionHoy();
@@ -156,35 +350,69 @@ const Index = () => {
     inicializarBonificaciones();
   }, [inicializarBonificaciones]);
 
-  // Usar MenuDelDia del contexto cuando se selecciona un turno
+  // Cargar menú cuando hay un turno seleccionado (como en el totem)
   useEffect(() => {
-    if (selectedTurno && menuDelDia && menuDelDia.length > 0) {
-      // Si hay MenuDelDia en el contexto, usarlo directamente
+    if (selectedTurno) {
+      cargarMenu();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTurno]);
+
+  const cargarMenu = useCallback(async () => {
+    if (!selectedTurno) return;
+
+    try {
+      setIsLoading(true);
+      console.log('🔄 [Index] cargarMenu - Cargando menú para turno:', selectedTurno);
+
       const turnoId = selectedTurno.id || selectedTurno.Id || selectedTurno.ID;
-      const menuFiltrado = menuDelDia.filter(item => {
-        const itemTurnoId = item.turnoId || item.turno_id || item.TurnoId || item.Turno_Id;
-        return itemTurnoId === turnoId;
-      });
+      if (!turnoId) {
+        console.error('❌ [Index] El turno seleccionado no tiene ID');
+        setMenuItems([]);
+        return;
+      }
+
+      console.log('📤 [Index] Llamando a menuService.getMenuByTurnoId con turnoId:', turnoId);
+      const token = localStorage.getItem('token');
+      console.log('🔑 [Index] Token disponible:', token ? '✅ Sí' : '❌ No');
       
-      if (menuFiltrado.length > 0) {
-        // Procesar datos del menú
+      let data;
+      try {
+        // Intentar primero con getMenuByTurnoId
+        data = await menuService.getMenuByTurnoId(turnoId);
+        console.log('✅ [Index] Datos recibidos de getMenuByTurnoId:', data);
+      } catch (error) {
+        console.log('⚠️ [Index] Error con getMenuByTurnoId, intentando con getMenuByTurno:', error);
+        // Si falla, usar getMenuByTurno como fallback
+        const hoy = new Date().toISOString().split('T')[0];
+        const planta = usuarioData?.plantaId || user?.plantaId || '';
+        const centro = usuarioData?.centroCostoId || user?.centroCostoId || '';
+        const jerarquia = usuarioData?.jerarquiaId || user?.jerarquiaId || '';
+        const proyecto = usuarioData?.proyectoId || user?.proyectoId || '';
+        const turnoNombre = selectedTurno.Nombre || selectedTurno.nombre || selectedTurno.Descripcion || selectedTurno.descripcion || '';
+        
+        data = await menuService.getMenuByTurno(planta, centro, jerarquia, proyecto, turnoNombre, hoy);
+        console.log('✅ [Index] Datos recibidos de getMenuByTurno:', data);
+      }
+
+      if (Array.isArray(data)) {
         const platosMap = new Map();
         const platos = [];
 
-        for (const menuItem of menuFiltrado) {
-          const codigo = menuItem.codigo || menuItem.cod_plato || menuItem.Codigo || menuItem.Cod_Plato;
+        for (const menuItem of data) {
+          const codigo = menuItem.codigo || menuItem.cod_plato || menuItem.Codigo || menuItem.Cod_Plato || menuItem.PlatoId || menuItem.platoId;
           if (!codigo || platosMap.has(codigo)) continue;
 
           platosMap.set(codigo, true);
 
           const plato = {
             codigo: codigo,
-            descripcion: menuItem.descripcion || menuItem.Descripcion || menuItem.plato || menuItem.Plato || 'Sin descripción',
+            descripcion: menuItem.descripcion || menuItem.Descripcion || menuItem.plato || menuItem.Plato || menuItem.PlatoNombre || menuItem.platoNombre || 'Sin descripción',
             costo: parseFloat(menuItem.costo || menuItem.Costo || menuItem.monto || menuItem.Monto || 0) || 0,
             plannutricional: menuItem.plannutricional || menuItem.PlanNutricional || menuItem.plan_nutricional || null,
             presentacion: menuItem.presentacion || menuItem.Presentacion || menuItem.imagen || menuItem.Imagen || defaultImage,
             ingredientes: menuItem.ingredientes || menuItem.Ingredientes || menuItem.ingrediente || menuItem.Ingrediente || null,
-            cantidadDisponible: menuItem.cantidad_disponible !== undefined ? parseInt(menuItem.cantidad_disponible) : 0,
+            cantidadDisponible: menuItem.cantidad_disponible !== undefined ? parseInt(menuItem.cantidad_disponible) : (menuItem.cantidadDisponible !== undefined ? parseInt(menuItem.cantidadDisponible) : 0),
             aplicarBonificacion: false,
             precioFinal: parseFloat(menuItem.costo || menuItem.Costo || menuItem.monto || menuItem.Monto || 0) || 0,
           };
@@ -192,17 +420,29 @@ const Index = () => {
           platos.push(plato);
         }
 
+        console.log('✅ [Index] Platos procesados:', platos.length);
         setMenuItems(platos);
-        setIsLoading(false);
       } else {
-        // Si no hay menú para este turno, dejar vacío
+        console.log('⚠️ [Index] getMenuDelDia no devolvió un array');
         setMenuItems([]);
       }
-    } else if (selectedTurno && (!menuDelDia || menuDelDia.length === 0)) {
-      // Si no hay MenuDelDia en el contexto, dejar vacío
+    } catch (error) {
+      console.error('❌ [Index] Error al cargar menú:', error);
+      if (!error.redirectToLogin) {
+        const errorMessage = error.message || 'Error al cargar el menú del día';
+        Swal.fire({
+          title: 'Error',
+          text: errorMessage,
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+      }
       setMenuItems([]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [selectedTurno, menuDelDia]);
+  }, [selectedTurno, defaultImage]);
 
 
   // Ya no se necesita cargarMenu, se usa MenuDelDia del contexto
@@ -308,7 +548,7 @@ const Index = () => {
         aplicar_bonificacion: !!pedidoSeleccionado.aplicarBonificacion,
       };
 
-      await apiService.crearPedido(jsonForm);
+      await comandasService.crearPedido(jsonForm);
 
       // Consumir bonificación si aplica
       if (pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1) {
@@ -332,7 +572,12 @@ const Index = () => {
         // Recargar datos desde /api/inicio/web
         try {
           setIsLoading(true);
-          const data = await apiService.getDashboardInicio();
+          // Usar inicioService pasando el id del usuario
+          const usuarioId = user?.id;
+          if (!usuarioId) {
+            throw new Error('No se encontró el ID del usuario');
+          }
+          const data = await inicioService.getInicioWeb(usuarioId);
           actualizarDatos(data);
           const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
           setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
@@ -369,7 +614,7 @@ const Index = () => {
     }
 
     try {
-      await apiService.actualizarPedido(
+      await comandasService.actualizarPedido(
         pedidoSeleccionado.user_Pedido.id,
         nuevoEstado,
         pedidoCalificacion,
@@ -389,7 +634,12 @@ const Index = () => {
         // Recargar datos desde /api/inicio/web después de actualizar pedido
         try {
           setIsLoading(true);
-          const data = await apiService.getDashboardInicio();
+          // Usar inicioService pasando el id del usuario
+          const usuarioId = user?.id;
+          if (!usuarioId) {
+            throw new Error('No se encontró el ID del usuario');
+          }
+          const data = await inicioService.getInicioWeb(usuarioId);
           actualizarDatos(data);
           const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
           setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
@@ -413,13 +663,94 @@ const Index = () => {
     }
   }, [pedidoSeleccionado, pedidoCalificacion, selectedTurno, actualizarDatos]);
 
-  const onTurnoChanged = useCallback((e) => {
+  const onTurnoChanged = useCallback(async (e) => {
     const turnoId = parseInt(e.target.value);
     const turnoSeleccionado = turnos.find(t => (t.id || t.Id || t.ID) === turnoId);
     if (turnoSeleccionado) {
       setSelectedTurno(turnoSeleccionado);
       setMenuItems([]); // Limpiar menú anterior mientras carga el nuevo
-      // El useEffect se encargará de cargar el menú cuando cambie selectedTurno
+      setIsLoading(true);
+      
+      try {
+        console.log('🔄 [Index] Cambio de turno, cargando menú para turnoId:', turnoId);
+        
+        // Llamar a getMenuByTurnoId en lugar de getMenuDelDia (no usar dashboardService)
+        let menuData;
+        try {
+          menuData = await menuService.getMenuByTurnoId(turnoId);
+          console.log('✅ [Index] Menú recibido de getMenuByTurnoId:', menuData);
+        } catch (error) {
+          console.log('⚠️ [Index] Error con getMenuByTurnoId, intentando con getMenuByTurno:', error);
+          // Si falla, usar getMenuByTurno como fallback
+          const hoy = new Date().toISOString().split('T')[0];
+          const planta = usuarioData?.plantaId || user?.plantaId || '';
+          const centro = usuarioData?.centroCostoId || user?.centroCostoId || '';
+          const jerarquia = usuarioData?.jerarquiaId || user?.jerarquiaId || '';
+          const proyecto = usuarioData?.proyectoId || user?.proyectoId || '';
+          const turnoNombre = turnoSeleccionado.Nombre || turnoSeleccionado.nombre || turnoSeleccionado.Descripcion || turnoSeleccionado.descripcion || '';
+          
+          menuData = await menuService.getMenuByTurno(planta, centro, jerarquia, proyecto, turnoNombre, hoy);
+          console.log('✅ [Index] Menú recibido de getMenuByTurno:', menuData);
+        }
+        
+        // Procesar los datos recibidos
+        if (Array.isArray(menuData) && menuData.length > 0) {
+          const platosMap = new Map();
+          const platos = [];
+
+          for (const menuItem of menuData) {
+            // Usar codigo o cod_plato como código único (como en el totem)
+            const codigo = menuItem.codigo || menuItem.cod_plato || menuItem.Codigo || menuItem.Cod_Plato || menuItem.PlatoId || menuItem.platoId;
+            
+            if (!codigo || platosMap.has(codigo)) {
+              continue;
+            }
+
+            platosMap.set(codigo, true);
+
+            // Extraer los campos con todas las variantes posibles
+            const descripcion = menuItem.descripcion || menuItem.Descripcion || menuItem.plato || menuItem.Plato || menuItem.PlatoNombre || menuItem.platoNombre || 'Sin descripción';
+            const costo = parseFloat(menuItem.costo || menuItem.Costo || menuItem.monto || menuItem.Monto || 0) || 0;
+            const plannutricional = menuItem.plannutricional || menuItem.PlanNutricional || menuItem.plan_nutricional || null;
+            const ingredientes = menuItem.ingredientes || menuItem.Ingredientes || menuItem.ingrediente || menuItem.Ingrediente || null;
+            const disponible = menuItem.cantidad_disponible !== undefined ? parseInt(menuItem.cantidad_disponible) : 0;
+
+            const plato = {
+              codigo: codigo,
+              descripcion: descripcion,
+              costo: costo,
+              plannutricional: plannutricional,
+              presentacion: menuItem.presentacion || menuItem.Presentacion || menuItem.imagen || menuItem.Imagen || defaultImage,
+              ingredientes: ingredientes,
+              cantidadDisponible: disponible,
+              aplicarBonificacion: false,
+              precioFinal: costo,
+            };
+
+            platos.push(plato);
+          }
+
+          console.log('✅ [Index] Platos procesados:', platos.length);
+          setMenuItems(platos);
+        } else {
+          console.log('⚠️ [Index] No hay items en el menú recibido');
+          setMenuItems([]);
+        }
+      } catch (error) {
+        console.error('❌ [Index] Error al cargar menú por turno:', error);
+        setMenuItems([]);
+        if (!error.redirectToLogin) {
+          Swal.fire({
+            title: 'Error',
+            text: error.message || 'No se pudo cargar el menú del turno seleccionado',
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#F34949',
+          });
+        }
+      } finally {
+        setIsLoading(false);
+      }
     }
   }, [turnos]);
 
@@ -458,8 +789,18 @@ const Index = () => {
                 <div className="container-fluid mt-4 pr-0 mr-0 row ocultar-en-movil">
                   <div className="col-sm-6 col-12 bienvenida">
                     <h3>
-                      Bienvenido {usuarioData?.nombre || localStorage.getItem('nombre') || user?.nombre || ''} {usuarioData?.apellido || localStorage.getItem('apellido') || user?.apellido || ''}
+                      Bienvenido {usuarioNombre || usuarioData?.nombre || user?.nombre || ''} {usuarioApellido || usuarioData?.apellido || user?.apellido || ''}
                     </h3>
+                    {usuarioData?.bonificaciones !== undefined && usuarioData?.bonificaciones !== null && parseInt(usuarioData.bonificaciones) > 0 && (
+                      <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
+                        Bonificaciones por día: {usuarioData.bonificaciones}
+                      </h5>
+                    )}
+                    {usuarioData?.bonificacionesInvitado !== undefined && usuarioData?.bonificacionesInvitado !== null && parseInt(usuarioData.bonificacionesInvitado) > 0 && (
+                      <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
+                        Bonificaciones Invitados: {usuarioData.bonificacionesInvitado}
+                      </h5>
+                    )}
                     {bonificacionDisponible && turnoDisponible && menuItems.length > 0 && (
                       <h5 style={{ color: '#6c757d' }}>
                         {pedidosRestantes === 0 && 'Te quedan 0 platos bonificados el día de hoy'}
@@ -477,12 +818,12 @@ const Index = () => {
                       <select
                         id="turno"
                         className="form-control"
-                        value={selectedTurno?.id || ''}
+                        value={selectedTurno?.Id || selectedTurno?.id || ''}
                         onChange={onTurnoChanged}
                       >
                         {turnos.map((t, index) => (
-                          <option key={t.id || t.Id || `turno-${index}`} value={t.id || t.Id}>
-                            {t.nombre || t.Nombre || t.descripcion || t.Descripcion}
+                          <option key={t.Id || t.id || `turno-${index}`} value={t.Id || t.id}>
+                            {t.Nombre || t.nombre || t.descripcion || t.Descripcion}
                           </option>
                         ))}
                       </select>
@@ -496,8 +837,20 @@ const Index = () => {
                 <div className="container-fluid mt-4 pr-0 mr-0 row d-block d-md-none">
                   <div className="col-sm-12 bienvenida">
                     <h3>
-                      <i className="lnr lnr-user"></i> Bienvenido {usuarioData?.nombre || localStorage.getItem('nombre') || user?.nombre || ''} {usuarioData?.apellido || localStorage.getItem('apellido') || user?.apellido || ''}
+                      <i className="lnr lnr-user"></i> Bienvenido {usuarioData?.nombre || user?.nombre || ''} {usuarioData?.apellido || user?.apellido || ''}
                     </h3>
+                    {usuarioData?.bonificaciones !== undefined && usuarioData?.bonificaciones !== null && usuarioData?.bonificaciones !== '' && parseInt(usuarioData.bonificaciones) > 0 && (
+                      <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
+                        <i className="lnr lnr-gift"></i>&nbsp;&nbsp;
+                        Bonificaciones por día: {usuarioData.bonificaciones}
+                      </h5>
+                    )}
+                    {usuarioData?.bonificacionesInvitado !== undefined && usuarioData?.bonificacionesInvitado !== null && usuarioData?.bonificacionesInvitado !== '' && parseInt(usuarioData.bonificacionesInvitado) > 0 && (
+                      <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
+                        <i className="lnr lnr-gift"></i>&nbsp;&nbsp;
+                        Bonificaciones Invitados: {usuarioData.bonificacionesInvitado}
+                      </h5>
+                    )}
                     {bonificacionDisponible && turnoDisponible && menuItems.length > 0 && (
                       <h5 style={{ color: '#6c757d' }}>
                         <i className="lnr lnr-dinner"></i>&nbsp;&nbsp;
@@ -515,12 +868,12 @@ const Index = () => {
                       <select
                         className="form-control"
                         id="selectedTurno"
-                        value={selectedTurno?.id || ''}
+                        value={selectedTurno?.Id || selectedTurno?.id || ''}
                         onChange={onTurnoChanged}
                       >
                         {turnos.map((t, index) => (
-                          <option key={t.id || t.Id || `turno-${index}`} value={t.id || t.Id}>
-                            {t.nombre || t.Nombre || t.descripcion || t.Descripcion}
+                          <option key={t.Id || t.id || `turno-${index}`} value={t.Id || t.id}>
+                            {t.Nombre || t.nombre || t.descripcion || t.Descripcion}
                           </option>
                         ))}
                       </select>
@@ -532,7 +885,15 @@ const Index = () => {
 
                 {/* Imagen decorativa - Desktop */}
                 <div className="col-sm-4 pt-5 imagen-escondida">
-                  <img className="sticky-image rised-image w-100" src="/Views/img/hero-2.jpg" alt="Imagen decorativa de comida" />
+                  <img 
+                    className="sticky-image rised-image w-100" 
+                    src={`${process.env.PUBLIC_URL || ''}/Views/img/hero-2.jpg`} 
+                    alt="Imagen decorativa de comida"
+                    onError={(e) => {
+                      // Si la imagen no carga, ocultarla o usar una imagen alternativa
+                      e.target.style.display = 'none';
+                    }}
+                  />
                 </div>
 
                 {/* Contenido principal */}
@@ -667,6 +1028,18 @@ const Index = () => {
                       <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Perfil Nutricional</span>
                       <span>{user?.plannutricional}</span>
                     </div>
+                    {usuarioData?.bonificaciones !== undefined && usuarioData?.bonificaciones !== null && usuarioData?.bonificaciones !== '' && parseInt(usuarioData.bonificaciones) > 0 && (
+                      <div className="container row">
+                        <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Bonificaciones</span>
+                        <span>{usuarioData.bonificaciones}</span>
+                      </div>
+                    )}
+                    {usuarioData?.bonificacionesInvitado !== undefined && usuarioData?.bonificacionesInvitado !== null && usuarioData?.bonificacionesInvitado !== '' && parseInt(usuarioData.bonificacionesInvitado) > 0 && (
+                      <div className="container row">
+                        <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Bonificaciones Invitados</span>
+                        <span>{usuarioData.bonificacionesInvitado}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="col-4 pl-0 mx-auto mt-5">
                     <img

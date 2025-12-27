@@ -217,7 +217,6 @@ const Jerarquia = () => {
       const soloActivos = filtroActivo === 'activo';
       cargarJerarquias(currentPage, filtro, soloActivos);
     } catch (error) {
-      console.error('Error al guardar jerarquía:', error);
       
       if (!error.redirectToLogin) {
         Swal.fire({
@@ -329,7 +328,6 @@ const Jerarquia = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar PDF:', error);
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a PDF',
@@ -369,7 +367,6 @@ const Jerarquia = () => {
         confirmButtonColor: '#F34949',
       });
     } catch (error) {
-      console.error('Error al exportar Excel:', error);
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el listado a Excel',
@@ -383,9 +380,9 @@ const Jerarquia = () => {
   // Renderizar vista de formulario (crear/editar)
   if (vista === 'crear' || vista === 'editar') {
     return (
-      <div className="container-fluid" style={{ padding: 0 }}>
+      <div className="container-fluid" style={{ padding: 0, backgroundColor: 'white' }}>
         {/* Barra negra con título */}
-        <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
+        <div className="page-title-bar">
           <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '1.5rem' }}>
             <button
               type="button"
@@ -395,17 +392,7 @@ const Jerarquia = () => {
             >
               <i className="fa fa-arrow-left"></i>
             </button>
-            <h3 style={{ 
-              fontSize: '1.75rem', 
-              fontWeight: 'normal', 
-              margin: 0, 
-              fontFamily: 'sans-serif', 
-              color: 'white', 
-              textAlign: 'left',
-              paddingTop: '0',
-              paddingBottom: '0',
-              lineHeight: '1.5',
-            }}>
+            <h3>
               {vista === 'editar' ? 'Editar Jerarquía' : 'Nueva Jerarquía'}
             </h3>
           </div>
@@ -508,7 +495,7 @@ const Jerarquia = () => {
             </div>
 
             <div className="row mt-3">
-              <div className="col-12">
+              <div className="col-12 d-flex justify-content-end">
                 <button
                   type="button"
                   className="btn mr-2"
@@ -554,21 +541,8 @@ const Jerarquia = () => {
   return (
     <div className="container-fluid" style={{ padding: 0 }}>
       {/* Barra negra con título Jerarquías */}
-      <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
-        <h3 style={{ 
-          fontSize: '1.75rem', 
-          fontWeight: 'normal', 
-          margin: 0, 
-          fontFamily: 'sans-serif', 
-          color: 'white', 
-          textAlign: 'left', 
-          paddingLeft: '1.5rem',
-          paddingTop: '0',
-          paddingBottom: '0',
-          lineHeight: '1.5',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
+      <div className="page-title-bar">
+        <h3>
           <i className="fa fa-sitemap mr-2" aria-hidden="true"></i>Jerarquías
         </h3>
       </div>

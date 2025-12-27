@@ -1,23 +1,9 @@
 /* Copiado de Views/css/smartstyle.css - Estilos principales de SmartLunch */
 /* ============================================
    PALETA DE COLORES DEL APLICATIVO
+   NOTA: Las variables CSS están definidas en src/index.css
+   Este archivo mantiene compatibilidad con estilos legacy
    ============================================ */
-:root {
-    --smart-primary: #F34949;
-    --smart-primary-dark: #E63939;
-    --smart-primary-darker: #C92A2A;
-    --smart-primary-light: #FF6B6B;
-    --smart-primary-lighter: #FF9999;
-    --smart-primary-bg: #ffe5e5;
-    --smart-success: #28a745;
-    --smart-success-dark: #218838;
-    --smart-gray-dark: #343a40;
-    --smart-gray: #495057;
-    --smart-gray-medium: #6c757d;
-    --smart-gray-light: #adb5bd;
-    --smart-gray-lighter: #e9ecef;
-    --smart-gray-lightest: #f8f9fa;
-}
 
 .smart-bg {
     background-color: var(--smart-primary) !important;
@@ -33,7 +19,7 @@
 }
 
 .solid-background {
-    background-color: #ffffff;
+    background-color: var(--smart-bg-primary);
     padding-bottom: 20px;
     min-height: calc(100vh - 60px);
 }
@@ -77,33 +63,34 @@
     align-items: center;
     cursor: pointer;
     padding: 0.5rem 0.75rem;
-    background: #ffffff;
-    border: 1px solid #dee2e6;
+    background: var(--smart-bg-primary);
+    border: 1px solid var(--smart-gray-lighter);
     border-radius: 6px;
     transition: all 0.2s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     min-width: 160px;
+    font-family: var(--smart-font-primary);
 }
 
 .custom-checkbox-label:hover {
-    background: #f8f9fa;
-    border-color: #adb5bd;
+    background: var(--smart-gray-lightest);
+    border-color: var(--smart-gray-light);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .custom-checkbox:checked + .custom-checkbox-label {
-    background: #f8f9fa;
-    border-color: #28a745;
+    background: var(--smart-gray-lightest);
+    border-color: var(--smart-success);
     box-shadow: 0 2px 4px rgba(40, 167, 69, 0.15);
 }
 
 .custom-checkbox:checked + .custom-checkbox-label .discount-icon {
-    background: #28a745;
-    color: white;
+    background: var(--smart-success);
+    color: var(--smart-white);
 }
 
 .custom-checkbox:checked + .custom-checkbox-label .discount-percentage {
-    color: #28a745;
+    color: var(--smart-success);
     font-weight: 600;
 }
 
@@ -116,8 +103,8 @@
 .discount-icon {
     width: 20px;
     height: 20px;
-    background: #6c757d;
-    color: white;
+    background: var(--smart-gray-medium);
+    color: var(--smart-white);
     border-radius: 3px;
     display: flex;
     align-items: center;
@@ -136,21 +123,24 @@
 
 .discount-label {
     font-size: 0.85em;
-    color: #6c757d;
+    color: var(--smart-gray-medium);
     font-weight: 400;
+    font-family: var(--smart-font-primary);
 }
 
 .discount-percentage {
     font-size: 0.9em;
     font-weight: 600;
-    color: #495057;
+    color: var(--smart-gray);
     transition: all 0.2s ease;
+    font-family: var(--smart-font-primary);
 }
 
 .discount-word {
     font-size: 0.85em;
-    color: #28a745;
+    color: var(--smart-success);
     font-weight: 500;
+    font-family: var(--smart-font-primary);
 }
 
 /* Responsive para móviles */

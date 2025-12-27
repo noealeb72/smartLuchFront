@@ -1,26 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import './styles/globalStyles.css';
 import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
-// Preload de recursos críticos
-if ('requestIdleCallback' in window) {
-  requestIdleCallback(() => {
-    // Preload de imágenes críticas
-    const criticalImages = [
-      '/Views/img/logo-preview.png',
-      '/Views/img/hero-2.jpg',
-    ];
-    criticalImages.forEach((src) => {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = 'image';
-      link.href = src;
-      document.head.appendChild(link);
-    });
-  });
-}
+// Preload de recursos críticos (solo cuando realmente se necesiten)
+// Se elimina el preload automático para evitar warnings del navegador
+// Las imágenes se cargarán cuando se usen en los componentes
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 

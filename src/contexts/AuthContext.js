@@ -20,23 +20,29 @@ export const AuthProvider = ({ children }) => {
   // Memoizar la función de carga de usuario
   const loadUserFromStorage = useCallback(() => {
     try {
-      const id = localStorage.getItem('id');
       const token = localStorage.getItem('token');
+      console.log('🔍 Cargando usuario desde localStorage, token existe:', !!token);
       
-      // Solo validar que existan id y token (datos mínimos requeridos)
-      if (id && token && id !== 'null' && id !== 'undefined' && token !== 'null' && token !== 'undefined') {
-        const storedUser = {
-          id: id,
-          token: token,
-          // Campos adicionales si existen (para compatibilidad)
-          jerarquia: localStorage.getItem('jerarquia') || localStorage.getItem('jerarquia_nombre') || '',
-          jerarquia_nombre: localStorage.getItem('jerarquia_nombre') || localStorage.getItem('jerarquia') || '',
-          role: localStorage.getItem('role') || localStorage.getItem('jerarquia_nombre') || localStorage.getItem('jerarquia') || '',
-        };
-        setUser(storedUser);
+      // Solo validar que exista el token
+      if (token && token !== 'null' && token !== 'undefined') {
+        // Solo guardar el token si no existe un usuario ya cargado (evitar bucles)
+        setUser((prevUser) => {
+          if (prevUser && prevUser.token === token) {
+            console.log('⏭️ [AuthContext] Usuario ya tiene el mismo token, no actualizar');
+            return prevUser;
+          }
+          const storedUser = {
+            token: token,
+          };
+          console.log('👤 [AuthContext] Token cargado desde localStorage');
+          return storedUser;
+        });
+      } else {
+        console.log('⚠️ [AuthContext] No hay token válido en localStorage');
+        setUser(null);
       }
     } catch (error) {
-      // Error silencioso al cargar usuario desde localStorage
+      console.error('❌ Error al cargar usuario desde localStorage:', error);
     } finally {
       setLoading(false);
     }
@@ -91,20 +97,22 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // Guardar SOLO id y token en localStorage
-      localStorage.setItem('id', String(usuarioId));
+      // Guardar SOLO el token en localStorage
       localStorage.setItem('token', token);
+      console.log('🔑 Token guardado en localStorage');
 
-      // Crear objeto userData con la información mínima necesaria
+      // Crear objeto userData con la información del usuario (sin guardar en localStorage)
       const userData = {
         id: usuarioId,
         username: response.Username || response.username || '',
         jerarquia: jerarquia,
+        jerarquia_nombre: jerarquia, // Asegurar que jerarquia_nombre esté presente
         nombreCompleto: response.NombreCompleto || response.nombreCompleto || '',
         activo: response.Activo || response.activo || true,
         role: jerarquia, // Para compatibilidad con código existente
       };
 
+      console.log('👤 Usuario autenticado y guardado:', userData);
       setUser(userData);
       return userData;
     } catch (error) {
@@ -144,7 +152,8 @@ export const AuthProvider = ({ children }) => {
   }, [config]);
 
   const logout = useCallback(() => {
-    localStorage.clear();
+    // Eliminar solo el token
+    localStorage.removeItem('token');
     setUser(null);
     window.location.href = '/login';
   }, []);

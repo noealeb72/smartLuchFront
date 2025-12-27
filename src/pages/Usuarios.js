@@ -26,6 +26,10 @@ const Usuarios = () => {
   // Estado para controlar qué tab está activa (solapas)
   const [tabActivo, setTabActivo] = useState('personal');
   
+  // Estado para mostrar/ocultar contraseñas
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   // Estado de paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(5);
@@ -54,6 +58,8 @@ const Usuarios = () => {
     confirmarContraseña: '',
     foto: null,
     fotoPreview: null,
+    bonificaciones: '0',
+    bonificaciones_invitado: '0',
   });
 
   // Cargar usuarios usando /api/usuario/lista con paginación
@@ -185,34 +191,37 @@ const Usuarios = () => {
         const updated = { ...prev };
         let hasChanges = false;
 
-        // Asignar jerarquía si hay una sola opción y no está asignada
+        // Asignar jerarquía SOLO si hay una sola opción y no está asignada
         if (jerarquias.length === 1 && (!prev.jerarquia_id || prev.jerarquia_id === '' || prev.jerarquia_id === 0)) {
           updated.jerarquia_id = jerarquias[0].id;
           hasChanges = true;
         }
 
-        // Asignar planta si hay una sola opción y no está asignada
+        // Asignar planta SOLO si hay una sola opción y no está asignada
         if (plantas.length === 1 && (!prev.planta_id || prev.planta_id === '' || prev.planta_id === 0)) {
           updated.planta_id = plantas[0].id;
           hasChanges = true;
         }
 
-        // Asignar centro de costo si hay una sola opción y no está asignada
+        // Asignar centro de costo SOLO si hay una sola opción y no está asignada
         if (centrosDeCosto.length === 1 && (!prev.centrodecosto_id || prev.centrodecosto_id === '' || prev.centrodecosto_id === 0)) {
           updated.centrodecosto_id = centrosDeCosto[0].id;
           hasChanges = true;
         }
 
-        // Asignar proyecto si hay una sola opción y no está asignada
+        // Asignar proyecto SOLO si hay una sola opción y no está asignada
         if (proyectos.length === 1 && (!prev.proyecto_id || prev.proyecto_id === '' || prev.proyecto_id === 0)) {
           updated.proyecto_id = proyectos[0].id;
           hasChanges = true;
         }
 
-        // Asignar plan nutricional si hay una sola opción y no está asignada
+        // Asignar plan nutricional SOLO si hay una sola opción y no está asignada
         if (planesNutricionales.length === 1 && (!prev.plannutricional_id || prev.plannutricional_id === '' || prev.plannutricional_id === 0)) {
-          updated.plannutricional_id = planesNutricionales[0].id;
-          hasChanges = true;
+          const planId = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
+          if (planId) {
+            updated.plannutricional_id = planId;
+            hasChanges = true;
+          }
         }
 
         return hasChanges ? updated : prev;
@@ -231,6 +240,8 @@ const Usuarios = () => {
   const handleVolverALista = () => {
     setVista('lista');
     setUsuarioEditando(null);
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setFormData({
       id: null,
       username: '',
@@ -252,14 +263,19 @@ const Usuarios = () => {
       confirmarContraseña: '',
       foto: null,
       fotoPreview: null,
+      bonificaciones: '0',
+      bonificaciones_invitado: '0',
     });
   };
 
   // Abrir página para crear nuevo usuario
   const handleCrearUsuario = () => {
     setUsuarioEditando(null);
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     
-    // Preparar formData inicial con valores automáticos si hay una sola opción disponible
+    // Preparar formData inicial con valores automáticos SOLO si hay una sola opción disponible
+    // Si hay múltiples opciones, dejar vacío para que aparezca "Seleccionar..."
     const nuevoFormData = {
       id: null,
       username: '',
@@ -279,6 +295,8 @@ const Usuarios = () => {
       confirmarContraseña: '',
       foto: null,
       fotoPreview: null,
+      bonificaciones: '0',
+      bonificaciones_invitado: '0',
     };
     
     setFormData(nuevoFormData);
@@ -286,76 +304,136 @@ const Usuarios = () => {
   };
 
   // Abrir página para editar usuario
-  const handleEditarUsuario = (usuario) => {
-    setUsuarioEditando(usuario);
-    
-    // Función auxiliar para obtener el ID correctamente, buscando en múltiples variantes
-    const obtenerId = (valor, arrayOpciones, campoNombre) => {
-      // Buscar en múltiples variantes de nombres
-      let idValue = valor || 
-                   usuario[`${campoNombre}_id`] || 
-                   usuario[campoNombre] || 
-                   usuario[`${campoNombre}Id`] || 
-                   usuario[`${campoNombre}ID`] ||
-                   usuario[`${campoNombre}_Id`] ||
-                   usuario[`${campoNombre}_ID`];
+  const handleEditarUsuario = async (usuario) => {
+    try {
+      setIsLoading(true);
       
-      // Si hay un solo valor disponible, usarlo automáticamente
-      if ((!idValue || idValue === '' || idValue === 0) && arrayOpciones.length === 1) {
-        idValue = arrayOpciones[0].id;
+      // Obtener el ID del usuario
+      const usuarioId = usuario.id || usuario.Id || usuario.ID;
+      if (!usuarioId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo obtener el ID del usuario',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Llamar al endpoint para obtener los datos completos del usuario
+      const usuarioCompleto = await apiService.getUsuarioPorId(usuarioId);
+      const usuarioParaEditar = usuarioCompleto || usuario;
+      
+      setUsuarioEditando(usuarioParaEditar);
+    
+      // Función auxiliar para obtener el ID correctamente, buscando en múltiples variantes
+      const obtenerId = (arrayOpciones, campoNombre) => {
+        // Buscar en múltiples variantes de nombres (camelCase, snake_case, PascalCase)
+        const variantes = [
+          `${campoNombre}_id`,
+          `${campoNombre}Id`,
+          `${campoNombre}ID`,
+          `${campoNombre}_Id`,
+          `${campoNombre}_ID`,
+          campoNombre,
+          // PascalCase
+          campoNombre === 'jerarquia' ? 'JerarquiaId' : 
+          campoNombre === 'plannutricional' ? 'PlanNutricionalId' :
+          campoNombre === 'planta' ? 'PlantaId' :
+          campoNombre === 'centrodecosto' ? 'CentroCostoId' :
+          campoNombre === 'proyecto' ? 'ProyectoId' : null
+        ].filter(v => v !== null);
+        
+        let idValue = null;
+        for (const variante of variantes) {
+          if (usuarioParaEditar[variante] !== undefined && usuarioParaEditar[variante] !== null && usuarioParaEditar[variante] !== '') {
+            idValue = usuarioParaEditar[variante];
+            break;
+          }
+        }
+        
+        // Si hay un solo valor disponible, usarlo automáticamente
+        if ((!idValue || idValue === '' || idValue === 0) && arrayOpciones.length === 1) {
+          idValue = arrayOpciones[0].id;
+        }
+        
+        // Convertir a string para que coincida con los valores de las opciones
+        if (idValue !== null && idValue !== undefined && idValue !== '') {
+          return String(idValue);
+        }
+        return '';
+      };
+      
+      // Obtener IDs como strings
+      const jerarquiaId = obtenerId(jerarquias, 'jerarquia');
+      const planId = obtenerId(planesNutricionales, 'plannutricional');
+      const plantaId = obtenerId(plantas, 'planta');
+      const centroId = obtenerId(centrosDeCosto, 'centrodecosto');
+      const proyectoId = obtenerId(proyectos, 'proyecto');
+      
+      
+      // Buscar la foto en diferentes variantes de nombres (priorizar Foto con mayúscula)
+      const fotoUsuario = usuarioParaEditar.Foto || usuarioParaEditar.foto || usuarioParaEditar.fotoUrl || usuarioParaEditar.foto_url || usuarioParaEditar.fotoBase64 || usuarioParaEditar.foto_base64 || null;
+      
+      // Si la foto es base64, asegurarse de que tenga el prefijo correcto para mostrarla
+      let fotoParaMostrar = fotoUsuario;
+      if (fotoUsuario && typeof fotoUsuario === 'string' && !fotoUsuario.startsWith('data:') && !fotoUsuario.startsWith('http')) {
+        // Si es base64 puro, agregar el prefijo
+        fotoParaMostrar = `data:image/jpeg;base64,${fotoUsuario}`;
       }
       
-      // Convertir a número si es posible, para que coincida con el value del option (que es número)
-      if (idValue !== null && idValue !== undefined && idValue !== '') {
-        const numValue = parseInt(idValue, 10);
-        return isNaN(numValue) ? idValue : numValue;
-      }
-      return '';
-    };
-    
-    // Obtener IDs con conversión a string
-    const jerarquiaId = obtenerId(usuario.jerarquia_id, jerarquias, 'jerarquia');
-    const planId = obtenerId(usuario.plannutricional_id, planesNutricionales, 'plannutricional');
-    const plantaId = obtenerId(usuario.planta_id, plantas, 'planta');
-    const centroId = obtenerId(usuario.centrodecosto_id, centrosDeCosto, 'centrodecosto');
-    const proyectoId = obtenerId(usuario.proyecto_id, proyectos, 'proyecto');
-    
-    setFormData({
-      id: usuario.id,
-      username: usuario.username || '',
-      nombre: usuario.nombre || '',
-      apellido: usuario.apellido || '',
-      legajo: usuario.legajo || '',
-      dni: usuario.dni || '',
-      cuil: usuario.cuil || '',
-      email: usuario.email || '',
-      telefono: usuario.telefono || '',
-      planta_id: plantaId,
-      centrodecosto_id: centroId,
-      proyecto_id: proyectoId,
-      jerarquia_id: jerarquiaId,
-      plannutricional_id: planId,
-      fecha_ingreso: usuario.fecha_ingreso || usuario.fechaIngreso || '',
-      contrato: usuario.contrato || '',
-      contraseña: '', // Siempre vacío al editar
-      confirmarContraseña: '', // Siempre vacío al editar
-      foto: null,
-      fotoPreview: usuario.foto || null,
-    });
-    setVista('editar');
+      
+      setFormData({
+        id: usuarioParaEditar.id || usuarioParaEditar.Id || usuarioParaEditar.ID,
+        username: usuarioParaEditar.username || usuarioParaEditar.Username || '',
+        nombre: usuarioParaEditar.nombre || usuarioParaEditar.Nombre || '',
+        apellido: usuarioParaEditar.apellido || usuarioParaEditar.Apellido || '',
+        legajo: usuarioParaEditar.legajo || usuarioParaEditar.Legajo || '',
+        dni: usuarioParaEditar.dni || usuarioParaEditar.Dni || usuarioParaEditar.DNI || '',
+        cuil: usuarioParaEditar.cuil || usuarioParaEditar.Cuil || usuarioParaEditar.CUIL || '',
+        email: usuarioParaEditar.email || usuarioParaEditar.Email || '',
+        telefono: usuarioParaEditar.telefono || usuarioParaEditar.Telefono || '',
+        planta_id: plantaId,
+        centrodecosto_id: centroId,
+        proyecto_id: proyectoId,
+        jerarquia_id: jerarquiaId,
+        plannutricional_id: planId,
+        fecha_ingreso: usuarioParaEditar.fecha_ingreso || usuarioParaEditar.fechaIngreso || usuarioParaEditar.FechaIngreso || '',
+        contrato: usuarioParaEditar.contrato || usuarioParaEditar.Contrato || '',
+        contraseña: '', // Siempre vacío al editar
+        confirmarContraseña: '', // Siempre vacío al editar
+        foto: null, // No hay archivo nuevo, solo preview
+        fotoPreview: fotoParaMostrar || null,
+        bonificaciones: usuarioParaEditar.bonificaciones || usuarioParaEditar.Bonificaciones ? String(usuarioParaEditar.bonificaciones || usuarioParaEditar.Bonificaciones) : '0',
+        bonificaciones_invitado: usuarioParaEditar.bonificaciones_invitado || usuarioParaEditar.BonificacionesInvitado ? String(usuarioParaEditar.bonificaciones_invitado || usuarioParaEditar.BonificacionesInvitado) : '0',
+      });
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+      setVista('editar');
+    } catch (error) {
+      Swal.fire({
+        title: 'Error',
+        text: error.message || 'Error al cargar los datos del usuario',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Manejar cambios en el formulario
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // Debug: verificar cuando se cambia centro de costo
-    if (name === 'centrodecosto_id') {
-      console.log('DEBUG centrodecosto_id cambiado:', {
-        name,
-        value,
-        valueType: typeof value,
-      });
+    
+    // DNI, Legajo y CUIL tienen sus propios handlers específicos, no usar handleInputChange para ellos
+    if (name === 'dni' || name === 'legajo' || name === 'cuil') {
+      return; // Estos campos tienen handlers específicos en el JSX
     }
+    
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -549,6 +627,7 @@ const Usuarios = () => {
     let primerCampoConError = null;
 
     // Asegurarse de que datosAValidar tenga todas las propiedades necesarias
+    // IMPORTANTE: Convertir a string para comparación consistente, pero preservar valores numéricos válidos
     const datos = {
       username: datosAValidar?.username || '',
       nombre: datosAValidar?.nombre || '',
@@ -556,11 +635,11 @@ const Usuarios = () => {
       legajo: datosAValidar?.legajo || '',
       dni: datosAValidar?.dni || '',
       cuil: datosAValidar?.cuil || '',
-      jerarquia_id: datosAValidar?.jerarquia_id || '',
-      plannutricional_id: datosAValidar?.plannutricional_id || '',
-      planta_id: datosAValidar?.planta_id || '',
-      centrodecosto_id: datosAValidar?.centrodecosto_id || '',
-      proyecto_id: datosAValidar?.proyecto_id || '',
+      jerarquia_id: datosAValidar?.jerarquia_id !== undefined && datosAValidar?.jerarquia_id !== null ? String(datosAValidar.jerarquia_id) : '',
+      plannutricional_id: datosAValidar?.plannutricional_id !== undefined && datosAValidar?.plannutricional_id !== null ? String(datosAValidar.plannutricional_id) : '',
+      planta_id: datosAValidar?.planta_id !== undefined && datosAValidar?.planta_id !== null ? String(datosAValidar.planta_id) : '',
+      centrodecosto_id: datosAValidar?.centrodecosto_id !== undefined && datosAValidar?.centrodecosto_id !== null ? String(datosAValidar.centrodecosto_id) : '',
+      proyecto_id: datosAValidar?.proyecto_id !== undefined && datosAValidar?.proyecto_id !== null ? String(datosAValidar.proyecto_id) : '',
       contraseña: datosAValidar?.contraseña || '',
       confirmarContraseña: datosAValidar?.confirmarContraseña || '',
     };
@@ -622,9 +701,10 @@ const Usuarios = () => {
     }
 
     // Validar planta (solo si hay más de una opción disponible)
-    if (!datos.planta_id || datos.planta_id === '') {
-      // Si solo hay una opción, no validar (se seleccionará automáticamente)
-      if (plantas.length > 1) {
+    if (plantas.length > 1) {
+      // Convertir a string para comparación consistente
+      const plantaValue = String(datos.planta_id || '').trim();
+      if (!plantaValue || plantaValue === '' || plantaValue === '0' || plantaValue === 'null' || plantaValue === 'undefined') {
         errores.push('La planta es requerida');
         if (!primerCampoConError) primerCampoConError = 'planta_id';
       }
@@ -640,12 +720,12 @@ const Usuarios = () => {
         if (!primerCampoConError) primerCampoConError = 'centrodecosto_id';
       }
     }
-    // Si hay un solo centro de costo, asegurarse de que esté asignado (se hará automáticamente en handleGuardar)
 
     // Validar proyecto (solo si hay más de una opción disponible)
-    if (!datos.proyecto_id || datos.proyecto_id === '') {
-      // Si solo hay una opción, no validar (se seleccionará automáticamente)
-      if (proyectos.length > 1) {
+    if (proyectos.length > 1) {
+      // Convertir a string para comparación consistente
+      const proyectoValue = String(datos.proyecto_id || '').trim();
+      if (!proyectoValue || proyectoValue === '' || proyectoValue === '0' || proyectoValue === 'null' || proyectoValue === 'undefined') {
         errores.push('El proyecto es requerido');
         if (!primerCampoConError) primerCampoConError = 'proyecto_id';
       }
@@ -707,144 +787,302 @@ const Usuarios = () => {
 
   // Guardar usuario (crear o actualizar)
   const handleGuardar = async () => {
+    console.log('🔵 [Usuarios] Iniciando guardado de usuario');
+    console.log('🔵 [Usuarios] formData actual:', formData);
+    console.log('🔵 [Usuarios] usuarioEditando:', usuarioEditando);
+    
     // Preparar datos actualizados con valores automáticos si hay un solo valor disponible
     // IMPORTANTE: Hacer una copia profunda para asegurar que todos los valores se copien correctamente
     const datosActualizados = {
       ...formData,
       contraseña: formData.contraseña || '', // Asegurar que la contraseña se copie explícitamente
       confirmarContraseña: formData.confirmarContraseña || '', // Asegurar que la confirmación se copie explícitamente
+      bonificaciones: formData.bonificaciones || '0', // Asegurar que bonificaciones se copie explícitamente
+      bonificaciones_invitado: formData.bonificaciones_invitado || '0', // Asegurar que bonificaciones_invitado se copie explícitamente
     };
     
-    // Si hay un solo valor disponible, asignarlo automáticamente SIEMPRE (incluso si está vacío, es 0, o es string vacío)
-    // Para jerarquía, usar exactamente la misma lógica que planta
-    if ((!datosActualizados.jerarquia_id || datosActualizados.jerarquia_id === '' || datosActualizados.jerarquia_id === 0) && jerarquias.length === 1) {
-      datosActualizados.jerarquia_id = jerarquias[0].id;
-    }
-    // Si no hay valor asignado pero hay jerarquías disponibles, usar el valor del formData o el primero (igual que planta)
-    if ((!datosActualizados.jerarquia_id || datosActualizados.jerarquia_id === '' || datosActualizados.jerarquia_id === 0) && jerarquias.length > 0) {
-      datosActualizados.jerarquia_id = formData.jerarquia_id || jerarquias[0].id;
-    }
-    // Plan nutricional: SIEMPRE usar el valor seleccionado en el formulario si existe
-    // Prioridad: 1) Valor seleccionado en formData (SIEMPRE tiene prioridad), 2) Valor único disponible, 3) null
-    // Convertir a string para comparación consistente (los valores de select vienen como string)
-    const planNutricionalFormValue = String(formData.plannutricional_id || '').trim();
+    console.log('🔵 [Usuarios] datosActualizados iniciales:', datosActualizados);
     
-    // SIEMPRE priorizar el valor del select si existe (incluso si hay múltiples opciones)
-    if (planNutricionalFormValue && planNutricionalFormValue !== '' && planNutricionalFormValue !== '0' && planNutricionalFormValue !== 'null' && planNutricionalFormValue !== 'undefined') {
-      // Si hay un valor seleccionado en el formulario, SIEMPRE usarlo (sin importar si hay uno o múltiples)
-      datosActualizados.plannutricional_id = planNutricionalFormValue;
-    } else if (planesNutricionales.length === 1) {
-      // Si no hay valor seleccionado pero hay solo uno disponible, asignarlo automáticamente
-      datosActualizados.plannutricional_id = String(planesNutricionales[0].id);
+    // Jerarquía: asignar automáticamente si hay una sola opción (solo si no es root)
+    if (jerarquias.length === 1 && formData.username !== 'root') {
+      // SIEMPRE asignar si hay una sola opción, incluso si ya hay un valor
+      datosActualizados.jerarquia_id = String(jerarquias[0].id);
+    } else {
+      // Si hay múltiples opciones o es root, usar el valor del formulario
+      const jerarquiaFormValue = String(formData.jerarquia_id || '').trim();
+      if (jerarquiaFormValue && jerarquiaFormValue !== '' && jerarquiaFormValue !== '0' && jerarquiaFormValue !== 'null' && jerarquiaFormValue !== 'undefined') {
+        datosActualizados.jerarquia_id = jerarquiaFormValue;
+      }
     }
-    if ((!datosActualizados.planta_id || datosActualizados.planta_id === '' || datosActualizados.planta_id === 0) && plantas.length === 1) {
-      datosActualizados.planta_id = plantas[0].id;
+    // Plan nutricional: asignar automáticamente SOLO si hay una sola opción
+    if (planesNutricionales.length === 1) {
+      // SIEMPRE asignar si hay una sola opción
+      datosActualizados.plannutricional_id = String(planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID);
+      console.log('🔵 [Usuarios] Plan nutricional auto-asignado (única opción):', datosActualizados.plannutricional_id);
+    } else {
+      // Si hay múltiples opciones, usar el valor del formulario
+      const planNutricionalFormValue = String(formData.plannutricional_id || '').trim();
+      console.log('🔵 [Usuarios] Plan nutricional del formulario:', planNutricionalFormValue, 'formData.plannutricional_id:', formData.plannutricional_id);
+      
+      if (planNutricionalFormValue && planNutricionalFormValue !== '' && planNutricionalFormValue !== '0' && planNutricionalFormValue !== 'null' && planNutricionalFormValue !== 'undefined') {
+        datosActualizados.plannutricional_id = planNutricionalFormValue;
+        console.log('✅ [Usuarios] Plan nutricional asignado desde formulario:', datosActualizados.plannutricional_id);
+      } else {
+        // Si no hay valor válido, dejar vacío para que la validación lo detecte
+        datosActualizados.plannutricional_id = '';
+        console.log('⚠️ [Usuarios] Plan nutricional vacío o inválido');
+      }
     }
-    // Centro de costo: SIEMPRE usar el valor seleccionado en el formulario si existe
-    // Prioridad: 1) Valor seleccionado en formData (SIEMPRE tiene prioridad), 2) Valor único disponible, 3) null
-    // Convertir a string para comparación consistente (los valores de select vienen como string)
-    const centroCostoFormValue = String(formData.centrodecosto_id || '').trim();
-    
-    // SIEMPRE priorizar el valor del select si existe (incluso si hay múltiples opciones)
-    if (centroCostoFormValue && centroCostoFormValue !== '' && centroCostoFormValue !== '0' && centroCostoFormValue !== 'null' && centroCostoFormValue !== 'undefined') {
-      // Si hay un valor seleccionado en el formulario, SIEMPRE usarlo (sin importar si hay uno o múltiples)
-      datosActualizados.centrodecosto_id = centroCostoFormValue;
-    } else if (centrosDeCosto.length === 1) {
-      // Si no hay valor seleccionado pero hay solo uno disponible, asignarlo automáticamente
+    // Planta: asignar automáticamente SOLO si hay una sola opción
+    if (plantas.length === 1) {
+      // SIEMPRE asignar si hay una sola opción, incluso si ya hay un valor
+      datosActualizados.planta_id = String(plantas[0].id);
+    } else {
+      // Si hay múltiples opciones, usar el valor del formulario
+      const plantaFormValue = String(formData.planta_id || '').trim();
+      if (plantaFormValue && plantaFormValue !== '' && plantaFormValue !== '0' && plantaFormValue !== 'null' && plantaFormValue !== 'undefined') {
+        datosActualizados.planta_id = plantaFormValue;
+      } else {
+        // Si no hay valor válido, dejar vacío para que la validación lo detecte
+        datosActualizados.planta_id = '';
+      }
+    }
+    // Centro de costo: asignar automáticamente SOLO si hay una sola opción
+    if (centrosDeCosto.length === 1) {
+      // SIEMPRE asignar si hay una sola opción, incluso si ya hay un valor
       datosActualizados.centrodecosto_id = String(centrosDeCosto[0].id);
+    } else {
+      // Si hay múltiples opciones, usar el valor del formulario
+      const centroCostoFormValue = String(formData.centrodecosto_id || '').trim();
+      if (centroCostoFormValue && centroCostoFormValue !== '' && centroCostoFormValue !== '0' && centroCostoFormValue !== 'null' && centroCostoFormValue !== 'undefined') {
+        datosActualizados.centrodecosto_id = centroCostoFormValue;
+      } else {
+        // Si no hay valor válido, dejar vacío para que la validación lo detecte
+        datosActualizados.centrodecosto_id = '';
+      }
     }
-    if ((!datosActualizados.proyecto_id || datosActualizados.proyecto_id === '' || datosActualizados.proyecto_id === 0) && proyectos.length === 1) {
-      datosActualizados.proyecto_id = proyectos[0].id;
+    // Proyecto: asignar automáticamente SOLO si hay una sola opción
+    if (proyectos.length === 1) {
+      // SIEMPRE asignar si hay una sola opción, incluso si ya hay un valor
+      datosActualizados.proyecto_id = String(proyectos[0].id);
+    } else {
+      // Si hay múltiples opciones, usar el valor del formulario
+      const proyectoFormValue = String(formData.proyecto_id || '').trim();
+      if (proyectoFormValue && proyectoFormValue !== '' && proyectoFormValue !== '0' && proyectoFormValue !== 'null' && proyectoFormValue !== 'undefined') {
+        datosActualizados.proyecto_id = proyectoFormValue;
+      } else {
+        // Si no hay valor válido, dejar vacío para que la validación lo detecte
+        datosActualizados.proyecto_id = '';
+      }
     }
-    
-    // Actualizar el estado con los valores automáticos
-    setFormData(datosActualizados);
-    
-    // Debug: verificar valores antes de validar
-    console.log('DEBUG antes de validar:', {
-      formData_plannutricional_id: formData.plannutricional_id,
-      formData_centrodecosto_id: formData.centrodecosto_id,
-      datosActualizados_plannutricional_id: datosActualizados.plannutricional_id,
-      datosActualizados_centrodecosto_id: datosActualizados.centrodecosto_id,
-      planesNutricionales_length: planesNutricionales.length,
-      centrosDeCosto_length: centrosDeCosto.length,
-    });
     
     // Validar con los datos actualizados (pasar datosActualizados como parámetro)
-    if (!validarFormulario(datosActualizados)) {
+    // IMPORTANTE: No actualizar formData antes de validar para evitar re-renders innecesarios
+    console.log('🔵 [Usuarios] Validando formulario...');
+    const validacion = validarFormulario(datosActualizados);
+    console.log('🔵 [Usuarios] Resultado de validación:', validacion);
+    
+    if (!validacion) {
+      console.log('❌ [Usuarios] Validación falló, no se puede guardar');
       return;
     }
+    
+    console.log('✅ [Usuarios] Validación exitosa, continuando con el guardado');
 
     try {
       setIsLoading(true);
 
+      // Validar que todos los IDs requeridos estén presentes
+      const jerarquiaId = datosActualizados.jerarquia_id ? parseInt(datosActualizados.jerarquia_id) : (jerarquias.length === 1 ? parseInt(jerarquias[0].id) : null);
+      const planNutricionalId = datosActualizados.plannutricional_id && datosActualizados.plannutricional_id !== '' ? parseInt(datosActualizados.plannutricional_id) : (planesNutricionales.length === 1 ? parseInt(planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID) : null);
+      console.log('🔵 [Usuarios] planNutricionalId calculado:', planNutricionalId, 'desde datosActualizados.plannutricional_id:', datosActualizados.plannutricional_id);
+      const plantaId = datosActualizados.planta_id ? parseInt(datosActualizados.planta_id) : (plantas.length === 1 ? parseInt(plantas[0].id) : null);
+      const centroCostoId = datosActualizados.centrodecosto_id ? parseInt(datosActualizados.centrodecosto_id) : (centrosDeCosto.length === 1 ? parseInt(centrosDeCosto[0].id) : null);
+      const proyectoId = datosActualizados.proyecto_id ? parseInt(datosActualizados.proyecto_id) : (proyectos.length === 1 ? parseInt(proyectos[0].id) : null);
+      
+      console.log('🔵 [Usuarios] IDs calculados:', {
+        jerarquiaId,
+        planNutricionalId,
+        plantaId,
+        centroCostoId,
+        proyectoId,
+        jerarquiasDisponibles: jerarquias.length,
+        planesDisponibles: planesNutricionales.length,
+        plantasDisponibles: plantas.length,
+        centrosDisponibles: centrosDeCosto.length,
+        proyectosDisponibles: proyectos.length,
+      });
+      
+      // Validar que los IDs requeridos no sean null y sean números válidos mayores a 0
+      // Solo validar si hay múltiples opciones disponibles (si hay una sola opción, ya se asignó automáticamente)
+      if (jerarquias.length > 1 && (!jerarquiaId || isNaN(jerarquiaId) || jerarquiaId <= 0)) {
+        console.error('❌ [Usuarios] Error: La jerarquía es requerida');
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'La jerarquía es requerida. Por favor, seleccione una jerarquía.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+      if (planesNutricionales.length > 1 && (!planNutricionalId || isNaN(planNutricionalId) || planNutricionalId <= 0)) {
+        console.error('❌ [Usuarios] Error: El plan nutricional es requerido');
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'El plan nutricional es requerido. Por favor, seleccione un plan nutricional.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+      if (plantas.length > 1 && (!plantaId || isNaN(plantaId) || plantaId <= 0)) {
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'La planta es requerida. Por favor, seleccione una planta.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+      if (centrosDeCosto.length > 1 && (!centroCostoId || isNaN(centroCostoId) || centroCostoId <= 0)) {
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'El centro de costo es requerido. Por favor, seleccione un centro de costo.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+      if (proyectos.length > 1 && (!proyectoId || isNaN(proyectoId) || proyectoId <= 0)) {
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'El proyecto es requerido. Por favor, seleccione un proyecto.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Validar que Legajo y Dni sean válidos
+      const legajoValue = parseInt(datosActualizados.legajo);
+      if (!legajoValue || isNaN(legajoValue) || legajoValue <= 0) {
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'El legajo debe ser un número mayor a 0',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      const dniValue = datosActualizados.dni ? parseInt(datosActualizados.dni) : 0;
+      if (!dniValue || isNaN(dniValue) || dniValue < 1000000 || dniValue > 99999999) {
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'El DNI debe ser un número válido entre 1000000 y 99999999',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Convertir fecha_ingreso a formato DateTime si está presente
+      let fechaIngresoFormatted = null;
+      if (datosActualizados.fecha_ingreso && datosActualizados.fecha_ingreso.trim() !== '') {
+        try {
+          // Si viene en formato YYYY-MM-DD, convertir a ISO string
+          const fecha = new Date(datosActualizados.fecha_ingreso);
+          if (!isNaN(fecha.getTime())) {
+            fechaIngresoFormatted = fecha.toISOString();
+          }
+        } catch (e) {
+          // Error al formatear fecha de ingreso
+        }
+      }
+
+      // Convertir foto a base64 si es un archivo
+      let fotoBase64 = null;
+      if (formData.foto && formData.foto instanceof File) {
+        try {
+          const reader = new FileReader();
+          const filePromise = new Promise((resolve, reject) => {
+            reader.onload = () => {
+              const result = reader.result;
+              // Si el resultado incluye el prefijo data:image, mantenerlo completo
+              resolve(result);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(formData.foto);
+          });
+          fotoBase64 = await filePromise;
+        } catch (e) {
+          // Error al convertir foto a base64
+        }
+      } else if (formData.foto && typeof formData.foto === 'string') {
+        // Si ya es un string (base64 o URL), usarlo directamente
+        fotoBase64 = formData.foto;
+      } else if (usuarioEditando && usuarioEditando.foto && !formData.foto) {
+        // Si se está editando y no se cambió la foto, mantener la foto existente
+        fotoBase64 = usuarioEditando.foto;
+      } else if (formData.fotoPreview && !formData.foto) {
+        // Si hay preview pero no hay archivo nuevo, usar el preview (puede ser base64 o URL)
+        fotoBase64 = formData.fotoPreview;
+      }
+
+      // Construir objeto en PascalCase según el DTO del backend
       const usuarioData = {
-        id: datosActualizados.id,
-        username: datosActualizados.username.trim(),
-        nombre: datosActualizados.nombre.trim(),
-        apellido: datosActualizados.apellido.trim(),
-        legajo: parseInt(datosActualizados.legajo),
-        dni: datosActualizados.dni ? parseInt(datosActualizados.dni) : null,
-        cuil: datosActualizados.cuil || null,
-        email: datosActualizados.email || null,
-        telefono: datosActualizados.telefono || null,
-        planta_id: datosActualizados.planta_id ? parseInt(datosActualizados.planta_id) : null,
-        centrodecosto_id: (() => {
-          // Usar directamente datosActualizados que ya tiene el valor procesado correctamente
-          const valorActualizado = String(datosActualizados.centrodecosto_id || '').trim();
-          
-          if (valorActualizado && valorActualizado !== '' && valorActualizado !== '0' && valorActualizado !== 'null' && valorActualizado !== 'undefined') {
-            const valor = parseInt(valorActualizado);
-            if (!isNaN(valor)) {
-              return valor;
-            }
-          }
-          // Si hay solo un centro de costo disponible, usar ese
-          if (centrosDeCosto.length === 1) {
-            const valor = parseInt(centrosDeCosto[0].id);
-            if (!isNaN(valor)) {
-              return valor;
-            }
-          }
-          return null;
+        Username: datosActualizados.username ? datosActualizados.username.trim() : null,
+        Nombre: datosActualizados.nombre.trim(),
+        Apellido: datosActualizados.apellido.trim(),
+        Legajo: legajoValue,
+        Dni: dniValue,
+        Cuil: datosActualizados.cuil ? datosActualizados.cuil.trim() : null,
+        Domicilio: datosActualizados.domicilio ? datosActualizados.domicilio.trim() : null,
+        FechaIngreso: fechaIngresoFormatted,
+        Contrato: datosActualizados.contrato ? datosActualizados.contrato.trim() : null,
+        Plannutricional_id: planNutricionalId || (planesNutricionales.length > 0 ? parseInt(planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID) : null),
+        PlantaId: plantaId,
+        CentroCostoId: centroCostoId,
+        ProyectoId: proyectoId,
+        JerarquiaId: jerarquiaId,
+        Bonificaciones: (() => {
+          const valor = datosActualizados.bonificaciones || formData.bonificaciones || '0';
+          const parsed = parseInt(valor, 10);
+          return isNaN(parsed) ? 0 : parsed;
         })(),
-        proyecto_id: datosActualizados.proyecto_id ? parseInt(datosActualizados.proyecto_id) : null,
-        jerarquia_id: datosActualizados.jerarquia_id ? parseInt(datosActualizados.jerarquia_id) : null,
-        plannutricional_id: (() => {
-          // Usar directamente datosActualizados que ya tiene el valor procesado correctamente
-          const valorActualizado = String(datosActualizados.plannutricional_id || '').trim();
-          
-          if (valorActualizado && valorActualizado !== '' && valorActualizado !== '0' && valorActualizado !== 'null' && valorActualizado !== 'undefined') {
-            const valor = parseInt(valorActualizado);
-            if (!isNaN(valor)) {
-              return valor;
-            }
-          }
-          // Si hay solo un plan nutricional disponible, usar ese
-          if (planesNutricionales.length === 1) {
-            const valor = parseInt(planesNutricionales[0].id);
-            if (!isNaN(valor)) {
-              return valor;
-            }
-          }
-          return null;
+        BonificacionesInvitado: (() => {
+          const valor = datosActualizados.bonificaciones_invitado || formData.bonificaciones_invitado || '0';
+          const parsed = parseInt(valor, 10);
+          return isNaN(parsed) ? 0 : parsed;
         })(),
-        fecha_ingreso: datosActualizados.fecha_ingreso || null,
-        contrato: datosActualizados.contrato || null,
+        Email: datosActualizados.email ? datosActualizados.email.trim() : null,
+        Telefono: datosActualizados.telefono ? datosActualizados.telefono.trim() : null,
+        Foto: fotoBase64,
+        OrigenDatos: datosActualizados.origenDatos || null,
       };
+      
+      // Si es actualización, agregar el ID
+      if (usuarioEditando && datosActualizados.id) {
+        usuarioData.Id = parseInt(datosActualizados.id);
+      }
+
 
       // Obtener el valor de la contraseña (puede estar en datosActualizados o formData)
       const passwordValue = (datosActualizados.contraseña || formData.contraseña || '').trim();
-      
-      // Debug: verificar valores de contraseña antes de enviar
-      console.log('DEBUG contraseña antes de enviar:', {
-        usuarioEditando: usuarioEditando,
-        datosActualizados_contraseña: datosActualizados.contraseña,
-        formData_contraseña: formData.contraseña,
-        passwordValue: passwordValue,
-        passwordValue_length: passwordValue.length,
-        passwordValue_isEmpty: passwordValue === '',
-      });
 
       // Solo incluir contraseña si se está creando o si se está cambiando
       if (!usuarioEditando) {
@@ -866,7 +1104,7 @@ const Usuarios = () => {
           setIsLoading(false);
           return;
         }
-        usuarioData.contraseña = passwordValue;
+        usuarioData.Password = passwordValue;
       } else if (passwordValue && passwordValue.length > 0) {
         // Al editar, solo incluir si se está cambiando (no vacía)
         if (passwordValue.length < 6) {
@@ -886,11 +1124,11 @@ const Usuarios = () => {
           setIsLoading(false);
           return;
         }
-        usuarioData.contraseña = passwordValue;
+        usuarioData.Password = passwordValue;
       }
       
       // Verificar que la contraseña esté presente si es necesario
-      if (!usuarioEditando && !usuarioData.contraseña) {
+      if (!usuarioEditando && !usuarioData.Password) {
         Swal.fire({
           title: 'Error',
           text: 'Error interno: La contraseña no se capturó correctamente. Por favor, intente nuevamente.',
@@ -929,16 +1167,61 @@ const Usuarios = () => {
       handleVolverALista();
       cargarUsuarios(currentPage, filtro, filtroActivo === 'activo');
     } catch (error) {
+      console.error('❌ [Usuarios] Error al guardar usuario:', error);
+      console.error('❌ [Usuarios] error.response:', error.response);
+      console.error('❌ [Usuarios] error.response?.data:', error.response?.data);
+      
       // Si hay error de conexión, el interceptor ya redirige automáticamente
       // Solo mostrar el error si no es un error de conexión
       if (!error.redirectToLogin) {
-        Swal.fire({
-          title: 'Error',
-          text: error.message || 'Error al guardar el usuario',
-          icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
-        });
+        let errorTitle = 'Error';
+        let errorMessage = error.message || 'Error al guardar el usuario';
+        let errorHtml = null;
+        
+        // Verificar si el backend devolvió errores de validación en formato JSON
+        if (error.response && error.response.data) {
+          const responseData = error.response.data;
+          
+          // Si hay un array de errores, mostrarlos todos
+          if (responseData.errors && Array.isArray(responseData.errors) && responseData.errors.length > 0) {
+            errorTitle = responseData.message || 'Errores de validación';
+            errorHtml = '<div style="text-align: left;"><p>Los siguientes errores fueron encontrados:</p><ul style="margin: 0; padding-left: 20px;">' +
+              responseData.errors.map(err => {
+                const fieldName = err.field ? err.field.replace('dto.', '') : 'Campo desconocido';
+                return `<li><strong>${fieldName}:</strong> ${err.message || 'Error de validación'}</li>`;
+              }).join('') +
+              '</ul></div>';
+          } else if (responseData.error) {
+            // Si hay un campo "error" con el mensaje (ej: "Ya existe un usuario con el mismo legajo.")
+            errorTitle = 'Error';
+            errorMessage = responseData.error;
+          } else if (responseData.message) {
+            // Si solo hay un mensaje general
+            errorTitle = 'Error de validación';
+            errorMessage = responseData.message;
+          } else if (typeof responseData === 'string') {
+            // Si la respuesta es directamente un string
+            errorMessage = responseData;
+          }
+        }
+        
+        if (errorHtml) {
+          Swal.fire({
+            title: errorTitle,
+            html: errorHtml,
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#F34949',
+          });
+        } else {
+          Swal.fire({
+            title: errorTitle,
+            text: errorMessage,
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#F34949',
+          });
+        }
       }
     } finally {
       setIsLoading(false);
@@ -975,9 +1258,9 @@ const Usuarios = () => {
   // Renderizar vista de formulario (editar o crear)
   if (vista === 'editar' || vista === 'crear') {
     return (
-      <div className="container-fluid" style={{ padding: 0 }}>
+      <div className="container-fluid" style={{ padding: 0, backgroundColor: 'white' }}>
         {/* Barra negra con título */}
-        <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
+        <div className="page-title-bar">
           <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '1.5rem' }}>
             <button
               type="button"
@@ -987,17 +1270,7 @@ const Usuarios = () => {
             >
               <i className="fa fa-arrow-left"></i>
             </button>
-            <h3 style={{ 
-              fontSize: '1.75rem', 
-              fontWeight: 'normal', 
-              margin: 0, 
-              fontFamily: 'sans-serif', 
-              color: 'white', 
-              textAlign: 'left',
-              paddingTop: '0',
-              paddingBottom: '0',
-              lineHeight: '1.5',
-            }}>
+            <h3>
               {vista === 'editar' ? 'Editar Usuario' : 'Nuevo Usuario'}
             </h3>
           </div>
@@ -1022,8 +1295,10 @@ const Usuarios = () => {
         <div className="usuarios-form-container" style={{ 
           width: '100%', 
           boxSizing: 'border-box', 
-          maxWidth: '1200px', 
-          margin: '0 auto'
+          maxWidth: '95%', 
+          margin: '0 auto',
+          paddingLeft: '2rem',
+          paddingRight: '2rem'
         }}>
           <form style={{ width: '100%' }}>
             {/* Navegación de Tabs */}
@@ -1141,10 +1416,13 @@ const Usuarios = () => {
             {tabActivo === 'personal' && (
               <div className="form-section">
                 <div className="form-section-content">
+              {/* Primera línea: Nombre usuario, Nombre y Apellido */}
               <div className="row">
-                <div className="col-md-6">
+                <div className="col-md-3">
                   <div className="form-group">
-                    <label htmlFor="username">Username</label>
+                    <label htmlFor="username">
+                      Nombre usuario <span style={{ color: '#F34949' }}>*</span>
+                    </label>
                     <input
                       type="text"
                       className="form-control"
@@ -1162,115 +1440,12 @@ const Usuarios = () => {
                     />
                     {usuarioEditando && (
                       <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                        El username no puede ser modificado
+                        El nombre de usuario no puede ser modificado
                       </small>
                     )}
                   </div>
                 </div>
-                <div className="col-md-6">
-                  <div className="form-group">
-                    <label htmlFor="foto">Foto del Usuario</label>
-                    <input
-                      type="file"
-                      className="form-control-file"
-                      id="foto"
-                      name="foto"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      style={{
-                        padding: '0.5rem',
-                        border: '1px solid #ced4da',
-                        borderRadius: '0.25rem',
-                        width: '100%',
-                        fontSize: '0.9rem'
-                      }}
-                    />
-                    {(formData.fotoPreview || (usuarioEditando && usuarioEditando.foto && !formData.fotoPreview)) && (
-                      <div className="mt-2">
-                        {formData.fotoPreview ? (
-                          <>
-                            <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>Vista previa:</p>
-                            <div style={{ position: 'relative', display: 'inline-block' }}>
-                              <img
-                                src={formData.fotoPreview}
-                                alt="Vista previa"
-                                style={{
-                                  maxWidth: '150px',
-                                  maxHeight: '150px',
-                                  borderRadius: '0.25rem',
-                                  border: '1px solid #ced4da',
-                                  padding: '0.25rem'
-                                }}
-                              />
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-danger"
-                                onClick={handleEliminarFoto}
-                                style={{
-                                  position: 'absolute',
-                                  top: '0.25rem',
-                                  right: '0.25rem',
-                                  padding: '0.25rem 0.5rem',
-                                  borderRadius: '50%',
-                                  width: '28px',
-                                  height: '28px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: '0.875rem'
-                                }}
-                                title="Eliminar foto"
-                              >
-                                <i className="fa fa-times"></i>
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>Foto actual:</p>
-                            <div style={{ position: 'relative', display: 'inline-block' }}>
-                              <img
-                                src={usuarioEditando.foto}
-                                alt="Foto actual"
-                                style={{
-                                  maxWidth: '150px',
-                                  maxHeight: '150px',
-                                  borderRadius: '0.25rem',
-                                  border: '1px solid #ced4da',
-                                  padding: '0.25rem'
-                                }}
-                              />
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-danger"
-                                onClick={handleEliminarFoto}
-                                style={{
-                                  position: 'absolute',
-                                  top: '0.25rem',
-                                  right: '0.25rem',
-                                  padding: '0.25rem 0.5rem',
-                                  borderRadius: '50%',
-                                  width: '28px',
-                                  height: '28px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: '0.875rem'
-                                }}
-                                title="Eliminar foto"
-                              >
-                                <i className="fa fa-times"></i>
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="row">
-                <div className="col-md-6">
+                <div className="col-md-4">
                   <div className="form-group">
                     <label htmlFor="nombre">
                       Nombre <span style={{ color: '#F34949' }}>*</span>
@@ -1286,7 +1461,7 @@ const Usuarios = () => {
                     />
                   </div>
                 </div>
-                <div className="col-md-6">
+                <div className="col-md-5">
                   <div className="form-group">
                     <label htmlFor="apellido">
                       Apellido <span style={{ color: '#F34949' }}>*</span>
@@ -1300,6 +1475,96 @@ const Usuarios = () => {
                       onChange={handleInputChange}
                       required
                     />
+                  </div>
+                </div>
+              </div>
+              {/* Segunda línea: Foto del Usuario */}
+              <div className="row">
+                <div className="col-md-6">
+                  <div className="form-group">
+                    <label htmlFor="foto">Foto del Usuario</label>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                      <div style={{ flex: '1' }}>
+                        <input
+                          type="file"
+                          className="form-control-file"
+                          id="foto"
+                          name="foto"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          style={{
+                            padding: '0.5rem',
+                            border: '1px solid #ced4da',
+                            borderRadius: '0.25rem',
+                            width: '100%',
+                            fontSize: '0.9rem'
+                          }}
+                        />
+                      </div>
+                      {(formData.fotoPreview || (usuarioEditando && (usuarioEditando.Foto || usuarioEditando.foto))) && (
+                        <div style={{ flexShrink: 0, marginTop: '0' }}>
+                          <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '0.5rem', marginTop: '0', paddingTop: '0' }}>
+                            {formData.foto && formData.foto instanceof File ? 'Vista previa:' : 'Foto actual:'}
+                          </p>
+                          <div style={{ position: 'relative', display: 'inline-block' }}>
+                            <img
+                              src={(() => {
+                                // Si hay preview en formData, usarlo
+                                if (formData.fotoPreview) {
+                                  return formData.fotoPreview;
+                                }
+                                // Si no, buscar en usuarioEditando
+                                const fotoOriginal = usuarioEditando?.Foto || usuarioEditando?.foto;
+                                if (fotoOriginal) {
+                                  // Si ya tiene el prefijo data:, usarlo directamente
+                                  if (fotoOriginal.startsWith('data:') || fotoOriginal.startsWith('http')) {
+                                    return fotoOriginal;
+                                  }
+                                  // Si es base64 puro, agregar el prefijo
+                                  return `data:image/jpeg;base64,${fotoOriginal}`;
+                                }
+                                return '';
+                              })()}
+                              alt={formData.foto && formData.foto instanceof File ? "Vista previa" : "Foto actual"}
+                              style={{
+                                maxWidth: '150px',
+                                maxHeight: '150px',
+                                borderRadius: '0.25rem',
+                                border: '1px solid #ced4da',
+                                padding: '0.25rem',
+                                objectFit: 'cover'
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger"
+                              onClick={handleEliminarFoto}
+                              style={{
+                                position: 'absolute',
+                                top: '0.25rem',
+                                right: '0.25rem',
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '50%',
+                                width: '28px',
+                                height: '28px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.875rem',
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                              title="Eliminar foto"
+                            >
+                              <i className="fa fa-times"></i>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1318,13 +1583,21 @@ const Usuarios = () => {
                       Legajo <span style={{ color: '#F34949' }}>*</span>
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       className="form-control"
                       id="legajo"
                       name="legajo"
                       value={formData.legajo}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        // Solo permitir números, eliminar letras y símbolos
+                        const soloNumeros = e.target.value.replace(/[^0-9]/g, '');
+                        setFormData((prev) => ({
+                          ...prev,
+                          legajo: soloNumeros,
+                        }));
+                      }}
                       required
+                      placeholder="Ingrese solo números"
                     />
                   </div>
                 </div>
@@ -1334,13 +1607,21 @@ const Usuarios = () => {
                       DNI <span style={{ color: '#F34949' }}>*</span>
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       className="form-control"
                       id="dni"
                       name="dni"
                       value={formData.dni}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        // Solo permitir números, eliminar letras y símbolos
+                        const soloNumeros = e.target.value.replace(/[^0-9]/g, '');
+                        setFormData((prev) => ({
+                          ...prev,
+                          dni: soloNumeros,
+                        }));
+                      }}
                       required
+                      placeholder="Ingrese solo números"
                     />
                   </div>
                 </div>
@@ -1355,9 +1636,21 @@ const Usuarios = () => {
                       id="cuil"
                       name="cuil"
                       value={formData.cuil}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        // Solo permitir números, eliminar guiones y otros caracteres
+                        const soloNumeros = e.target.value.replace(/[^0-9]/g, '');
+                        setFormData((prev) => ({
+                          ...prev,
+                          cuil: soloNumeros,
+                        }));
+                      }}
                       required
+                      placeholder="Ingrese solo números sin guiones"
                     />
+                    <small className="form-text text-muted" style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                      <i className="fa fa-info-circle" style={{ marginRight: '0.25rem' }}></i>
+                      Ingrese el CUIL solo con números, sin guiones ni espacios
+                    </small>
                   </div>
                 </div>
               </div>
@@ -1405,8 +1698,9 @@ const Usuarios = () => {
             {tabActivo === 'organizacion' && (
               <div className="form-section">
                 <div className="form-section-content">
+              {/* Primera línea: Jerarquía, Plan Nutricional, Planta */}
               <div className="row">
-                <div className="col-md-6">
+                <div className="col-md-4">
                   <div className="form-group">
                     <label htmlFor="jerarquia_id">
                       Jerarquía <span style={{ color: '#F34949' }}>*</span>
@@ -1418,20 +1712,38 @@ const Usuarios = () => {
                       value={formData.jerarquia_id || ''}
                       onChange={handleInputChange}
                       required
+                      disabled={formData.username === 'root'}
+                      style={formData.username === 'root' ? {
+                        backgroundColor: '#e9ecef',
+                        cursor: 'not-allowed',
+                        opacity: 0.7
+                      } : {}}
                     >
-                      {jerarquias.length > 0 ? (
-                        jerarquias.map((jer) => (
-                          <option key={jer.id} value={jer.id}>
-                            {jer.nombre || jer.descripcion}
-                          </option>
-                        ))
-                      ) : (
+                      {jerarquias.length === 0 ? (
                         <option value="">Sin opciones disponibles</option>
+                      ) : jerarquias.length === 1 ? (
+                        <option value={String(jerarquias[0].id)}>
+                          {jerarquias[0].nombre || jerarquias[0].descripcion}
+                        </option>
+                      ) : (
+                        <>
+                          {!usuarioEditando && <option value="">Seleccionar jerarquía</option>}
+                          {jerarquias.map((jer) => (
+                            <option key={jer.id} value={String(jer.id)}>
+                              {jer.nombre || jer.descripcion}
+                            </option>
+                          ))}
+                        </>
                       )}
                     </select>
+                    {formData.username === 'root' && (
+                      <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                        La jerarquía del usuario root no puede ser modificada
+                      </small>
+                    )}
                   </div>
                 </div>
-                <div className="col-md-6">
+                <div className="col-md-4">
                   <div className="form-group">
                     <label htmlFor="plannutricional_id">
                       Plan Nutricional <span style={{ color: '#F34949' }}>*</span>
@@ -1440,7 +1752,7 @@ const Usuarios = () => {
                       className="form-control"
                       id="plannutricional_id"
                       name="plannutricional_id"
-                      value={formData.plannutricional_id || (planesNutricionales.length === 1 ? planesNutricionales[0].id : '')}
+                      value={formData.plannutricional_id || (planesNutricionales.length === 1 ? String(planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID) : '')}
                       onChange={handleInputChange}
                       disabled={planesNutricionales.length <= 1}
                       required
@@ -1450,14 +1762,21 @@ const Usuarios = () => {
                         opacity: 0.7
                       } : {}}
                     >
-                      {planesNutricionales.length > 0 ? (
-                        planesNutricionales.map((plan) => (
-                          <option key={plan.id} value={plan.id}>
-                            {plan.nombre || plan.descripcion}
-                          </option>
-                        ))
-                      ) : (
+                      {planesNutricionales.length === 0 ? (
                         <option value="">Sin opciones disponibles</option>
+                      ) : planesNutricionales.length === 1 ? (
+                        <option value={String(planesNutricionales[0].id)}>
+                          {planesNutricionales[0].nombre || planesNutricionales[0].descripcion}
+                        </option>
+                      ) : (
+                        <>
+                          {!usuarioEditando && <option value="">Seleccionar plan nutricional</option>}
+                          {planesNutricionales.map((plan) => (
+                            <option key={plan.id} value={String(plan.id)}>
+                              {plan.nombre || plan.descripcion}
+                            </option>
+                          ))}
+                        </>
                       )}
                     </select>
                     {planesNutricionales.length <= 1 && planesNutricionales.length > 0 && (
@@ -1468,8 +1787,6 @@ const Usuarios = () => {
                     )}
                   </div>
                 </div>
-              </div>
-              <div className="row">
                 <div className="col-md-4">
                   <div className="form-group">
                     <label htmlFor="planta_id">
@@ -1489,14 +1806,21 @@ const Usuarios = () => {
                         opacity: 0.7
                       } : {}}
                     >
-                      {plantas.length > 0 ? (
-                        plantas.map((planta) => (
-                          <option key={planta.id} value={planta.id}>
-                            {planta.nombre || planta.descripcion}
-                          </option>
-                        ))
-                      ) : (
+                      {plantas.length === 0 ? (
                         <option value="">Sin opciones disponibles</option>
+                      ) : plantas.length === 1 ? (
+                        <option value={String(plantas[0].id)}>
+                          {plantas[0].nombre || plantas[0].descripcion}
+                        </option>
+                      ) : (
+                        <>
+                          {!usuarioEditando && <option value="">Seleccionar planta</option>}
+                          {plantas.map((planta) => (
+                            <option key={planta.id} value={String(planta.id)}>
+                              {planta.nombre || planta.descripcion}
+                            </option>
+                          ))}
+                        </>
                       )}
                     </select>
                     {plantas.length <= 1 && plantas.length > 0 && (
@@ -1507,6 +1831,9 @@ const Usuarios = () => {
                     )}
                   </div>
                 </div>
+              </div>
+              {/* Segunda línea: Centro de Costo, Proyecto, Fecha de Ingreso */}
+              <div className="row">
                 <div className="col-md-4">
                   <div className="form-group">
                     <label htmlFor="centrodecosto_id">
@@ -1516,7 +1843,7 @@ const Usuarios = () => {
                       className="form-control"
                       id="centrodecosto_id"
                       name="centrodecosto_id"
-                      value={formData.centrodecosto_id || (centrosDeCosto.length === 1 ? centrosDeCosto[0].id : '')}
+                      value={formData.centrodecosto_id || (centrosDeCosto.length === 1 ? String(centrosDeCosto[0].id) : '')}
                       onChange={handleInputChange}
                       disabled={centrosDeCosto.length <= 1}
                       required
@@ -1526,14 +1853,21 @@ const Usuarios = () => {
                         opacity: 0.7
                       } : {}}
                     >
-                      {centrosDeCosto.length > 0 ? (
-                        centrosDeCosto.map((cc) => (
-                          <option key={cc.id} value={cc.id}>
-                            {cc.nombre || cc.descripcion}
-                          </option>
-                        ))
-                      ) : (
+                      {centrosDeCosto.length === 0 ? (
                         <option value="">Sin opciones disponibles</option>
+                      ) : centrosDeCosto.length === 1 ? (
+                        <option value={String(centrosDeCosto[0].id)}>
+                          {centrosDeCosto[0].nombre || centrosDeCosto[0].descripcion}
+                        </option>
+                      ) : (
+                        <>
+                          {!usuarioEditando && <option value="">Seleccionar centro de costo</option>}
+                          {centrosDeCosto.map((cc) => (
+                            <option key={cc.id} value={String(cc.id)}>
+                              {cc.nombre || cc.descripcion}
+                            </option>
+                          ))}
+                        </>
                       )}
                     </select>
                     {centrosDeCosto.length <= 1 && centrosDeCosto.length > 0 && (
@@ -1563,14 +1897,21 @@ const Usuarios = () => {
                         opacity: 0.7
                       } : {}}
                     >
-                      {proyectos.length > 0 ? (
-                        proyectos.map((proj) => (
-                          <option key={proj.id} value={proj.id}>
-                            {proj.nombre || proj.descripcion}
-                          </option>
-                        ))
-                      ) : (
+                      {proyectos.length === 0 ? (
                         <option value="">Sin opciones disponibles</option>
+                      ) : proyectos.length === 1 ? (
+                        <option value={String(proyectos[0].id)}>
+                          {proyectos[0].nombre || proyectos[0].descripcion}
+                        </option>
+                      ) : (
+                        <>
+                          {!usuarioEditando && <option value="">Seleccionar proyecto</option>}
+                          {proyectos.map((proj) => (
+                            <option key={proj.id} value={String(proj.id)}>
+                              {proj.nombre || proj.descripcion}
+                            </option>
+                          ))}
+                        </>
                       )}
                     </select>
                     {proyectos.length <= 1 && proyectos.length > 0 && (
@@ -1581,8 +1922,6 @@ const Usuarios = () => {
                     )}
                   </div>
                 </div>
-              </div>
-              <div className="row">
                 <div className="col-md-4">
                   <div className="form-group">
                     <label htmlFor="fecha_ingreso">Fecha de Ingreso</label>
@@ -1596,6 +1935,9 @@ const Usuarios = () => {
                     />
                   </div>
                 </div>
+              </div>
+              {/* Tercera línea: Contrato, Bonificaciones, Bonificaciones Invitados */}
+              <div className="row">
                 <div className="col-md-4">
                   <div className="form-group">
                     <label htmlFor="contrato">Contrato</label>
@@ -1610,7 +1952,53 @@ const Usuarios = () => {
                     />
                   </div>
                 </div>
+                <div className="col-md-4">
+                  <div className="form-group">
+                    <label htmlFor="bonificaciones">Bonificaciones</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      id="bonificaciones"
+                      name="bonificaciones"
+                      value={formData.bonificaciones || '0'}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        setFormData((prev) => ({
+                          ...prev,
+                          bonificaciones: value || '0',
+                        }));
+                      }}
+                      min="0"
+                      placeholder="0"
+                    />
+                    <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
+                      <i className="fa fa-info-circle mr-1" style={{ color: '#6c757d' }}></i>
+                      La cantidad de bonificaciones que se den serán tomadas por día
+                    </small>
+                  </div>
                 </div>
+                <div className="col-md-4">
+                  <div className="form-group">
+                    <label htmlFor="bonificaciones_invitado">Bonificaciones Invitados</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      id="bonificaciones_invitado"
+                      name="bonificaciones_invitado"
+                      value={formData.bonificaciones_invitado || '0'}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        setFormData((prev) => ({
+                          ...prev,
+                          bonificaciones_invitado: value || '0',
+                        }));
+                      }}
+                      min="0"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
               </div>
               </div>
             )}
@@ -1639,20 +2027,41 @@ const Usuarios = () => {
                       <label htmlFor="contraseña">
                         {usuarioEditando
                           ? 'Nueva Contraseña (dejar vacío para no cambiar)'
-                          : 'Contraseña *'}
+                          : <>Contraseña <span style={{ color: '#F34949' }}>*</span></>}
                       </label>
-                      <input
-                        type="password"
-                        className="form-control"
-                        id="contraseña"
-                        name="contraseña"
-                        autoComplete="new-password"
-                        value={formData.contraseña || ''}
-                        onChange={handleInputChange}
-                        required={!usuarioEditando}
-                        minLength={usuarioEditando && !formData.contraseña ? 0 : 6}
-                        placeholder={usuarioEditando ? 'Escriba la nueva contraseña' : ''}
-                      />
+                      <div className="input-group password-input-group">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          className="form-control password-input"
+                          id="contraseña"
+                          name="contraseña"
+                          autoComplete="new-password"
+                          value={formData.contraseña || ''}
+                          onChange={handleInputChange}
+                          required={!usuarioEditando}
+                          minLength={usuarioEditando && !formData.contraseña ? 0 : 6}
+                          placeholder={usuarioEditando ? 'Escriba la nueva contraseña' : ''}
+                          style={{ borderRight: 'none', fontSize: '0.85rem', borderTopRightRadius: '0', borderBottomRightRadius: '0' }}
+                        />
+                        <div className="input-group-append">
+                          <button
+                            className="btn btn-outline-secondary password-toggle-btn"
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            style={{
+                              borderLeft: 'none',
+                              borderColor: '#ced4da',
+                              backgroundColor: '#fff',
+                              cursor: 'pointer',
+                              padding: '0.375rem 0.6rem 0.375rem 0.5rem',
+                              fontSize: '0.85rem',
+                              minWidth: '45px'
+                            }}
+                          >
+                            <i className={showPassword ? "fa fa-eye-slash" : "fa fa-eye"}></i>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="col-md-6">
@@ -1660,17 +2069,38 @@ const Usuarios = () => {
                       <label htmlFor="confirmarContraseña">
                         {usuarioEditando ? 'Confirmar Nueva Contraseña' : 'Confirmar Contraseña'}
                       </label>
-                      <input
-                        type="password"
-                        className="form-control"
-                        id="confirmarContraseña"
-                        name="confirmarContraseña"
-                        autoComplete="new-password"
-                        value={formData.confirmarContraseña || ''}
-                        onChange={handleInputChange}
-                        required={!usuarioEditando || formData.contraseña}
-                        placeholder={usuarioEditando ? 'Confirme la nueva contraseña' : ''}
-                      />
+                      <div className="input-group password-input-group">
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          className="form-control password-input"
+                          id="confirmarContraseña"
+                          name="confirmarContraseña"
+                          autoComplete="new-password"
+                          value={formData.confirmarContraseña || ''}
+                          onChange={handleInputChange}
+                          required={!usuarioEditando || formData.contraseña}
+                          placeholder={usuarioEditando ? 'Confirme la nueva contraseña' : ''}
+                          style={{ borderRight: 'none', fontSize: '0.85rem', borderTopRightRadius: '0', borderBottomRightRadius: '0' }}
+                        />
+                        <div className="input-group-append">
+                          <button
+                            className="btn btn-outline-secondary password-toggle-btn"
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            style={{
+                              borderLeft: 'none',
+                              borderColor: '#ced4da',
+                              backgroundColor: '#fff',
+                              cursor: 'pointer',
+                              padding: '0.375rem 0.6rem 0.375rem 0.5rem',
+                              fontSize: '0.85rem',
+                              minWidth: '45px'
+                            }}
+                          >
+                            <i className={showConfirmPassword ? "fa fa-eye-slash" : "fa fa-eye"}></i>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1680,7 +2110,7 @@ const Usuarios = () => {
 
             {/* Botones de acción */}
             <div className="row mt-3">
-              <div className="col-12">
+              <div className="col-12 d-flex justify-content-end">
                 <button
                   type="button"
                   className="btn mr-2"
@@ -1726,21 +2156,8 @@ const Usuarios = () => {
   return (
     <div className="container-fluid" style={{ padding: 0 }}>
       {/* Barra negra con título Usuarios */}
-      <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
-        <h3 style={{ 
-          fontSize: '1.75rem', 
-          fontWeight: 'normal', 
-          margin: 0, 
-          fontFamily: 'sans-serif', 
-          color: 'white', 
-          textAlign: 'left', 
-          paddingLeft: '1.5rem',
-          paddingTop: '0',
-          paddingBottom: '0',
-          lineHeight: '1.5',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
+      <div className="page-title-bar">
+        <h3>
           <i className="fa fa-users mr-2" aria-hidden="true"></i>Usuarios
         </h3>
       </div>
@@ -1867,6 +2284,19 @@ const Usuarios = () => {
                   : 'No hay usuarios registrados'
           }
           onEdit={handleEditarUsuario}
+          canEdit={(usuario) => {
+            // Si estamos en el filtro de "Inactivos", no mostrar el botón de editar
+            if (filtroActivo === 'inactivo') {
+              return false;
+            }
+            // Si estamos en el filtro de "Activos", todos los usuarios mostrados están activos
+            if (filtroActivo === 'activo') {
+              return true;
+            }
+            // Por defecto, usar el campo normalizado 'activo'
+            const isActivo = usuario.activo === true || usuario.activo === 1 || usuario.activo === 'true' || usuario.activo === '1';
+            return isActivo; // Solo se puede editar si está activo
+          }}
           onDelete={(usuario) => {
             // No permitir eliminar al usuario root
             if (usuario.username === 'root') {
@@ -1977,7 +2407,6 @@ const Usuarios = () => {
             if (isInactivo) {
               return (
                 <button
-                  className="btn btn-sm btn-success"
                   onClick={async () => {
                     Swal.fire({
                       title: '¿Está seguro?',
@@ -2018,9 +2447,21 @@ const Usuarios = () => {
                     });
                   }}
                   title="Activar usuario"
-                  style={{ marginRight: '0.5rem' }}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    backgroundColor: '#28a745',
+                    border: 'none',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    padding: 0,
+                    marginRight: '0.5rem'
+                  }}
                 >
-                  <i className="fa fa-check-circle"></i>
+                  <i className="fa fa-check" style={{ color: 'white', fontSize: '16px' }}></i>
                 </button>
               );
             }
@@ -2032,7 +2473,7 @@ const Usuarios = () => {
         
         {/* Controles de paginación del servidor (siempre que haya más de una página) */}
         {totalPages > 1 && (
-          <div className="d-flex justify-content-between align-items-center mt-3">
+          <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
             <div>
               <span className="text-muted">
                 Mostrando página {currentPage} de {totalPages} ({totalItems} usuarios)
