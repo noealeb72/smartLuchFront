@@ -10,6 +10,12 @@
   left: 0;
   right: 0;
   z-index: 1000;
+  overflow: visible !important;
+}
+
+.navbar .container-fluid {
+  position: relative !important;
+  overflow: visible !important;
 }
 
 .navbar.smart-bg {
@@ -22,24 +28,25 @@
 .smart-title {
   margin: 0px 0px 0px 0px;
   padding: 0px 0px 0px 0px;
-  font-size: 150px; /* Tamaño base para móvil - aumentado más */
+  font-size: 1.5rem !important; /* Tamaño normal para el texto */
   color: white !important;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  font-weight: 900; /* Más bold (máximo válido) */
-  margin-left: 3rem !important; /* Margen izquierdo aumentado */
+  font-weight: 700 !important;
+  margin-left: 0 !important;
+  line-height: 1.2 !important;
 }
 
 .smart-title i {
   color: white !important;
-  font-size: 2.2em; /* Icono más grande - aumentado */
-  margin-right: 0 !important;
+  font-size: 1.5rem !important; /* Icono del mismo tamaño que el texto */
+  margin-right: 0.5rem !important;
   padding-right: 0 !important;
   margin-left: 0 !important;
   padding-left: 0 !important;
 }
 
 .smart-title span {
-  margin-left: -0.2rem !important;
+  margin-left: 0 !important;
   padding-left: 0 !important;
   letter-spacing: 0 !important;
 }
@@ -47,12 +54,12 @@
 /* Logo más grande en desktop */
 @media (min-width: 992px) {
   .smart-title {
-    font-size: 220px !important; /* Más grande en desktop - aumentado más */
-    margin-left: 3rem !important; /* Margen izquierdo aumentado en desktop */
+    font-size: 1.75rem !important;
+    margin-left: 0 !important;
   }
 
   .smart-title i {
-    font-size: 2.5em !important; /* Icono más grande en desktop - aumentado */
+    font-size: 1.75rem !important;
   }
 }
 
@@ -70,6 +77,8 @@
   white-space: nowrap !important;
   color: #ffffff !important; /* Color blanco fijo */
   transition: none !important; /* Sin transición */
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 /* Desactivar cambio de color al pasar el mouse */
@@ -140,6 +149,73 @@
   right: 0 !important;
   left: auto !important;
   margin-top: 0.125rem !important;
+  z-index: 1050 !important;
+}
+
+/* Asegurar que los nav-items no se superpongan */
+.navbar-nav .nav-item {
+  position: relative !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+/* Asegurar que el navbar-nav no se comprima */
+.navbar-nav {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 0 !important;
+}
+
+/* Asegurar que el contenedor del menú no se comprima */
+#navbarSupportedContent {
+  flex-shrink: 0 !important;
+  min-width: 0 !important;
+}
+
+/* Asegurar que solo un menú se muestre a la vez */
+#navbarSupportedContent.d-md-flex {
+  display: flex !important;
+}
+
+#navbarSupportedContentMobile.d-md-none {
+  display: none !important;
+}
+
+/* Forzar que solo un menú se muestre a la vez */
+@media (min-width: 768px) {
+  #navbarSupportedContentMobile {
+    display: none !important;
+  }
+  
+  #navbarSupportedContent {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  #navbarSupportedContent {
+    display: none !important;
+  }
+  
+  #navbarSupportedContentMobile {
+    display: block !important;
+  }
+}
+
+/* Asegurar que el menú desktop esté oculto en móvil */
+#navbarSupportedContent.d-none {
+  display: none !important;
+}
+
+#navbarSupportedContent.d-md-flex {
+  display: flex !important;
+}
+
+/* Asegurar que el menú móvil esté oculto en desktop */
+#navbarSupportedContentMobile.d-md-none {
+  display: none !important;
 }
 
 /* Mostrar dropdown cuando tiene clase 'show' */
@@ -163,30 +239,83 @@
   }
 }
 
-/* Estilos responsive para móvil */
-@media (max-width: 991.98px) {
+/* Estilos responsive para móvil y tablet pequeña */
+@media (max-width: 767.98px) {
   .navbar {
     flex-direction: column !important;
     align-items: stretch !important;
   }
 
   .smart-title {
-    font-size: 130px !important; /* Aumentado más para móvil */
-    margin-left: 3rem !important; /* Margen izquierdo aumentado en móvil */
+    font-size: 1.25rem !important;
+    margin-left: 0 !important;
   }
 
   .smart-title i {
-    font-size: 2em !important; /* Icono más grande en móvil */
+    font-size: 1.25rem !important;
   }
 
-  /* Ocultar menú hamburguesa en móvil */
+  /* Estilos para el menú hamburguesa en móvil */
   .navbar-toggler {
-    display: none !important;
+    display: block !important;
+    order: 2;
+    margin-left: auto;
   }
 
-  /* Ocultar menú colapsable en móvil */
-  .navbar-collapse {
-    display: none !important;
+  /* Menú móvil fuera del nav */
+  #navbarSupportedContentMobile {
+    display: block !important;
+    width: 100% !important;
+    background-color: var(--smart-primary) !important;
+    padding: 0.5rem 0 !important;
+    position: relative !important;
+    z-index: 999 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+  }
+
+  /* Estilos para los dropdowns en móvil */
+  #navbarSupportedContentMobile .dropdown-menu {
+    position: static !important;
+    float: none !important;
+    width: 100% !important;
+    margin-top: 0.5rem !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  #navbarSupportedContentMobile .dropdown-item {
+    color: white !important;
+    padding: 0.75rem 1.5rem !important;
+  }
+
+  #navbarSupportedContentMobile .dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+  }
+
+  /* Ajustar los nav-links en móvil */
+  #navbarSupportedContentMobile .nav-link {
+    padding: 0.75rem 1.5rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  #navbarSupportedContentMobile .nav-link:last-child {
+    border-bottom: none !important;
+  }
+
+  #navbarSupportedContentMobile .nav-item {
+    list-style: none !important;
+  }
+
+  #navbarSupportedContentMobile .navbar-nav {
+    flex-direction: column !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
 
