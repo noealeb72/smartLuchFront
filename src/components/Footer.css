@@ -15,7 +15,7 @@ footer {
 
 footer.smart-bg {
   margin-top: auto !important;
-  padding-top: 1rem;
+  padding-top: 0.5rem !important;
   padding-bottom: 0.75rem;
   margin-bottom: 0 !important;
   margin-left: 0 !important;
@@ -28,7 +28,7 @@ footer.smart-bg {
 }
 
 footer.smart-bg .container {
-  padding-top: 0.5rem;
+  padding-top: 0.25rem !important;
   padding-bottom: 0.5rem;
   margin-bottom: 0 !important;
 }
@@ -36,16 +36,60 @@ footer.smart-bg .container {
 footer.smart-bg h4 {
   font-size: 1.1rem !important;
   margin-bottom: 0.5rem !important;
+  font-family: var(--smart-font-headings) !important;
 }
 
 footer.smart-bg p {
   font-size: 0.85rem !important;
   margin-bottom: 0.5rem !important;
+  font-family: var(--smart-font-primary) !important;
 }
 
 footer.smart-bg .nav-link {
   font-size: 0.9rem !important;
   padding: 0.25rem 0.5rem !important;
+  font-family: var(--smart-font-primary) !important;
+  color: white !important;
+}
+
+footer.smart-bg .nav-link i,
+footer.smart-bg .nav-link .fab,
+footer.smart-bg .nav-link .fa,
+footer.smart-bg .nav-link i.fab,
+footer.smart-bg .nav-link i.fa {
+  color: white !important;
+  font-size: 1.2rem !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  font-family: "Font Awesome 6 Brands", "Font Awesome 5 Brands" !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  text-rendering: auto !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+footer.smart-bg .nav-link i.fab::before {
+  font-family: "Font Awesome 6 Brands" !important;
+  font-weight: 400 !important;
+}
+
+footer.smart-bg {
+  font-family: var(--smart-font-primary) !important;
+}
+
+footer.smart-bg * {
+  font-family: var(--smart-font-primary) !important;
+}
+
+footer.smart-bg h4,
+footer.smart-bg h1,
+footer.smart-bg h2,
+footer.smart-bg h3,
+footer.smart-bg h5,
+footer.smart-bg h6 {
+  font-family: var(--smart-font-headings) !important;
 }
 
 .footer-widget {
@@ -54,7 +98,12 @@ footer.smart-bg .nav-link {
 
 .open-hours li {
   margin-bottom: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.75rem !important;
+  font-family: var(--smart-font-primary) !important;
+}
+
+.open-hours li span {
+  font-size: 0.75rem !important;
 }
 
 /* Estilos para footer simple (páginas que no sean Index) */
