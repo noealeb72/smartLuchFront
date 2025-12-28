@@ -131,6 +131,12 @@ const DataTable = ({
                       }
                     }
                     
+                    // Si el valor es un objeto, intentar extraer propiedades comunes o mostrar un mensaje
+                    if (value !== null && value !== undefined && typeof value === 'object' && !Array.isArray(value)) {
+                      // Intentar obtener propiedades comunes de objetos
+                      value = value.nombre || value.Nombre || value.descripcion || value.Descripcion || value.id || value.Id || '[Objeto]';
+                    }
+                    
                     // Si aún no hay valor, mostrar '-'
                     if (value === undefined || value === null || value === '') {
                       value = '-';

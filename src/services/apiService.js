@@ -25,6 +25,7 @@ import { proyectosService } from './proyectosService';
 import { planesNutricionalesService } from './planesNutricionalesService';
 import { jerarquiasService } from './jerarquiasService';
 import { configApiService } from './configApiService';
+import { reportesService } from './reportesService';
 import { getApiBaseUrl } from './configService';
 import api from './apiClient';
 
@@ -63,6 +64,9 @@ export const apiService = {
 
   // Configuración
   getConfig: configApiService.getConfig,
+
+  // Reportes
+  getReportePorComensal: reportesService.getReportePorComensal,
 
   // Usuarios
   getUsuarios: usuariosService.getUsuarios,

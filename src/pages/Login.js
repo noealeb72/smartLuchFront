@@ -109,8 +109,8 @@ const Login = () => {
         </div>
       )}
 
-      <div className="container" style={{ paddingTop: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '0' : '10px', overflow: 'visible', minHeight: '100%', maxWidth: '100%' }}>
-        <div className="d-flex justify-content-center" style={{ width: '100%', alignItems: 'center', padding: isMobile ? '0' : '20px', overflow: 'visible' }}>
+      <div className="container" style={{ paddingTop: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, overflow: 'visible', minHeight: '100%', maxWidth: '100%' }}>
+        <div className="d-flex justify-content-center" style={{ width: '100%', alignItems: 'center', padding: 0, overflow: 'visible' }}>
           <div className="user_card">
             <div className="d-flex justify-content-center">
               <div className="brand_logo_container">
@@ -166,7 +166,7 @@ const Login = () => {
                     placeholder="Contraseña"
                     autoComplete="current-password"
                     required
-                    style={{ borderLeft: 'none', borderRight: 'none', paddingLeft: '0.75rem', borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+                    style={{ borderLeft: 'none', paddingLeft: '0.75rem' }}
                   />
                   <div className="input-group-append">
                     <button
@@ -199,7 +199,7 @@ const Login = () => {
                   </div>
                 </div>
 
-                <div className="d-flex justify-content-center login_container" style={{ marginTop: isMobile ? '1rem' : '1.5rem' }}>
+                <div className="d-flex justify-content-center login_container" style={{ marginTop: isMobile ? '1rem' : '1.5rem', marginBottom: 0 }}>
                   <button
                     type="submit"
                     className="btn login_btn"
@@ -208,10 +208,6 @@ const Login = () => {
                   >
                     Ingresar <i className="fas fa-arrow-right ml-2"></i>
                   </button>
-                </div>
-
-                <div className="text-center mt-4 mb-3" style={{ position: 'relative' }}>
-                  <hr style={{ border: 'none', borderTop: '1px solid #e9ecef', margin: 0 }} />
                 </div>
               </form>
             </div>

@@ -1473,20 +1473,25 @@ const esPlatoInactivo = (plato) => {
                 field: 'plannutricional',
                 label: 'Plan Nutricional',
                 render: (v, row) => {
-                  const planNombre =
+                  // Primero intentar obtener el nombre directamente
+                  let planNombre = 
                     row.plannutricional_nombre ||
                     row.Plannutricional_nombre ||
                     row.planNutricional_nombre ||
                     row.planNutricionalNombre ||
-                    row.plan_nutricional_nombre ||
-                    (row.planNutricional &&
-                      (row.planNutricional.nombre ||
-                        row.planNutricional.Nombre)) ||
-                    (row.PlanNutricional &&
-                      (row.PlanNutricional.nombre ||
-                        row.PlanNutricional.Nombre)) ||
-                    '-';
-                  return planNombre;
+                    row.plan_nutricional_nombre;
+                  
+                  // Si no hay nombre directo, intentar desde el objeto anidado
+                  if (!planNombre) {
+                    if (row.planNutricional && typeof row.planNutricional === 'object') {
+                      planNombre = row.planNutricional.nombre || row.planNutricional.Nombre || row.planNutricional.descripcion || row.planNutricional.Descripcion;
+                    } else if (row.PlanNutricional && typeof row.PlanNutricional === 'object') {
+                      planNombre = row.PlanNutricional.nombre || row.PlanNutricional.Nombre || row.PlanNutricional.descripcion || row.PlanNutricional.Descripcion;
+                    }
+                  }
+                  
+                  // Asegurar que siempre retornamos un string
+                  return planNombre || '-';
                 },
               },
               {

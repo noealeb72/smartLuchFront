@@ -51,10 +51,16 @@ const Navbar = memo(() => {
   };
 
   const toggleDropdown = (dropdownId) => {
-    setOpenDropdowns((prev) => ({
-      ...prev,
-      [dropdownId]: !prev[dropdownId],
-    }));
+    setOpenDropdowns((prev) => {
+      // Si el dropdown que se está haciendo clic ya está abierto, cerrarlo
+      if (prev[dropdownId]) {
+        return {};
+      }
+      // Si está cerrado, abrirlo y cerrar todos los demás
+      return {
+        [dropdownId]: true,
+      };
+    });
   };
 
   // Cerrar dropdowns al hacer clic fuera
@@ -319,16 +325,20 @@ const Navbar = memo(() => {
                 >
                   Turnos
                 </Link>
-                <div className="dropdown-divider"></div>
-                <Link 
-                  className="dropdown-item" 
-                  to="/configuracion" 
-                  role="menuitem"
-                  onClick={() => setOpenDropdowns({})}
-                >
-                  <i className="fa fa-server mr-2" aria-hidden="true"></i>
-                  Configuración del Servidor
-                </Link>
+                {role === 'Admin' && (
+                  <>
+                    <div className="dropdown-divider"></div>
+                    <Link 
+                      className="dropdown-item" 
+                      to="/configuracion" 
+                      role="menuitem"
+                      onClick={() => setOpenDropdowns({})}
+                    >
+                      <i className="fa fa-server mr-2" aria-hidden="true"></i>
+                      Configuración del Servidor
+                    </Link>
+                  </>
+                )}
               </div>
             </li>
           )}
