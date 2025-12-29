@@ -15,8 +15,10 @@ const Buscador = ({ filtro, setFiltro, placeholder = 'Filtrar por nombre, apelli
           style={{
             border: '1px solid #ced4da',
             borderRight: filtro ? 'none' : '1px solid #ced4da',
-            borderTopRightRadius: filtro ? 0 : '0.25rem',
-            borderBottomRightRadius: filtro ? 0 : '0.25rem',
+            borderTopLeftRadius: '0.25rem',
+            borderBottomLeftRadius: '0.25rem',
+            borderTopRightRadius: 0,
+            borderBottomRightRadius: 0,
             boxSizing: 'border-box',
             overflow: 'visible',
             minWidth: 0,
@@ -29,7 +31,7 @@ const Buscador = ({ filtro, setFiltro, placeholder = 'Filtrar por nombre, apelli
           }}
         />
         {filtro && (
-          <div className="input-group-append" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'stretch', marginLeft: 0 }}>
+          <div className="input-group-append" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'stretch', marginLeft: 0, height: '100%' }}>
             <button
               className="btn btn-outline-secondary"
               type="button"
@@ -38,20 +40,21 @@ const Buscador = ({ filtro, setFiltro, placeholder = 'Filtrar por nombre, apelli
               style={{
                 backgroundColor: '#343a40',
                 color: 'white',
-                borderColor: '#343a40',
-                borderLeft: '1px solid #343a40',
+                border: '1px solid #343a40',
+                borderLeft: 'none',
                 borderTopLeftRadius: 0,
                 borderBottomLeftRadius: 0,
-                borderTopRightRadius: '0.25rem',
-                borderBottomRightRadius: '0.25rem',
-                height: 'calc(1.5em + 1rem + 2px)',
+                borderTopRightRadius: 0,
+                borderBottomRightRadius: 0,
+                height: '100%',
                 minHeight: 'calc(1.5em + 1rem + 2px)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: '0.5rem 0.75rem',
-                marginLeft: '-2px',
+                marginLeft: 0,
                 flexShrink: 0,
+                boxSizing: 'border-box',
               }}
             >
               <i className="fa fa-times"></i>

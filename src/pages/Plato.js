@@ -20,6 +20,7 @@ const Plato = () => {
   const [soloActivos, setSoloActivos] = useState(true); // Por defecto mostrar solo activos
   const [vista, setVista] = useState('lista'); // 'lista' | 'editar' | 'crear'
   const [planesNutricionales, setPlanesNutricionales] = useState([]);
+  const [imagenAmpliada, setImagenAmpliada] = useState(null); // URL de la imagen ampliada
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -196,6 +197,26 @@ const Plato = () => {
   useEffect(() => {
     cargarPlatos(currentPage, filtro);
   }, [currentPage, filtro, soloActivos, cargarPlatos]);
+
+  // Cerrar modal de imagen ampliada con tecla ESC
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && imagenAmpliada) {
+        setImagenAmpliada(null);
+      }
+    };
+
+    if (imagenAmpliada) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevenir scroll del body cuando el modal está abierto
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [imagenAmpliada]);
 
   // Auto-seleccionar plan nutricional si hay solo uno disponible
   useEffect(() => {
@@ -1393,6 +1414,14 @@ const esPlatoInactivo = (plato) => {
                             borderRadius: '0.25rem',
                             border: '1px solid #dee2e6',
                             cursor: 'pointer',
+                            transition: 'opacity 0.2s',
+                          }}
+                          onClick={() => setImagenAmpliada(fotoUrl)}
+                          onMouseEnter={(e) => {
+                            e.target.style.opacity = '0.8';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.opacity = '1';
                           }}
                           onError={(e) => {
                             // Si la imagen falla al cargar, mostrar el fallback
@@ -1629,6 +1658,93 @@ const esPlatoInactivo = (plato) => {
             enablePagination={true}
           />
         </div>
+
+        {/* Modal para imagen ampliada */}
+        {imagenAmpliada && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              cursor: 'pointer',
+            }}
+            onClick={() => setImagenAmpliada(null)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setImagenAmpliada(null);
+              }
+            }}
+            tabIndex={0}
+          >
+            <div
+              style={{
+                position: 'relative',
+                width: '600px',
+                height: '600px',
+                maxWidth: '90vw',
+                maxHeight: '90vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={imagenAmpliada}
+                alt="Imagen ampliada del plato"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  maxWidth: '600px',
+                  maxHeight: '600px',
+                  objectFit: 'contain',
+                  borderRadius: '0.5rem',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setImagenAmpliada(null)}
+                style={{
+                  position: 'absolute',
+                  top: '-40px',
+                  right: '0',
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '35px',
+                  height: '35px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '1.2rem',
+                  color: '#333',
+                  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#fff';
+                  e.target.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                  e.target.style.transform = 'scale(1)';
+                }}
+                title="Cerrar (ESC)"
+              >
+                <i className="fa fa-times"></i>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

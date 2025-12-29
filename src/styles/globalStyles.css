@@ -700,3 +700,58 @@ a:focus {
   overflow: visible !important;
 }
 
+/* Estilo específico para el input de búsqueda */
+#buscar {
+  border: 1px solid #ced4da !important;
+  border-left: 1px solid #ced4da !important;
+  border-right: 1px solid #ced4da !important;
+  border-top: 1px solid #ced4da !important;
+  border-bottom: 1px solid #ced4da !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  min-width: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Asegurar que el input-group no corte el input de búsqueda */
+.input-group {
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+}
+
+.input-group #buscar {
+  border: 1px solid #ced4da !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Botón de limpiar búsqueda sin bordes redondeados y misma altura que el input */
+.input-group .input-group-append {
+  height: 100% !important;
+  display: flex !important;
+  align-items: stretch !important;
+}
+
+.input-group .input-group-append button {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  height: 100% !important;
+  min-height: calc(1.5em + 1rem + 2px) !important;
+  box-sizing: border-box !important;
+}
+
+/* Asegurar que input-group-append esté en línea con el input */
+.input-group .input-group-append {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  margin-left: 0 !important;
+}
+

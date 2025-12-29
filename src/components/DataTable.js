@@ -65,8 +65,26 @@ const DataTable = ({
   }
 
   if (!data || data.length === 0) {
+    // Detectar si es un mensaje de búsqueda sin resultados
+    const isSearchMessage = emptyMessage && (
+      emptyMessage.includes('No se encontraron') || 
+      emptyMessage.includes('coincidan con la búsqueda')
+    );
+    
     return (
-      <div className="alert alert-info">
+      <div 
+        className={isSearchMessage ? "alert" : "alert alert-info"}
+        style={isSearchMessage ? {
+          backgroundColor: 'var(--smart-primary-bg)',
+          borderColor: 'var(--smart-primary-dark)',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          color: 'var(--smart-primary)',
+          padding: '0.75rem 1.25rem',
+          marginBottom: '1rem',
+          borderRadius: '0.25rem'
+        } : {}}
+      >
         {emptyMessage}
       </div>
     );

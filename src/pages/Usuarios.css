@@ -274,6 +274,28 @@ body.modal-open {
   border-radius: 0.25rem;
 }
 
+/* Excepción para el input de búsqueda - debe terminar recto */
+.input-group #buscar,
+#buscar {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Botón de limpiar búsqueda sin bordes redondeados y misma altura que el input */
+.input-group .input-group-append {
+  height: 100% !important;
+  display: flex !important;
+  align-items: stretch !important;
+}
+
+.input-group .input-group-append button {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  height: 100% !important;
+  min-height: calc(1.5em + 1rem + 2px) !important;
+  box-sizing: border-box !important;
+}
+
 .form-group .form-control:focus {
   border-color: #F34949;
   outline: none;
