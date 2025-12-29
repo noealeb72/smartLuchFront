@@ -1193,13 +1193,13 @@ const esPlatoInactivo = (plato) => {
           <div
             style={{
               display: 'flex',
-              alignItems: 'flex-end',
-              gap: '0.5rem',
+              alignItems: 'center',
+              gap: '0.75rem',
               marginBottom: '1rem',
-              flexWrap: 'wrap',
+              flexWrap: 'nowrap',
             }}
           >
-            <div style={{ flex: '1', minWidth: '300px' }}>
+            <div style={{ flex: '1', minWidth: '200px', maxWidth: '100%' }}>
               <Buscador
                 filtro={filtro}
                 setFiltro={handleFiltroChange}
@@ -1217,6 +1217,7 @@ const esPlatoInactivo = (plato) => {
                 border: '1px solid #ced4da',
                 borderRadius: '0.25rem',
                 height: '38px',
+                flexShrink: 0,
               }}
             >
               <input
@@ -1247,7 +1248,7 @@ const esPlatoInactivo = (plato) => {
               </label>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
               <button
                 type="button"
                 className="btn"
@@ -1260,7 +1261,7 @@ const esPlatoInactivo = (plato) => {
                   color: 'white',
                   padding: '0.375rem 0.5rem',
                   width: '36px',
-                  height: '36px',
+                  height: '38px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1282,7 +1283,7 @@ const esPlatoInactivo = (plato) => {
                   color: 'white',
                   padding: '0.375rem 0.5rem',
                   width: '36px',
-                  height: '36px',
+                  height: '38px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
