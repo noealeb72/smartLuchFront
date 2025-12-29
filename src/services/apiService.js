@@ -67,6 +67,7 @@ export const apiService = {
 
   // Reportes
   getReportePorComensal: reportesService.getReportePorComensal,
+  getReporteGeneral: reportesService.getReporteGeneral,
 
   // Usuarios
   getUsuarios: usuariosService.getUsuarios,

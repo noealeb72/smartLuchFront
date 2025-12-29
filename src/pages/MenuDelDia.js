@@ -51,6 +51,7 @@ const MenuDelDia = () => {
 
   const cargarCatalogos = useCallback(async () => {
     try {
+      setIsLoading(true);
       const [
         turnosData,
         platosData,
@@ -60,7 +61,7 @@ const MenuDelDia = () => {
         centrosData,
         plantasData,
       ] = await Promise.all([
-        turnosService.getTurnosDisponibles(),
+        turnosService.getTurnosLista(1, 1000, '', true), // Obtener todos los turnos activos
         platosService.obtenerPlatosLista(1, 1000, '', true), // Obtener todos los platos activos
         catalogosService.getJerarquias(),
         catalogosService.getPlanesNutricionales(),
@@ -69,15 +70,50 @@ const MenuDelDia = () => {
         catalogosService.getPlantas(),
       ]);
 
-      setTurnos(Array.isArray(turnosData) ? turnosData : []);
-      setPlatos(Array.isArray(platosData) ? (platosData.items || platosData.data || platosData) : []);
+      // El backend devuelve: { id, nombre, descripcion }
+      // Normalizar y asegurar que sean arrays
+      console.log('📦 [MenuDelDia] Datos recibidos de catálogos:', {
+        turnos: turnosData,
+        platos: platosData,
+        jerarquias: jerarquiasData,
+        planes: planesData,
+        proyectos: proyectosData,
+        centros: centrosData,
+        plantas: plantasData,
+      });
+
+      // getTurnosLista devuelve un objeto con items, totalItems, etc.
+      const turnosArray = Array.isArray(turnosData) ? turnosData : (turnosData?.items || turnosData?.data || []);
+      const platosArray = Array.isArray(platosData) ? (platosData.items || platosData.data || platosData) : [];
+      
+      setTurnos(turnosArray);
+      setPlatos(platosArray);
       setJerarquias(Array.isArray(jerarquiasData) ? jerarquiasData : []);
       setPlanesNutricionales(Array.isArray(planesData) ? planesData : []);
       setProyectos(Array.isArray(proyectosData) ? proyectosData : []);
       setCentrosDeCosto(Array.isArray(centrosData) ? centrosData : []);
       setPlantas(Array.isArray(plantasData) ? plantasData : []);
+
+      console.log('✅ [MenuDelDia] Catálogos normalizados:', {
+        turnos: turnosArray.length,
+        platos: platosArray.length,
+        jerarquias: jerarquias.length,
+        planes: planesNutricionales.length,
+        proyectos: proyectos.length,
+        centros: centrosDeCosto.length,
+        plantas: plantas.length,
+      });
     } catch (error) {
       console.error('Error al cargar catálogos:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Error al cargar los catálogos. Por favor, intente de nuevo más tarde.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -754,8 +790,12 @@ const MenuDelDia = () => {
                       name="plannutricional_id"
                       value={formData.plannutricional_id || ''}
                       onChange={handleInputChange}
+                      disabled={isLoading}
                     >
-                      <option value="">Seleccione un plan nutricional</option>
+                      <option value="">{isLoading ? 'Cargando...' : 'Seleccione un plan nutricional'}</option>
+                      {planesNutricionales.length === 0 && !isLoading && (
+                        <option value="" disabled>No hay planes nutricionales disponibles</option>
+                      )}
                       {planesNutricionales.map((plan) => {
                         const planId = plan.id || plan.Id || plan.ID;
                         const planNombre = plan.nombre || plan.Nombre || plan.descripcion || plan.Descripcion || '';
@@ -849,11 +889,15 @@ const MenuDelDia = () => {
                       name="jerarquiaId"
                       value={formData.jerarquiaId || ''}
                       onChange={handleInputChange}
+                      disabled={isLoading}
                     >
-                      <option value="">Seleccione una jerarquía</option>
+                      <option value="">{isLoading ? 'Cargando...' : 'Seleccione una jerarquía'}</option>
+                      {jerarquias.length === 0 && !isLoading && (
+                        <option value="" disabled>No hay jerarquías disponibles</option>
+                      )}
                       {jerarquias.map((jerarquia) => {
                         const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID;
-                        const jerarquiaNombre = jerarquia.nombre || jerarquia.Nombre || '';
+                        const jerarquiaNombre = jerarquia.nombre || jerarquia.Nombre || jerarquia.descripcion || jerarquia.Descripcion || '';
                         return (
                           <option key={jerarquiaId} value={String(jerarquiaId)}>
                             {jerarquiaNombre}
@@ -898,8 +942,12 @@ const MenuDelDia = () => {
                       name="proyectoId"
                       value={formData.proyectoId || ''}
                       onChange={handleInputChange}
+                      disabled={isLoading}
                     >
-                      <option value="">Seleccione un proyecto</option>
+                      <option value="">{isLoading ? 'Cargando...' : 'Seleccione un proyecto'}</option>
+                      {proyectos.length === 0 && !isLoading && (
+                        <option value="" disabled>No hay proyectos disponibles</option>
+                      )}
                       {proyectos.map((proyecto) => {
                         const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
                         const proyectoNombre = proyecto.nombre || proyecto.Nombre || proyecto.descripcion || proyecto.Descripcion || '';
@@ -921,8 +969,12 @@ const MenuDelDia = () => {
                       name="centroCostoId"
                       value={formData.centroCostoId || ''}
                       onChange={handleInputChange}
+                      disabled={isLoading}
                     >
-                      <option value="">Seleccione un centro de costo</option>
+                      <option value="">{isLoading ? 'Cargando...' : 'Seleccione un centro de costo'}</option>
+                      {centrosDeCosto.length === 0 && !isLoading && (
+                        <option value="" disabled>No hay centros de costo disponibles</option>
+                      )}
                       {centrosDeCosto.map((centro) => {
                         const centroId = centro.id || centro.Id || centro.ID;
                         const centroNombre = centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion || '';
@@ -944,8 +996,12 @@ const MenuDelDia = () => {
                       name="plantaId"
                       value={formData.plantaId || ''}
                       onChange={handleInputChange}
+                      disabled={isLoading}
                     >
-                      <option value="">Seleccione una planta</option>
+                      <option value="">{isLoading ? 'Cargando...' : 'Seleccione una planta'}</option>
+                      {plantas.length === 0 && !isLoading && (
+                        <option value="" disabled>No hay plantas disponibles</option>
+                      )}
                       {plantas.map((planta) => {
                         const plantaId = planta.id || planta.Id || planta.ID;
                         const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';

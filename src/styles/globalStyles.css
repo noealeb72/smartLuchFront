@@ -10,6 +10,7 @@
    ============================================ */
 
 /* Texto general - Open Sans */
+/* Excluir iconos Font Awesome de la fuente global */
 body,
 p,
 span,
@@ -24,6 +25,86 @@ td,
 th,
 li {
   font-family: var(--smart-font-primary) !important;
+}
+
+/* Asegurar que los iconos Font Awesome usen su propia fuente */
+/* Esto es crítico para Chrome */
+i[class*="fa-"],
+i[class^="fa-"],
+i.fa,
+i.fas,
+i.far,
+i.fal,
+i.fab,
+i.fad,
+i.fak,
+.fa,
+.fas,
+.far,
+.fal,
+.fab,
+.fad,
+.fak,
+[class*="fa-"],
+[class^="fa-"] {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 5 Free", "Font Awesome 5 Pro" !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  text-rendering: auto !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  display: inline-block !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  word-wrap: normal !important;
+  white-space: nowrap !important;
+  direction: ltr !important;
+  speak: none !important;
+  line-height: 1 !important;
+}
+
+/* Iconos de marcas (Brands) usan Font Awesome 6 Brands */
+i.fab,
+i[class*="fab fa-"],
+.fab,
+[class*="fab fa-"] {
+  font-family: "Font Awesome 6 Brands" !important;
+  font-weight: 400 !important;
+}
+
+/* Asegurar que los pseudo-elementos ::before también usen la fuente correcta */
+i[class*="fa-"]::before,
+i[class^="fa-"]::before,
+i.fa::before,
+i.fas::before,
+i.far::before,
+i.fal::before,
+i.fab::before,
+i.fad::before,
+i.fak::before,
+.fa::before,
+.fas::before,
+.far::before,
+.fal::before,
+.fab::before,
+.fad::before,
+.fak::before,
+[class*="fa-"]::before,
+[class^="fa-"]::before {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 5 Free", "Font Awesome 5 Pro" !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Específico para iconos de marcas */
+i.fab::before,
+.fab::before,
+[class*="fab fa-"]::before {
+  font-family: "Font Awesome 6 Brands" !important;
+  font-weight: 400 !important;
 }
 
 /* Títulos - Josefin Sans */
@@ -248,22 +329,40 @@ h3, h4, h5, h6, .h3, .h4, .h5, .h6 {
    FORMULARIOS UNIFICADOS
    ============================================ */
 
-.form-control,
-.form-select,
-input,
-textarea,
-select {
+/* Excluir el login de estos estilos globales */
+.form-control:not(.login-container .form-control):not(.user_card .form-control),
+.form-select:not(.login-container .form-select):not(.user_card .form-select),
+input:not(.login-container input):not(.user_card input),
+textarea:not(.login-container textarea):not(.user_card textarea),
+select:not(.login-container select):not(.user_card select) {
   font-family: var(--smart-font-primary) !important;
   color: var(--smart-gray-dark) !important;
   border-color: var(--smart-gray-light) !important;
   background-color: var(--smart-white) !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  overflow: visible !important;
+  min-width: 0 !important;
 }
 
-.form-control:focus,
-.form-select:focus,
-input:focus,
-textarea:focus,
-select:focus {
+/* Asegurar que los select no se corten (excluir login) */
+select.form-control:not(.login-container select):not(.user_card select),
+select:not(.login-container select):not(.user_card select) {
+  padding-right: 2.5rem !important;
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+  -moz-appearance: menulist !important;
+  background-image: none !important;
+  overflow: visible !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Excluir el login de estos estilos de focus */
+.form-control:focus:not(.login-container .form-control):not(.user_card .form-control),
+.form-select:focus:not(.login-container .form-select):not(.user_card .form-select),
+input:focus:not(.login-container input):not(.user_card input),
+textarea:focus:not(.login-container textarea):not(.user_card textarea),
+select:focus:not(.login-container select):not(.user_card select) {
   border-color: var(--smart-primary) !important;
   box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.25) !important;
   outline: none !important;
@@ -542,5 +641,62 @@ a:focus {
 
 .shadow {
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   ESTILOS PARA EVITAR CORTES EN CAMPOS
+   ============================================ */
+
+/* Asegurar que las filas no corten los campos */
+.row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  overflow: visible !important;
+}
+
+.row > [class*="col-"] {
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+  overflow: visible !important;
+}
+
+/* Asegurar que los contenedores no corten los campos */
+.container,
+.container-fluid {
+  overflow: visible !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+/* Asegurar que los form-group no corten los campos */
+.form-group {
+  overflow: visible !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Asegurar que los select dentro de col-* no se corten */
+[class*="col-"] select,
+[class*="col-"] .form-control,
+[class*="col-"] input {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
 }
 

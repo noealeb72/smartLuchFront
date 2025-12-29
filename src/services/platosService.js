@@ -67,6 +67,33 @@ export const platosService = {
   },
 
   /**
+   * Busca platos simple (para autocompletes rápidos)
+   * GET api/plato/buscar-simple
+   * Requiere mínimo 4 caracteres en el texto
+   */
+  buscarPlatosSimple: async (texto = null, soloActivos = true, maxResultados = 20) => {
+    const baseUrl = getApiBaseUrl();
+
+    // Validar que el texto tenga al menos 4 caracteres
+    const textoTrimmed = texto ? texto.trim() : '';
+    if (textoTrimmed && textoTrimmed.length < 4) {
+      throw new Error('El texto de búsqueda debe tener al menos 4 caracteres');
+    }
+
+    const params = {
+      soloActivos: soloActivos,
+      maxResultados: maxResultados,
+    };
+
+    if (textoTrimmed && textoTrimmed.length >= 4) {
+      params.texto = textoTrimmed;
+    }
+
+    const response = await api.get(`${baseUrl}/api/plato/buscar-simple`, { params });
+    return response.data;
+  },
+
+  /**
    * Crea un nuevo plato
    * POST api/plato/crear
    */

@@ -1240,6 +1240,7 @@ const esPlatoInactivo = (plato) => {
                   fontSize: '0.875rem',
                   color: '#495057',
                   userSelect: 'none',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {soloActivos ? 'Platos activos' : 'Platos de baja'}

@@ -786,7 +786,7 @@ const Index = () => {
             <div className="section-content">
               <div className="row">
                 {/* Bienvenida - Desktop */}
-                <div className="container-fluid mt-4 pr-0 mr-0 row ocultar-en-movil">
+                <div className="container-fluid mt-4 row ocultar-en-movil" style={{ marginLeft: 0, marginRight: 0, paddingLeft: '1rem', paddingRight: '1rem' }}>
                   <div className="col-sm-6 col-12 bienvenida">
                     <h3>
                       Bienvenido {usuarioNombre || usuarioData?.nombre || user?.nombre || ''} {usuarioApellido || usuarioData?.apellido || user?.apellido || ''}
@@ -809,24 +809,38 @@ const Index = () => {
                     )}
                   </div>
 
-                  <div className="col-sm-6 pr-0 d-flex align-items-end">
-                    <label className="col-6 text-right mb-0" htmlFor="turno">
+                  <div className="col-sm-6" style={{ paddingLeft: '0.75rem', paddingRight: '0.75rem', display: 'flex', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
+                    <label className="mb-0" htmlFor="turno" style={{ paddingRight: '0.75rem', flexShrink: 0, textAlign: 'right', minWidth: 'fit-content', whiteSpace: 'nowrap' }}>
                       Ver opciones para turno:
                     </label>
 
                     {turnos.length > 0 ? (
-                      <select
-                        id="turno"
-                        className="form-control"
-                        value={selectedTurno?.Id || selectedTurno?.id || ''}
-                        onChange={onTurnoChanged}
-                      >
-                        {turnos.map((t, index) => (
-                          <option key={t.Id || t.id || `turno-${index}`} value={t.Id || t.id}>
-                            {t.Nombre || t.nombre || t.descripcion || t.Descripcion}
-                          </option>
-                        ))}
-                      </select>
+                      <div style={{ flex: '1 1 auto', minWidth: 0, maxWidth: '100%' }}>
+                        <select
+                          id="turno"
+                          className="form-control"
+                          value={selectedTurno?.Id || selectedTurno?.id || ''}
+                          onChange={onTurnoChanged}
+                          style={{ 
+                            width: '100%', 
+                            maxWidth: '100%',
+                            boxSizing: 'border-box',
+                            overflow: 'visible',
+                            paddingRight: '2.5rem',
+                            border: '1px solid #ced4da',
+                            borderLeft: '1px solid #ced4da',
+                            borderRight: '1px solid #ced4da',
+                            borderTop: '1px solid #ced4da',
+                            borderBottom: '1px solid #ced4da'
+                          }}
+                        >
+                          {turnos.map((t, index) => (
+                            <option key={t.Id || t.id || `turno-${index}`} value={t.Id || t.id}>
+                              {t.Nombre || t.nombre || t.descripcion || t.Descripcion}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     ) : (
                       <span className="text-muted ml-2">Sin turnos disponibles para hoy.</span>
                     )}
@@ -834,7 +848,7 @@ const Index = () => {
                 </div>
 
                 {/* Bienvenida - Mobile */}
-                <div className="container-fluid mt-4 pr-0 mr-0 row d-block d-md-none">
+                <div className="container-fluid mt-4 row d-block d-md-none" style={{ marginLeft: 0, marginRight: 0, paddingLeft: '1rem', paddingRight: '1rem' }}>
                   <div className="col-sm-12 bienvenida">
                     <h3>
                       <i className="lnr lnr-user"></i> Bienvenido {usuarioData?.nombre || user?.nombre || ''} {usuarioData?.apellido || user?.apellido || ''}
@@ -859,24 +873,38 @@ const Index = () => {
                     )}
                   </div>
 
-                  <div className="col-sm-12 pr-0 d-flex flex-column align-items-start">
+                  <div className="col-sm-12 d-flex flex-column align-items-start" style={{ paddingLeft: '0.75rem', paddingRight: '0.75rem', width: '100%' }}>
                     <label className="w-100 text-left mb-1" htmlFor="selectedTurno" style={{ margin: 0, padding: 0 }}>
                       Ver opciones para turno:
                     </label>
 
                     {turnos.length > 0 ? (
-                      <select
-                        className="form-control"
-                        id="selectedTurno"
-                        value={selectedTurno?.Id || selectedTurno?.id || ''}
-                        onChange={onTurnoChanged}
-                      >
-                        {turnos.map((t, index) => (
-                          <option key={t.Id || t.id || `turno-${index}`} value={t.Id || t.id}>
-                            {t.Nombre || t.nombre || t.descripcion || t.Descripcion}
-                          </option>
-                        ))}
-                      </select>
+                      <div style={{ width: '100%', maxWidth: '100%' }}>
+                        <select
+                          className="form-control"
+                          id="selectedTurno"
+                          value={selectedTurno?.Id || selectedTurno?.id || ''}
+                          onChange={onTurnoChanged}
+                          style={{ 
+                            width: '100%', 
+                            maxWidth: '100%',
+                            boxSizing: 'border-box',
+                            overflow: 'visible',
+                            paddingRight: '2.5rem',
+                            border: '1px solid #ced4da',
+                            borderLeft: '1px solid #ced4da',
+                            borderRight: '1px solid #ced4da',
+                            borderTop: '1px solid #ced4da',
+                            borderBottom: '1px solid #ced4da'
+                          }}
+                        >
+                          {turnos.map((t, index) => (
+                            <option key={t.Id || t.id || `turno-${index}`} value={t.Id || t.id}>
+                              {t.Nombre || t.nombre || t.descripcion || t.Descripcion}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     ) : (
                       <span className="text-muted mt-1">Sin turnos disponibles para hoy.</span>
                     )}
@@ -898,7 +926,7 @@ const Index = () => {
 
                 {/* Contenido principal */}
                 <div className="col-12 col-md-8 pt-3 mx-auto">
-                  <h4 className="mt-4 text-danger">Tu próximo pedido reservado</h4>
+                  <h4 className="mt-4 text-smart-primary">Tu próximo pedido reservado</h4>
 
                   {pedidosVigentes.length === 0 ? (
                     <div className="card mt-2 pl-2" role="status" aria-live="polite">
@@ -927,7 +955,18 @@ const Index = () => {
                     <>
                       <h4 className="mt-4" style={{ color: '#343a40' }}>Menú del día</h4>
                       {!isLoading && menuItems.length === 0 && (
-                        <div className="alert alert-warning mt-3" role="alert" aria-live="polite">
+                        <div 
+                          className="alert mt-3" 
+                          role="alert" 
+                          aria-live="polite"
+                          style={{
+                            backgroundColor: 'var(--smart-primary-bg)',
+                            borderColor: 'var(--smart-primary-dark)',
+                            color: 'var(--smart-primary)',
+                            borderWidth: '1px',
+                            borderStyle: 'solid'
+                          }}
+                        >
                           No hay platos disponibles para este turno.
                         </div>
                       )}

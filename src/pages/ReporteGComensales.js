@@ -21,6 +21,7 @@ const ReporteGComensales = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isCargandoHistorial, setIsCargandoHistorial] = useState(false);
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(true);
   
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -284,6 +285,14 @@ const ReporteGComensales = () => {
         plantaId ? parseInt(plantaId) : null // Convertir a número si existe
       );
       
+      // Debug: Ver qué datos vienen del backend
+      console.log('📸 [ReporteGComensales] Datos recibidos del backend:', {
+        foto: data.foto || data.Foto,
+        tieneFoto: !!(data.foto || data.Foto),
+        keys: Object.keys(data),
+        usuarioSeleccionadoFoto: usuarioSeleccionado?.foto || usuarioSeleccionado?.Foto
+      });
+      
       // Mapear los datos según la estructura del backend
       const historialCompleto = (data.consumidos || []).map(comanda => {
         // Asegurar que descripcionPlato sea siempre un string
@@ -318,33 +327,80 @@ const ReporteGComensales = () => {
       // Paginar el historial
       const historialPaginado = paginarHistorial(historialCompleto, 1);
       
-      // Normalizar los datos del reporte
+      // Obtener nombres de las entidades relacionadas desde el usuario seleccionado o datos del backend
+      const planNutricionalNombre = (() => {
+        const v = data.plannutricional;
+        if (!v) return usuarioSeleccionado?.plannutricional_nombre || usuarioSeleccionado?.planNutricionalNombre || null;
+        if (typeof v === 'object') return v.nombre || v.Nombre || v.descripcion || v.Descripcion || null;
+        return v;
+      })();
+
+      // Obtener foto del usuario (buscar en múltiples variantes)
+      const obtenerFoto = () => {
+        // Buscar en data del backend (variantes posibles)
+        const fotoData = data.foto || data.Foto || data.fotoUsuario || data.FotoUsuario;
+        if (fotoData) return fotoData;
+        
+        // Buscar en usuarioSeleccionado (variantes posibles)
+        const fotoUsuario = usuarioSeleccionado?.foto || 
+                           usuarioSeleccionado?.Foto || 
+                           usuarioSeleccionado?.fotoUsuario || 
+                           usuarioSeleccionado?.FotoUsuario;
+        if (fotoUsuario) return fotoUsuario;
+        
+        return null;
+      };
+
+      // Normalizar los datos del reporte según la estructura sugerida
       const reporteData = {
-        informacionComensal: {
-          nombre: data.nombre || '',
-          apellido: data.apellido || '',
-          dni: data.dni || '',
-          foto: data.foto || null,
-          legajo: data.legajo || legajo,
-          plannutricional: (() => {
-            const v = data.plannutricional;
-            if (!v) return null;
-            if (typeof v === 'object') return v.nombre || v.Nombre || v.descripcion || v.Descripcion || null;
-            return v;
-          })(),
-          proyecto_id: data.proyecto_id || null,
-          centrodecosto_id: data.centrodecosto_id || null,
-          planta_id: data.planta_id || null,
-          domicilio: data.domicilio || null,
-          platosConsumidos: historialCompleto.length,
-          bonificados: data.bonificados || 0,
-          bonificadosInvitados: data.bonificadosInvitados || 0,
-          costoTotal: data.monto || 0,
+        // Sección 1: Header con datos del usuario
+        usuario: {
+          foto: obtenerFoto(),
+          nombreCompleto: `${data.nombre || ''} ${data.apellido || ''}`.trim() || 
+                         `${usuarioSeleccionado?.nombre || ''} ${usuarioSeleccionado?.apellido || ''}`.trim(),
+          legajo: data.legajo || legajo || usuarioSeleccionado?.legajo || '',
+          dni: data.dni || usuarioSeleccionado?.dni || '',
+          domicilio: data.domicilio || usuarioSeleccionado?.domicilio || null
+        },
+        
+        // Sección 2: Información organizacional
+        organizacion: {
+          planta: usuarioSeleccionado?.planta_nombre || usuarioSeleccionado?.plantaNombre || usuarioSeleccionado?.planta || 'N/A',
+          centroCosto: usuarioSeleccionado?.centrodecosto_nombre || usuarioSeleccionado?.centroDeCostoNombre || usuarioSeleccionado?.centrodecosto || 'N/A',
+          proyecto: usuarioSeleccionado?.proyecto_nombre || usuarioSeleccionado?.proyectoNombre || usuarioSeleccionado?.proyecto || 'N/A',
+          jerarquia: usuarioSeleccionado?.jerarquia_nombre || usuarioSeleccionado?.jerarquiaNombre || usuarioSeleccionado?.jerarquia || 'N/A',
+          planNutricional: planNutricionalNombre || 'N/A'
+        },
+        
+        // Sección 3: Resumen de bonificaciones
+        bonificaciones: {
+          total: data.bonificados || 0,
+          invitadoAcumulado: usuarioSeleccionado?.bonificacionesInvitado || usuarioSeleccionado?.bonificaciones_invitado || 0,
+          invitadoRango: data.bonificadosInvitados || 0
+        },
+        
+        // Sección 4: Estadísticas del período
+        estadisticas: {
+          montoTotal: data.monto || 0,
           ultimoEstado: data.ultimoEstado || null,
           ultimoPlato: data.ultimoPlato || null,
-          proyecto_nombre: null, // Se puede cargar después si es necesario
-          centrodecosto_nombre: null // Se puede cargar después si es necesario
+          cantidadPlatosDistintos: (data.descripcionesPlatos || []).length
         },
+        
+        // Sección 5: Tabla de comandas
+        comandas: historialCompleto.map(comanda => ({
+          fecha: comanda.fecha,
+          plato: comanda.descripcionPlato || comanda.plato || 'N/A',
+          monto: comanda.monto || 0,
+          estado: comanda.estado || 'N/A',
+          bonificado: comanda.bonificado ? 'Sí' : 'No',
+          invitado: comanda.invitado ? 'Sí' : 'No'
+        })),
+        
+        // Sección 6: Lista de platos
+        platosDistintos: data.descripcionesPlatos || [],
+        
+        // Datos adicionales para compatibilidad
         historialCompleto: historialCompleto,
         historialPedidos: historialPaginado.items,
         totalItems: historialPaginado.totalItems,
@@ -415,10 +471,21 @@ const ReporteGComensales = () => {
 
   // Cambiar página del historial
   const handlePageChange = (page) => {
-    if (!reporte || !reporte.historialCompleto) return;
+    if (!reporte || !reporte.comandas || reporte.comandas.length === 0) return;
     
     setCurrentPage(page);
-    const historialPaginado = paginarHistorial(reporte.historialCompleto, page);
+    // Convertir comandas a formato de historial para la paginación
+    const historialParaPaginacion = reporte.comandas.map(comanda => ({
+      fecha: comanda.fecha,
+      plato: comanda.plato,
+      descripcionPlato: comanda.plato,
+      monto: comanda.monto,
+      estado: comanda.estado,
+      bonificado: comanda.bonificado === 'Sí',
+      invitado: comanda.invitado === 'Sí'
+    }));
+    
+    const historialPaginado = paginarHistorial(historialParaPaginacion, page);
     
     setReporte(prev => ({
       ...prev,
@@ -462,7 +529,33 @@ const ReporteGComensales = () => {
     }).format(valor);
   };
 
+  // Traducir estado
+  const traducirEstado = (estado) => {
+    if (!estado) return 'N/A';
+    const estadoLower = (estado || '').toLowerCase();
+    if (estadoLower.includes('aceptación') || estadoLower.includes('aceptacion')) {
+      return 'Aceptado';
+    } else if (estadoLower.includes('devuelto')) {
+      return 'Devuelto';
+    } else if (estadoLower.includes('pendiente')) {
+      return 'Pendiente';
+    }
+    return estado; // Devolver el estado original si no se reconoce
+  };
+
   // Obtener color del estado
+  // Limpiar la palabra "jerarquia" del inicio del texto
+  const limpiarJerarquia = (texto) => {
+    if (!texto || texto === 'N/A') return texto;
+    const textoLimpio = texto.trim();
+    // Verificar si comienza con "jerarquia" (case insensitive)
+    const regex = /^jerarquia\s+/i;
+    if (regex.test(textoLimpio)) {
+      return textoLimpio.replace(regex, '').trim();
+    }
+    return textoLimpio;
+  };
+
   const getEstadoColor = (estado) => {
     const estadoLower = (estado || '').toLowerCase();
     if (estadoLower.includes('aceptación') || estadoLower.includes('aceptacion')) {
@@ -477,10 +570,10 @@ const ReporteGComensales = () => {
 
   // Exportar reporte a PDF
   const handleExportarPDF = () => {
-    if (!reporte || !reporte.informacionComensal) {
+    if (!reporte || !reporte.usuario || !reporte.comandas || reporte.comandas.length === 0) {
       Swal.fire({
         title: 'Error',
-        text: 'No hay reporte para exportar',
+        text: 'No hay pedidos para exportar',
         icon: 'error',
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#F34949',
@@ -523,73 +616,128 @@ const ReporteGComensales = () => {
       doc.setFontSize(10);
       doc.setFont(undefined, 'normal');
       
-      const nombreCompleto = `${reporte.informacionComensal.nombre || usuarioSeleccionado?.nombre || ''} ${reporte.informacionComensal.apellido || usuarioSeleccionado?.apellido || ''}`.trim();
-      doc.text(`Nombre: ${nombreCompleto || 'N/A'}`, 14, yPos);
-      yPos += 6;
+      // Sección 1: Datos del usuario
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Datos del Usuario', 14, yPos);
+      yPos += 8;
       
-      doc.text(`DNI: ${reporte.informacionComensal.dni || usuarioSeleccionado?.dni || 'N/A'}`, 14, yPos);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Nombre completo: ${reporte.usuario.nombreCompleto || 'N/A'}`, 14, yPos);
       yPos += 6;
-      
-      doc.text(`Platos consumidos: ${reporte.informacionComensal.platosConsumidos || 0}`, 14, yPos);
+      doc.text(`Legajo: ${reporte.usuario.legajo || 'N/A'}`, 14, yPos);
       yPos += 6;
-      
-      doc.text(`Centro de Costo: ${reporte.informacionComensal.centrodecosto_nombre || 'N/A'}`, 14, yPos);
+      doc.text(`DNI: ${reporte.usuario.dni || 'N/A'}`, 14, yPos);
       yPos += 6;
+      if (reporte.usuario.domicilio) {
+        doc.text(`Domicilio: ${reporte.usuario.domicilio}`, 14, yPos);
+        yPos += 6;
+      }
+      yPos += 4;
       
-      doc.text(`Proyecto: ${reporte.informacionComensal.proyecto_nombre || 'N/A'}`, 14, yPos);
+      // Sección 2: Información organizacional
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Información Organizacional', 14, yPos);
+      yPos += 8;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Planta: ${reporte.organizacion.planta}`, 14, yPos);
       yPos += 6;
-      
-      doc.text(`Costo total: ${formatearMoneda(reporte.informacionComensal.costoTotal || 0)}`, 14, yPos);
+      doc.text(`Centro de Costo: ${reporte.organizacion.centroCosto}`, 14, yPos);
       yPos += 6;
-      
-      doc.text(`Bonificados del mes: ${reporte.informacionComensal.bonificados || 0}`, 14, yPos);
+      doc.text(`Proyecto: ${reporte.organizacion.proyecto}`, 14, yPos);
       yPos += 6;
-      
-      doc.text(`Perfil: ${reporte.informacionComensal.plannutricional || usuarioSeleccionado?.jerarquiaNombre || 'N/A'}`, 14, yPos);
+      doc.text(`Jerarquía: ${limpiarJerarquia(reporte.organizacion.jerarquia)}`, 14, yPos);
+      yPos += 6;
+      doc.text(`Plan Nutricional: ${reporte.organizacion.planNutricional}`, 14, yPos);
       yPos += 10;
       
-      // Historial de Pedidos
-      if (reporte.historialCompleto && reporte.historialCompleto.length > 0) {
+      // Sección 3: Resumen de bonificaciones
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Resumen de Bonificaciones', 14, yPos);
+      yPos += 8;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Total bonificados: ${reporte.bonificaciones.total || 0}`, 14, yPos);
+      yPos += 6;
+      doc.text(`Invitado acumulado: ${reporte.bonificaciones.invitadoAcumulado || 0}`, 14, yPos);
+      yPos += 6;
+      doc.text(`Invitado en rango: ${reporte.bonificaciones.invitadoRango || 0}`, 14, yPos);
+      yPos += 10;
+      
+      // Sección 4: Estadísticas del período
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Estadísticas del Período', 14, yPos);
+      yPos += 8;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Monto total: ${formatearMoneda(reporte.estadisticas.montoTotal || 0)}`, 14, yPos);
+      yPos += 6;
+      doc.text(`Último estado: ${traducirEstado(reporte.estadisticas.ultimoEstado) || 'N/A'}`, 14, yPos);
+      yPos += 6;
+      doc.text(`Último plato: ${reporte.estadisticas.ultimoPlato || 'N/A'}`, 14, yPos);
+      yPos += 6;
+      doc.text(`Cantidad de platos distintos: ${reporte.estadisticas.cantidadPlatosDistintos || 0}`, 14, yPos);
+      yPos += 10;
+      
+      // Sección 5: Historial de Pedidos
+      if (reporte.comandas && reporte.comandas.length > 0) {
         doc.setFontSize(12);
         doc.setFont(undefined, 'bold');
         doc.text('Historial de Pedidos', 14, yPos);
         yPos += 8;
         
         // Preparar datos de la tabla con TODOS los pedidos (no solo la página actual)
-        const tableData = reporte.historialCompleto.map((pedido) => {
-          // Asegurar que el nombre del plato sea string
-          let platoNombre = pedido.plato || pedido.descripcionPlato;
-          if (platoNombre && typeof platoNombre === 'object') {
-            platoNombre = platoNombre.descripcion || platoNombre.Descripcion || 
-                         platoNombre.nombre || platoNombre.Nombre || 'N/A';
-          }
-          platoNombre = platoNombre || 'N/A';
-          
+        const tableData = reporte.comandas.map((comanda) => {
           return [
-            formatearFechaHora(pedido.fecha || pedido.Fecha || pedido.fechaPedido),
-            platoNombre,
-            pedido.estado || 'N/A',
-            pedido.bonificado ? 'Sí' : 'No',
-            formatearMoneda(pedido.monto || 0)
+            formatearFechaHora(comanda.fecha),
+            comanda.plato || 'N/A',
+            traducirEstado(comanda.estado),
+            comanda.bonificado,
+            comanda.invitado,
+            formatearMoneda(comanda.monto || 0)
           ];
         });
         
         doc.autoTable({
           startY: yPos,
-          head: [['Fecha', 'Plato', 'Estado', 'Bonificación', 'Costo']],
+          head: [['Fecha', 'Plato', 'Estado', 'Bonificación', 'Invitado', 'Costo']],
           body: tableData,
           styles: { fontSize: 8 },
           headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { top: yPos }
         });
+        
+        // Sección 6: Lista de platos distintos
+        if (reporte.platosDistintos && reporte.platosDistintos.length > 0) {
+          yPos = doc.lastAutoTable.finalY + 10;
+          doc.setFontSize(12);
+          doc.setFont(undefined, 'bold');
+          doc.text('Platos Distintos Consumidos', 14, yPos);
+          yPos += 8;
+          
+          doc.setFontSize(10);
+          doc.setFont(undefined, 'normal');
+          reporte.platosDistintos.forEach((plato) => {
+            doc.text(`• ${plato || 'N/A'}`, 14, yPos);
+            yPos += 6;
+          });
+        }
       } else {
         doc.setFontSize(10);
         doc.text('No hay pedidos registrados en el rango de fechas seleccionado.', 14, yPos);
       }
       
       // Nombre del archivo
-      const nombreUsuario = nombreCompleto.replace(/\s+/g, '_') || 'comensal';
+      const nombreUsuario = (reporte.usuario.nombreCompleto || 'comensal').replace(/\s+/g, '_');
       const fechaArchivo = new Date().toISOString().split('T')[0];
       const fileName = `reporte_${nombreUsuario}_${fechaArchivo}.pdf`;
       
@@ -629,12 +777,53 @@ const ReporteGComensales = () => {
       <div className="container-fluid" style={{ backgroundColor: 'white', padding: '2rem 3rem', minHeight: 'calc(100vh - 200px)' }}>
         <div className="usuarios-form-container" style={{ maxWidth: '95%', width: '100%', margin: '0 auto' }}>
           <form>
-            <div className="form-section">
-              <div className="form-section-title">
-                <i className="fa fa-filter mr-2"></i>
-                <span>Filtros del Reporte</span>
+            <div className="form-section" style={{ marginBottom: '2rem' }}>
+              <div 
+                className="page-title-bar" 
+                style={{ 
+                  marginBottom: filtrosAbiertos ? '0' : '1.5rem', 
+                  borderRadius: filtrosAbiertos ? '0.5rem 0.5rem 0 0' : '0.5rem',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  transition: 'all 0.3s ease'
+                }}
+                onClick={() => setFiltrosAbiertos(!filtrosAbiertos)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setFiltrosAbiertos(!filtrosAbiertos);
+                  }
+                }}
+                aria-expanded={filtrosAbiertos}
+                aria-controls="filtros-content"
+              >
+                <h3 style={{ margin: 0, padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center' }}>
+                    <i className="fa fa-filter mr-2" aria-hidden="true" style={{ fontSize: '12px' }}></i>
+                    Filtros del Reporte
+                  </span>
+                  <i 
+                    className={`fa ${filtrosAbiertos ? 'fa-chevron-up' : 'fa-chevron-down'}`} 
+                    aria-hidden="true"
+                    style={{ fontSize: '0.9rem', marginLeft: '1rem', transition: 'transform 0.3s ease' }}
+                  ></i>
+                </h3>
               </div>
-              <div className="form-section-content">
+              {filtrosAbiertos && (
+              <div 
+                id="filtros-content"
+                className="form-section-content" 
+                style={{ 
+                  border: '1px solid #dee2e6', 
+                  borderTop: 'none', 
+                  borderRadius: '0 0 0.5rem 0.5rem', 
+                  backgroundColor: 'white', 
+                  padding: '1.5rem',
+                  animation: 'fadeIn 0.3s ease'
+                }}
+              >
                 <div className="row">
                   <div className="col-md-2">
                     <div className="form-group">
@@ -824,34 +1013,34 @@ const ReporteGComensales = () => {
                       <label style={{ visibility: 'hidden' }}>&nbsp;</label>
                       <button
                         type="button"
-                        className="btn form-control"
+                        className="btn"
                         onClick={handleGenerarReporte}
                         disabled={isGenerandoReporte || isLoading}
                         style={{
-                          backgroundColor: '#e9ecef',
-                          borderColor: '#ced4da',
-                          color: '#6c757d',
-                          height: 'calc(1.5em + 1rem + 2px)',
-                          minHeight: 'calc(1.5em + 1rem + 2px)',
+                          backgroundColor: '#6c757d',
+                          borderColor: '#6c757d',
+                          color: 'white',
+                          height: 'calc(1.5em + 0.75rem + 2px)',
+                          minHeight: 'calc(1.5em + 0.75rem + 2px)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '0.85rem',
-                          padding: '0.4rem 0.5rem',
+                          padding: '0.375rem 0.75rem',
                           whiteSpace: 'nowrap',
-                          lineHeight: '1.5',
-                          boxSizing: 'border-box'
+                          width: 'auto',
+                          minWidth: '120px'
                         }}
                       >
                         {isGenerandoReporte ? (
                           <>
-                            <span className="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>
-                            <span style={{ fontSize: '0.75rem' }}>Generando...</span>
+                            <span className="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
+                            Buscando...
                           </>
                         ) : (
                           <>
-                            <i className="fa fa-file-pdf mr-1" style={{ fontSize: '0.8rem' }}></i>
-                            <span style={{ fontSize: '0.75rem' }}>Generar</span>
+                            <i className="fa fa-search mr-2"></i>
+                            Buscar
                           </>
                         )}
                       </button>
@@ -859,79 +1048,212 @@ const ReporteGComensales = () => {
                   </div>
                 </div>
               </div>
+              )}
             </div>
           </form>
 
           {/* Sección del Reporte */}
           {mostrarReporte && reporte && (
             <div id="reporte-section" style={{ marginTop: '3rem' }}>
-              {/* Botón de exportar PDF */}
-              <div className="d-flex justify-content-end mb-3">
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={handleExportarPDF}
-                  disabled={!reporte || !reporte.informacionComensal}
-                  style={{
-                    backgroundColor: '#dc3545',
-                    borderColor: '#dc3545',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '0.5rem 1rem'
-                  }}
-                  title="Exportar reporte a PDF"
-                >
-                  <i className="fa fa-file-pdf mr-2"></i>
-                  Exportar a PDF
-                </button>
-              </div>
+              {/* Botón de exportar PDF - Solo mostrar si hay pedidos */}
+              {reporte.comandas && reporte.comandas.length > 0 && (
+                <div className="d-flex justify-content-end mb-3">
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={handleExportarPDF}
+                    style={{
+                      backgroundColor: '#dc3545',
+                      borderColor: '#dc3545',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.5rem 1rem'
+                    }}
+                    title="Exportar reporte a PDF"
+                  >
+                    <i className="fa fa-file-pdf mr-2"></i>
+                    Exportar a PDF
+                  </button>
+                </div>
+              )}
 
-              {/* Información del Comensal */}
+              {/* Tarjeta de Perfil del Comensal */}
               <div className="form-section" style={{ marginBottom: '2rem' }}>
                 <div className="page-title-bar" style={{ marginBottom: '1.5rem', borderRadius: '0.5rem 0.5rem 0 0' }}>
                   <h3 style={{ margin: 0, padding: '0.75rem 1.5rem' }}>
                     <i className="fa fa-user mr-2" aria-hidden="true"></i>
-                    Información del Comensal
+                    Datos del Usuario
                   </h3>
                 </div>
-                <div className="form-section-content" style={{ padding: '1.5rem' }}>
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="row">
-                        <div className="col-md-6 mb-3">
-                          <strong>Nombre:</strong> {reporte.informacionComensal.nombre || usuarioSeleccionado?.nombre || ''} {reporte.informacionComensal.apellido || usuarioSeleccionado?.apellido || ''}
+                <div className="form-section-content" style={{ padding: '1.5rem', border: '1px solid #dee2e6', borderTop: 'none', borderRadius: '0 0 0.5rem 0.5rem', backgroundColor: 'white' }}>
+                  <div className="row align-items-center">
+                    {/* Información del usuario - Columnas izquierda y centro */}
+                    <div className="col-md-9">
+                      {/* Primera fila: Nombre, DNI, Legajo */}
+                      <div className="row mb-3">
+                        <div className="col-md-4">
+                          <div>
+                            <strong>Nombre:</strong> {reporte.usuario.nombreCompleto || 'N/A'}
+                          </div>
                         </div>
-                        <div className="col-md-6 mb-3">
-                          <strong>DNI:</strong> {reporte.informacionComensal.dni || usuarioSeleccionado?.dni || 'N/A'}
+                        <div className="col-md-4">
+                          <div>
+                            <strong>DNI:</strong> {reporte.usuario.dni || 'N/A'}
+                          </div>
                         </div>
-                        <div className="col-md-6 mb-3">
-                          <strong>Platos consumidos:</strong> {reporte.informacionComensal.platosConsumidos || 0}
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          <strong>Centro de Costo:</strong> {reporte.informacionComensal.centrodecosto_nombre || 'N/A'}
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          <strong>Proyecto:</strong> {reporte.informacionComensal.proyecto_nombre || 'N/A'}
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          <strong>Costo total:</strong> {formatearMoneda(reporte.informacionComensal.costoTotal || 0)}
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          <strong>Bonificados del mes:</strong> {reporte.informacionComensal.bonificados || 0}
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          <strong>Perfil:</strong> {reporte.informacionComensal.plannutricional || usuarioSeleccionado?.jerarquiaNombre || 'N/A'}
+                        <div className="col-md-4">
+                          <div>
+                            <strong>Legajo:</strong> {reporte.usuario.legajo || 'N/A'}
+                          </div>
                         </div>
                       </div>
+                      
+                      {/* Segunda fila: Planta, Proyecto, Centro de Costo */}
+                      <div className="row mb-3">
+                        <div className="col-md-4">
+                          <div>
+                            <strong>Planta:</strong> {reporte.organizacion.planta || 'N/A'}
+                          </div>
+                        </div>
+                        <div className="col-md-4">
+                          <div>
+                            <strong>Proyecto:</strong> {reporte.organizacion.proyecto || 'N/A'}
+                          </div>
+                        </div>
+                        <div className="col-md-4">
+                          <div>
+                            <strong>Centro de Costo:</strong> {reporte.organizacion.centroCosto || 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Tercera fila: Jerarquía y Perfil nutricional */}
+                      <div className="row mb-3">
+                        <div className="col-md-4">
+                          <div>
+                            <strong>Jerarquía:</strong> {limpiarJerarquia(reporte.organizacion.jerarquia) || 'N/A'}
+                          </div>
+                        </div>
+                        <div className="col-md-4">
+                          <div>
+                            <strong>Perfil nutricional:</strong> {reporte.organizacion.planNutricional || 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Cuarta fila: Platos consumidos, Bonificaciones, Costo total */}
+                      <div className="row">
+                        <div className="col-md-4">
+                          <div>
+                            <strong>Platos consumidos:</strong> {reporte.comandas ? reporte.comandas.length : 0}
+                          </div>
+                        </div>
+                        <div className="col-md-4">
+                          <div>
+                            <strong>Bonificados del mes:</strong> {reporte.bonificaciones.total || 0}
+                          </div>
+                        </div>
+                        <div className="col-md-4">
+                          <div>
+                            <strong>Costo total:</strong> {formatearMoneda(reporte.estadisticas.montoTotal || 0)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Foto del comensal - Columna derecha */}
+                    <div className="col-md-3 text-center">
+                      {(() => {
+                        const foto = reporte.usuario.foto;
+                        if (foto) {
+                          // La foto ya viene con el prefijo data:image/jpeg;base64, desde el backend
+                          // Solo necesitamos usarla directamente
+                          return (
+                            <>
+                              <img
+                                src={foto}
+                                alt="Foto del comensal"
+                                style={{
+                                  width: '150px',
+                                  height: '150px',
+                                  borderRadius: '50%',
+                                  objectFit: 'cover',
+                                  border: '3px solid #dee2e6',
+                                  marginBottom: '0.5rem',
+                                  display: 'block',
+                                  margin: '0 auto 0.5rem'
+                                }}
+                                onError={(e) => {
+                                  // Si falla la carga, mostrar el fallback
+                                  e.target.style.display = 'none';
+                                  const parent = e.target.parentElement;
+                                  if (parent) {
+                                    const fallback = parent.querySelector('.sin-foto-fallback');
+                                    if (fallback) {
+                                      fallback.style.display = 'block';
+                                    }
+                                  }
+                                }}
+                                onLoad={(e) => {
+                                  // Si carga correctamente, ocultar el fallback
+                                  const parent = e.target.parentElement;
+                                  if (parent) {
+                                    const fallback = parent.querySelector('.sin-foto-fallback');
+                                    if (fallback) {
+                                      fallback.style.display = 'none';
+                                    }
+                                  }
+                                }}
+                              />
+                              <div className="sin-foto-fallback" style={{ display: 'none' }}>
+                                <div
+                                  style={{
+                                    width: '150px',
+                                    height: '150px',
+                                    borderRadius: '50%',
+                                    backgroundColor: '#e9ecef',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    margin: '0 auto 0.5rem',
+                                    border: '3px solid #dee2e6'
+                                  }}
+                                >
+                                  <i className="fa fa-user" style={{ fontSize: '4rem', color: '#6c757d' }}></i>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        } else {
+                          // No hay foto, mostrar icono por defecto
+                          return (
+                            <div
+                              style={{
+                                width: '150px',
+                                height: '150px',
+                                borderRadius: '50%',
+                                backgroundColor: '#e9ecef',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 0.5rem',
+                                border: '3px solid #dee2e6'
+                              }}
+                            >
+                              <i className="fa fa-user" style={{ fontSize: '4rem', color: '#6c757d' }}></i>
+                            </div>
+                          );
+                        }
+                      })()}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Historial de Pedidos */}
-              <div className="form-section">
+              {/* Sección 5: Tabla de comandas */}
+              <div className="form-section" style={{ marginBottom: '2rem' }}>
                 <div className="page-title-bar" style={{ marginBottom: '1.5rem', borderRadius: '0.5rem 0.5rem 0 0' }}>
                   <h3 style={{ margin: 0, padding: '0.75rem 1.5rem' }}>
                     <i className="fa fa-utensils mr-2" aria-hidden="true"></i>
@@ -945,7 +1267,7 @@ const ReporteGComensales = () => {
                         <span className="sr-only">Cargando...</span>
                       </div>
                     </div>
-                  ) : reporte.historialPedidos && reporte.historialPedidos.length > 0 ? (
+                  ) : reporte.comandas && reporte.comandas.length > 0 ? (
                     <>
                       <div className="table-responsive">
                         <table className="table table-striped">
@@ -962,23 +1284,7 @@ const ReporteGComensales = () => {
                             {reporte.historialPedidos.map((pedido, index) => (
                               <tr key={index}>
                                 <td>{formatearFechaHora(pedido.fecha || pedido.Fecha || pedido.fechaPedido)}</td>
-                                <td>
-                                  {(() => {
-                                    // Asegurar que siempre retornemos un string
-                                    let platoNombre = pedido.plato || pedido.descripcionPlato;
-                                    
-                                    // Si es un objeto, intentar extraer propiedades comunes
-                                    if (platoNombre && typeof platoNombre === 'object') {
-                                      platoNombre = platoNombre.descripcion || platoNombre.Descripcion || 
-                                                   platoNombre.nombre || platoNombre.Nombre || 
-                                                   platoNombre.id || platoNombre.Id || 
-                                                   'N/A';
-                                    }
-                                    
-                                    // Asegurar que sea string
-                                    return platoNombre || 'N/A';
-                                  })()}
-                                </td>
+                                <td>{pedido.plato || pedido.descripcionPlato || 'N/A'}</td>
                                 <td>
                                   <span
                                     className="badge"
@@ -989,7 +1295,7 @@ const ReporteGComensales = () => {
                                       borderRadius: '0.25rem'
                                     }}
                                   >
-                                    {pedido.estado || 'N/A'}
+                                    {traducirEstado(pedido.estado)}
                                   </span>
                                 </td>
                                 <td>{pedido.bonificado ? 'Sí' : 'No'}</td>
@@ -1018,8 +1324,19 @@ const ReporteGComensales = () => {
                                 const newPageSize = parseInt(e.target.value);
                                 setPageSize(newPageSize);
                                 setCurrentPage(1);
-                                if (reporte && reporte.historialCompleto) {
-                                  const historialPaginado = paginarHistorial(reporte.historialCompleto, 1);
+                                if (reporte && reporte.comandas && reporte.comandas.length > 0) {
+                                  // Convertir comandas a formato de historial para la paginación
+                                  const historialParaPaginacion = reporte.comandas.map(comanda => ({
+                                    fecha: comanda.fecha,
+                                    plato: comanda.plato,
+                                    descripcionPlato: comanda.plato,
+                                    monto: comanda.monto,
+                                    estado: comanda.estado,
+                                    bonificado: comanda.bonificado === 'Sí',
+                                    invitado: comanda.invitado === 'Sí'
+                                  }));
+                                  
+                                  const historialPaginado = paginarHistorial(historialParaPaginacion, 1);
                                   setReporte(prev => ({
                                     ...prev,
                                     historialPedidos: historialPaginado.items,
@@ -1111,6 +1428,28 @@ const ReporteGComensales = () => {
                   )}
                 </div>
               </div>
+
+              {/* Sección 6: Lista de platos distintos */}
+              {reporte.platosDistintos && reporte.platosDistintos.length > 0 && (
+                <div className="form-section">
+                  <div className="page-title-bar" style={{ marginBottom: '1.5rem', borderRadius: '0.5rem 0.5rem 0 0' }}>
+                    <h3 style={{ margin: 0, padding: '0.75rem 1.5rem' }}>
+                      <i className="fa fa-list mr-2" aria-hidden="true"></i>
+                      Platos Distintos Consumidos
+                    </h3>
+                  </div>
+                  <div className="form-section-content" style={{ padding: '1.5rem' }}>
+                    <ul className="list-unstyled">
+                      {reporte.platosDistintos.map((plato, index) => (
+                        <li key={index} className="mb-2">
+                          <i className="fa fa-check-circle mr-2 text-success" aria-hidden="true"></i>
+                          {plato || 'N/A'}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

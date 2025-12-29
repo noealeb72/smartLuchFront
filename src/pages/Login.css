@@ -22,24 +22,16 @@
   justify-content: center;
   box-sizing: border-box;
   
-  /* Fondo moderno con gradiente animado */
+  /* Fondo estático */
   background: linear-gradient(135deg, 
     var(--smart-gray-lightest) 0%, 
     #ffffff 25%,
     var(--smart-primary-bg) 50%,
     #ffffff 75%,
     var(--smart-gray-lightest) 100%);
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
 }
 
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Decoraciones de fondo modernas */
+/* Decoraciones de fondo estáticas */
 .login-container::before {
   content: '';
   position: absolute;
@@ -50,7 +42,6 @@
   background: radial-gradient(circle, rgba(243, 73, 73, 0.12) 0%, transparent 70%);
   border-radius: 50%;
   z-index: 0;
-  animation: float 20s ease-in-out infinite;
 }
 
 .login-container::after {
@@ -63,12 +54,6 @@
   background: radial-gradient(circle, rgba(243, 73, 73, 0.08) 0%, transparent 70%);
   border-radius: 50%;
   z-index: 0;
-  animation: float 25s ease-in-out infinite reverse;
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(30px, -30px) scale(1.1); }
 }
 
 /* Card principal sin efectos */
@@ -141,18 +126,6 @@
   text-align: center;
   margin-bottom: 2rem;
   margin-top: 2.5rem;
-  animation: fadeIn 0.8s ease-out 0.2s both;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .welcome-title h4 {
@@ -183,15 +156,8 @@
   background: linear-gradient(135deg, rgba(243, 73, 73, 0.1) 0%, rgba(243, 73, 73, 0.05) 100%);
   border-left: 4px solid var(--smart-primary);
   border-radius: 12px;
-  animation: shake 0.5s ease;
   box-shadow: 0 2px 8px rgba(243, 73, 73, 0.1);
   font-family: var(--smart-font-primary);
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-8px); }
-  75% { transform: translateX(8px); }
 }
 
 /* Inputs modernos */
