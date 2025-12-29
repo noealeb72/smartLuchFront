@@ -103,12 +103,6 @@ const Login = () => {
 
   return (
     <div className="login-container">
-      {isLoading && (
-        <div className="se-pre-con">
-          <span className="sr-only">Iniciando sesión...</span>
-        </div>
-      )}
-
       <div className="container" style={{ paddingTop: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, overflow: 'visible', minHeight: '100%', maxWidth: '100%' }}>
         <div className="d-flex justify-content-center" style={{ width: '100%', alignItems: 'center', padding: 0, overflow: 'visible' }}>
           <div className="user_card">

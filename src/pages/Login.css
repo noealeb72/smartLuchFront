@@ -164,7 +164,6 @@
 .input-group {
   margin-bottom: 1.5rem;
   position: relative;
-  animation: fadeIn 0.8s ease-out 0.3s both;
 }
 
 .input-group-text {
@@ -295,7 +294,6 @@
 /* Checkbox moderno */
 .form-group {
   margin-bottom: 1.5rem;
-  animation: fadeIn 0.8s ease-out 0.4s both;
 }
 
 .custom-control-label {
@@ -339,7 +337,6 @@
   border-radius: 12px !important;
   position: relative;
   overflow: hidden;
-  animation: fadeIn 0.8s ease-out 0.5s both;
   font-family: var(--smart-font-primary);
 }
 
