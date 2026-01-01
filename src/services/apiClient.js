@@ -24,9 +24,6 @@ api.interceptors.request.use(
         config.headers = {};
       }
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('🔑 [apiClient] Token agregado al header Authorization');
-    } else {
-      console.log('⚠️ [apiClient] No hay token válido disponible');
     }
     
     // Agregar timestamp para cache busting si es necesario

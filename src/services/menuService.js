@@ -13,6 +13,9 @@ export const menuService = {
     const baseUrl = getApiBaseUrl();
     const token = localStorage.getItem('token');
     
+    // Solo pasar los parámetros que acepta el endpoint según la firma del método:
+    // int page = 1, int pageSize = 10, DateTime? fechaDesde = null, DateTime? fechaHasta = null,
+    // string search = null, bool activo = true
     const params = {
       page,
       pageSize,
@@ -21,12 +24,10 @@ export const menuService = {
     
     if (filtros.fechaDesde) params.fechaDesde = filtros.fechaDesde;
     if (filtros.fechaHasta) params.fechaHasta = filtros.fechaHasta;
-    if (filtros.plantaId) params.plantaId = filtros.plantaId;
-    if (filtros.centroCostoId) params.centroCostoId = filtros.centroCostoId;
-    if (filtros.proyectoId) params.proyectoId = filtros.proyectoId;
-    if (filtros.jerarquiaId) params.jerarquiaId = filtros.jerarquiaId;
-    if (filtros.turnoId) params.turnoId = filtros.turnoId;
-    if (filtros.platoId) params.platoId = filtros.platoId;
+    if (filtros.search && filtros.search.trim()) {
+      params.search = filtros.search.trim();
+    }
+    // No se envían: plantaId, centroCostoId, proyectoId, jerarquiaId, turnoId, platoId
     
     const headers = {};
     if (token && token !== 'null' && token !== 'undefined') {
@@ -55,6 +56,10 @@ export const menuService = {
     const response = await api.get(`${baseUrl}/api/menudd/${id}`, {
       headers,
     });
+    
+    console.log('[menuService.getPorId] Respuesta completa de GET /api/menudd/' + id + ':', response.data);
+    console.log('[menuService.getPorId] Estructura del objeto:', JSON.stringify(response.data, null, 2));
+    
     return response.data;
   },
 
@@ -198,22 +203,36 @@ export const menuService = {
       fechaParam = new Date().toISOString();
     }
     
+    // Convertir turno a número si es necesario
+    let turnoIdParam = null;
+    if (turno !== null && turno !== undefined) {
+      const turnoIdParsed = parseInt(turno);
+      if (!isNaN(turnoIdParsed) && turnoIdParsed > 0) {
+        turnoIdParam = turnoIdParsed;
+      }
+    }
+    
     const params = {
       fecha: fechaParam,
       plantaId: planta ? parseInt(planta) : null,
-      turnoId: turno ? parseInt(turno) : null,
+      turnoId: turnoIdParam,
       centroCostoId: centro ? parseInt(centro) : null,
       proyectoId: proyecto ? parseInt(proyecto) : null,
       jerarquiaId: jerarquia ? parseInt(jerarquia) : null,
       soloConStock: true,
     };
     
-    // Eliminar parámetros null/undefined
+    // Eliminar parámetros null/undefined, excepto turnoId que es requerido
     Object.keys(params).forEach(key => {
-      if (params[key] === null || params[key] === undefined) {
+      if (key !== 'turnoId' && (params[key] === null || params[key] === undefined)) {
         delete params[key];
       }
     });
+    
+    // Validar que turnoId esté presente y sea un número válido
+    if (!params.turnoId || isNaN(params.turnoId) || params.turnoId <= 0) {
+      throw new Error('turnoId es requerido y debe ser un número válido mayor a 0');
+    }
     
     console.log('📤 [menuService.getMenuByTurno] Parámetros que se enviarán:', params);
     
@@ -293,6 +312,26 @@ export const menuService = {
       }
       throw error;
     }
+  },
+
+  /**
+   * POST api/menudd/impresion - Obtiene datos de menús para impresión con columnas y filtros seleccionados
+   * @param {Object} params - Objeto con columnas a incluir y filtros
+   */
+  getImpresion: async (params) => {
+    const baseUrl = getApiBaseUrl();
+    const token = localStorage.getItem('token');
+    
+    const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await api.post(`${baseUrl}/api/menudd/impresion`, params, {
+      headers,
+    });
+    
+    return response.data;
   },
 };
 

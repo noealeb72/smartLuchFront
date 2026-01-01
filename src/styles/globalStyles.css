@@ -340,7 +340,6 @@ select:not(.login-container select):not(.user_card select) {
   border-color: var(--smart-gray-light) !important;
   background-color: var(--smart-white) !important;
   box-sizing: border-box !important;
-  width: 100% !important;
   overflow: visible !important;
   min-width: 0 !important;
 }

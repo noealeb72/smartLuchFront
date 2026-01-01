@@ -198,6 +198,11 @@
   font-family: var(--smart-font-primary);
 }
 
+/* Campo nombre de usuario con bordes rectos */
+#view_username {
+  border-radius: 0 !important;
+}
+
 /* Eliminar color amarillo del autocompletado */
 .form-control:-webkit-autofill,
 .form-control:-webkit-autofill:hover,

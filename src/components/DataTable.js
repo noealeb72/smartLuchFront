@@ -71,12 +71,18 @@ const DataTable = ({
       emptyMessage.includes('coincidan con la búsqueda')
     );
     
+    // Detectar si es un mensaje de "no hay registros"
+    const isNoRecordsMessage = emptyMessage && (
+      emptyMessage.includes('No hay') && 
+      emptyMessage.includes('registrados')
+    );
+    
     return (
       <div 
-        className={isSearchMessage ? "alert" : "alert alert-info"}
-        style={isSearchMessage ? {
+        className={isSearchMessage || isNoRecordsMessage ? "alert" : "alert alert-info"}
+        style={isSearchMessage || isNoRecordsMessage ? {
           backgroundColor: 'var(--smart-primary-bg)',
-          borderColor: 'var(--smart-primary-dark)',
+          borderColor: 'var(--smart-primary)',
           borderWidth: '1px',
           borderStyle: 'solid',
           color: 'var(--smart-primary)',
@@ -111,7 +117,12 @@ const DataTable = ({
           <thead className="thead-dark">
             <tr>
               {columns.map((col) => (
-                <th key={col.key || col.field}>{col.label}</th>
+                <th 
+                  key={col.key || col.field}
+                  style={col.align ? { textAlign: col.align } : {}}
+                >
+                  {col.label}
+                </th>
               ))}
               {(onEdit || onDelete || renderActions) && <th>Acciones</th>}
             </tr>
@@ -161,31 +172,58 @@ const DataTable = ({
                     }
                   }
                   
-                  return <td key={col.key || col.field}>{value}</td>;
+                  return (
+                    <td 
+                      key={col.key || col.field}
+                      style={col.align ? { textAlign: col.align } : {}}
+                    >
+                      {value}
+                    </td>
+                  );
                 })}
               {(onEdit || onDelete || renderActions) && (
-                <td>
-                  {onEdit && (canEdit ? canEdit(row) : true) && (
-                    <button
-                      className="btn btn-sm btn-dark mr-2"
-                      onClick={() => onEdit(row)}
-                      title="Editar"
-                      style={{ backgroundColor: '#343a40', borderColor: '#343a40' }}
-                    >
-                      <i className="fa fa-edit"></i>
-                    </button>
-                  )}
-                  {onDelete && (canDelete ? canDelete(row) : true) && (
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => onDelete(row)}
-                      title="Eliminar"
-                      style={{ marginRight: '0.5rem' }}
-                    >
-                      <i className="fa fa-trash"></i>
-                    </button>
-                  )}
-                  {renderActions && renderActions(row)}
+                <td style={{ 
+                  whiteSpace: 'nowrap',
+                  minWidth: '120px'
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem',
+                    flexWrap: 'nowrap'
+                  }}>
+                    {onEdit && (canEdit ? canEdit(row) : true) && (
+                      <button
+                        className="btn btn-sm btn-dark"
+                        onClick={() => onEdit(row)}
+                        title="Editar"
+                        style={{ 
+                          backgroundColor: '#343a40', 
+                          borderColor: '#343a40',
+                          flexShrink: 0
+                        }}
+                      >
+                        <i className="fa fa-edit"></i>
+                      </button>
+                    )}
+                    {onDelete && (canDelete ? canDelete(row) : true) && (
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => onDelete(row)}
+                        title="Eliminar"
+                        style={{ 
+                          flexShrink: 0
+                        }}
+                      >
+                        <i className="fa fa-trash"></i>
+                      </button>
+                    )}
+                    {renderActions && (
+                      <div style={{ flexShrink: 0 }}>
+                        {renderActions(row)}
+                      </div>
+                    )}
+                  </div>
                 </td>
               )}
               </tr>

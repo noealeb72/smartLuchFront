@@ -58,6 +58,7 @@ export const apiService = {
   // Comandas/Pedidos
   getPedidosVigentes: comandasService.getPedidosVigentes,
   getPedidosPendientes: comandasService.getPedidosPendientes,
+  getListaComandas: comandasService.getLista,
   crearPedido: comandasService.crearPedido,
   actualizarPedido: comandasService.actualizarPedido,
   despacharPedido: comandasService.despacharPedido,

@@ -94,6 +94,34 @@ export const platosService = {
   },
 
   /**
+   * Obtiene platos por plan nutricional
+   * GET api/plato/por-plan-nutricional/{planNutricionalId}
+   * @param {number} planNutricionalId - ID del plan nutricional
+   * @param {boolean} soloActivos - Si es true, solo devuelve platos activos (default: true)
+   * @returns {Promise<Array>} - Lista de platos del plan nutricional
+   */
+  obtenerPorPlanNutricional: async (planNutricionalId, soloActivos = true) => {
+    const baseUrl = getApiBaseUrl();
+    const planId = Number(planNutricionalId);
+
+    if (!Number.isInteger(planId) || planId <= 0) {
+      throw new Error('ID de plan nutricional no válido: ' + JSON.stringify(planNutricionalId));
+    }
+
+    const params = {
+      soloActivos: soloActivos,
+    };
+
+    const response = await api.get(`${baseUrl}/api/plato/por-plan-nutricional/${planId}`, { params });
+    
+    // Normalizar la respuesta (puede ser array directo o objeto con items/data)
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return response.data?.items || response.data?.data || response.data || [];
+  },
+
+  /**
    * Crea un nuevo plato
    * POST api/plato/crear
    */
@@ -472,5 +500,25 @@ export const platosService = {
       // Para otros errores, solo loguear pero no bloquear el flujo
       console.warn('⚠️ [platosService.eliminarFotoPlato] No se pudo eliminar el archivo, pero se continúa con el proceso');
     }
+  },
+
+  /**
+   * POST api/plato/impresion - Obtiene platos filtrados para impresión
+   * @param {Object} impresionData - Datos de columnas y filtros para la impresión
+   * @returns {Promise<Array>} - Lista de platos filtrados con solo las columnas seleccionadas
+   */
+  getImpresion: async (impresionData) => {
+    const baseUrl = getApiBaseUrl();
+    const token = localStorage.getItem('token');
+
+    const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await api.post(`${baseUrl}/api/plato/impresion`, impresionData, {
+      headers,
+    });
+    return response.data;
   },
 };

@@ -1,25 +1,79 @@
 // src/pages/MenuDelDia.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { menuService } from '../services/menuService';
 import { catalogosService } from '../services/catalogosService';
 import { turnosService } from '../services/turnosService';
 import { platosService } from '../services/platosService';
+import { useAuth } from '../contexts/AuthContext';
+import { useDashboard } from '../contexts/DashboardContext';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import './Usuarios.css';
 
 const MenuDelDia = () => {
+  const { user } = useAuth();
+  const { usuarioData } = useDashboard();
+  
+  // Función para obtener la fecha local en formato YYYY-MM-DD
+  const obtenerFechaLocal = () => {
+    const ahora = new Date();
+    const año = ahora.getFullYear();
+    const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+    const dia = String(ahora.getDate()).padStart(2, '0');
+    return `${año}-${mes}-${dia}`;
+  };
+  
   const [menus, setMenus] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filtro, setFiltro] = useState('');
   const [soloActivos, setSoloActivos] = useState(true);
   const [vista, setVista] = useState('lista'); // 'lista' | 'editar' | 'crear'
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(obtenerFechaLocal()); // Fecha de hoy por defecto
+  
+  // Estados para el modal de impresión
+  const [mostrarModalImpresion, setMostrarModalImpresion] = useState(false);
+  const [columnasSeleccionadas, setColumnasSeleccionadas] = useState({
+    plato: true,
+    plannutricional: true,
+    turno: true,
+    jerarquia: true,
+    proyecto: true,
+    centroCosto: true,
+    planta: true,
+    cantidad: true,
+    fecha: false,
+    estado: false,
+  });
+  const [filtrosImpresion, setFiltrosImpresion] = useState({
+    fecha: obtenerFechaLocal(),
+    turnoId: '',
+    planNutricionalId: '',
+    jerarquiaId: '',
+    proyectoId: '',
+    centroCostoId: '',
+    plantaId: '',
+    activo: null, // null = todos, true = solo activos, false = solo inactivos
+  });
+
+  // Estados para el buscador de plato
+  const [busquedaPlato, setBusquedaPlato] = useState('');
+  const [mostrarDropdownPlato, setMostrarDropdownPlato] = useState(false);
+  const [platoSeleccionadoNombre, setPlatoSeleccionadoNombre] = useState('');
+  
+  // Ref para rastrear el plan nutricional anterior y evitar limpiar el plato en la primera carga
+  const planNutricionalAnteriorRef = useRef(null);
+  // Ref para rastrear si estamos cargando un menú para editar
+  const cargandoParaEditarRef = useRef(false);
 
   // Catálogos
   const [turnos, setTurnos] = useState([]);
   const [platos, setPlatos] = useState([]);
+  const [platosPorPlan, setPlatosPorPlan] = useState([]); // Platos filtrados por plan nutricional desde el API
   const [jerarquias, setJerarquias] = useState([]);
   const [planesNutricionales, setPlanesNutricionales] = useState([]);
   const [proyectos, setProyectos] = useState([]);
@@ -28,7 +82,7 @@ const MenuDelDia = () => {
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
@@ -43,7 +97,7 @@ const MenuDelDia = () => {
     centroCostoId: '',
     plantaId: '',
     cantidad: '1',
-    fecha: new Date().toISOString().split('T')[0], // Fecha actual en formato YYYY-MM-DD
+    fecha: obtenerFechaLocal(), // Fecha actual en formato YYYY-MM-DD
     activo: true,
   });
 
@@ -72,16 +126,6 @@ const MenuDelDia = () => {
 
       // El backend devuelve: { id, nombre, descripcion }
       // Normalizar y asegurar que sean arrays
-      console.log('📦 [MenuDelDia] Datos recibidos de catálogos:', {
-        turnos: turnosData,
-        platos: platosData,
-        jerarquias: jerarquiasData,
-        planes: planesData,
-        proyectos: proyectosData,
-        centros: centrosData,
-        plantas: plantasData,
-      });
-
       // getTurnosLista devuelve un objeto con items, totalItems, etc.
       const turnosArray = Array.isArray(turnosData) ? turnosData : (turnosData?.items || turnosData?.data || []);
       const platosArray = Array.isArray(platosData) ? (platosData.items || platosData.data || platosData) : [];
@@ -93,18 +137,7 @@ const MenuDelDia = () => {
       setProyectos(Array.isArray(proyectosData) ? proyectosData : []);
       setCentrosDeCosto(Array.isArray(centrosData) ? centrosData : []);
       setPlantas(Array.isArray(plantasData) ? plantasData : []);
-
-      console.log('✅ [MenuDelDia] Catálogos normalizados:', {
-        turnos: turnosArray.length,
-        platos: platosArray.length,
-        jerarquias: jerarquias.length,
-        planes: planesNutricionales.length,
-        proyectos: proyectos.length,
-        centros: centrosDeCosto.length,
-        plantas: plantas.length,
-      });
     } catch (error) {
-      console.error('Error al cargar catálogos:', error);
       Swal.fire({
         title: 'Error',
         text: 'Error al cargar los catálogos. Por favor, intente de nuevo más tarde.',
@@ -118,26 +151,27 @@ const MenuDelDia = () => {
   }, []);
 
   const cargarMenus = useCallback(
-    async (page = 1, searchTerm = '') => {
+    async (page = 1, searchTerm = '', fecha = null) => {
       try {
         setIsLoading(true);
+        
+        // Usar la fecha proporcionada o la fecha seleccionada
+        const fechaFiltro = fecha || fechaSeleccionada;
+        
+        // Solo pasar los parámetros que acepta el endpoint según la firma del método
+        // public HttpResponseMessage ObtenerLista(int page, int pageSize, DateTime? fechaDesde, 
+        // DateTime? fechaHasta, string search, bool activo)
         const filtros = {
-          activo: soloActivos,
+          activo: soloActivos, // true para activos, false para de baja
+          fechaDesde: fechaFiltro,
+          fechaHasta: fechaFiltro,
+          search: null, // search siempre null según especificación del usuario
         };
 
-        if (searchTerm && searchTerm.trim()) {
-          // Si hay búsqueda, podría filtrar por platoId si el término es un ID
-          const platoEncontrado = platos.find(
-            (p) =>
-              (p.descripcion || p.Descripcion || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-              (p.codigo || p.Codigo || '').toString().toLowerCase().includes(searchTerm.toLowerCase())
-          );
-          if (platoEncontrado) {
-            filtros.platoId = platoEncontrado.id || platoEncontrado.Id;
-          }
-        }
-
+        // Llamar a ObtenerLista de la API
         const data = await menuService.getLista(page, pageSize, filtros);
+
+        console.log('[MenuDelDia] Respuesta de la API al cargar la tabla:', data);
 
         let items = [];
         let totalItemsCount = 0;
@@ -174,32 +208,1078 @@ const MenuDelDia = () => {
         setIsLoading(false);
       }
     },
-    [pageSize, soloActivos, platos]
+    [pageSize, soloActivos, fechaSeleccionada, usuarioData]
   );
 
   useEffect(() => {
     cargarCatalogos();
   }, [cargarCatalogos]);
 
+  // Cargar menús al iniciar y cuando cambian los filtros
   useEffect(() => {
-    if (platos.length > 0) {
-      cargarMenus(currentPage, filtro);
+    // Cargar menús inmediatamente con la fecha de hoy, sin esperar a que los platos estén cargados
+    cargarMenus(currentPage, filtro, fechaSeleccionada);
+  }, [currentPage, filtro, soloActivos, cargarMenus, fechaSeleccionada]);
+
+  // Auto-seleccionar valores cuando hay un solo elemento disponible en los catálogos
+  // SOLO en modo editar, NO en modo crear (en crear siempre debe estar "-- Seleccionar --")
+  useEffect(() => {
+    if (vista === 'editar') {
+      setFormData(prev => {
+        const nuevo = { ...prev };
+        
+        // Solo auto-seleccionar si el campo está vacío
+        // Auto-seleccionar jerarquía si hay una sola
+        if (jerarquias.length === 1 && !prev.jerarquiaId) {
+          const jerarquiaId = jerarquias[0].id || jerarquias[0].Id || jerarquias[0].ID;
+          nuevo.jerarquiaId = String(jerarquiaId);
+        }
+        
+        // Auto-seleccionar turno si hay uno solo
+        if (turnos.length === 1 && !prev.turnoId) {
+          const turnoId = turnos[0].id || turnos[0].Id || turnos[0].ID;
+          nuevo.turnoId = String(turnoId);
+        }
+        
+        // Auto-seleccionar proyecto si hay uno solo
+        if (proyectos.length === 1 && !prev.proyectoId) {
+          const proyectoId = proyectos[0].id || proyectos[0].Id || proyectos[0].ID;
+          nuevo.proyectoId = String(proyectoId);
+        }
+        
+        // Auto-seleccionar centro de costo si hay uno solo
+        if (centrosDeCosto.length === 1 && !prev.centroCostoId) {
+          const centroId = centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID;
+          nuevo.centroCostoId = String(centroId);
+        }
+        
+        // Auto-seleccionar planta si hay una sola
+        if (plantas.length === 1 && !prev.plantaId) {
+          const plantaId = plantas[0].id || plantas[0].Id || plantas[0].ID;
+          nuevo.plantaId = String(plantaId);
+        }
+        
+        // Auto-seleccionar plan nutricional si hay uno solo
+        if (planesNutricionales.length === 1 && !prev.plannutricional_id) {
+          const planId = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
+          nuevo.plannutricional_id = String(planId);
+        }
+        
+        return nuevo;
+      });
     }
-  }, [currentPage, filtro, soloActivos, cargarMenus, platos.length]);
+  }, [jerarquias, turnos, proyectos, centrosDeCosto, plantas, planesNutricionales, vista]);
+
+  // Validar y corregir plan nutricional cuando se cargan los catálogos en modo edición
+  useEffect(() => {
+    if (vista === 'editar' && formData.plannutricional_id && planesNutricionales.length > 0) {
+      const planIdActual = String(formData.plannutricional_id);
+      const planExiste = planesNutricionales.some(
+        (p) => String(p.id || p.Id || p.ID) === planIdActual
+      );
+      
+      if (!planExiste) {
+        // Intentar encontrar el plan por ID numérico
+        const planIdNum = parseInt(planIdActual);
+        const planEncontrado = planesNutricionales.find(
+          (p) => (p.id || p.Id || p.ID) === planIdNum
+        );
+        
+        if (planEncontrado) {
+          const planIdCorrecto = String(planEncontrado.id || planEncontrado.Id || planEncontrado.ID);
+          setFormData(prev => ({
+            ...prev,
+            plannutricional_id: planIdCorrecto
+          }));
+        }
+      }
+    }
+  }, [vista, formData.plannutricional_id, planesNutricionales]);
 
   // ===================== handlers =====================
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Si se cambia el plan nutricional, limpiar la selección de plato
+    if (name === 'plannutricional_id') {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        platoId: '',
+      }));
+      setBusquedaPlato('');
+      setPlatoSeleccionadoNombre('');
+      return;
+    }
+    
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
+  // Cargar platos desde el API cuando se seleccione un plan nutricional
+  useEffect(() => {
+    const cargarPlatosPorPlan = async () => {
+      if (!formData.plannutricional_id || formData.plannutricional_id === '' || formData.plannutricional_id === '-- Seleccionar --') {
+        setPlatosPorPlan([]);
+        return;
+      }
+
+      try {
+        const planId = parseInt(formData.plannutricional_id);
+        if (!Number.isInteger(planId) || planId <= 0) {
+          setPlatosPorPlan([]);
+          return;
+        }
+
+        setIsLoading(true);
+        const platosData = await platosService.obtenerPorPlanNutricional(planId, true);
+        
+        // Normalizar la respuesta
+        const platosArray = Array.isArray(platosData) 
+          ? platosData 
+          : (platosData?.items || platosData?.data || []);
+        
+        setPlatosPorPlan(platosArray);
+      } catch (error) {
+        setPlatosPorPlan([]);
+        Swal.fire({
+          title: 'Error',
+          text: 'Error al cargar los platos del plan nutricional seleccionado.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    cargarPlatosPorPlan();
+  }, [formData.plannutricional_id]);
+
+  // Actualizar el nombre del plato cuando se cargan los platosPorPlan y hay un platoId
+  useEffect(() => {
+    if (formData.platoId && platosPorPlan.length > 0) {
+      const platoId = parseInt(formData.platoId);
+      const plato = platosPorPlan.find(
+        (p) => (p.id || p.Id || p.ID) === platoId
+      );
+      
+      if (plato) {
+        const nombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
+        // Solo actualizar si no hay nombre establecido o si el nombre actual está vacío
+        if (!busquedaPlato || busquedaPlato.trim() === '') {
+          setPlatoSeleccionadoNombre(nombre);
+          setBusquedaPlato(nombre);
+        }
+      }
+    }
+  }, [platosPorPlan, formData.platoId, busquedaPlato]);
+
+  // Filtrar platos según el plan nutricional seleccionado (ahora usa los datos del API)
+  const platosFiltrados = useMemo(() => {
+    if (!formData.plannutricional_id || formData.plannutricional_id === '' || formData.plannutricional_id === '-- Seleccionar --') {
+      // Si no hay plan nutricional seleccionado, no mostrar ningún plato
+      return [];
+    }
+    
+    // Usar los platos cargados desde el API
+    let platosDisponibles = platosPorPlan;
+    
+    // Si estamos editando y hay un plato seleccionado que no está en la lista del API,
+    // agregarlo para que no se pierda la selección
+    if (formData.platoId && vista === 'editar') {
+      const platoSeleccionado = platos.find(
+        (p) => (p.id || p.Id || p.ID) === parseInt(formData.platoId)
+      );
+      
+      if (platoSeleccionado && !platosDisponibles.find(
+        (p) => (p.id || p.Id || p.ID) === (platoSeleccionado.id || platoSeleccionado.Id || platoSeleccionado.ID)
+      )) {
+        // El plato seleccionado no está en la lista del API, agregarlo
+        platosDisponibles = [platoSeleccionado, ...platosDisponibles];
+      }
+    }
+    
+    return platosDisponibles;
+  }, [platosPorPlan, formData.plannutricional_id, formData.platoId, vista, platos]);
+
+  // Filtrar platos según el texto de búsqueda
+  const platosBuscados = useMemo(() => {
+    if (!busquedaPlato.trim()) {
+      return [];
+    }
+    
+    const termino = busquedaPlato.toLowerCase().trim();
+    return platosFiltrados.filter((plato) => {
+      const nombre = (plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '').toLowerCase();
+      const codigo = (plato.codigo || plato.Codigo || '').toString().toLowerCase();
+      return nombre.includes(termino) || codigo.includes(termino);
+    });
+  }, [busquedaPlato, platosFiltrados]);
+
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.plato-buscador-container')) {
+        setMostrarDropdownPlato(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Actualizar el nombre del plato seleccionado cuando cambia formData.platoId
+  useEffect(() => {
+    if (formData.platoId) {
+      const platoId = parseInt(formData.platoId);
+      
+      // Buscar el plato en múltiples fuentes: platosPorPlan, platosFiltrados, y platos
+      let plato = platosPorPlan.find(
+        (p) => (p.id || p.Id || p.ID) === platoId
+      );
+      
+      if (!plato) {
+        plato = platosFiltrados.find(
+          (p) => (p.id || p.Id || p.ID) === platoId
+        );
+      }
+      
+      if (!plato) {
+        plato = platos.find(
+          (p) => (p.id || p.Id || p.ID) === platoId
+        );
+      }
+      
+      if (plato) {
+        const nombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
+        // Solo actualizar si el nombre es diferente o si está vacío
+        if (!busquedaPlato || busquedaPlato.trim() === '' || busquedaPlato !== nombre) {
+          setPlatoSeleccionadoNombre(nombre);
+          setBusquedaPlato(nombre);
+        }
+      }
+    } else {
+      setPlatoSeleccionadoNombre('');
+      setBusquedaPlato('');
+    }
+  }, [formData.platoId, platos, platosPorPlan, platosFiltrados]);
+
+  // Limpiar búsqueda cuando cambia el plan nutricional
+  useEffect(() => {
+    // No limpiar si estamos cargando para editar
+    if (cargandoParaEditarRef.current) {
+      return;
+    }
+    
+    const planActual = formData.plannutricional_id;
+    const planAnterior = planNutricionalAnteriorRef.current;
+    
+    // Si no hay plan seleccionado o es el placeholder, limpiar
+    if (!planActual || planActual === '' || planActual === '-- Seleccionar --') {
+      // Solo limpiar si no estamos en modo editar con un platoId ya establecido
+      if (vista !== 'editar' || !formData.platoId) {
+        setBusquedaPlato('');
+        setPlatoSeleccionadoNombre('');
+        setFormData(prev => ({ ...prev, platoId: '' }));
+      }
+      planNutricionalAnteriorRef.current = planActual;
+      return;
+    }
+    
+    // Si el plan cambió (no es la primera carga) y NO estamos en modo editar con un plato ya seleccionado
+    // Solo limpiar si el usuario cambió el plan manualmente, no cuando se carga para editar
+    if (planAnterior !== null && planAnterior !== planActual) {
+      // Si estamos en modo editar y hay un platoId, no limpiar (puede ser que se esté cargando el menú)
+      if (vista !== 'editar' || !formData.platoId) {
+        setBusquedaPlato('');
+        setPlatoSeleccionadoNombre('');
+        setFormData(prev => ({ ...prev, platoId: '' }));
+      }
+    }
+    
+    // Actualizar la referencia
+    planNutricionalAnteriorRef.current = planActual;
+  }, [formData.plannutricional_id, vista, formData.platoId]);
+
+  const handleFiltroChange = (value) => {
+    setFiltro(value);
+    setCurrentPage(1);
+  };
+
+  const handleFechaChange = (e) => {
+    const nuevaFecha = e.target.value;
+    setFechaSeleccionada(nuevaFecha);
+    setCurrentPage(1);
+    // Recargar menús con la nueva fecha
+    cargarMenus(1, filtro, nuevaFecha);
+  };
+
+  // Función auxiliar para obtener datos de un menú según las columnas seleccionadas
+  const obtenerDatosMenu = (menu, columnas) => {
+    const datos = [];
+    const headers = [];
+
+    if (columnas.plato) {
+      headers.push('Plato');
+      const platoNombre =
+        menu.platoNombre ||
+        menu.PlatoNombre ||
+        menu.plato_nombre ||
+        menu.plato?.descripcion ||
+        menu.Plato?.Descripcion ||
+        '-';
+      datos.push(platoNombre);
+    }
+
+    if (columnas.plannutricional) {
+      headers.push('Plan Nutricional');
+      const planNombre =
+        menu.PlanNutricionalNombre ||
+        menu.plannutricionalNombre ||
+        menu.PlannutricionalNombre ||
+        menu.plan_nutricional_nombre ||
+        planesNutricionales.find((p) => (p.id || p.Id) === (menu.PlanNutricionalId || menu.planNutricionalId || menu.plannutricional_id || menu.Plannutricional_id))?.nombre ||
+        planesNutricionales.find((p) => (p.id || p.Id) === (menu.PlanNutricionalId || menu.planNutricionalId || menu.plannutricional_id || menu.Plannutricional_id))?.Nombre ||
+        menu.planNutricional?.nombre ||
+        menu.PlanNutricional?.Nombre ||
+        '-';
+      datos.push(planNombre);
+    }
+
+    if (columnas.turno) {
+      headers.push('Turno');
+      const turnoNombre =
+        menu.turnoNombre ||
+        menu.TurnoNombre ||
+        menu.turno_nombre ||
+        turnos.find((t) => (t.id || t.Id) === (menu.turnoId || menu.TurnoId))?.nombre ||
+        turnos.find((t) => (t.id || t.Id) === (menu.turnoId || menu.TurnoId))?.Nombre ||
+        menu.turno?.nombre ||
+        menu.Turno?.Nombre ||
+        '-';
+      datos.push(turnoNombre);
+    }
+
+    if (columnas.jerarquia) {
+      headers.push('Jerarquía');
+      const jerarquiaNombre =
+        menu.jerarquiaNombre ||
+        menu.JerarquiaNombre ||
+        menu.jerarquia_nombre ||
+        jerarquias.find((j) => (j.id || j.Id) === (menu.jerarquiaId || menu.JerarquiaId))?.nombre ||
+        jerarquias.find((j) => (j.id || j.Id) === (menu.jerarquiaId || menu.JerarquiaId))?.Nombre ||
+        menu.jerarquia?.nombre ||
+        menu.Jerarquia?.Nombre ||
+        '-';
+      datos.push(jerarquiaNombre);
+    }
+
+    if (columnas.proyecto) {
+      headers.push('Proyecto');
+      const proyectoNombre =
+        menu.proyectoNombre ||
+        menu.ProyectoNombre ||
+        menu.proyecto_nombre ||
+        proyectos.find((p) => (p.id || p.Id) === (menu.proyectoId || menu.ProyectoId))?.nombre ||
+        proyectos.find((p) => (p.id || p.Id) === (menu.proyectoId || menu.ProyectoId))?.Nombre ||
+        menu.proyecto?.nombre ||
+        menu.Proyecto?.Nombre ||
+        '-';
+      datos.push(proyectoNombre);
+    }
+
+    if (columnas.centroCosto) {
+      headers.push('Centro de Costo');
+      const centroNombre =
+        menu.centroCostoNombre ||
+        menu.CentroCostoNombre ||
+        menu.centro_costo_nombre ||
+        centrosDeCosto.find((c) => (c.id || c.Id) === (menu.centroCostoId || menu.CentroCostoId))?.nombre ||
+        centrosDeCosto.find((c) => (c.id || c.Id) === (menu.centroCostoId || menu.CentroCostoId))?.Nombre ||
+        menu.centroCosto?.nombre ||
+        menu.CentroCosto?.Nombre ||
+        '-';
+      datos.push(centroNombre);
+    }
+
+    if (columnas.planta) {
+      headers.push('Planta');
+      const plantaNombre =
+        menu.plantaNombre ||
+        menu.PlantaNombre ||
+        menu.planta_nombre ||
+        plantas.find((p) => (p.id || p.Id) === (menu.plantaId || menu.PlantaId))?.nombre ||
+        plantas.find((p) => (p.id || p.Id) === (menu.plantaId || menu.PlantaId))?.Nombre ||
+        menu.planta?.nombre ||
+        menu.Planta?.Nombre ||
+        '-';
+      datos.push(plantaNombre);
+    }
+
+    if (columnas.cantidad) {
+      headers.push('Cantidad');
+      const cantidad = menu.cantidad || menu.Cantidad || menu.Cant || 0;
+      datos.push(cantidad.toString());
+    }
+
+    if (columnas.fecha) {
+      headers.push('Fecha');
+      const fechaMenu = menu.fecha 
+        ? (menu.fecha.split('T')[0] || menu.fecha.split(' ')[0])
+        : '-';
+      datos.push(fechaMenu);
+    }
+
+    if (columnas.estado) {
+      headers.push('Estado');
+      const activo = menu.activo !== undefined ? menu.activo : menu.Activo !== undefined ? menu.Activo : true;
+      datos.push(activo ? 'Activo' : 'Inactivo');
+    }
+
+    return { headers, datos };
+  };
+
+  // Función para filtrar menús según los filtros de impresión
+  const filtrarMenusParaImpresion = (menusList, filtros) => {
+    return menusList.filter(menu => {
+      // Filtro por fecha
+      if (filtros.fecha) {
+        const fechaMenu = menu.fecha ? (menu.fecha.split('T')[0] || menu.fecha.split(' ')[0]) : '';
+        if (fechaMenu !== filtros.fecha) return false;
+      }
+
+      // Filtro por turno
+      if (filtros.turnoId) {
+        const turnoId = menu.turnoId || menu.TurnoId;
+        if (String(turnoId) !== String(filtros.turnoId)) return false;
+      }
+
+      // Filtro por plan nutricional
+      if (filtros.planNutricionalId) {
+        const planId = menu.PlanNutricionalId || menu.planNutricionalId || menu.plannutricional_id || menu.Plannutricional_id;
+        if (String(planId) !== String(filtros.planNutricionalId)) return false;
+      }
+
+      // Filtro por jerarquía
+      if (filtros.jerarquiaId) {
+        const jerarquiaId = menu.jerarquiaId || menu.JerarquiaId;
+        if (String(jerarquiaId) !== String(filtros.jerarquiaId)) return false;
+      }
+
+      // Filtro por proyecto
+      if (filtros.proyectoId) {
+        const proyectoId = menu.proyectoId || menu.ProyectoId;
+        if (String(proyectoId) !== String(filtros.proyectoId)) return false;
+      }
+
+      // Filtro por centro de costo
+      if (filtros.centroCostoId) {
+        const centroId = menu.centroCostoId || menu.CentroCostoId;
+        if (String(centroId) !== String(filtros.centroCostoId)) return false;
+      }
+
+      // Filtro por planta
+      if (filtros.plantaId) {
+        const plantaId = menu.plantaId || menu.PlantaId;
+        if (String(plantaId) !== String(filtros.plantaId)) return false;
+      }
+
+      // Filtro por estado
+      if (filtros.activo !== null) {
+        const activo = menu.activo !== undefined ? menu.activo : menu.Activo !== undefined ? menu.Activo : true;
+        if (activo !== filtros.activo) return false;
+      }
+
+      return true;
+    });
+  };
+
+  const handleExportarPDF = async (columnas = null, filtros = null) => {
+    const cols = columnas || columnasSeleccionadas;
+    const filtrosAplicar = filtros || filtrosImpresion;
+    
+    try {
+      setIsLoading(true);
+      
+      // Mapear columnas seleccionadas al formato del endpoint
+      const columnasRequest = {
+        incluirPlato: cols.plato || false,
+        incluirTurno: cols.turno || false,
+        incluirProyecto: cols.proyecto || false,
+        incluirPlanta: cols.planta || false,
+        incluirFecha: cols.fecha || false,
+        incluirPlanNutricional: cols.plannutricional || false,
+        incluirJerarquia: cols.jerarquia || false,
+        incluirCentroCosto: cols.centroCosto || false,
+        incluirCantidad: cols.cantidad || false,
+        incluirEstado: cols.estado || false,
+      };
+
+      // Mapear filtros al formato del endpoint
+      const filtrosRequest = {
+        fecha: filtrosAplicar.fecha || null,
+        turnoId: filtrosAplicar.turnoId ? parseInt(filtrosAplicar.turnoId) : null,
+        planNutricionalId: filtrosAplicar.planNutricionalId ? parseInt(filtrosAplicar.planNutricionalId) : null,
+        jerarquiaId: filtrosAplicar.jerarquiaId ? parseInt(filtrosAplicar.jerarquiaId) : null,
+        proyectoId: filtrosAplicar.proyectoId ? parseInt(filtrosAplicar.proyectoId) : null,
+        centroCostoId: filtrosAplicar.centroCostoId ? parseInt(filtrosAplicar.centroCostoId) : null,
+        plantaId: filtrosAplicar.plantaId ? parseInt(filtrosAplicar.plantaId) : null,
+        estado: filtrosAplicar.activo === null ? null : (filtrosAplicar.activo ? 'Activo' : 'Inactivo'),
+      };
+
+      // Llamar al endpoint de impresión
+      const requestData = {
+        ...columnasRequest,
+        ...filtrosRequest,
+      };
+      
+      console.log('[MenuDelDia] Datos enviados al endpoint de impresión (PDF):', requestData);
+      
+      const menusFiltrados = await menuService.getImpresion(requestData);
+      
+      console.log('[MenuDelDia] Respuesta del endpoint de impresión (PDF):', menusFiltrados);
+      
+      if (!menusFiltrados || menusFiltrados.length === 0) {
+        Swal.fire({
+          title: 'Sin datos',
+          text: 'No hay menús que coincidan con los filtros seleccionados',
+          icon: 'warning',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      const doc = new jsPDF();
+
+      // Logo removido - no se muestra icono ni palabra SmartLunch
+      let startY = 15; // Posición inicial del contenido
+
+      // Título centrado debajo del logo
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.setFontSize(14);
+      const titulo = 'Listado de Menú del Día';
+      const tituloWidth = doc.getTextWidth(titulo);
+      const tituloX = (pageWidth - tituloWidth) / 2; // Centrado
+      doc.text(titulo, tituloX, startY);
+
+      // Fecha centrada con letra más chica
+      const fecha = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      doc.setFontSize(9);
+      const fechaTexto = `Generado el: ${fecha}`;
+      const fechaWidth = doc.getTextWidth(fechaTexto);
+      const fechaX = (pageWidth - fechaWidth) / 2; // Centrado
+      doc.text(fechaTexto, fechaX, startY + 7);
+
+      // Obtener headers y datos desde la respuesta del API
+      const headers = [];
+      const tableData = [];
+      
+      // Mapeo de nombres de columnas del API (PascalCase) a labels
+      const columnLabels = {
+        Plato: 'Plato',
+        Turno: 'Turno',
+        Proyecto: 'Proyecto',
+        Planta: 'Planta',
+        Fecha: 'Fecha',
+        PlanNutricional: 'Plan Nutricional',
+        Jerarquia: 'Jerarquía',
+        CentroCosto: 'Centro de Costo',
+        Cantidad: 'Cantidad',
+        Estado: 'Estado',
+        // También soportar camelCase por si acaso
+        plato: 'Plato',
+        turno: 'Turno',
+        proyecto: 'Proyecto',
+        planta: 'Planta',
+        fecha: 'Fecha',
+        planNutricional: 'Plan Nutricional',
+        jerarquia: 'Jerarquía',
+        centroCosto: 'Centro de Costo',
+        cantidad: 'Cantidad',
+        estado: 'Estado',
+      };
+
+      // Construir headers basado en las columnas que tienen datos
+      if (menusFiltrados.length > 0) {
+        const primerMenu = menusFiltrados[0];
+        Object.keys(primerMenu).forEach(key => {
+          if (primerMenu[key] !== null && columnLabels[key]) {
+            headers.push(columnLabels[key]);
+          }
+        });
+      }
+
+      // Construir datos de la tabla manteniendo el orden de los headers
+      const columnasOrdenadas = headers.map(header => {
+        // Encontrar la clave que corresponde a este header
+        for (const [key, label] of Object.entries(columnLabels)) {
+          if (label === header) {
+            return key;
+          }
+        }
+        return null;
+      }).filter(key => key !== null);
+
+      menusFiltrados.forEach((menu) => {
+        const fila = [];
+        columnasOrdenadas.forEach(key => {
+          // Buscar la propiedad en el objeto (puede ser PascalCase o camelCase)
+          const valor = menu[key] || menu[key.charAt(0).toUpperCase() + key.slice(1)] || null;
+          fila.push(valor !== null ? String(valor) : '-');
+        });
+        tableData.push(fila);
+      });
+
+      // Calcular la posición inicial de la tabla (debajo del título y fecha)
+      const tableStartY = startY + 15;
+      
+      doc.autoTable({
+        startY: tableStartY,
+        head: [headers],
+        body: tableData,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [52, 58, 64] },
+      });
+
+      doc.save('menus-del-dia.pdf');
+      
+      if (columnas || filtros) {
+        setMostrarModalImpresion(false);
+      }
+    } catch (error) {
+      Swal.fire({
+        title: 'Error',
+        text: error.message || 'Error al generar el PDF',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExportarExcel = async (columnas = null, filtros = null) => {
+    const cols = columnas || columnasSeleccionadas;
+    const filtrosAplicar = filtros || filtrosImpresion;
+    
+    try {
+      setIsLoading(true);
+      
+      // Mapear columnas seleccionadas al formato del endpoint
+      const columnasRequest = {
+        incluirPlato: cols.plato || false,
+        incluirTurno: cols.turno || false,
+        incluirProyecto: cols.proyecto || false,
+        incluirPlanta: cols.planta || false,
+        incluirFecha: cols.fecha || false,
+        incluirPlanNutricional: cols.plannutricional || false,
+        incluirJerarquia: cols.jerarquia || false,
+        incluirCentroCosto: cols.centroCosto || false,
+        incluirCantidad: cols.cantidad || false,
+        incluirEstado: cols.estado || false,
+      };
+
+      // Mapear filtros al formato del endpoint
+      const filtrosRequest = {
+        fecha: filtrosAplicar.fecha || null,
+        turnoId: filtrosAplicar.turnoId ? parseInt(filtrosAplicar.turnoId) : null,
+        planNutricionalId: filtrosAplicar.planNutricionalId ? parseInt(filtrosAplicar.planNutricionalId) : null,
+        jerarquiaId: filtrosAplicar.jerarquiaId ? parseInt(filtrosAplicar.jerarquiaId) : null,
+        proyectoId: filtrosAplicar.proyectoId ? parseInt(filtrosAplicar.proyectoId) : null,
+        centroCostoId: filtrosAplicar.centroCostoId ? parseInt(filtrosAplicar.centroCostoId) : null,
+        plantaId: filtrosAplicar.plantaId ? parseInt(filtrosAplicar.plantaId) : null,
+        estado: filtrosAplicar.activo === null ? null : (filtrosAplicar.activo ? 'Activo' : 'Inactivo'),
+      };
+
+      // Llamar al endpoint de impresión
+      const requestData = {
+        ...columnasRequest,
+        ...filtrosRequest,
+      };
+      
+      console.log('[MenuDelDia] Datos enviados al endpoint de impresión (Excel):', requestData);
+      
+      const menusFiltrados = await menuService.getImpresion(requestData);
+      
+      console.log('[MenuDelDia] Respuesta del endpoint de impresión (Excel):', menusFiltrados);
+      
+      if (!menusFiltrados || menusFiltrados.length === 0) {
+        Swal.fire({
+          title: 'Sin datos',
+          text: 'No hay menús que coincidan con los filtros seleccionados',
+          icon: 'warning',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      // Mapeo de nombres de columnas del API (PascalCase) a labels
+      const columnLabels = {
+        Plato: 'Plato',
+        Turno: 'Turno',
+        Proyecto: 'Proyecto',
+        Planta: 'Planta',
+        Fecha: 'Fecha',
+        PlanNutricional: 'Plan Nutricional',
+        Jerarquia: 'Jerarquía',
+        CentroCosto: 'Centro de Costo',
+        Cantidad: 'Cantidad',
+        Estado: 'Estado',
+        // También soportar camelCase por si acaso
+        plato: 'Plato',
+        turno: 'Turno',
+        proyecto: 'Proyecto',
+        planta: 'Planta',
+        fecha: 'Fecha',
+        planNutricional: 'Plan Nutricional',
+        jerarquia: 'Jerarquía',
+        centroCosto: 'Centro de Costo',
+        cantidad: 'Cantidad',
+        estado: 'Estado',
+      };
+
+      // Construir headers basado en las columnas que tienen datos
+      const headers = [];
+      if (menusFiltrados.length > 0) {
+        const primerMenu = menusFiltrados[0];
+        Object.keys(primerMenu).forEach(key => {
+          if (primerMenu[key] !== null && columnLabels[key]) {
+            headers.push(columnLabels[key]);
+          }
+        });
+      }
+
+      // Construir datos de la hoja manteniendo el orden de los headers
+      const columnasOrdenadas = headers.map(header => {
+        // Encontrar la clave que corresponde a este header
+        for (const [key, label] of Object.entries(columnLabels)) {
+          if (label === header) {
+            return key;
+          }
+        }
+        return null;
+      }).filter(key => key !== null);
+
+      const worksheetData = menusFiltrados.map((menu) => {
+        const fila = [];
+        columnasOrdenadas.forEach(key => {
+          // Buscar la propiedad en el objeto (puede ser PascalCase o camelCase)
+          const valor = menu[key] || menu[key.charAt(0).toUpperCase() + key.slice(1)] || null;
+          fila.push(valor !== null ? String(valor) : '-');
+        });
+        return fila;
+      });
+
+      // Obtener fecha formateada
+      const fecha = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      const numColumnas = headers.length;
+      
+      // Crear datos con título y fecha
+      const datosConTitulo = [
+        [], // Fila vacía
+        ['Listado de Menú del Día'], // Título
+        [`Generado el: ${fecha}`], // Fecha
+        [], // Fila vacía
+        headers, // Headers
+        ...worksheetData, // Datos
+      ];
+
+      const worksheet = XLSX.utils.aoa_to_sheet(datosConTitulo);
+      
+      // Fusionar celdas para centrar título y fecha
+      worksheet['!merges'] = [
+        { s: { r: 1, c: 0 }, e: { r: 1, c: numColumnas - 1 } }, // Título centrado
+        { s: { r: 2, c: 0 }, e: { r: 2, c: numColumnas - 1 } }, // Fecha centrada
+        { s: { r: 3, c: 0 }, e: { r: 3, c: numColumnas - 1 } }, // Fila vacía
+      ];
+      
+      // Ajustar el ancho de las columnas
+      const colWidths = headers.map(() => ({ wch: 18 }));
+      worksheet['!cols'] = colWidths;
+      
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Menús del Día');
+      XLSX.writeFile(workbook, 'menus-del-dia.xlsx');
+      
+      if (columnas || filtros) {
+        setMostrarModalImpresion(false);
+      }
+    } catch (error) {
+      Swal.fire({
+        title: 'Error',
+        text: error.message || 'Error al generar el archivo Excel',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExportarPDFOriginal = () => {
+    try {
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text('Listado de Menús del Día', 14, 15);
+
+      const fecha = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      doc.setFontSize(10);
+      doc.text(`Generado el: ${fecha}`, 14, 22);
+
+      const tableData = menus.map((menu) => {
+        const platoNombre =
+          menu.platoNombre ||
+          menu.PlatoNombre ||
+          menu.plato_nombre ||
+          menu.plato?.descripcion ||
+          menu.Plato?.Descripcion ||
+          '-';
+
+        const turnoNombre =
+          menu.turnoNombre ||
+          menu.TurnoNombre ||
+          menu.turno_nombre ||
+          turnos.find((t) => (t.id || t.Id) === (menu.turnoId || menu.TurnoId))?.nombre ||
+          turnos.find((t) => (t.id || t.Id) === (menu.turnoId || menu.TurnoId))?.Nombre ||
+          menu.turno?.nombre ||
+          menu.Turno?.Nombre ||
+          '-';
+
+        const jerarquiaNombre =
+          menu.jerarquiaNombre ||
+          menu.JerarquiaNombre ||
+          menu.jerarquia_nombre ||
+          jerarquias.find((j) => (j.id || j.Id) === (menu.jerarquiaId || menu.JerarquiaId))?.nombre ||
+          jerarquias.find((j) => (j.id || j.Id) === (menu.jerarquiaId || menu.JerarquiaId))?.Nombre ||
+          menu.jerarquia?.nombre ||
+          menu.Jerarquia?.Nombre ||
+          '-';
+
+        const planNombre =
+          menu.plannutricionalNombre ||
+          menu.PlannutricionalNombre ||
+          menu.plan_nutricional_nombre ||
+          planesNutricionales.find((p) => (p.id || p.Id) === (menu.plannutricional_id || menu.Plannutricional_id))?.nombre ||
+          planesNutricionales.find((p) => (p.id || p.Id) === (menu.plannutricional_id || menu.Plannutricional_id))?.Nombre ||
+          menu.planNutricional?.nombre ||
+          menu.PlanNutricional?.Nombre ||
+          '-';
+
+        const proyectoNombre =
+          menu.proyectoNombre ||
+          menu.ProyectoNombre ||
+          menu.proyecto_nombre ||
+          proyectos.find((p) => (p.id || p.Id) === (menu.proyectoId || menu.ProyectoId))?.nombre ||
+          proyectos.find((p) => (p.id || p.Id) === (menu.proyectoId || menu.ProyectoId))?.Nombre ||
+          menu.proyecto?.nombre ||
+          menu.Proyecto?.Nombre ||
+          '-';
+
+        const centroNombre =
+          menu.centroCostoNombre ||
+          menu.CentroCostoNombre ||
+          menu.centro_costo_nombre ||
+          centrosDeCosto.find((c) => (c.id || c.Id) === (menu.centroCostoId || menu.CentroCostoId))?.nombre ||
+          centrosDeCosto.find((c) => (c.id || c.Id) === (menu.centroCostoId || menu.CentroCostoId))?.Nombre ||
+          menu.centroCosto?.nombre ||
+          menu.CentroCosto?.Nombre ||
+          '-';
+
+        const plantaNombre =
+          menu.plantaNombre ||
+          menu.PlantaNombre ||
+          menu.planta_nombre ||
+          plantas.find((p) => (p.id || p.Id) === (menu.plantaId || menu.PlantaId))?.nombre ||
+          plantas.find((p) => (p.id || p.Id) === (menu.plantaId || menu.PlantaId))?.Nombre ||
+          menu.planta?.nombre ||
+          menu.Planta?.Nombre ||
+          '-';
+
+        const cantidad = menu.cantidad || menu.Cantidad || menu.Cant || 0;
+        const fechaMenu = menu.fecha 
+          ? (menu.fecha.split('T')[0] || menu.fecha.split(' ')[0])
+          : '-';
+        const activo = menu.activo !== undefined ? menu.activo : menu.Activo !== undefined ? menu.Activo : true;
+
+        return [
+          platoNombre,
+          turnoNombre,
+          jerarquiaNombre,
+          planNombre,
+          proyectoNombre,
+          centroNombre,
+          plantaNombre,
+          cantidad.toString(),
+          fechaMenu,
+          activo ? 'Activo' : 'Inactivo',
+        ];
+      });
+
+      doc.autoTable({
+        startY: 28,
+        head: [['Plato', 'Turno', 'Jerarquía', 'Plan Nutricional', 'Proyecto', 'Centro de Costo', 'Planta', 'Cantidad', 'Fecha', 'Estado']],
+        body: tableData,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [52, 58, 64] },
+      });
+
+      doc.save('menus-del-dia.pdf');
+    } catch {
+      Swal.fire({
+        title: 'Error',
+        text: 'Error al generar el PDF',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    }
+  };
+
+  const handleExportarExcelOriginal = () => {
+    try {
+      const worksheetData = [
+        ['Plato', 'Turno', 'Jerarquía', 'Plan Nutricional', 'Proyecto', 'Centro de Costo', 'Planta', 'Cantidad', 'Fecha', 'Estado'],
+        ...menus.map((menu) => {
+          const platoNombre =
+            menu.platoNombre ||
+            menu.PlatoNombre ||
+            menu.plato_nombre ||
+            menu.plato?.descripcion ||
+            menu.Plato?.Descripcion ||
+            '-';
+
+          const turnoNombre =
+            menu.turnoNombre ||
+            menu.TurnoNombre ||
+            menu.turno_nombre ||
+            turnos.find((t) => (t.id || t.Id) === (menu.turnoId || menu.TurnoId))?.nombre ||
+            turnos.find((t) => (t.id || t.Id) === (menu.turnoId || menu.TurnoId))?.Nombre ||
+            menu.turno?.nombre ||
+            menu.Turno?.Nombre ||
+            '-';
+
+          const jerarquiaNombre =
+            menu.jerarquiaNombre ||
+            menu.JerarquiaNombre ||
+            menu.jerarquia_nombre ||
+            jerarquias.find((j) => (j.id || j.Id) === (menu.jerarquiaId || menu.JerarquiaId))?.nombre ||
+            jerarquias.find((j) => (j.id || j.Id) === (menu.jerarquiaId || menu.JerarquiaId))?.Nombre ||
+            menu.jerarquia?.nombre ||
+            menu.Jerarquia?.Nombre ||
+            '-';
+
+          const planNombre =
+            menu.plannutricionalNombre ||
+            menu.PlannutricionalNombre ||
+            menu.plan_nutricional_nombre ||
+            planesNutricionales.find((p) => (p.id || p.Id) === (menu.plannutricional_id || menu.Plannutricional_id))?.nombre ||
+            planesNutricionales.find((p) => (p.id || p.Id) === (menu.plannutricional_id || menu.Plannutricional_id))?.Nombre ||
+            menu.planNutricional?.nombre ||
+            menu.PlanNutricional?.Nombre ||
+            '-';
+
+          const proyectoNombre =
+            menu.proyectoNombre ||
+            menu.ProyectoNombre ||
+            menu.proyecto_nombre ||
+            proyectos.find((p) => (p.id || p.Id) === (menu.proyectoId || menu.ProyectoId))?.nombre ||
+            proyectos.find((p) => (p.id || p.Id) === (menu.proyectoId || menu.ProyectoId))?.Nombre ||
+            menu.proyecto?.nombre ||
+            menu.Proyecto?.Nombre ||
+            '-';
+
+          const centroNombre =
+            menu.centroCostoNombre ||
+            menu.CentroCostoNombre ||
+            menu.centro_costo_nombre ||
+            centrosDeCosto.find((c) => (c.id || c.Id) === (menu.centroCostoId || menu.CentroCostoId))?.nombre ||
+            centrosDeCosto.find((c) => (c.id || c.Id) === (menu.centroCostoId || menu.CentroCostoId))?.Nombre ||
+            menu.centroCosto?.nombre ||
+            menu.CentroCosto?.Nombre ||
+            '-';
+
+          const plantaNombre =
+            menu.plantaNombre ||
+            menu.PlantaNombre ||
+            menu.planta_nombre ||
+            plantas.find((p) => (p.id || p.Id) === (menu.plantaId || menu.PlantaId))?.nombre ||
+            plantas.find((p) => (p.id || p.Id) === (menu.plantaId || menu.PlantaId))?.Nombre ||
+            menu.planta?.nombre ||
+            menu.Planta?.Nombre ||
+            '-';
+
+          const cantidad = menu.cantidad || menu.Cantidad || menu.Cant || 0;
+          const fechaMenu = menu.fecha 
+            ? (menu.fecha.split('T')[0] || menu.fecha.split(' ')[0])
+            : '-';
+          const activo = menu.activo !== undefined ? menu.activo : menu.Activo !== undefined ? menu.Activo : true;
+
+          return [
+            platoNombre,
+            turnoNombre,
+            jerarquiaNombre,
+            planNombre,
+            proyectoNombre,
+            centroNombre,
+            plantaNombre,
+            cantidad.toString(),
+            fechaMenu,
+            activo ? 'Activo' : 'Inactivo',
+          ];
+        }),
+      ];
+
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Menús del Día');
+      XLSX.writeFile(workbook, 'menus-del-dia.xlsx');
+    } catch {
+      Swal.fire({
+        title: 'Error',
+        text: 'Error al generar el archivo Excel',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    }
+  };
+
   const handleCrearMenu = () => {
     setVista('crear');
-    setFormData({
+    
+    // Todos los select deben comenzar con "-- Seleccionar --" (valor vacío)
+    const nuevoFormData = {
       id: null,
       platoId: '',
       turnoId: '',
@@ -209,34 +1289,138 @@ const MenuDelDia = () => {
       centroCostoId: '',
       plantaId: '',
       cantidad: '1',
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: obtenerFechaLocal(),
       activo: true,
-    });
+    };
+    
+    setFormData(nuevoFormData);
+    // Limpiar también el buscador de plato
+    setBusquedaPlato('');
+    setPlatoSeleccionadoNombre('');
   };
 
   const handleEditarMenu = async (menu) => {
     try {
       setIsLoading(true);
+      cargandoParaEditarRef.current = true; // Marcar que estamos cargando para editar
       const menuCompleto = await menuService.getPorId(menu.id || menu.Id || menu.ID);
+      
+      // Obtener el plan nutricional ID - PlanNutricionalId es el campo que trae el DTO
+      let planNutricionalId = '';
+      
+      if (menuCompleto.PlanNutricionalId !== undefined && menuCompleto.PlanNutricionalId !== null) {
+        planNutricionalId = menuCompleto.PlanNutricionalId;
+      } else if (menuCompleto.planNutricionalId !== undefined && menuCompleto.planNutricionalId !== null) {
+        planNutricionalId = menuCompleto.planNutricionalId;
+      } else if (menuCompleto.plannutricional_id !== undefined && menuCompleto.plannutricional_id !== null) {
+        planNutricionalId = menuCompleto.plannutricional_id;
+      } else if (menuCompleto.Plannutricional_id !== undefined && menuCompleto.Plannutricional_id !== null) {
+        planNutricionalId = menuCompleto.Plannutricional_id;
+      } else if (menuCompleto.plan_nutricional_id !== undefined && menuCompleto.plan_nutricional_id !== null) {
+        planNutricionalId = menuCompleto.plan_nutricional_id;
+      } else if (menuCompleto.planNutricional?.id !== undefined && menuCompleto.planNutricional?.id !== null) {
+        planNutricionalId = menuCompleto.planNutricional.id;
+      } else if (menuCompleto.PlanNutricional?.Id !== undefined && menuCompleto.PlanNutricional?.Id !== null) {
+        planNutricionalId = menuCompleto.PlanNutricional.Id;
+      } else if (menuCompleto.planNutricional?.ID !== undefined && menuCompleto.planNutricional?.ID !== null) {
+        planNutricionalId = menuCompleto.planNutricional.ID;
+      }
+      
+      console.log('[MenuDelDia] Plan Nutricional ID extraído del API:', planNutricionalId);
+      console.log('[MenuDelDia] Planes nutricionales disponibles:', planesNutricionales.map(p => ({ id: p.id || p.Id || p.ID, nombre: p.nombre || p.Nombre })));
+      
+      // Convertir a string y validar que exista en planesNutricionales
+      if (planNutricionalId !== '' && planNutricionalId !== null && planNutricionalId !== undefined) {
+        // Convertir a número primero para normalizar
+        const planIdNum = parseInt(planNutricionalId);
+        if (!isNaN(planIdNum) && planIdNum > 0) {
+          // Buscar el plan en la lista
+          const planEncontrado = planesNutricionales.find(
+            (p) => {
+              const pId = p.id || p.Id || p.ID;
+              return pId === planIdNum || parseInt(pId) === planIdNum;
+            }
+          );
+          
+          if (planEncontrado) {
+            planNutricionalId = String(planEncontrado.id || planEncontrado.Id || planEncontrado.ID);
+            console.log('[MenuDelDia] Plan nutricional encontrado y normalizado:', planNutricionalId);
+          } else {
+            console.warn('[MenuDelDia] Plan nutricional ID', planIdNum, 'no encontrado en la lista de planes disponibles');
+            planNutricionalId = '';
+          }
+        } else {
+          console.warn('[MenuDelDia] Plan nutricional ID no es un número válido:', planNutricionalId);
+          planNutricionalId = '';
+        }
+      } else {
+        console.warn('[MenuDelDia] No se encontró PlanNutricionalId en la respuesta del API');
+        planNutricionalId = '';
+      }
+      
+      // Obtener el platoId y el nombre del plato si está disponible
+      const platoId = menuCompleto.PlatoId || menuCompleto.platoId || menuCompleto.plato_id || '';
+      // PlatoNombre es la propiedad que trae el nombre del plato desde el API
+      const platoNombre = menuCompleto.PlatoNombre || 
+                          menuCompleto.platoNombre || 
+                          menuCompleto.plato_nombre ||
+                          menuCompleto.plato?.descripcion ||
+                          menuCompleto.Plato?.Descripcion ||
+                          menuCompleto.plato?.nombre ||
+                          menuCompleto.Plato?.Nombre ||
+                          '';
+      
+      // Establecer el nombre del plato ANTES de establecer formData
+      if (platoNombre) {
+        setPlatoSeleccionadoNombre(platoNombre);
+        setBusquedaPlato(platoNombre);
+      }
       
       setFormData({
         id: menuCompleto.id || menuCompleto.Id || menuCompleto.ID,
-        platoId: menuCompleto.platoId || menuCompleto.PlatoId || menuCompleto.plato_id || '',
+        platoId: platoId ? String(platoId) : '',
         turnoId: menuCompleto.turnoId || menuCompleto.TurnoId || menuCompleto.turno_id || '',
         jerarquiaId: menuCompleto.jerarquiaId || menuCompleto.JerarquiaId || menuCompleto.jerarquia_id || '',
-        plannutricional_id: menuCompleto.plannutricional_id || menuCompleto.Plannutricional_id || menuCompleto.planNutricionalId || '',
+        plannutricional_id: planNutricionalId,
         proyectoId: menuCompleto.proyectoId || menuCompleto.ProyectoId || menuCompleto.proyecto_id || '',
         centroCostoId: menuCompleto.centroCostoId || menuCompleto.CentroCostoId || menuCompleto.centro_costo_id || '',
         plantaId: menuCompleto.plantaId || menuCompleto.PlantaId || menuCompleto.planta_id || '',
         cantidad: menuCompleto.cantidad || menuCompleto.Cantidad || menuCompleto.Cant || '',
         fecha: menuCompleto.fecha 
           ? (menuCompleto.fecha.split('T')[0] || menuCompleto.fecha.split(' ')[0])
-          : new Date().toISOString().split('T')[0],
+          : obtenerFechaLocal(),
         activo: menuCompleto.activo !== undefined ? menuCompleto.activo : menuCompleto.Activo !== undefined ? menuCompleto.Activo : true,
       });
       
       setVista('editar');
+      
+      // Establecer el nombre del plato después de cambiar la vista como respaldo
+      setTimeout(() => {
+        if (platoNombre) {
+          setPlatoSeleccionadoNombre(platoNombre);
+          setBusquedaPlato(platoNombre);
+        } else if (platoId) {
+          // Si no hay nombre pero sí hay platoId, intentar buscarlo en las listas disponibles
+          const platoIdNum = parseInt(platoId);
+          let plato = platos.find((p) => (p.id || p.Id || p.ID) === platoIdNum);
+          
+          if (!plato && platosPorPlan.length > 0) {
+            plato = platosPorPlan.find((p) => (p.id || p.Id || p.ID) === platoIdNum);
+          }
+          
+          if (plato) {
+            const nombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
+            setPlatoSeleccionadoNombre(nombre);
+            setBusquedaPlato(nombre);
+          }
+        }
+        // Marcar que terminamos de cargar para editar
+        setTimeout(() => {
+          cargandoParaEditarRef.current = false;
+        }, 500);
+      }, 300);
     } catch (error) {
+      cargandoParaEditarRef.current = false; // Resetear en caso de error
       if (!error.redirectToLogin) {
         Swal.fire({
           title: 'Error',
@@ -253,12 +1437,23 @@ const MenuDelDia = () => {
 
   const handleVolverALista = () => {
     setVista('lista');
-    cargarMenus(currentPage, filtro);
+    cargarMenus(currentPage, filtro, fechaSeleccionada);
   };
 
   const handleGuardar = async () => {
     try {
       // Validaciones
+      if (!formData.plannutricional_id) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Debe seleccionar un plan nutricional',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
       if (!formData.platoId) {
         Swal.fire({
           title: 'Error',
@@ -303,6 +1498,50 @@ const MenuDelDia = () => {
         return;
       }
 
+      if (!formData.jerarquiaId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Debe seleccionar una jerarquía',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      if (!formData.proyectoId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Debe seleccionar un proyecto',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      if (!formData.centroCostoId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Debe seleccionar un centro de costo',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      if (!formData.plantaId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Debe seleccionar una planta',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
       setIsLoading(true);
 
       const menuData = {
@@ -324,8 +1563,9 @@ const MenuDelDia = () => {
           title: 'Éxito',
           text: 'Menú del día actualizado correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
         });
       } else {
         await menuService.crearMenu(menuData);
@@ -333,8 +1573,9 @@ const MenuDelDia = () => {
           title: 'Éxito',
           text: 'Menú del día creado correctamente',
           icon: 'success',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
         });
       }
 
@@ -413,18 +1654,44 @@ const MenuDelDia = () => {
             <AgregarButton onClick={handleCrearMenu} />
           </div>
 
-          {/* Filtros */}
-          <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <Buscador
-              value={filtro}
-              onChange={(e) => {
-                setFiltro(e.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="Filtrar por plato, turno..."
-            />
+          {/* Buscador + export */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              marginBottom: '1rem',
+              flexWrap: 'nowrap',
+            }}
+          >
+            <div style={{ flex: '1', minWidth: '200px', maxWidth: '100%' }}>
+              <Buscador
+                filtro={filtro}
+                setFiltro={handleFiltroChange}
+                placeholder="Filtrar por plato, turno..."
+              />
+            </div>
 
-            {/* Checkbox de menús activos */}
+            {/* Calendario para seleccionar fecha */}
+            <div style={{ flexShrink: 0, maxWidth: '170px' }}>
+              <input
+                type="date"
+                className="form-control"
+                value={fechaSeleccionada}
+                onChange={handleFechaChange}
+                style={{
+                  height: '38px',
+                  fontSize: '0.875rem',
+                  padding: '0.4rem 0.5rem',
+                  border: '1px solid #ced4da',
+                  borderRadius: '0.25rem',
+                  width: '100%',
+                }}
+                title="Seleccionar fecha"
+              />
+            </div>
+
+            {/* Filtro de menús activos */}
             <div
               style={{
                 display: 'flex',
@@ -434,6 +1701,7 @@ const MenuDelDia = () => {
                 border: '1px solid #ced4da',
                 borderRadius: '0.25rem',
                 height: '38px',
+                flexShrink: 0,
               }}
             >
               <input
@@ -457,16 +1725,47 @@ const MenuDelDia = () => {
                   fontSize: '0.875rem',
                   color: '#495057',
                   userSelect: 'none',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {soloActivos ? 'Menús activos' : 'Menús de baja'}
               </label>
             </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setMostrarModalImpresion(true)}
+                disabled={menus.length === 0}
+                title="Opciones de impresión"
+                style={{
+                  backgroundColor: '#007bff',
+                  borderColor: '#007bff',
+                  color: 'white',
+                  padding: '0.375rem 0.5rem',
+                  width: '36px',
+                  height: '38px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1rem',
+                }}
+              >
+                <i className="fa fa-print" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
 
           {/* Tabla */}
-          <DataTable
-            columns={[
+          <div style={{ 
+            width: '100%', 
+            overflowX: 'auto',
+            maxWidth: '100%',
+            boxSizing: 'border-box'
+          }}>
+            <DataTable
+              columns={[
               {
                 key: 'plato',
                 field: 'plato',
@@ -481,6 +1780,25 @@ const MenuDelDia = () => {
                     row.Plato?.Descripcion ||
                     '-';
                   return platoNombre;
+                },
+              },
+              {
+                key: 'plannutricional',
+                field: 'plannutricional',
+                label: 'Plan Nutricional',
+                render: (v, row) => {
+                  const planNombre =
+                    row.PlanNutricionalNombre ||
+                    row.planNutricionalNombre ||
+                    row.plannutricionalNombre ||
+                    row.PlannutricionalNombre ||
+                    row.plan_nutricional_nombre ||
+                    planesNutricionales.find((p) => (p.id || p.Id) === (row.PlanNutricionalId || row.planNutricionalId || row.plannutricional_id || row.Plannutricional_id))?.nombre ||
+                    planesNutricionales.find((p) => (p.id || p.Id) === (row.PlanNutricionalId || row.planNutricionalId || row.plannutricional_id || row.Plannutricional_id))?.Nombre ||
+                    row.planNutricional?.nombre ||
+                    row.PlanNutricional?.Nombre ||
+                    '-';
+                  return planNombre;
                 },
               },
               {
@@ -515,23 +1833,6 @@ const MenuDelDia = () => {
                     row.Jerarquia?.Nombre ||
                     '-';
                   return jerarquiaNombre;
-                },
-              },
-              {
-                key: 'plannutricional',
-                field: 'plannutricional',
-                label: 'Plan Nutricional',
-                render: (v, row) => {
-                  const planNombre =
-                    row.plannutricionalNombre ||
-                    row.PlannutricionalNombre ||
-                    row.plan_nutricional_nombre ||
-                    planesNutricionales.find((p) => (p.id || p.Id) === (row.plannutricional_id || row.Plannutricional_id))?.nombre ||
-                    planesNutricionales.find((p) => (p.id || p.Id) === (row.plannutricional_id || row.Plannutricional_id))?.Nombre ||
-                    row.planNutricional?.nombre ||
-                    row.PlanNutricional?.Nombre ||
-                    '-';
-                  return planNombre;
                 },
               },
               {
@@ -586,52 +1887,10 @@ const MenuDelDia = () => {
                 },
               },
               {
-                key: 'estado',
-                field: 'estado',
-                label: 'Estado',
-                render: (v, row) => {
-                  const activo = row.activo !== undefined ? row.activo : row.Activo !== undefined ? row.Activo : true;
-                  return (
-                    <span
-                      className={`badge ${activo ? 'badge-success' : 'badge-secondary'}`}
-                      style={{
-                        backgroundColor: activo ? '#28A745' : '#6C757D',
-                        color: 'white',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '0.25rem',
-                        fontSize: '0.875rem',
-                      }}
-                    >
-                      {activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  );
-                },
-              },
-              {
                 key: 'cantidad',
                 field: 'cantidad',
                 label: 'Cantidad',
                 render: (v, row) => row.cantidad || row.Cantidad || row.Cant || 0,
-              },
-              {
-                key: 'fecha',
-                field: 'fecha',
-                label: 'Fecha',
-                render: (v, row) => {
-                  const fecha = row.fecha || row.Fecha;
-                  if (!fecha) return '-';
-                  // Formatear fecha a DD/MM/YYYY
-                  try {
-                    const date = new Date(fecha);
-                    return date.toLocaleDateString('es-AR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                    });
-                  } catch {
-                    return fecha.split('T')[0] || fecha.split(' ')[0] || fecha;
-                  }
-                },
               },
             ]}
             data={menus}
@@ -666,7 +1925,7 @@ const MenuDelDia = () => {
                       confirmButtonText: 'Aceptar',
                       confirmButtonColor: '#F34949',
                     });
-                    cargarMenus(currentPage, filtro);
+                    cargarMenus(currentPage, filtro, fechaSeleccionada);
                   } catch (error) {
                     if (!error.redirectToLogin) {
                       Swal.fire({
@@ -715,7 +1974,500 @@ const MenuDelDia = () => {
             totalItems={totalItems}
             enablePagination={true}
           />
+          </div>
         </div>
+
+        {/* Modal de opciones de impresión */}
+        {mostrarModalImpresion && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1050,
+              padding: '1rem',
+            }}
+            onClick={() => setMostrarModalImpresion(false)}
+          >
+            <div
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '0.25rem',
+                padding: '1.5rem',
+                maxWidth: '600px',
+                width: '90%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h4 style={{ margin: 0 }}>Opciones de Impresión</h4>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setMostrarModalImpresion(false)}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    fontSize: '1.5rem',
+                    color: '#6c757d',
+                    cursor: 'pointer',
+                    padding: 0,
+                    width: '30px',
+                    height: '30px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <i className="fa fa-times"></i>
+                </button>
+              </div>
+
+              {/* Selección de columnas */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h5 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '600' }}>
+                  Columnas a incluir:
+                </h5>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '0.5rem 1rem',
+                    maxWidth: '50%',
+                    justifyContent: 'start',
+                  }}
+                >
+                  {Object.keys(columnasSeleccionadas).map((columna) => {
+                    const labels = {
+                      plato: 'Plato',
+                      plannutricional: 'Plan Nutricional',
+                      turno: 'Turno',
+                      jerarquia: 'Jerarquía',
+                      proyecto: 'Proyecto',
+                      centroCosto: 'Centro de Costo',
+                      planta: 'Planta',
+                      cantidad: 'Cantidad',
+                      fecha: 'Fecha',
+                      estado: 'Estado',
+                    };
+
+                    const labelTexto = labels[columna] || columna;
+
+                    return (
+                      <label
+                        key={columna}
+                        htmlFor={`col-${columna}`}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.375rem',
+                          margin: 0,
+                          padding: 0,
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          textAlign: 'left',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          id={`col-${columna}`}
+                          checked={columnasSeleccionadas[columna] || false}
+                          onChange={(e) => {
+                            setColumnasSeleccionadas((prev) => ({
+                              ...prev,
+                              [columna]: e.target.checked,
+                            }));
+                          }}
+                          style={{
+                            margin: 0,
+                            flexShrink: 0,
+                            width: '18px',
+                            height: '18px',
+                            cursor: 'pointer',
+                          }}
+                        />
+                        <span style={{ whiteSpace: 'nowrap' }}>
+                          {labelTexto}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Filtros */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h5 style={{ 
+                  marginBottom: '1rem', 
+                  fontSize: '1rem', 
+                  fontWeight: '600',
+                  color: '#333'
+                }}>Filtros:</h5>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(2, 1fr)', 
+                  gap: '1rem',
+                  padding: '1rem',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '6px',
+                  border: '1px solid #e0e0e0'
+                }}>
+                  <div>
+                    <label style={{ 
+                      fontSize: '0.875rem', 
+                      marginBottom: '0.5rem', 
+                      display: 'block',
+                      fontWeight: '500',
+                      color: '#555'
+                    }}>Fecha:</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={filtrosImpresion.fecha}
+                      onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, fecha: e.target.value }))}
+                      style={{ 
+                        fontSize: '0.875rem',
+                        padding: '0.5rem',
+                        border: '1px solid #ced4da',
+                        borderRadius: '4px',
+                        width: '100%'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ 
+                      fontSize: '0.875rem', 
+                      marginBottom: '0.5rem', 
+                      display: 'block',
+                      fontWeight: '500',
+                      color: '#555'
+                    }}>Turno:</label>
+                    <select
+                      className="form-control"
+                      value={filtrosImpresion.turnoId}
+                      onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, turnoId: e.target.value }))}
+                      style={{ 
+                        fontSize: '0.875rem',
+                        padding: '0.5rem',
+                        border: '1px solid #ced4da',
+                        borderRadius: '4px',
+                        width: '100%'
+                      }}
+                    >
+                      <option value="">Todos</option>
+                      {turnos.map((turno) => {
+                        const turnoId = turno.id || turno.Id || turno.ID;
+                        const turnoNombre = turno.nombre || turno.Nombre || turno.descripcion || turno.Descripcion || '';
+                        return (
+                          <option key={turnoId} value={String(turnoId)}>
+                            {turnoNombre}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ 
+                      fontSize: '0.875rem', 
+                      marginBottom: '0.5rem', 
+                      display: 'block',
+                      fontWeight: '500',
+                      color: '#555'
+                    }}>Plan Nutricional:</label>
+                    <select
+                      className="form-control"
+                      value={filtrosImpresion.planNutricionalId}
+                      onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, planNutricionalId: e.target.value }))}
+                      style={{ 
+                        fontSize: '0.875rem',
+                        padding: '0.5rem',
+                        border: '1px solid #ced4da',
+                        borderRadius: '4px',
+                        width: '100%'
+                      }}
+                    >
+                      <option value="">Todos</option>
+                      {planesNutricionales.map((plan) => {
+                        const planId = plan.id || plan.Id || plan.ID;
+                        const planNombre = plan.nombre || plan.Nombre || plan.descripcion || plan.Descripcion || '';
+                        return (
+                          <option key={planId} value={String(planId)}>
+                            {planNombre}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ 
+                      fontSize: '0.875rem', 
+                      marginBottom: '0.5rem', 
+                      display: 'block',
+                      fontWeight: '500',
+                      color: '#555'
+                    }}>Jerarquía:</label>
+                    <select
+                      className="form-control"
+                      value={filtrosImpresion.jerarquiaId}
+                      onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, jerarquiaId: e.target.value }))}
+                      style={{ 
+                        fontSize: '0.875rem',
+                        padding: '0.5rem',
+                        border: '1px solid #ced4da',
+                        borderRadius: '4px',
+                        width: '100%'
+                      }}
+                    >
+                      <option value="">Todas</option>
+                      {jerarquias.map((jerarquia) => {
+                        const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID;
+                        const jerarquiaNombre = jerarquia.nombre || jerarquia.Nombre || jerarquia.descripcion || jerarquia.Descripcion || '';
+                        return (
+                          <option key={jerarquiaId} value={String(jerarquiaId)}>
+                            {jerarquiaNombre}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ 
+                      fontSize: '0.875rem', 
+                      marginBottom: '0.5rem', 
+                      display: 'block',
+                      fontWeight: '500',
+                      color: '#555'
+                    }}>Proyecto:</label>
+                    <select
+                      className="form-control"
+                      value={filtrosImpresion.proyectoId}
+                      onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, proyectoId: e.target.value }))}
+                      style={{ 
+                        fontSize: '0.875rem',
+                        padding: '0.5rem',
+                        border: '1px solid #ced4da',
+                        borderRadius: '4px',
+                        width: '100%'
+                      }}
+                    >
+                      <option value="">Todos</option>
+                      {proyectos.map((proyecto) => {
+                        const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
+                        const proyectoNombre = proyecto.nombre || proyecto.Nombre || proyecto.descripcion || proyecto.Descripcion || '';
+                        return (
+                          <option key={proyectoId} value={String(proyectoId)}>
+                            {proyectoNombre}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ 
+                      fontSize: '0.875rem', 
+                      marginBottom: '0.5rem', 
+                      display: 'block',
+                      fontWeight: '500',
+                      color: '#555'
+                    }}>Centro de Costo:</label>
+                    <select
+                      className="form-control"
+                      value={filtrosImpresion.centroCostoId}
+                      onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, centroCostoId: e.target.value }))}
+                      style={{ 
+                        fontSize: '0.875rem',
+                        padding: '0.5rem',
+                        border: '1px solid #ced4da',
+                        borderRadius: '4px',
+                        width: '100%'
+                      }}
+                    >
+                      <option value="">Todos</option>
+                      {centrosDeCosto.map((centro) => {
+                        const centroId = centro.id || centro.Id || centro.ID;
+                        const centroNombre = centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion || '';
+                        return (
+                          <option key={centroId} value={String(centroId)}>
+                            {centroNombre}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ 
+                      fontSize: '0.875rem', 
+                      marginBottom: '0.5rem', 
+                      display: 'block',
+                      fontWeight: '500',
+                      color: '#555'
+                    }}>Planta:</label>
+                    <select
+                      className="form-control"
+                      value={filtrosImpresion.plantaId}
+                      onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, plantaId: e.target.value }))}
+                      style={{ 
+                        fontSize: '0.875rem',
+                        padding: '0.5rem',
+                        border: '1px solid #ced4da',
+                        borderRadius: '4px',
+                        width: '100%'
+                      }}
+                    >
+                      <option value="">Todas</option>
+                      {plantas.map((planta) => {
+                        const plantaId = planta.id || planta.Id || planta.ID;
+                        const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
+                        return (
+                          <option key={plantaId} value={String(plantaId)}>
+                            {plantaNombre}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ 
+                      fontSize: '0.875rem', 
+                      marginBottom: '0.5rem', 
+                      display: 'block',
+                      fontWeight: '500',
+                      color: '#555'
+                    }}>Estado:</label>
+                    <select
+                      className="form-control"
+                      value={filtrosImpresion.activo === null ? '' : filtrosImpresion.activo ? 'activo' : 'inactivo'}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFiltrosImpresion(prev => ({
+                          ...prev,
+                          activo: value === '' ? null : value === 'activo',
+                        }));
+                      }}
+                      style={{ 
+                        fontSize: '0.875rem',
+                        padding: '0.5rem',
+                        border: '1px solid #ced4da',
+                        borderRadius: '4px',
+                        width: '100%'
+                      }}
+                    >
+                      <option value="">Todos</option>
+                      <option value="activo">Solo Activos</option>
+                      <option value="inactivo">Solo Inactivos</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div style={{ 
+                display: 'flex', 
+                gap: '0.75rem', 
+                justifyContent: 'flex-end',
+                marginTop: '1.5rem',
+                paddingTop: '1.5rem',
+                borderTop: '1px solid #e0e0e0'
+              }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setMostrarModalImpresion(false)}
+                  style={{
+                    backgroundColor: '#6c757d',
+                    borderColor: '#6c757d',
+                    color: 'white',
+                    padding: '0.625rem 1.5rem',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    border: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#5a6268';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#6c757d';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => handleExportarPDF(columnasSeleccionadas, filtrosImpresion)}
+                  style={{
+                    backgroundColor: '#dc3545',
+                    borderColor: '#dc3545',
+                    color: 'white',
+                    padding: '0.625rem 1.5rem',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    border: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#c82333';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#dc3545';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <i className="fa fa-file-pdf mr-2"></i>
+                  Exportar PDF
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => handleExportarExcel(columnasSeleccionadas, filtrosImpresion)}
+                  style={{
+                    backgroundColor: '#28a745',
+                    borderColor: '#28a745',
+                    color: 'white',
+                    padding: '0.625rem 1.5rem',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    border: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#218838';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#28a745';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <i className="fa fa-file-excel mr-2"></i>
+                  Exportar Excel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -723,7 +2475,7 @@ const MenuDelDia = () => {
   // ===== formulario crear/editar =====
   return (
     <div className="container-fluid" style={{ padding: 0, backgroundColor: 'white' }}>
-      <div className="page-title-bar">
+        <div className="page-title-bar">
         <div
           style={{
             display: 'flex',
@@ -783,58 +2535,241 @@ const MenuDelDia = () => {
               <div className="row">
                 <div className="col-md-3">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-                    <label htmlFor="plannutricional_id" style={{ marginBottom: '0.25rem' }}>Plan Nutricional</label>
+                    <label htmlFor="plannutricional_id" style={{ marginBottom: '0.25rem' }}>
+                      Plan Nutricional <span style={{ color: '#F34949' }}>*</span>
+                    </label>
                     <select
                       className="form-control"
                       id="plannutricional_id"
                       name="plannutricional_id"
-                      value={formData.plannutricional_id || ''}
+                      value={formData.plannutricional_id || (planesNutricionales.length === 1 ? String(planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID) : '')}
                       onChange={handleInputChange}
-                      disabled={isLoading}
+                      disabled={isLoading || planesNutricionales.length === 1}
+                      required
+                      style={{
+                        ...(planesNutricionales.length === 1
+                          ? {
+                              backgroundColor: '#e9ecef',
+                              cursor: 'not-allowed',
+                              opacity: 0.7,
+                            }
+                          : {})
+                      }}
                     >
-                      <option value="">{isLoading ? 'Cargando...' : 'Seleccione un plan nutricional'}</option>
-                      {planesNutricionales.length === 0 && !isLoading && (
-                        <option value="" disabled>No hay planes nutricionales disponibles</option>
+                      {planesNutricionales.length === 0 ? (
+                        <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                      ) : planesNutricionales.length === 1 ? (
+                        <option value={String(planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID)}>
+                          {planesNutricionales[0].nombre || planesNutricionales[0].Nombre || planesNutricionales[0].descripcion || planesNutricionales[0].Descripcion}
+                        </option>
+                      ) : (
+                        <>
+                          {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                          {planesNutricionales.map((plan) => {
+                            const planId = plan.id || plan.Id || plan.ID;
+                            const planNombre = plan.nombre || plan.Nombre || plan.descripcion || plan.Descripcion || '';
+                            return (
+                              <option key={planId} value={String(planId)}>
+                                {planNombre}
+                              </option>
+                            );
+                          })}
+                        </>
                       )}
-                      {planesNutricionales.map((plan) => {
-                        const planId = plan.id || plan.Id || plan.ID;
-                        const planNombre = plan.nombre || plan.Nombre || plan.descripcion || plan.Descripcion || '';
-                        return (
-                          <option key={planId} value={String(planId)}>
-                            {planNombre}
-                          </option>
-                        );
-                      })}
                     </select>
                   </div>
                 </div>
-                <div className="col-md-5">
-                  <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                <div className="col-md-6">
+                  <div className="form-group" style={{ marginBottom: '0.5rem', position: 'relative' }}>
                     <label htmlFor="platoId" style={{ marginBottom: '0.25rem' }}>
                       Plato <span style={{ color: '#F34949' }}>*</span>
                     </label>
-                    <select
-                      className="form-control"
-                      id="platoId"
-                      name="platoId"
+                    <div className="plato-buscador-container" style={{ position: 'relative' }}>
+                      <div className="input-group">
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="platoId"
+                          name="platoId"
+                          value={busquedaPlato}
+                          onChange={(e) => {
+                            const valor = e.target.value;
+                            setBusquedaPlato(valor);
+                            // Si se borra el texto, limpiar la selección
+                            if (!valor.trim()) {
+                              setFormData(prev => ({ ...prev, platoId: '' }));
+                              setPlatoSeleccionadoNombre('');
+                              setMostrarDropdownPlato(false);
+                            } else {
+                              // Mostrar dropdown si hay texto de búsqueda
+                              setMostrarDropdownPlato(true);
+                            }
+                          }}
+                          onFocus={() => {
+                            if (busquedaPlato.trim()) {
+                              setMostrarDropdownPlato(true);
+                            }
+                          }}
+                          placeholder={!formData.plannutricional_id || formData.plannutricional_id === '' 
+                            ? 'Primero seleccione un Plan Nutricional' 
+                            : 'Buscar plato por nombre o código...'}
+                          disabled={!formData.plannutricional_id || formData.plannutricional_id === ''}
+                          required
+                          style={{
+                            fontSize: '0.875rem',
+                            padding: '0.4rem 0.75rem',
+                            height: '38px',
+                            boxSizing: 'border-box',
+                            lineHeight: '1.5',
+                            ...( (!formData.plannutricional_id || formData.plannutricional_id === '') ? {
+                              backgroundColor: '#e9ecef',
+                              cursor: 'not-allowed',
+                              opacity: 0.7,
+                            } : {})
+                          }}
+                        />
+                        {busquedaPlato && (
+                          <div className="input-group-append">
+                            <button
+                              type="button"
+                              className="btn"
+                              onClick={() => {
+                                setBusquedaPlato('');
+                                setPlatoSeleccionadoNombre('');
+                                setFormData(prev => ({ ...prev, platoId: '' }));
+                                setMostrarDropdownPlato(false);
+                              }}
+                              style={{
+                                backgroundColor: '#f8f9fa',
+                                border: '1px solid #ced4da',
+                                borderLeft: 'none',
+                                color: '#6c757d',
+                                padding: '0.375rem 0.75rem',
+                                height: '38px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                              }}
+                              title="Limpiar búsqueda"
+                            >
+                              <i className="fa fa-times" aria-hidden="true"></i>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Dropdown con resultados */}
+                      {mostrarDropdownPlato && platosBuscados.length > 0 && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            backgroundColor: 'white',
+                            border: '1px solid #ced4da',
+                            borderTop: 'none',
+                            borderRadius: '0 0 0.25rem 0.25rem',
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            marginTop: '-1px',
+                          }}
+                        >
+                          {platosBuscados.map((plato) => {
+                            const platoId = plato.id || plato.Id || plato.ID;
+                            const platoNombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
+                            const platoCodigo = plato.codigo || plato.Codigo || '';
+                            return (
+                              <div
+                                key={platoId}
+                                onClick={() => {
+                                  setFormData(prev => ({ ...prev, platoId: String(platoId) }));
+                                  setPlatoSeleccionadoNombre(platoNombre);
+                                  setBusquedaPlato(platoNombre);
+                                  setMostrarDropdownPlato(false);
+                                }}
+                                style={{
+                                  padding: '0.5rem 0.75rem',
+                                  cursor: 'pointer',
+                                  borderBottom: '1px solid #f0f0f0',
+                                  transition: 'background-color 0.2s',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.backgroundColor = '#f8f9fa';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.backgroundColor = 'white';
+                                }}
+                              >
+                                <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>{platoNombre}</div>
+                                {platoCodigo && (
+                                  <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.25rem' }}>
+                                    Código: {platoCodigo}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
+                      {/* Mensaje cuando no hay resultados */}
+                      {busquedaPlato.trim() && platosBuscados.length === 0 && mostrarDropdownPlato && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            backgroundColor: 'white',
+                            border: '1px solid #ced4da',
+                            borderTop: 'none',
+                            borderRadius: '0 0 0.25rem 0.25rem',
+                            padding: '0.75rem',
+                            color: '#6c757d',
+                            fontSize: '0.875rem',
+                            marginTop: '-1px',
+                          }}
+                        >
+                          No se encontraron platos que coincidan con "{busquedaPlato}"
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Input oculto para validación HTML5 */}
+                    <input
+                      type="hidden"
                       value={formData.platoId || ''}
-                      onChange={handleInputChange}
                       required
-                    >
-                      <option value="">Seleccione un plato</option>
-                      {platos.map((plato) => {
-                        const platoId = plato.id || plato.Id || plato.ID;
-                        const platoNombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
-                        return (
-                          <option key={platoId} value={String(platoId)}>
-                            {platoNombre}
-                          </option>
-                        );
-                      })}
-                    </select>
+                    />
+                    
+                    {(!formData.plannutricional_id || formData.plannutricional_id === '') && (
+                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <i 
+                          className="fa fa-info-circle" 
+                          title="Debe seleccionar el plan nutricional para poder buscar y agregar platos"
+                          style={{ 
+                            color: '#6c757d',
+                            fontSize: '0.875rem',
+                            cursor: 'help',
+                          }}
+                          aria-hidden="true"
+                        ></i>
+                        <span style={{ 
+                          color: '#6c757d',
+                          fontSize: '0.875rem',
+                        }}>
+                          Debe seleccionar primero un plan nutricional para poder buscar un plato
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="col-md-2">
+                <div className="col-md-2" style={{ maxWidth: '120px' }}>
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="cantidad" style={{ marginBottom: '0.25rem' }}>
                       Cantidad <span style={{ color: '#F34949' }}>*</span>
@@ -858,10 +2793,14 @@ const MenuDelDia = () => {
                       required
                       min="1"
                       placeholder="1"
+                      style={{
+                        padding: '0.4rem 0.5rem',
+                        fontSize: '0.875rem',
+                      }}
                     />
                   </div>
                 </div>
-                <div className="col-md-2">
+                <div className="col-md-2" style={{ maxWidth: '170px' }}>
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="fecha" style={{ marginBottom: '0.25rem' }}>
                       Fecha <span style={{ color: '#F34949' }}>*</span>
@@ -874,36 +2813,59 @@ const MenuDelDia = () => {
                       value={formData.fecha || ''}
                       onChange={handleInputChange}
                       required
+                      style={{
+                        padding: '0.4rem 0.5rem',
+                        fontSize: '0.875rem',
+                      }}
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="row">
+              <div className="row" style={{ marginTop: '1.5rem' }}>
                 <div className="col-md-2">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-                    <label htmlFor="jerarquiaId" style={{ marginBottom: '0.25rem' }}>Jerarquía</label>
+                    <label htmlFor="jerarquiaId" style={{ marginBottom: '0.25rem' }}>
+                      Jerarquía <span style={{ color: '#F34949' }}>*</span>
+                    </label>
                     <select
                       className="form-control"
                       id="jerarquiaId"
                       name="jerarquiaId"
-                      value={formData.jerarquiaId || ''}
+                      value={formData.jerarquiaId || (jerarquias.length === 1 ? String(jerarquias[0].id || jerarquias[0].Id || jerarquias[0].ID) : '')}
                       onChange={handleInputChange}
-                      disabled={isLoading}
+                      disabled={isLoading || jerarquias.length === 1}
+                      required
+                      style={{
+                        ...(jerarquias.length === 1
+                          ? {
+                              backgroundColor: '#e9ecef',
+                              cursor: 'not-allowed',
+                              opacity: 0.7,
+                            }
+                          : {})
+                      }}
                     >
-                      <option value="">{isLoading ? 'Cargando...' : 'Seleccione una jerarquía'}</option>
-                      {jerarquias.length === 0 && !isLoading && (
-                        <option value="" disabled>No hay jerarquías disponibles</option>
+                      {jerarquias.length === 0 ? (
+                        <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                      ) : jerarquias.length === 1 ? (
+                        <option value={String(jerarquias[0].id || jerarquias[0].Id || jerarquias[0].ID)}>
+                          {jerarquias[0].nombre || jerarquias[0].Nombre || jerarquias[0].descripcion || jerarquias[0].Descripcion}
+                        </option>
+                      ) : (
+                        <>
+                          {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                          {jerarquias.map((jerarquia) => {
+                            const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID;
+                            const jerarquiaNombre = jerarquia.nombre || jerarquia.Nombre || jerarquia.descripcion || jerarquia.Descripcion || '';
+                            return (
+                              <option key={jerarquiaId} value={String(jerarquiaId)}>
+                                {jerarquiaNombre}
+                              </option>
+                            );
+                          })}
+                        </>
                       )}
-                      {jerarquias.map((jerarquia) => {
-                        const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID;
-                        const jerarquiaNombre = jerarquia.nombre || jerarquia.Nombre || jerarquia.descripcion || jerarquia.Descripcion || '';
-                        return (
-                          <option key={jerarquiaId} value={String(jerarquiaId)}>
-                            {jerarquiaNombre}
-                          </option>
-                        );
-                      })}
                     </select>
                   </div>
                 </div>
@@ -916,101 +2878,178 @@ const MenuDelDia = () => {
                       className="form-control"
                       id="turnoId"
                       name="turnoId"
-                      value={formData.turnoId || ''}
+                      value={formData.turnoId || (turnos.length === 1 ? String(turnos[0].id || turnos[0].Id || turnos[0].ID) : '')}
                       onChange={handleInputChange}
+                      disabled={turnos.length === 1}
                       required
+                      style={{
+                        ...(turnos.length === 1
+                          ? {
+                              backgroundColor: '#e9ecef',
+                              cursor: 'not-allowed',
+                              opacity: 0.7,
+                            }
+                          : {})
+                      }}
                     >
-                      <option value="">Seleccione un turno</option>
-                      {turnos.map((turno) => {
-                        const turnoId = turno.id || turno.Id || turno.ID;
-                        const turnoNombre = turno.nombre || turno.Nombre || turno.descripcion || turno.Descripcion || '';
-                        return (
-                          <option key={turnoId} value={String(turnoId)}>
-                            {turnoNombre}
-                          </option>
-                        );
-                      })}
+                      {turnos.length === 0 ? (
+                        <option value="">Cargando...</option>
+                      ) : turnos.length === 1 ? (
+                        <option value={String(turnos[0].id || turnos[0].Id || turnos[0].ID)}>
+                          {turnos[0].nombre || turnos[0].Nombre || turnos[0].descripcion || turnos[0].Descripcion}
+                        </option>
+                      ) : (
+                        <>
+                          {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                          {turnos.map((turno) => {
+                            const turnoId = turno.id || turno.Id || turno.ID;
+                            const turnoNombre = turno.nombre || turno.Nombre || turno.descripcion || turno.Descripcion || '';
+                            return (
+                              <option key={turnoId} value={String(turnoId)}>
+                                {turnoNombre}
+                              </option>
+                            );
+                          })}
+                        </>
+                      )}
                     </select>
                   </div>
                 </div>
                 <div className="col-md-2">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-                    <label htmlFor="proyectoId" style={{ marginBottom: '0.25rem' }}>Proyecto</label>
+                    <label htmlFor="proyectoId" style={{ marginBottom: '0.25rem' }}>
+                      Proyecto <span style={{ color: '#F34949' }}>*</span>
+                    </label>
                     <select
                       className="form-control"
                       id="proyectoId"
                       name="proyectoId"
-                      value={formData.proyectoId || ''}
+                      value={formData.proyectoId || (proyectos.length === 1 ? String(proyectos[0].id || proyectos[0].Id || proyectos[0].ID) : '')}
                       onChange={handleInputChange}
-                      disabled={isLoading}
+                      disabled={isLoading || proyectos.length === 1}
+                      required
+                      style={{
+                        ...(proyectos.length === 1
+                          ? {
+                              backgroundColor: '#e9ecef',
+                              cursor: 'not-allowed',
+                              opacity: 0.7,
+                            }
+                          : {})
+                      }}
                     >
-                      <option value="">{isLoading ? 'Cargando...' : 'Seleccione un proyecto'}</option>
-                      {proyectos.length === 0 && !isLoading && (
-                        <option value="" disabled>No hay proyectos disponibles</option>
+                      {proyectos.length === 0 ? (
+                        <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                      ) : proyectos.length === 1 ? (
+                        <option value={String(proyectos[0].id || proyectos[0].Id || proyectos[0].ID)}>
+                          {proyectos[0].nombre || proyectos[0].Nombre || proyectos[0].descripcion || proyectos[0].Descripcion}
+                        </option>
+                      ) : (
+                        <>
+                          {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                          {proyectos.map((proyecto) => {
+                            const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
+                            const proyectoNombre = proyecto.nombre || proyecto.Nombre || proyecto.descripcion || proyecto.Descripcion || '';
+                            return (
+                              <option key={proyectoId} value={String(proyectoId)}>
+                                {proyectoNombre}
+                              </option>
+                            );
+                          })}
+                        </>
                       )}
-                      {proyectos.map((proyecto) => {
-                        const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
-                        const proyectoNombre = proyecto.nombre || proyecto.Nombre || proyecto.descripcion || proyecto.Descripcion || '';
-                        return (
-                          <option key={proyectoId} value={String(proyectoId)}>
-                            {proyectoNombre}
-                          </option>
-                        );
-                      })}
                     </select>
                   </div>
                 </div>
                 <div className="col-md-3">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-                    <label htmlFor="centroCostoId" style={{ marginBottom: '0.25rem' }}>Centro de costo</label>
+                    <label htmlFor="centroCostoId" style={{ marginBottom: '0.25rem' }}>
+                      Centro de costo <span style={{ color: '#F34949' }}>*</span>
+                    </label>
                     <select
                       className="form-control"
                       id="centroCostoId"
                       name="centroCostoId"
-                      value={formData.centroCostoId || ''}
+                      value={formData.centroCostoId || (centrosDeCosto.length === 1 ? String(centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID) : '')}
                       onChange={handleInputChange}
-                      disabled={isLoading}
+                      disabled={isLoading || centrosDeCosto.length === 1}
+                      required
+                      style={{
+                        ...(centrosDeCosto.length === 1
+                          ? {
+                              backgroundColor: '#e9ecef',
+                              cursor: 'not-allowed',
+                              opacity: 0.7,
+                            }
+                          : {})
+                      }}
                     >
-                      <option value="">{isLoading ? 'Cargando...' : 'Seleccione un centro de costo'}</option>
-                      {centrosDeCosto.length === 0 && !isLoading && (
-                        <option value="" disabled>No hay centros de costo disponibles</option>
+                      {centrosDeCosto.length === 0 ? (
+                        <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                      ) : centrosDeCosto.length === 1 ? (
+                        <option value={String(centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID)}>
+                          {centrosDeCosto[0].nombre || centrosDeCosto[0].Nombre || centrosDeCosto[0].descripcion || centrosDeCosto[0].Descripcion}
+                        </option>
+                      ) : (
+                        <>
+                          {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                          {centrosDeCosto.map((centro) => {
+                            const centroId = centro.id || centro.Id || centro.ID;
+                            const centroNombre = centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion || '';
+                            return (
+                              <option key={centroId} value={String(centroId)}>
+                                {centroNombre}
+                              </option>
+                            );
+                          })}
+                        </>
                       )}
-                      {centrosDeCosto.map((centro) => {
-                        const centroId = centro.id || centro.Id || centro.ID;
-                        const centroNombre = centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion || '';
-                        return (
-                          <option key={centroId} value={String(centroId)}>
-                            {centroNombre}
-                          </option>
-                        );
-                      })}
                     </select>
                   </div>
                 </div>
                 <div className="col-md-3">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-                    <label htmlFor="plantaId" style={{ marginBottom: '0.25rem' }}>Planta</label>
+                    <label htmlFor="plantaId" style={{ marginBottom: '0.25rem' }}>
+                      Planta <span style={{ color: '#F34949' }}>*</span>
+                    </label>
                     <select
                       className="form-control"
                       id="plantaId"
                       name="plantaId"
-                      value={formData.plantaId || ''}
+                      value={formData.plantaId || (plantas.length === 1 ? String(plantas[0].id || plantas[0].Id || plantas[0].ID) : '')}
                       onChange={handleInputChange}
-                      disabled={isLoading}
+                      disabled={isLoading || plantas.length === 1}
+                      required
+                      style={{
+                        ...(plantas.length === 1
+                          ? {
+                              backgroundColor: '#e9ecef',
+                              cursor: 'not-allowed',
+                              opacity: 0.7,
+                            }
+                          : {})
+                      }}
                     >
-                      <option value="">{isLoading ? 'Cargando...' : 'Seleccione una planta'}</option>
-                      {plantas.length === 0 && !isLoading && (
-                        <option value="" disabled>No hay plantas disponibles</option>
+                      {plantas.length === 0 ? (
+                        <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                      ) : plantas.length === 1 ? (
+                        <option value={String(plantas[0].id || plantas[0].Id || plantas[0].ID)}>
+                          {plantas[0].nombre || plantas[0].Nombre || plantas[0].descripcion || plantas[0].Descripcion}
+                        </option>
+                      ) : (
+                        <>
+                          {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                          {plantas.map((planta) => {
+                            const plantaId = planta.id || planta.Id || planta.ID;
+                            const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
+                            return (
+                              <option key={plantaId} value={String(plantaId)}>
+                                {plantaNombre}
+                              </option>
+                            );
+                          })}
+                        </>
                       )}
-                      {plantas.map((planta) => {
-                        const plantaId = planta.id || planta.Id || planta.ID;
-                        const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
-                        return (
-                          <option key={plantaId} value={String(plantaId)}>
-                            {plantaNombre}
-                          </option>
-                        );
-                      })}
                     </select>
                   </div>
                 </div>

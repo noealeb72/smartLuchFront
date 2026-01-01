@@ -31,14 +31,45 @@ export const comandasService = {
   },
 
   /**
+   * Obtiene lista de pedidos para despacho
+   * GET /api/comanda/lista
+   */
+  getLista: async (page = 1, pageSize = 10, fechaDesde = null, fechaHasta = null) => {
+    const baseUrl = getApiBaseUrl();
+    const params = {
+      page,
+      pageSize,
+      activo: true,
+    };
+    
+    if (fechaDesde) params.fechaDesde = fechaDesde;
+    if (fechaHasta) params.fechaHasta = fechaHasta;
+    
+    const response = await api.get(`${baseUrl}/api/comanda/lista`, {
+      params,
+    });
+    return response.data;
+  },
+
+  /**
    * Crea un nuevo pedido
+   * POST /api/comanda/crear
+   * Usa el DTO ComandaCreateDto
    */
   crearPedido: async (pedidoData) => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.post(`${baseUrl}/api/comanda/Create`, pedidoData, {
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
+    const token = localStorage.getItem('token');
+    
+    const headers = {
+      'Content-Type': 'application/json; charset=utf-8',
+    };
+    
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await api.post(`${baseUrl}/api/comanda/crear`, pedidoData, {
+      headers,
     });
     clearApiCache();
     return response.data;

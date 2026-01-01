@@ -6,13 +6,14 @@ import { useDashboard } from '../contexts/DashboardContext';
 import { inicioService } from '../services/inicioService';
 import { menuService } from '../services/menuService';
 import { comandasService } from '../services/comandasService';
+import { getApiBaseUrl } from '../services/configService';
 import Swal from 'sweetalert2';
 import './Index.css';
 import '../styles/smartstyle.css';
 
 const Index = () => {
   const { user } = useAuth();
-  const { turnos, pedidosHoy, usuarioData, actualizarDatos } = useDashboard();
+  const { turnos, pedidosHoy, menuDelDia, usuarioData, actualizarDatos } = useDashboard();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTurno, setSelectedTurno] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
@@ -44,14 +45,12 @@ const Index = () => {
     const cargarDatosInicio = async (usuarioIdParam = null) => {
       // Evitar múltiples llamadas simultáneas
       if (requestInProgressRef.current) {
-        console.log('⚠️ [Index] Ya hay una petición en progreso, cancelando...');
         return;
       }
       
       // Verificar que haya token antes de hacer la petición
       const token = localStorage.getItem('token');
       if (!token || token === 'null' || token === 'undefined') {
-        console.error('❌ [Index] No hay token válido, no se puede cargar datos');
         requestInProgressRef.current = false;
         setIsLoading(false);
         return;
@@ -65,22 +64,9 @@ const Index = () => {
         // Obtener el id del usuario: puede venir como parámetro, del estado, o del token
         let usuarioId = usuarioIdParam || user?.id || usuarioData?.id;
         
-        console.log('🔍 [Index] Verificando usuarioId:', {
-          userId: user?.id,
-          usuarioDataId: usuarioData?.id,
-          usuarioIdFinal: usuarioId,
-          userCompleto: user,
-          usuarioDataCompleto: usuarioData,
-          tieneId: !!usuarioId
-        });
-        
         // Si no hay id, no podemos hacer la llamada
         // Esto puede pasar si se recarga la página y solo hay token en localStorage
         if (!usuarioId) {
-          console.error('❌ [Index] No se encontró el ID del usuario');
-          console.error('❌ [Index] Objeto user:', user);
-          console.error('❌ [Index] usuarioData:', usuarioData);
-          console.error('❌ [Index] Esperando a que se cargue el ID del usuario...');
           requestInProgressRef.current = false;
           setIsLoading(false);
           // NO redirigir automáticamente, solo esperar
@@ -88,22 +74,9 @@ const Index = () => {
         }
         
         // Siempre llamar a inicioService pasando el id del usuario
-        console.log('📥 [Index] Llamando a api/inicio/web con usuarioId:', usuarioId);
-        console.log('📥 [Index] Token disponible:', localStorage.getItem('token') ? '✅ Sí' : '❌ No');
         const data = await inicioService.getInicioWeb(usuarioId);
-        console.log('✅ [Index] Datos recibidos de api/inicio/web:', data);
-        console.log('✅ [Index] Estructura de datos:', {
-          tieneUsuario: !!data.Usuario,
-          tieneTurnos: !!data.Turnos,
-          tieneMenuDelDia: !!data.MenuDelDia,
-          tienePlatosPedidos: !!data.PlatosPedidos,
-          cantidadTurnos: Array.isArray(data.Turnos) ? data.Turnos.length : 0,
-          cantidadMenuDelDia: Array.isArray(data.MenuDelDia) ? data.MenuDelDia.length : 0,
-          cantidadPlatosPedidos: Array.isArray(data.PlatosPedidos) ? data.PlatosPedidos.length : 0
-        });
         
         if (!isMountedRef.current) {
-          console.log('⚠️ [Index] Componente desmontado antes de actualizar estado');
           requestInProgressRef.current = false;
           setIsLoading(false); // Asegurar que se quite el loading
           return;
@@ -111,35 +84,24 @@ const Index = () => {
         
         // Actualizar el contexto con los datos recibidos
         try {
-          console.log('🔄 [Index] Llamando a actualizarDatos con:', data);
           actualizarDatos(data);
-          console.log('✅ [Index] actualizarDatos completado');
         } catch (errorActualizar) {
-          console.error('❌ [Index] Error al actualizar datos en el contexto:', errorActualizar);
           // Continuar aunque haya error en actualizarDatos
         }
         
         // Guardar nombre y apellido del Usuario para mostrar en "Bienvenido"
         if (data.Usuario) {
-          console.log('👤 Datos del Usuario:', data.Usuario);
           const nombre = data.Usuario.Nombre || data.Usuario.nombre || '';
           const apellido = data.Usuario.Apellido || data.Usuario.apellido || '';
           setUsuarioNombre(nombre);
           setUsuarioApellido(apellido);
-          console.log('👤 Usuario nombre y apellido guardados:', nombre, apellido);
         }
         
         // Sincronizar pedidosVigentes con PlatosPedidos de la respuesta
         const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
-        console.log('🍽️ PlatosPedidos recibidos:', pedidosData);
         setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
-        
-        // Asegurar que se quite el loading después de procesar los datos
-        console.log('✅ [Index] Procesamiento de datos completado, quitando loading...');
       } catch (error) {
-        console.error('❌ [Index] Error en cargarDatosInicio:', error);
         if (!isMountedRef.current) {
-          console.log('⚠️ [Index] Componente desmontado durante error');
           requestInProgressRef.current = false;
           setIsLoading(false); // Asegurar que se quite el loading
           return;
@@ -148,13 +110,11 @@ const Index = () => {
         // Si el error tiene redirectToLogin, evitar que se redirija automáticamente
         // y manejar el error aquí en lugar de dejar que el interceptor lo haga
         if (error.redirectToLogin) {
-          console.error('⚠️ [Index] Error con redirectToLogin detectado, evitando redirección automática');
           error.redirectToLogin = false; // Evitar redirección automática
         }
         
         // Solo mostrar error si no es un error de autenticación que requiere logout
         if (error.response?.status === 401) {
-          console.error('❌ [Index] Error 401 - No autorizado, redirigiendo al login');
           // En caso de 401, sí redirigir al login
           localStorage.clear();
           window.location.href = '/login';
@@ -169,13 +129,10 @@ const Index = () => {
           confirmButtonColor: '#F34949',
         });
       } finally {
-        console.log('🔄 [Index] Ejecutando finally, isMounted:', isMountedRef.current);
         // Siempre quitar el loading, incluso si el componente está desmontado
         // React puede manejar actualizaciones de estado en componentes desmontados
-        console.log('✅ [Index] Quitando loading en finally...');
         setIsLoading(false);
         requestInProgressRef.current = false;
-        console.log('✅ [Index] Loading quitado en finally');
       }
     };
 
@@ -194,48 +151,25 @@ const Index = () => {
           const payload = JSON.parse(atob(tokenParts[1]));
           // Intentar diferentes nombres de campo que puede tener el ID del usuario en el token
           usuarioIdDesdeToken = payload.usuario || payload.usuarioId || payload.userId || payload.id || payload.sub || payload.nameid || null;
-          if (usuarioIdDesdeToken) {
-            console.log('✅ [Index] ID del usuario obtenido del token:', usuarioIdDesdeToken);
-            console.log('📋 [Index] Payload completo del token:', payload);
-          } else {
-            console.warn('⚠️ [Index] No se encontró ID de usuario en el token. Payload:', payload);
-          }
         }
       } catch (error) {
-        console.warn('⚠️ [Index] No se pudo decodificar el token:', error);
+        // Error al decodificar token
       }
     }
     
     const usuarioIdFinal = tieneUsuarioId || usuarioIdDesdeToken;
     
-    console.log('🔍 [Index] Verificando autenticación para cargar datos:', {
-      tieneToken,
-      tieneUsuarioId: !!tieneUsuarioId,
-      usuarioIdDesdeToken,
-      usuarioIdFinal: !!usuarioIdFinal,
-      userId: user?.id,
-      usuarioDataId: usuarioData?.id,
-      requestInProgress: requestInProgressRef.current
-    });
-    
     // Ejecutar si hay token Y (usuario con id O id desde token) Y no hay una petición en progreso
     if (tieneToken && usuarioIdFinal && !requestInProgressRef.current) {
-      console.log('✅ [Index] Usuario autenticado con ID, cargando datos desde api/inicio/web...');
       // Pasar el usuarioIdFinal a la función
       cargarDatosInicio(usuarioIdFinal);
     } else if (!usuarioIdFinal && tieneToken && !requestInProgressRef.current) {
       // Si hay token pero no id, intentar decodificar el token nuevamente con más campos
-      console.log('⏳ [Index] Hay token pero falta ID del usuario');
-      console.log('⏳ [Index] Token (primeros 20 chars):', token.substring(0, 20) + '...');
-      console.log('⏳ [Index] Intentando decodificar token nuevamente con más campos...');
-      
       // Intentar decodificar el token una vez más con más campos posibles
       try {
         const tokenParts = token.split('.');
         if (tokenParts.length === 3) {
           const payload = JSON.parse(atob(tokenParts[1]));
-          console.log('📋 [Index] Payload completo del token:', payload);
-          console.log('📋 [Index] Todas las claves del payload:', Object.keys(payload));
           
           // Buscar el ID en diferentes campos comunes de JWT (más exhaustivo)
           const posiblesIds = [
@@ -255,36 +189,20 @@ const Index = () => {
             ...Object.values(payload).filter(v => typeof v === 'number' && v > 0 && v < 1000000)
           ].filter(id => id !== undefined && id !== null && id !== '');
           
-          console.log('🔍 [Index] Posibles IDs encontrados:', posiblesIds);
-          
           if (posiblesIds.length > 0) {
             const idEncontrado = posiblesIds[0];
-            console.log('✅ [Index] ID encontrado en el token, cargando datos con ID:', idEncontrado);
             // Intentar cargar datos con este ID
             cargarDatosInicio(idEncontrado);
           } else {
-            console.warn('⚠️ [Index] No se pudo encontrar el ID del usuario en el token');
-            console.warn('⚠️ [Index] El backend debería poder obtener el ID del token, pero no podemos llamar sin ID');
-            console.warn('⚠️ [Index] Payload completo para depuración:', JSON.stringify(payload, null, 2));
             setIsLoading(false);
           }
         } else {
-          console.error('❌ [Index] Token no tiene formato JWT válido (no tiene 3 partes)');
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('❌ [Index] Error al decodificar token:', error);
-        console.error('❌ [Index] Error details:', error.message);
         setIsLoading(false);
       }
-    } else if (requestInProgressRef.current) {
-      console.log('⏭️ [Index] Ya hay una petición en progreso, esperando...');
     } else {
-      console.log('⏳ [Index] Esperando autenticación...', { 
-        tieneToken,
-        tieneUsuarioId: !!tieneUsuarioId,
-        usuarioIdDesdeToken
-      });
       setIsLoading(false); // Asegurar que no se quede en loading
     }
     
@@ -293,7 +211,7 @@ const Index = () => {
       // No resetear requestInProgressRef aquí porque puede estar en medio de una petición
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, usuarioData?.id]); // Ejecutar cuando cambie el id del usuario o usuarioData
+  }, [user?.id]); // Solo ejecutar cuando cambie el id del usuario (no usuarioData?.id para evitar loops)
 
   // Sincronizar pedidosHoy del contexto con el estado local
   useEffect(() => {
@@ -350,39 +268,164 @@ const Index = () => {
     inicializarBonificaciones();
   }, [inicializarBonificaciones]);
 
-  // Cargar menú cuando hay un turno seleccionado (como en el totem)
+  // Cargar menú cuando hay un turno seleccionado, usando menuDelDia del contexto
   useEffect(() => {
-    if (selectedTurno) {
-      cargarMenu();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTurno]);
+    if (selectedTurno && menuDelDia && menuDelDia.length > 0) {
+      const turnoId = selectedTurno.id || selectedTurno.Id || selectedTurno.ID;
+      if (!turnoId) {
+        setMenuItems([]);
+        return;
+      }
+      
+      // Filtrar menuDelDia por el turno seleccionado
+      const menuFiltrado = menuDelDia.filter(menu => {
+        const menuTurnoId = menu.TurnoId || menu.turnoId || menu.Turno?.Id || menu.turno?.id;
+        return menuTurnoId === turnoId;
+      });
 
-  const cargarMenu = useCallback(async () => {
+      if (menuFiltrado.length > 0) {
+        const platosMap = new Map();
+        const platos = [];
+
+        for (const menuItem of menuFiltrado) {
+          // Usar PlatoId como código único, pero si es 0, usar el Id del menú
+          // Verificar explícitamente si existe (incluyendo 0)
+          let codigo = menuItem.PlatoId !== undefined ? menuItem.PlatoId : (menuItem.platoId !== undefined ? menuItem.platoId : null);
+          
+          // Si PlatoId es 0 o no existe, usar el Id del menú como código
+          if (codigo === null || codigo === 0 || codigo === '0') {
+            codigo = menuItem.Id || menuItem.id;
+            if (!codigo) {
+              // Si tampoco hay Id, generar uno único basado en el índice
+              codigo = `menu_item_${platos.length}`;
+            }
+          }
+          
+          // Convertir a string para usar como clave
+          const codigoStr = String(codigo);
+          
+          // Si ya existe este código, agregar un sufijo único con el Id del menú
+          let codigoFinal = codigoStr;
+          if (platosMap.has(codigoStr)) {
+            const menuId = menuItem.Id || menuItem.id || platos.length;
+            codigoFinal = `${codigoStr}_${menuId}`;
+          }
+
+          platosMap.set(codigoFinal, true);
+
+          // Obtener la foto del menú del día
+          let fotoUrl = defaultImage;
+          const foto = menuItem.Foto || menuItem.foto || menuItem.Imagen || menuItem.imagen || null;
+          
+          if (foto && foto.trim() !== '') {
+            // Si es una URL completa (http/https) o base64, usarla tal cual
+            if (foto.startsWith('http://') || foto.startsWith('https://') || foto.startsWith('data:')) {
+              fotoUrl = foto;
+            } else if (foto.startsWith('/uploads/platos/') || foto.includes('uploads/platos/')) {
+              // Si es una ruta de uploads/platos/, construir la URL completa
+              const baseUrl = getApiBaseUrl();
+              
+              // Si contiene 'uploads/platos/' pero no empieza con '/', extraer la parte relativa
+              let rutaRelativa = foto;
+              if (foto.includes('uploads/platos/') && !foto.startsWith('/uploads/platos/')) {
+                const indiceUploads = foto.indexOf('uploads/platos/');
+                rutaRelativa = `/${foto.substring(indiceUploads)}`;
+              }
+              
+              // Decodificar primero para obtener el nombre original, luego codificar solo si es necesario
+              const partes = rutaRelativa.split('/');
+              let nombreArchivo = partes.pop();
+              const rutaBase = partes.join('/');
+              
+              // Si el nombre ya está codificado (contiene % pero no espacios), decodificarlo primero
+              if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
+                try {
+                  nombreArchivo = decodeURIComponent(nombreArchivo);
+                } catch (e) {
+                  // Error al decodificar
+                }
+              }
+              
+              // Codificar solo si hay espacios o caracteres especiales
+              if (nombreArchivo.includes(' ') || /[^a-zA-Z0-9._-]/.test(nombreArchivo)) {
+                nombreArchivo = encodeURIComponent(nombreArchivo);
+              }
+              
+              fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivo}`;
+            } else {
+              // Si es solo un nombre de archivo, construir la ruta completa
+              const baseUrl = getApiBaseUrl();
+              fotoUrl = `${baseUrl}/uploads/platos/${foto}`;
+            }
+          }
+
+          const costo = parseFloat(
+            menuItem.costo || 
+            menuItem.Costo || 
+            menuItem.monto || 
+            menuItem.Monto || 
+            menuItem.importe || 
+            menuItem.Importe || 
+            menuItem.precio || 
+            menuItem.Precio || 
+            menuItem.ImportePlato ||
+            menuItem.importePlato ||
+            0
+          ) || 0;
+
+          // Obtener el PlatoId real (si es 0, usar el Id del menú)
+          const platoIdReal = (menuItem.PlatoId !== undefined && menuItem.PlatoId !== 0) 
+            ? menuItem.PlatoId 
+            : (menuItem.platoId !== undefined && menuItem.platoId !== 0)
+            ? menuItem.platoId
+            : (menuItem.Id || menuItem.id);
+
+          const plato = {
+            codigo: codigoFinal,
+            platoId: platoIdReal, // Guardar el PlatoId para usarlo al crear la comanda
+            menuId: menuItem.Id || menuItem.id, // Guardar el ID del menú para usarlo al crear la comanda
+            descripcion: menuItem.PlatoNombre || menuItem.platoNombre || menuItem.descripcion || menuItem.Descripcion || 'Sin descripción',
+            costo: costo,
+            plannutricional: menuItem.NutricionalNombre || menuItem.nutricionalNombre || menuItem.PlanNutricionalNombre || menuItem.planNutricionalNombre || null,
+            presentacion: fotoUrl,
+            ingredientes: null,
+            cantidadDisponible: menuItem.Disponible !== undefined ? parseInt(menuItem.Disponible) : (menuItem.disponible !== undefined ? parseInt(menuItem.disponible) : 0),
+            aplicarBonificacion: false,
+            precioFinal: costo,
+          };
+
+          platos.push(plato);
+        }
+
+        setMenuItems(platos);
+      } else {
+        setMenuItems([]);
+      }
+    } else if (selectedTurno && (!menuDelDia || menuDelDia.length === 0)) {
+      // Si hay turno seleccionado pero no hay menuDelDia, intentar cargar desde el API
+      cargarMenuDesdeAPI();
+    } else if (!selectedTurno) {
+      setMenuItems([]);
+    }
+  }, [selectedTurno, menuDelDia, defaultImage]);
+
+  const cargarMenuDesdeAPI = useCallback(async () => {
     if (!selectedTurno) return;
 
     try {
       setIsLoading(true);
-      console.log('🔄 [Index] cargarMenu - Cargando menú para turno:', selectedTurno);
 
       const turnoId = selectedTurno.id || selectedTurno.Id || selectedTurno.ID;
       if (!turnoId) {
-        console.error('❌ [Index] El turno seleccionado no tiene ID');
         setMenuItems([]);
         return;
       }
-
-      console.log('📤 [Index] Llamando a menuService.getMenuByTurnoId con turnoId:', turnoId);
-      const token = localStorage.getItem('token');
-      console.log('🔑 [Index] Token disponible:', token ? '✅ Sí' : '❌ No');
       
       let data;
       try {
         // Intentar primero con getMenuByTurnoId
         data = await menuService.getMenuByTurnoId(turnoId);
-        console.log('✅ [Index] Datos recibidos de getMenuByTurnoId:', data);
       } catch (error) {
-        console.log('⚠️ [Index] Error con getMenuByTurnoId, intentando con getMenuByTurno:', error);
         // Si falla, usar getMenuByTurno como fallback
         const hoy = new Date().toISOString().split('T')[0];
         const planta = usuarioData?.plantaId || user?.plantaId || '';
@@ -392,7 +435,6 @@ const Index = () => {
         const turnoNombre = selectedTurno.Nombre || selectedTurno.nombre || selectedTurno.Descripcion || selectedTurno.descripcion || '';
         
         data = await menuService.getMenuByTurno(planta, centro, jerarquia, proyecto, turnoNombre, hoy);
-        console.log('✅ [Index] Datos recibidos de getMenuByTurno:', data);
       }
 
       if (Array.isArray(data)) {
@@ -405,29 +447,88 @@ const Index = () => {
 
           platosMap.set(codigo, true);
 
+          // Obtener la foto del menú del día
+          let fotoUrl = defaultImage;
+          const foto = menuItem.Foto || menuItem.foto || menuItem.Imagen || menuItem.imagen || null;
+          
+          if (foto && foto.trim() !== '') {
+            // Si es una URL completa (http/https) o base64, usarla tal cual
+            if (foto.startsWith('http://') || foto.startsWith('https://') || foto.startsWith('data:')) {
+              fotoUrl = foto;
+            } else if (foto.startsWith('/uploads/platos/') || foto.includes('uploads/platos/')) {
+              // Si es una ruta de uploads/platos/, construir la URL completa
+              const baseUrl = getApiBaseUrl();
+              
+              // Si contiene 'uploads/platos/' pero no empieza con '/', extraer la parte relativa
+              let rutaRelativa = foto;
+              if (foto.includes('uploads/platos/') && !foto.startsWith('/uploads/platos/')) {
+                const indiceUploads = foto.indexOf('uploads/platos/');
+                rutaRelativa = `/${foto.substring(indiceUploads)}`;
+              }
+              
+              // Decodificar primero para obtener el nombre original, luego codificar solo si es necesario
+              const partes = rutaRelativa.split('/');
+              let nombreArchivo = partes.pop();
+              const rutaBase = partes.join('/');
+              
+              // Si el nombre ya está codificado (contiene % pero no espacios), decodificarlo primero
+              if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
+                try {
+                  nombreArchivo = decodeURIComponent(nombreArchivo);
+                } catch (e) {
+                  // Error al decodificar
+                }
+              }
+              
+              // Codificar solo si hay espacios o caracteres especiales
+              if (nombreArchivo.includes(' ') || /[^a-zA-Z0-9._-]/.test(nombreArchivo)) {
+                nombreArchivo = encodeURIComponent(nombreArchivo);
+              }
+              
+              fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivo}`;
+            } else {
+              // Si es solo un nombre de archivo, construir la ruta completa
+              const baseUrl = getApiBaseUrl();
+              fotoUrl = `${baseUrl}/uploads/platos/${foto}`;
+            }
+          }
+
+          const costo = parseFloat(
+            menuItem.costo || 
+            menuItem.Costo || 
+            menuItem.monto || 
+            menuItem.Monto || 
+            menuItem.importe || 
+            menuItem.Importe || 
+            menuItem.precio || 
+            menuItem.Precio || 
+            menuItem.ImportePlato ||
+            menuItem.importePlato ||
+            0
+          ) || 0;
+
           const plato = {
             codigo: codigo,
+            platoId: menuItem.PlatoId || menuItem.platoId || menuItem.Id || menuItem.id, // Guardar el PlatoId para usarlo al crear la comanda
+            menuId: menuItem.Id || menuItem.id, // Guardar el ID del menú para usarlo al crear la comanda
             descripcion: menuItem.descripcion || menuItem.Descripcion || menuItem.plato || menuItem.Plato || menuItem.PlatoNombre || menuItem.platoNombre || 'Sin descripción',
-            costo: parseFloat(menuItem.costo || menuItem.Costo || menuItem.monto || menuItem.Monto || 0) || 0,
-            plannutricional: menuItem.plannutricional || menuItem.PlanNutricional || menuItem.plan_nutricional || null,
-            presentacion: menuItem.presentacion || menuItem.Presentacion || menuItem.imagen || menuItem.Imagen || defaultImage,
+            costo: costo,
+            plannutricional: menuItem.NutricionalNombre || menuItem.nutricionalNombre || menuItem.PlanNutricionalNombre || menuItem.planNutricionalNombre || menuItem.plannutricional || menuItem.PlanNutricional || menuItem.plan_nutricional || null,
+            presentacion: fotoUrl,
             ingredientes: menuItem.ingredientes || menuItem.Ingredientes || menuItem.ingrediente || menuItem.Ingrediente || null,
-            cantidadDisponible: menuItem.cantidad_disponible !== undefined ? parseInt(menuItem.cantidad_disponible) : (menuItem.cantidadDisponible !== undefined ? parseInt(menuItem.cantidadDisponible) : 0),
+            cantidadDisponible: menuItem.Disponible !== undefined ? parseInt(menuItem.Disponible) : (menuItem.disponible !== undefined ? parseInt(menuItem.disponible) : (menuItem.cantidad_disponible !== undefined ? parseInt(menuItem.cantidad_disponible) : (menuItem.cantidadDisponible !== undefined ? parseInt(menuItem.cantidadDisponible) : 0))),
             aplicarBonificacion: false,
-            precioFinal: parseFloat(menuItem.costo || menuItem.Costo || menuItem.monto || menuItem.Monto || 0) || 0,
+            precioFinal: costo,
           };
 
           platos.push(plato);
         }
 
-        console.log('✅ [Index] Platos procesados:', platos.length);
         setMenuItems(platos);
       } else {
-        console.log('⚠️ [Index] getMenuDelDia no devolvió un array');
         setMenuItems([]);
       }
     } catch (error) {
-      console.error('❌ [Index] Error al cargar menú:', error);
       if (!error.redirectToLogin) {
         const errorMessage = error.message || 'Error al cargar el menú del día';
         Swal.fire({
@@ -442,7 +543,7 @@ const Index = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedTurno, defaultImage]);
+  }, [selectedTurno, defaultImage, usuarioData, user]);
 
 
   // Ya no se necesita cargarMenu, se usa MenuDelDia del contexto
@@ -519,36 +620,183 @@ const Index = () => {
     if (!pedidoSeleccionado) return;
 
     try {
-      const ahora = new Date();
-      const dia = ahora.getDay();
-      const mes = ahora.getMonth();
-      const anio = ahora.getFullYear();
-      const hora = ahora.getHours();
-      const minuto = ahora.getMinutes();
-      const fecha = `${hora}:${minuto} ${dia}/${mes}/${anio}`;
+      // Obtener IDs necesarios
+      const usuarioId = usuarioData?.id || user?.id || null;
+      if (!usuarioId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo obtener el ID del usuario',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
 
-      const jsonForm = {
-        cod_plato: pedidoSeleccionado.codigo,
-        monto: pedidoSeleccionado.precioFinal || pedidoSeleccionado.costo,
-        estado: 'P',
-        calificacion: 1,
-        planta: user?.planta,
-        proyecto: user?.proyecto,
-        centrodecosto: user?.centrodecosto,
-        user_id: user?.dni,
-        user_name: user?.nombre,
-        user_lastName: user?.apellido,
-        user_fileNumber: user?.legajo,
-        invitado: false,
-        comentario: pedidoComentario,
-        fecha_hora: fecha,
-        precio_original: pedidoSeleccionado.costo,
-        bonificado: pedidoSeleccionado.bonificado || 0,
-        porcentaje_bonificacion: porcentajeBonificacion,
-        aplicar_bonificacion: !!pedidoSeleccionado.aplicarBonificacion,
+      // Obtener PlatoId y MenuddId (Id del menú del día) del pedido seleccionado (ya lo guardamos en el objeto plato)
+      let platoId = pedidoSeleccionado.platoId || null;
+      let menuId = pedidoSeleccionado.menuId || null; // Este será el MenuddId en el DTO
+      
+      // Si no está en el objeto, buscar en menuDelDia por código
+      if (!platoId || platoId === 0 || !menuId) {
+        const menuItemEncontrado = menuDelDia.find(item => {
+          const itemCodigo = item.codigo || item.cod_plato || item.Codigo || item.Cod_Plato || '';
+          return String(itemCodigo) === String(pedidoSeleccionado.codigo);
+        });
+
+        if (menuItemEncontrado) {
+          // Obtener el ID del menú
+          if (!menuId) {
+            menuId = menuItemEncontrado.Id || menuItemEncontrado.id;
+          }
+          
+          // Priorizar PlatoId, pero si es 0, usar el Id del menú
+          if (!platoId || platoId === 0) {
+            const platoIdEncontrado = menuItemEncontrado.PlatoId || menuItemEncontrado.platoId;
+            if (platoIdEncontrado && platoIdEncontrado !== 0) {
+              platoId = platoIdEncontrado;
+            } else {
+              // Si PlatoId es 0, usar el Id del menú del día
+              platoId = menuItemEncontrado.Id || menuItemEncontrado.id;
+            }
+          }
+        } else {
+          // Si no se encuentra, intentar usar el código directamente si es numérico
+          if (!platoId || platoId === 0) {
+            const codigoNum = parseInt(pedidoSeleccionado.codigo);
+            if (!isNaN(codigoNum) && codigoNum > 0) {
+              platoId = codigoNum;
+            }
+          }
+        }
+      }
+
+      if (!platoId || platoId === 0) {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo obtener el ID del plato. Por favor, recarga la página e intenta nuevamente.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      if (!menuId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo obtener el ID del menú. Por favor, recarga la página e intenta nuevamente.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      if (!menuId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo obtener el ID del menú. Por favor, recarga la página e intenta nuevamente.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      // Obtener TurnoId
+      const turnoId = selectedTurno?.id || selectedTurno?.Id || selectedTurno?.ID || null;
+      if (!turnoId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo obtener el ID del turno',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      // Obtener IDs de planta, centro de costo, proyecto y jerarquía
+      const plantaId = usuarioData?.plantaId || user?.plantaId || null;
+      const centroDeCostoId = usuarioData?.centroCostoId || user?.centroCostoId || null;
+      const proyectoId = usuarioData?.proyectoId || user?.proyectoId || null;
+      const jerarquiaId = usuarioData?.jerarquiaId || user?.jerarquiaId || null;
+
+      if (!plantaId || !centroDeCostoId || !proyectoId || !jerarquiaId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Faltan datos del usuario (planta, centro de costo, proyecto o jerarquía)',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      // Fecha actual en formato DateTime
+      const fecha = new Date();
+
+      // Monto (precio final)
+      const monto = parseFloat(pedidoSeleccionado.precioFinal || pedidoSeleccionado.costo || 0);
+
+      // Bonificado (si aplicó bonificación)
+      const bonificado = !!pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1;
+
+      // Construir el DTO según ComandaCreateDto
+      // Npedido: No se envía, el backend lo genera automáticamente
+      const comandaDto = {
+        UsuarioId: parseInt(usuarioId),
+        PlatoId: parseInt(platoId),
+        MenuddId: parseInt(menuId), // ID del menú del día (Id del objeto del menú del día)
+        TurnoId: parseInt(turnoId),
+        Fecha: fecha.toISOString(), // DateTime en formato ISO
+        Monto: monto,
+        Bonificado: bonificado,
+        Invitado: false,
+        Calificacion: 0,
+        Estado: 'P', // Estado inicial: P = Pendiente
+        Comentario: pedidoComentario || null,
+        PlantaId: parseInt(plantaId),
+        CentroDeCostoId: parseInt(centroDeCostoId),
+        ProyectoId: parseInt(proyectoId),
+        JerarquiaId: parseInt(jerarquiaId),
       };
 
-      await comandasService.crearPedido(jsonForm);
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📤 [Index] CONFIRMAR PEDIDO - DATOS A ENVIAR');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📦 DTO COMPLETO (ComandaCreateDto):');
+      console.log(JSON.stringify(comandaDto, null, 2));
+      console.log('');
+      console.log('📋 DETALLE DE CAMPOS:');
+      console.log('  • UsuarioId:', comandaDto.UsuarioId);
+      console.log('  • PlatoId:', comandaDto.PlatoId);
+      console.log('  • MenuddId:', comandaDto.MenuddId, '(ID del menú del día)');
+      console.log('  • TurnoId:', comandaDto.TurnoId);
+      console.log('  • Fecha:', comandaDto.Fecha);
+      console.log('  • Monto:', comandaDto.Monto);
+      console.log('  • Bonificado:', comandaDto.Bonificado);
+      console.log('  • Invitado:', comandaDto.Invitado);
+      console.log('  • Calificacion:', comandaDto.Calificacion);
+      console.log('  • Estado:', comandaDto.Estado);
+      console.log('  • Comentario:', comandaDto.Comentario || '(vacío)');
+      console.log('  • PlantaId:', comandaDto.PlantaId);
+      console.log('  • CentroDeCostoId:', comandaDto.CentroDeCostoId);
+      console.log('  • ProyectoId:', comandaDto.ProyectoId);
+      console.log('  • JerarquiaId:', comandaDto.JerarquiaId);
+      console.log('');
+      console.log('🔍 DATOS DEL PEDIDO SELECCIONADO:');
+      console.log('  • Código:', pedidoSeleccionado.codigo);
+      console.log('  • Descripción:', pedidoSeleccionado.descripcion);
+      console.log('  • PlatoId (del objeto):', pedidoSeleccionado.platoId);
+      console.log('  • MenuId (del objeto, será MenuddId en DTO):', pedidoSeleccionado.menuId);
+      console.log('  • Costo:', pedidoSeleccionado.costo);
+      console.log('  • Precio Final:', pedidoSeleccionado.precioFinal);
+      console.log('  • Aplicar Bonificación:', pedidoSeleccionado.aplicarBonificacion);
+      console.log('═══════════════════════════════════════════════════════════');
+
+      await comandasService.crearPedido(comandaDto);
 
       // Consumir bonificación si aplica
       if (pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1) {
@@ -588,15 +836,60 @@ const Index = () => {
         }
       });
     } catch (error) {
+      console.error('[Index] Error al crear pedido:', error);
+      console.error('[Index] error.response:', error.response);
+      console.error('[Index] error.response?.data:', error.response?.data);
+      
       // Si hay error de conexión, el interceptor ya redirige automáticamente
       if (!error.redirectToLogin) {
-        Swal.fire({
-          title: 'Operación Incorrecta',
-          text: error.message || 'Error al crear el pedido',
-          icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
-        });
+        let errorTitle = 'Error';
+        let errorMessage = error.message || 'Error al crear el pedido';
+        let errorHtml = null;
+        
+        // Verificar si el backend devolvió errores de validación en formato JSON
+        if (error.response && error.response.data) {
+          const responseData = error.response.data;
+          
+          // Si hay un array de errores, mostrarlos todos
+          if (responseData.errors && Array.isArray(responseData.errors) && responseData.errors.length > 0) {
+            errorTitle = responseData.message || 'Errores de validación';
+            errorHtml = '<div style="text-align: left;"><p>Los siguientes errores fueron encontrados:</p><ul style="margin: 0; padding-left: 20px;">' +
+              responseData.errors.map(err => {
+                const fieldName = err.field ? err.field.replace('dto.', '').replace('Dto.', '') : 'Campo desconocido';
+                return `<li><strong>${fieldName}:</strong> ${err.message || 'Error de validación'}</li>`;
+              }).join('') +
+              '</ul></div>';
+          } else if (responseData.error) {
+            // Si hay un campo "error" con el mensaje
+            errorTitle = 'Error';
+            errorMessage = responseData.error;
+          } else if (responseData.message) {
+            // Si solo hay un mensaje general
+            errorTitle = responseData.message || 'Error de validación';
+            errorMessage = typeof responseData.message === 'string' ? responseData.message : 'Error al crear el pedido';
+          } else if (typeof responseData === 'string') {
+            // Si la respuesta es directamente un string
+            errorMessage = responseData;
+          }
+        }
+        
+        if (errorHtml) {
+          Swal.fire({
+            title: errorTitle,
+            html: errorHtml,
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#F34949',
+          });
+        } else {
+          Swal.fire({
+            title: errorTitle,
+            text: errorMessage,
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#F34949',
+          });
+        }
       }
     }
   }, [pedidoSeleccionado, user, pedidoComentario, bonificacionDisponible, cantidadBonificacionesHoy, porcentajeBonificacion, selectedTurno, actualizarDatos]);
@@ -672,26 +965,16 @@ const Index = () => {
       setIsLoading(true);
       
       try {
-        console.log('🔄 [Index] Cambio de turno, cargando menú para turnoId:', turnoId);
+        // Siempre llamar a getMenuByTurno (por-turno)
+        const hoy = new Date().toISOString().split('T')[0];
+        const planta = usuarioData?.plantaId || user?.plantaId || '';
+        const centro = usuarioData?.centroCostoId || user?.centroCostoId || '';
+        const jerarquia = usuarioData?.jerarquiaId || user?.jerarquiaId || '';
+        const proyecto = usuarioData?.proyectoId || user?.proyectoId || '';
+        const turnoIdParam = turnoId; // Usar el turnoId que ya tenemos
         
-        // Llamar a getMenuByTurnoId en lugar de getMenuDelDia (no usar dashboardService)
-        let menuData;
-        try {
-          menuData = await menuService.getMenuByTurnoId(turnoId);
-          console.log('✅ [Index] Menú recibido de getMenuByTurnoId:', menuData);
-        } catch (error) {
-          console.log('⚠️ [Index] Error con getMenuByTurnoId, intentando con getMenuByTurno:', error);
-          // Si falla, usar getMenuByTurno como fallback
-          const hoy = new Date().toISOString().split('T')[0];
-          const planta = usuarioData?.plantaId || user?.plantaId || '';
-          const centro = usuarioData?.centroCostoId || user?.centroCostoId || '';
-          const jerarquia = usuarioData?.jerarquiaId || user?.jerarquiaId || '';
-          const proyecto = usuarioData?.proyectoId || user?.proyectoId || '';
-          const turnoNombre = turnoSeleccionado.Nombre || turnoSeleccionado.nombre || turnoSeleccionado.Descripcion || turnoSeleccionado.descripcion || '';
-          
-          menuData = await menuService.getMenuByTurno(planta, centro, jerarquia, proyecto, turnoNombre, hoy);
+        const menuData = await menuService.getMenuByTurno(planta, centro, jerarquia, proyecto, turnoIdParam, hoy);
           console.log('✅ [Index] Menú recibido de getMenuByTurno:', menuData);
-        }
         
         // Procesar los datos recibidos
         if (Array.isArray(menuData) && menuData.length > 0) {
@@ -708,19 +991,86 @@ const Index = () => {
 
             platosMap.set(codigo, true);
 
+            // Obtener la foto del menú del día
+            let fotoUrl = defaultImage;
+            const foto = menuItem.Foto || menuItem.foto || menuItem.Imagen || menuItem.imagen || null;
+            
+            if (foto && foto.trim() !== '') {
+              // Si es una URL completa (http/https) o base64, usarla tal cual
+              if (foto.startsWith('http://') || foto.startsWith('https://') || foto.startsWith('data:')) {
+                fotoUrl = foto;
+              } else if (foto.startsWith('/uploads/platos/') || foto.includes('uploads/platos/')) {
+                // Si es una ruta de uploads/platos/, construir la URL completa
+                const baseUrl = getApiBaseUrl();
+                
+                // Si contiene 'uploads/platos/' pero no empieza con '/', extraer la parte relativa
+                let rutaRelativa = foto;
+                if (foto.includes('uploads/platos/') && !foto.startsWith('/uploads/platos/')) {
+                  const indiceUploads = foto.indexOf('uploads/platos/');
+                  rutaRelativa = `/${foto.substring(indiceUploads)}`;
+                }
+                
+                // Decodificar primero para obtener el nombre original, luego codificar solo si es necesario
+                const partes = rutaRelativa.split('/');
+                let nombreArchivo = partes.pop();
+                const rutaBase = partes.join('/');
+                
+                // Si el nombre ya está codificado (contiene % pero no espacios), decodificarlo primero
+                if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
+                  try {
+                    nombreArchivo = decodeURIComponent(nombreArchivo);
+                  } catch (e) {
+                    // Error al decodificar
+                  }
+                }
+                
+                // Codificar solo si hay espacios o caracteres especiales
+                if (nombreArchivo.includes(' ') || /[^a-zA-Z0-9._-]/.test(nombreArchivo)) {
+                  nombreArchivo = encodeURIComponent(nombreArchivo);
+                }
+                
+                fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivo}`;
+              } else {
+                // Si es solo un nombre de archivo, construir la ruta completa
+                const baseUrl = getApiBaseUrl();
+                fotoUrl = `${baseUrl}/uploads/platos/${foto}`;
+              }
+            }
+
             // Extraer los campos con todas las variantes posibles
             const descripcion = menuItem.descripcion || menuItem.Descripcion || menuItem.plato || menuItem.Plato || menuItem.PlatoNombre || menuItem.platoNombre || 'Sin descripción';
-            const costo = parseFloat(menuItem.costo || menuItem.Costo || menuItem.monto || menuItem.Monto || 0) || 0;
-            const plannutricional = menuItem.plannutricional || menuItem.PlanNutricional || menuItem.plan_nutricional || null;
+            const costo = parseFloat(
+              menuItem.costo || 
+              menuItem.Costo || 
+              menuItem.monto || 
+              menuItem.Monto || 
+              menuItem.importe || 
+              menuItem.Importe || 
+              menuItem.precio || 
+              menuItem.Precio || 
+              menuItem.ImportePlato ||
+              menuItem.importePlato ||
+              0
+            ) || 0;
+            const plannutricional = menuItem.NutricionalNombre || menuItem.nutricionalNombre || menuItem.PlanNutricionalNombre || menuItem.planNutricionalNombre || menuItem.plannutricional || menuItem.PlanNutricional || menuItem.plan_nutricional || null;
             const ingredientes = menuItem.ingredientes || menuItem.Ingredientes || menuItem.ingrediente || menuItem.Ingrediente || null;
-            const disponible = menuItem.cantidad_disponible !== undefined ? parseInt(menuItem.cantidad_disponible) : 0;
+            const disponible = menuItem.Disponible !== undefined ? parseInt(menuItem.Disponible) : (menuItem.disponible !== undefined ? parseInt(menuItem.disponible) : (menuItem.cantidad_disponible !== undefined ? parseInt(menuItem.cantidad_disponible) : (menuItem.cantidadDisponible !== undefined ? parseInt(menuItem.cantidadDisponible) : 0)));
+
+            // Obtener el PlatoId real
+            const platoIdReal = (menuItem.PlatoId !== undefined && menuItem.PlatoId !== 0) 
+              ? menuItem.PlatoId 
+              : (menuItem.platoId !== undefined && menuItem.platoId !== 0)
+              ? menuItem.platoId
+              : (menuItem.Id || menuItem.id);
 
             const plato = {
               codigo: codigo,
+              platoId: platoIdReal, // Guardar el PlatoId para usarlo al crear la comanda
+              menuId: menuItem.Id || menuItem.id, // Guardar el ID del menú para usarlo al crear la comanda
               descripcion: descripcion,
               costo: costo,
               plannutricional: plannutricional,
-              presentacion: menuItem.presentacion || menuItem.Presentacion || menuItem.imagen || menuItem.Imagen || defaultImage,
+              presentacion: fotoUrl,
               ingredientes: ingredientes,
               cantidadDisponible: disponible,
               aplicarBonificacion: false,
@@ -730,14 +1080,11 @@ const Index = () => {
             platos.push(plato);
           }
 
-          console.log('✅ [Index] Platos procesados:', platos.length);
           setMenuItems(platos);
         } else {
-          console.log('⚠️ [Index] No hay items en el menú recibido');
           setMenuItems([]);
         }
       } catch (error) {
-        console.error('❌ [Index] Error al cargar menú por turno:', error);
         setMenuItems([]);
         if (!error.redirectToLogin) {
           Swal.fire({
@@ -752,7 +1099,7 @@ const Index = () => {
         setIsLoading(false);
       }
     }
-  }, [turnos]);
+  }, [turnos, usuarioData, user, defaultImage]);
 
   // Memoizar handlers para evitar recrearlos
   const handleCancelarPedido = useCallback((pedido) => {
@@ -939,7 +1286,7 @@ const Index = () => {
                     <div className="card mt-2 pl-2">
                       {pedidosVigentes.map((pedido, index) => (
                         <PedidoVigente
-                          key={pedido.user_npedido || pedido.user_Pedido?.id || index}
+                          key={pedido.Id || pedido.id || pedido.Npedido || pedido.npedido || pedido.user_npedido || pedido.user_Pedido?.id || index}
                           pedido={pedido}
                           index={index}
                           defaultImage={defaultImage}
@@ -1003,8 +1350,45 @@ const Index = () => {
         {/* Modales */}
         {/* Modal Confirmar Pedido */}
         {showConfirmModal && pedidoSeleccionado && (
-          <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1" role="dialog">
-            <div className="modal-dialog" role="document">
+          <div 
+            className="modal fade show" 
+            style={{ 
+              display: 'flex',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              zIndex: 1050,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              overflow: 'auto',
+              padding: '20px',
+              boxSizing: 'border-box',
+            }} 
+            tabIndex="-1" 
+            role="dialog"
+          >
+            <div 
+              className="modal-dialog" 
+              role="document"
+              style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '600px',
+                margin: 'auto',
+                transform: 'none',
+                top: 'auto',
+                left: 'auto',
+                right: 'auto',
+                bottom: 'auto',
+                alignSelf: 'center',
+                flexShrink: 0,
+              }}
+            >
               <div className="modal-content">
                 <div className="modal-header" style={{ backgroundColor: '#343a40', color: 'white', padding: '10px 15px' }}>
                   <h5 className="modal-title" style={{ color: 'white', fontSize: '16px', margin: 0, fontWeight: 500 }}>
@@ -1049,23 +1433,53 @@ const Index = () => {
                     </div>
                     <div className="container row">
                       <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Planta</span>
-                      <span>{user?.planta}</span>
+                      <span>
+                        {usuarioData?.plantaNombre || 
+                         usuarioData?.PlantaNombre || 
+                         user?.plantaNombre || 
+                         user?.planta || 
+                         '-'}
+                      </span>
                     </div>
                     <div className="container row">
                       <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Centro de costo</span>
-                      <span>{user?.centrodecosto}</span>
+                      <span>
+                        {usuarioData?.centroCostoNombre || 
+                         usuarioData?.CentroCostoNombre || 
+                         user?.centroCostoNombre || 
+                         user?.centrodecosto || 
+                         '-'}
+                      </span>
                     </div>
                     <div className="container row">
                       <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Proyecto</span>
-                      <span>{user?.proyecto}</span>
+                      <span>
+                        {usuarioData?.proyectoNombre || 
+                         usuarioData?.ProyectoNombre || 
+                         user?.proyectoNombre || 
+                         user?.proyecto || 
+                         '-'}
+                      </span>
                     </div>
                     <div className="container row">
                       <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Jerarquia</span>
-                      <span>{user?.jerarquia}</span>
+                      <span>
+                        {usuarioData?.jerarquiaNombre || 
+                         usuarioData?.JerarquiaNombre || 
+                         user?.jerarquiaNombre || 
+                         user?.jerarquia || 
+                         '-'}
+                      </span>
                     </div>
                     <div className="container row">
                       <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Perfil Nutricional</span>
-                      <span>{user?.plannutricional}</span>
+                      <span>
+                        {usuarioData?.planNutricionalNombre || 
+                         usuarioData?.PlanNutricionalNombre || 
+                         user?.planNutricionalNombre || 
+                         user?.plannutricional || 
+                         '-'}
+                      </span>
                     </div>
                     {usuarioData?.bonificaciones !== undefined && usuarioData?.bonificaciones !== null && usuarioData?.bonificaciones !== '' && parseInt(usuarioData.bonificaciones) > 0 && (
                       <div className="container row">
@@ -1133,11 +1547,50 @@ const Index = () => {
 
         {/* Modal Cancelar */}
         {showCancelModal && pedidoSeleccionado && (
-          <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1" role="dialog">
-            <div className="modal-dialog" role="document">
+          <div 
+            className="modal fade show" 
+            style={{ 
+              display: 'flex',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              zIndex: 1050,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              overflow: 'auto',
+              padding: '20px',
+              boxSizing: 'border-box',
+            }} 
+            tabIndex="-1" 
+            role="dialog"
+          >
+            <div 
+              className="modal-dialog" 
+              role="document"
+              style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '600px',
+                margin: 'auto',
+                transform: 'none',
+                top: 'auto',
+                left: 'auto',
+                right: 'auto',
+                bottom: 'auto',
+                alignSelf: 'center',
+                flexShrink: 0,
+              }}
+            >
               <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title">Cancelar pedido</h5>
+                <div className="modal-header" style={{ backgroundColor: '#343a40', color: 'white', padding: '10px 15px' }}>
+                  <h5 className="modal-title" style={{ color: 'white', fontSize: '16px', margin: 0, fontWeight: 500 }}>
+                    Cancelar pedido
+                  </h5>
                   <button
                     type="button"
                     className="close"
@@ -1145,27 +1598,105 @@ const Index = () => {
                       setShowCancelModal(false);
                       setPedidoSeleccionado(null);
                     }}
+                    style={{ color: 'white' }}
                   >
                     <span>&times;</span>
                   </button>
                 </div>
-                <div className="modal-body">
-                  <p>¿Está seguro de que quieres cancelar el pedido?</p>
-                </div>
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={() => {
-                      setShowCancelModal(false);
-                      setPedidoSeleccionado(null);
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="button" className="btn btn-dark" onClick={() => actualizaPedido('C')}>
-                    Aceptar
-                  </button>
+                <div className="modal-body row">
+                  <div className="col-12 mb-3">
+                    <div className="alert alert-warning" style={{ fontSize: '0.9em', padding: '0.75rem' }}>
+                      <i className="fas fa-exclamation-triangle"></i>
+                      ¿Está seguro de que desea cancelar este pedido?
+                    </div>
+                  </div>
+                  <div className="col-8 pl-4">
+                    <div className="container row d-flex align-items-start">
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                        Plato
+                      </span>
+                      <span style={{ wordWrap: 'break-word', whiteSpace: 'normal', flex: 1 }}>
+                        {pedidoSeleccionado.PlatoDescripcion || pedidoSeleccionado.platoDescripcion || pedidoSeleccionado.descripcion || pedidoSeleccionado.Descripcion || '-'}
+                      </span>
+                    </div>
+                    <div className="container row">
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Nº Pedido</span>
+                      <span>
+                        {pedidoSeleccionado.Npedido || pedidoSeleccionado.npedido || pedidoSeleccionado.user_npedido || (pedidoSeleccionado.user_Pedido && pedidoSeleccionado.user_Pedido.id) || '-'}
+                      </span>
+                    </div>
+                    <div className="container row">
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Turno</span>
+                      <span>
+                        {pedidoSeleccionado.TurnoNombre || pedidoSeleccionado.turnoNombre || pedidoSeleccionado.turno || '-'}
+                      </span>
+                    </div>
+                    <div className="container row">
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Plan Nutricional</span>
+                      <span>
+                        {pedidoSeleccionado.PlanNutricional || pedidoSeleccionado.planNutricional || pedidoSeleccionado.plannutricional || '-'}
+                      </span>
+                    </div>
+                    {(pedidoSeleccionado.Comentario || pedidoSeleccionado.comentario) && (pedidoSeleccionado.Comentario || pedidoSeleccionado.comentario).trim() !== '' && (
+                      <div className="container row mt-2">
+                        <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Comentario</span>
+                        <span style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>
+                          {pedidoSeleccionado.Comentario || pedidoSeleccionado.comentario}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-4 pl-0 mx-auto mt-5">
+                    <img
+                      className="round-img mr-4"
+                      style={{ width: '100%', borderRadius: '50%', objectFit: 'cover', aspectRatio: 1 }}
+                      src={pedidoSeleccionado.Foto ? (() => {
+                        const foto = pedidoSeleccionado.Foto || pedidoSeleccionado.foto || pedidoSeleccionado.presentacion;
+                        if (!foto || foto.trim() === '') return defaultImage;
+                        if (foto.startsWith('http://') || foto.startsWith('https://') || foto.startsWith('data:')) return foto;
+                        if (foto.startsWith('/uploads/platos/') || foto.includes('uploads/platos/')) {
+                          const baseUrl = getApiBaseUrl();
+                          let rutaRelativa = foto;
+                          if (foto.includes('uploads/platos/') && !foto.startsWith('/uploads/platos/')) {
+                            const indiceUploads = foto.indexOf('uploads/platos/');
+                            rutaRelativa = `/${foto.substring(indiceUploads)}`;
+                          }
+                          const partes = rutaRelativa.split('/');
+                          let nombreArchivo = partes.pop();
+                          const rutaBase = partes.join('/');
+                          if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
+                            try {
+                              nombreArchivo = decodeURIComponent(nombreArchivo);
+                            } catch (e) {}
+                          }
+                          if (nombreArchivo.includes(' ') || /[^a-zA-Z0-9._-]/.test(nombreArchivo)) {
+                            nombreArchivo = encodeURIComponent(nombreArchivo);
+                          }
+                          return `${baseUrl}${rutaBase}/${nombreArchivo}`;
+                        }
+                        return `${getApiBaseUrl()}/uploads/platos/${foto}`;
+                      })() : defaultImage}
+                      alt={pedidoSeleccionado.PlatoDescripcion || pedidoSeleccionado.platoDescripcion || pedidoSeleccionado.descripcion || 'Imagen del plato'}
+                      onError={(e) => {
+                        e.target.src = defaultImage;
+                      }}
+                    />
+                  </div>
+                  <div className="col-12 modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary mr-2"
+                      onClick={() => {
+                        setShowCancelModal(false);
+                        setPedidoSeleccionado(null);
+                      }}
+                    >
+                      Mantener pedido
+                    </button>
+                    <button type="button" className="btn btn-danger" onClick={() => actualizaPedido('C')}>
+                      Cancelar pedido
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

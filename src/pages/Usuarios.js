@@ -1435,8 +1435,11 @@ const Usuarios = () => {
                       style={usuarioEditando ? {
                         backgroundColor: '#e9ecef',
                         cursor: 'not-allowed',
-                        opacity: 0.7
-                      } : {}}
+                        opacity: 0.7,
+                        borderRadius: '0'
+                      } : {
+                        borderRadius: '0'
+                      }}
                     />
                     {usuarioEditando && (
                       <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>

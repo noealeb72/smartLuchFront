@@ -51,6 +51,23 @@
   border-bottom: 1px solid #dee2e6;
 }
 
+/* Estilos para columna de acciones - mantener botones en línea horizontal */
+.table tbody td:last-child {
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+.table tbody td:last-child > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.table tbody td:last-child button {
+  flex-shrink: 0;
+}
+
 .btn-sm {
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;

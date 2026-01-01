@@ -26,8 +26,19 @@ export const DashboardProvider = ({ children }) => {
 
   // Funciones para actualizar los datos desde Index
   const actualizarDatos = useCallback((data) => {
-    console.log('🔄 [DashboardContext] actualizarDatos llamado con:', data);
-    console.log('🔄 [DashboardContext] Estructura completa de data:', JSON.stringify(data, null, 2));
+    // Log con stack trace para ver desde dónde se llama
+    console.log('🔄 [DashboardContext] actualizarDatos llamado');
+    console.trace('📍 [DashboardContext] Stack trace de la llamada:');
+    console.log('🔄 [DashboardContext] Datos recibidos:', data);
+    
+    // Normalizar el objeto para el log, eliminando duplicados (priorizar mayúsculas)
+    const dataNormalizado = {
+      Usuario: data.Usuario || data.usuario,
+      Turnos: data.Turnos || data.turnos,
+      MenuDelDia: data.MenuDelDia || data.menuDelDia,
+      PlatosPedidos: data.PlatosPedidos || data.platosPedidos,
+    };
+    console.log('🔄 [DashboardContext] Estructura normalizada de data:', JSON.stringify(dataNormalizado, null, 2));
     
     const turnosData = data.Turnos || data.turnos || [];
     console.log('⏰ [DashboardContext] Turnos recibidos:', turnosData, 'Cantidad:', turnosData.length);
@@ -93,8 +104,11 @@ export const DashboardProvider = ({ children }) => {
           planNutricionalId: usuario.Plannutricional_id || usuario.PlanNutricionalId || usuario.plannutricional_id || usuario.planNutricionalId,
           planNutricionalNombre: usuario.PlanNutricionalNombre || usuario.planNutricionalNombre,
           plantaId: usuario.PlantaId || usuario.plantaId,
+          plantaNombre: usuario.PlantaNombre || usuario.plantaNombre || '',
           centroCostoId: usuario.CentroCostoId || usuario.centroCostoId,
+          centroCostoNombre: usuario.CentroCostoNombre || usuario.centroCostoNombre || '',
           proyectoId: usuario.ProyectoId || usuario.proyectoId,
+          proyectoNombre: usuario.ProyectoNombre || usuario.proyectoNombre || '',
           jerarquiaId: usuario.JerarquiaId || usuario.jerarquiaId,
           jerarquiaNombre: jerarquiaNombre,
           bonificaciones: usuario.Bonificaciones || usuario.bonificaciones || 0,

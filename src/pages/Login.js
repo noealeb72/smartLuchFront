@@ -141,7 +141,7 @@ const Login = () => {
                     placeholder="Nombre de usuario"
                     autoComplete="username"
                     required
-                    style={{ borderLeft: 'none', paddingLeft: '0.75rem' }}
+                    style={{ borderLeft: 'none', paddingLeft: '0.75rem', borderRadius: '0' }}
                   />
                 </div>
 

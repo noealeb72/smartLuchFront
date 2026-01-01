@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDashboard } from '../contexts/DashboardContext';
-import apiService from '../services/apiService';
+import { apiService } from '../services/apiService';
+import { getApiBaseUrl } from '../services/configService';
 import Swal from 'sweetalert2';
+import Buscador from '../components/Buscador';
+import DataTable from '../components/DataTable';
 import './Despacho.css';
+import './Usuarios.css';
 
 const Despacho = () => {
   const { turnos } = useDashboard();
@@ -10,17 +14,68 @@ const Despacho = () => {
   const [pedidosFiltrados, setPedidosFiltrados] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filtro, setFiltro] = useState('');
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
 
   // Cargar pedidos pendientes
   const cargarPedidos = useCallback(async () => {
     try {
       setIsLoading(true);
-      const fecha = new Date().toISOString().split('T')[0];
+      // Obtener fecha de hoy en formato YYYY-MM-DD
+      const hoy = new Date();
+      const fechaHoy = hoy.toISOString().split('T')[0];
       
-      const data = await apiService.getPedidosPendientes(fecha, null);
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📤 [Despacho] SOLICITANDO LISTA DE PEDIDOS');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📤 [Despacho] Parámetros enviados:');
+      console.log('  • page: 1');
+      console.log('  • pageSize: 1000');
+      console.log('  • fechaDesde:', fechaHoy);
+      console.log('  • fechaHasta:', fechaHoy);
+      console.log('  • activo: true');
+      console.log('═══════════════════════════════════════════════════════════');
       
-      // Normalizar la respuesta (puede venir como array directo o dentro de un objeto)
-      const pedidosArray = Array.isArray(data) ? data : (data.pedidos || data.items || data.data || []);
+      // Llamar al endpoint /api/comanda/lista con fechaDesde y fechaHasta igual a hoy
+      const data = await apiService.getListaComandas(1, 1000, fechaHoy, fechaHoy);
+      
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📥 [Despacho] RESPUESTA DE LA API');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📥 [Despacho] Respuesta completa:', data);
+      console.log('📥 [Despacho] Tipo de respuesta:', typeof data);
+      console.log('📥 [Despacho] ¿Es array?:', Array.isArray(data));
+      if (!Array.isArray(data)) {
+        console.log('📥 [Despacho] Propiedades del objeto:', Object.keys(data));
+        if (data.items) {
+          console.log('📥 [Despacho] data.items:', data.items);
+          console.log('📥 [Despacho] Cantidad de items:', data.items?.length || 0);
+        }
+        if (data.data) {
+          console.log('📥 [Despacho] data.data:', data.data);
+          console.log('📥 [Despacho] Cantidad de data:', data.data?.length || 0);
+        }
+        if (data.pedidos) {
+          console.log('📥 [Despacho] data.pedidos:', data.pedidos);
+          console.log('📥 [Despacho] Cantidad de pedidos:', data.pedidos?.length || 0);
+        }
+      } else {
+        console.log('📥 [Despacho] Cantidad de pedidos (array):', data.length);
+        if (data.length > 0) {
+          console.log('📥 [Despacho] Primer pedido:', data[0]);
+          console.log('📥 [Despacho] Estructura del primer pedido:', Object.keys(data[0]));
+        }
+      }
+      console.log('═══════════════════════════════════════════════════════════');
+      
+      // Normalizar la respuesta (puede venir como array directo o dentro de un objeto con items/data)
+      const pedidosArray = Array.isArray(data) 
+        ? data 
+        : (data.items || data.data || data.pedidos || []);
+      
+      console.log('📋 [Despacho] Pedidos normalizados:', pedidosArray);
+      console.log('📋 [Despacho] Cantidad de pedidos normalizados:', pedidosArray.length);
+      console.log('═══════════════════════════════════════════════════════════');
       
       setPedidos(pedidosArray);
       setPedidosFiltrados(pedidosArray);
@@ -58,22 +113,30 @@ const Despacho = () => {
       const nombre = (pedido.user_name || pedido.userName || pedido.nombre || '').toLowerCase();
       const apellido = (pedido.user_lastName || pedido.userLastName || pedido.apellido || '').toLowerCase();
       const legajo = (pedido.user_fileNumber || pedido.userFileNumber || pedido.legajo || '').toString().toLowerCase();
-      const plato = (pedido.descripcion || pedido.Descripcion || pedido.plato || pedido.Plato || '').toLowerCase();
-      const codigo = (pedido.cod_plato || pedido.codPlato || pedido.codigo || '').toString().toLowerCase();
+      const plato = (pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || pedido.plato || pedido.Plato || '').toLowerCase();
+      const npedido = (pedido.Npedido || pedido.npedido || '').toString().toLowerCase();
       
       return nombre.includes(textoFiltro) ||
              apellido.includes(textoFiltro) ||
              legajo.includes(textoFiltro) ||
              plato.includes(textoFiltro) ||
-             codigo.includes(textoFiltro);
+             npedido.includes(textoFiltro);
     });
     
     setPedidosFiltrados(filtrados);
   }, [filtro, pedidos]);
 
+  // Abrir modal de información del pedido
+  const handleVerDetalle = (pedido) => {
+    setPedidoSeleccionado(pedido);
+    setMostrarModal(true);
+  };
+
   // Despachar un pedido
-  const handleDespachar = async (pedido) => {
-    const pedidoId = pedido.id || pedido.Id || pedido.ID;
+  const handleDespachar = async () => {
+    if (!pedidoSeleccionado) return;
+    
+    const pedidoId = pedidoSeleccionado.Id || pedidoSeleccionado.id || pedidoSeleccionado.ID;
     
     if (!pedidoId) {
       Swal.fire({
@@ -86,206 +149,422 @@ const Despacho = () => {
       return;
     }
 
-    const resultado = await Swal.fire({
-      title: '¿Despachar este plato?',
-      html: `
-        <div style="text-align: left;">
-          <p><strong>Usuario:</strong> ${pedido.user_name || pedido.userName || ''} ${pedido.user_lastName || pedido.userLastName || ''}</p>
-          <p><strong>Legajo:</strong> ${pedido.user_fileNumber || pedido.userFileNumber || ''}</p>
-          <p><strong>Plato:</strong> ${pedido.descripcion || pedido.Descripcion || pedido.plato || ''}</p>
-        </div>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#28a745',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Sí, despachar',
-      cancelButtonText: 'Cancelar',
-    });
+    try {
+      setIsLoading(true);
+      await apiService.despacharPedido(pedidoId);
+      
+      Swal.fire({
+        title: '¡Despachado!',
+        text: 'El plato ha sido marcado como despachado',
+        icon: 'success',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
 
-    if (resultado.isConfirmed) {
-      try {
-        setIsLoading(true);
-        await apiService.despacharPedido(pedidoId);
-        
+      // Cerrar modal y recargar pedidos
+      setMostrarModal(false);
+      setPedidoSeleccionado(null);
+      await cargarPedidos();
+    } catch (error) {
+      if (!error.redirectToLogin) {
         Swal.fire({
-          title: '¡Despachado!',
-          text: 'El plato ha sido marcado como despachado',
-          icon: 'success',
+          title: 'Error',
+          text: error.message || 'Error al despachar el pedido',
+          icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
         });
-
-        // Recargar pedidos
-        await cargarPedidos();
-      } catch (error) {
-        if (!error.redirectToLogin) {
-          Swal.fire({
-            title: 'Error',
-            text: error.message || 'Error al despachar el pedido',
-            icon: 'error',
-            confirmButtonText: 'Aceptar',
-            confirmButtonColor: '#F34949',
-          });
-        }
-      } finally {
-        setIsLoading(false);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Formatear fecha
+  // Formatear fecha con hora
   const formatearFecha = (fechaHora) => {
     if (!fechaHora) return '-';
     try {
       const fecha = new Date(fechaHora);
-      return fecha.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
+      const dia = String(fecha.getDate()).padStart(2, '0');
+      const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+      const año = fecha.getFullYear();
+      const horas = String(fecha.getHours()).padStart(2, '0');
+      const minutos = String(fecha.getMinutes()).padStart(2, '0');
+      const segundos = String(fecha.getSeconds()).padStart(2, '0');
+      return `${dia}/${mes}/${año} ${horas}:${minutos}:${segundos}`;
     } catch {
       return fechaHora;
     }
   };
 
-  // Formatear importe
+  // Formatear importe con separadores de miles
   const formatearImporte = (monto) => {
     if (!monto && monto !== 0) return '-';
-    return `$${parseFloat(monto).toFixed(2)}`;
+    return `$${parseFloat(monto).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  // Obtener estado del pedido
-  const obtenerEstado = (estado) => {
+  // Obtener estado del pedido con badge de color
+  const obtenerEstadoBadge = (estado) => {
     const estados = {
-      'P': 'Pendiente',
-      'D': 'Despachado',
-      'C': 'Cancelado',
-      'R': 'Recibido',
+      'P': { texto: 'Pendiente', color: '#ffffff', bgColor: '#ff9800' }, // Naranja con texto blanco
+      'D': { texto: 'Despachado', color: '#6c757d', bgColor: '#f5f5f5' }, // Gris
+      'C': { texto: 'Cancelado', color: '#dc3545', bgColor: '#f8d7da' }, // Rojo
+      'R': { texto: 'Recibido', color: '#28a745', bgColor: '#d4edda' }, // Verde
+      'E': { texto: 'En Aceptación', color: '#007bff', bgColor: '#cce5ff' }, // Azul
     };
-    return estados[estado] || estado || '-';
+    
+    const estadoInfo = estados[estado] || { texto: estado || '-', color: '#6c757d', bgColor: '#f5f5f5' };
+    
+    return (
+      <span
+        style={{
+          display: 'inline-block',
+          padding: '0.25rem 0.75rem',
+          borderRadius: '0.375rem',
+          fontSize: '0.875rem',
+          fontWeight: '500',
+          color: estadoInfo.color,
+          backgroundColor: estadoInfo.bgColor,
+          border: 'none',
+        }}
+      >
+        {estadoInfo.texto}
+      </span>
+    );
   };
 
-  // Limpiar búsqueda
-  const limpiarBusqueda = () => {
-    setFiltro('');
-  };
 
   return (
-      <div className="container-fluid despacho-container">
+      <div className="container-fluid" style={{ padding: 0 }}>
         {/* Barra negra con título */}
-        <div style={{ backgroundColor: '#343A40', color: 'white', padding: '0.5rem 0', width: '100%', minHeight: 'auto' }}>
-          <h3 style={{ 
-            fontSize: '1.75rem', 
-            fontWeight: 'normal', 
-            margin: 0, 
-            fontFamily: 'sans-serif', 
-            color: 'white', 
-            textAlign: 'left', 
-            paddingLeft: '1.5rem',
-            paddingTop: '0',
-            paddingBottom: '0',
-            lineHeight: '1.5',
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <i className="fa fa-utensils mr-2" aria-hidden="true"></i>Despacho de platos
+        <div className="page-title-bar">
+          <h3>
+            <i className="fa fa-truck mr-2" aria-hidden="true"></i>
+            <span>Despacho de platos</span>
           </h3>
         </div>
 
-        {/* Búsqueda */}
-        <div className="despacho-busqueda">
-          <label htmlFor="filtro">Buscar</label>
-          <div className="despacho-busqueda-input-container">
-            <input
-              type="text"
-              id="filtro"
-              className="form-control despacho-busqueda-input"
-              placeholder="Buscar pedidos..."
-              value={filtro}
-              onChange={(e) => setFiltro(e.target.value)}
+        <div
+          style={{
+            paddingTop: '1.5rem',
+            paddingLeft: '3rem',
+            paddingRight: '3rem',
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+        >
+          {/* Buscador */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              marginBottom: '1rem',
+              flexWrap: 'nowrap',
+            }}
+          >
+            <div style={{ flex: '1', minWidth: '200px', maxWidth: '100%' }}>
+              <Buscador
+                filtro={filtro}
+                setFiltro={setFiltro}
+                placeholder="Buscar pedidos..."
+              />
+            </div>
+          </div>
+
+          {/* Tabla */}
+          <div style={{ 
+            width: '100%', 
+            overflowX: 'auto',
+            maxWidth: '100%',
+            boxSizing: 'border-box'
+          }}>
+            <DataTable
+              columns={[
+                {
+                  key: 'pedido',
+                  field: 'Npedido',
+                  label: 'Pedido',
+                  render: (v, row) => {
+                    return row.Npedido || row.npedido || row.Id || row.id || '-';
+                  },
+                },
+                {
+                  key: 'usuario',
+                  field: 'usuario',
+                  label: 'Usuario',
+                  render: (v, row) => {
+                    const nombre = row.user_name || row.userName || row.nombre || row.UsuarioNombre || '';
+                    const apellido = row.user_lastName || row.userLastName || row.apellido || '';
+                    return `${nombre} ${apellido}`.trim() || '-';
+                  },
+                },
+                {
+                  key: 'plato',
+                  field: 'PlatoDescripcion',
+                  label: 'Plato',
+                  render: (v, row) => {
+                    return row.PlatoDescripcion || row.platoDescripcion || row.descripcion || row.Descripcion || '-';
+                  },
+                },
+                {
+                  key: 'importe',
+                  field: 'Monto',
+                  label: 'Importe',
+                  render: (v, row) => {
+                    const monto = row.Monto || row.monto || row.importe || row.Importe || 0;
+                    return formatearImporte(monto);
+                  },
+                },
+                {
+                  key: 'fecha',
+                  field: 'fecha',
+                  label: 'Fecha',
+                  render: (v, row) => {
+                    const fechaHora = row.fecha_hora || row.fechaHora || row.fecha || row.Fecha || row.createdate || '';
+                    return formatearFecha(fechaHora);
+                  },
+                },
+                {
+                  key: 'estado',
+                  field: 'Estado',
+                  label: 'Estado',
+                  render: (v, row) => {
+                    const estado = row.Estado || row.estado || 'P';
+                    return obtenerEstadoBadge(estado);
+                  },
+                },
+                {
+                  key: 'accion',
+                  field: 'accion',
+                  label: 'Acción',
+                  align: 'center',
+                  render: (v, row) => {
+                    const estado = row.Estado || row.estado || 'P';
+                    return (
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => handleVerDetalle(row)}
+                          disabled={isLoading}
+                          title="Ver todos los datos de la comanda"
+                          style={{ 
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            border: '1px solid #007bff',
+                            whiteSpace: 'nowrap',
+                            padding: '0.25rem 0.5rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.25rem',
+                            cursor: 'pointer',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.875rem',
+                          }}
+                        >
+                          <i className="fa fa-eye"></i>
+                        </button>
+                        {estado === 'P' && (
+                          <button
+                            className="btn btn-sm"
+                            onClick={() => handleVerDetalle(row)}
+                            disabled={isLoading}
+                            title="Ver detalle y despachar"
+                            style={{ 
+                              backgroundColor: '#343a40',
+                              color: 'white',
+                              border: '1px solid #343a40',
+                              whiteSpace: 'nowrap',
+                              padding: '0.25rem 0.5rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.25rem',
+                              cursor: 'pointer',
+                              borderRadius: '0.25rem',
+                            }}
+                          >
+                            <i className="fa fa-truck"></i>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  },
+                },
+              ]}
+              data={pedidosFiltrados}
+              isLoading={isLoading}
+              emptyMessage={
+                filtro
+                  ? 'No se encontraron pedidos con la búsqueda ingresada'
+                  : 'No hay pedidos pendientes'
+              }
             />
-            {filtro && (
-              <button
-                type="button"
-                className="despacho-busqueda-clear"
-                onClick={limpiarBusqueda}
-                title="Limpiar búsqueda"
-              >
-                <i className="fa fa-times"></i>
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Tabla de pedidos */}
-        <div className="despacho-tabla-container">
-          {isLoading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="sr-only">Cargando...</span>
+        {/* Modal de información del pedido */}
+        {mostrarModal && pedidoSeleccionado && (
+          <div 
+            className="modal fade show" 
+            style={{ 
+              display: 'flex',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              zIndex: 1050,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              overflow: 'auto',
+              padding: '20px',
+              boxSizing: 'border-box',
+            }} 
+            tabIndex="-1" 
+            role="dialog"
+            onClick={() => {
+              setMostrarModal(false);
+              setPedidoSeleccionado(null);
+            }}
+          >
+            <div 
+              className="modal-dialog" 
+              role="document"
+              style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '600px',
+                margin: 'auto',
+                transform: 'none',
+                top: 'auto',
+                left: 'auto',
+                right: 'auto',
+                bottom: 'auto',
+                alignSelf: 'center',
+                flexShrink: 0,
+                minHeight: 'auto',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-content">
+                <div className="modal-header" style={{ backgroundColor: '#343a40', color: 'white', padding: '10px 15px' }}>
+                  <h5 className="modal-title" style={{ color: 'white', fontSize: '16px', margin: 0, fontWeight: 500 }}>
+                    Información del Pedido
+                  </h5>
+                  <button
+                    type="button"
+                    className="close"
+                    onClick={() => {
+                      setMostrarModal(false);
+                      setPedidoSeleccionado(null);
+                    }}
+                    style={{ color: 'white' }}
+                  >
+                    <span>&times;</span>
+                  </button>
+                </div>
+                <div className="modal-body row">
+                  <div className="col-8 pl-4">
+                    <div className="container row">
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold', whiteSpace: 'nowrap' }}>Nombre del usuario</span>
+                      <span style={{ wordWrap: 'break-word', whiteSpace: 'normal', flex: 1 }}>
+                        {pedidoSeleccionado.user_name || pedidoSeleccionado.userName || pedidoSeleccionado.UsuarioNombre || ''} {pedidoSeleccionado.user_lastName || pedidoSeleccionado.userLastName || ''}
+                      </span>
+                    </div>
+                    <div className="container row">
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Jerarquía</span>
+                      <span>
+                        {pedidoSeleccionado.JerarquiaDescripcion || pedidoSeleccionado.jerarquiaDescripcion || pedidoSeleccionado.jerarquiaNombre || pedidoSeleccionado.JerarquiaNombre || pedidoSeleccionado.jerarquia || '-'}
+                      </span>
+                    </div>
+                    <div className="container row">
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Planta</span>
+                      <span>
+                        {pedidoSeleccionado.PlantaDescripcion || pedidoSeleccionado.plantaDescripcion || pedidoSeleccionado.plantaNombre || pedidoSeleccionado.PlantaNombre || pedidoSeleccionado.planta || '-'}
+                      </span>
+                    </div>
+                    <div className="container row">
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Proyecto</span>
+                      <span>
+                        {pedidoSeleccionado.ProyectoDescripcion || pedidoSeleccionado.proyectoDescripcion || pedidoSeleccionado.proyectoNombre || pedidoSeleccionado.ProyectoNombre || pedidoSeleccionado.proyecto || '-'}
+                      </span>
+                    </div>
+                    <div className="container row">
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Centro de costo</span>
+                      <span>
+                        {pedidoSeleccionado.CentroDeCostoDescripcion || pedidoSeleccionado.centroDeCostoDescripcion || pedidoSeleccionado.centroCostoNombre || pedidoSeleccionado.CentroCostoNombre || pedidoSeleccionado.centrodecosto || '-'}
+                      </span>
+                    </div>
+                    <div className="container row">
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Turno</span>
+                      <span>
+                        {pedidoSeleccionado.TurnoNombre || pedidoSeleccionado.turnoNombre || pedidoSeleccionado.turno || '-'}
+                      </span>
+                    </div>
+                    <div className="container row d-flex align-items-start">
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                        Nombre del plato
+                      </span>
+                      <span style={{ wordWrap: 'break-word', whiteSpace: 'normal', flex: 1 }}>
+                        {pedidoSeleccionado.PlatoDescripcion || pedidoSeleccionado.platoDescripcion || pedidoSeleccionado.descripcion || pedidoSeleccionado.Descripcion || pedidoSeleccionado.PlatoNombre || pedidoSeleccionado.platoNombre || '-'}
+                      </span>
+                    </div>
+                    {(pedidoSeleccionado.comentario || pedidoSeleccionado.Comentario) && (pedidoSeleccionado.comentario || pedidoSeleccionado.Comentario).trim() !== '' && (
+                      <div className="container row mt-2">
+                        <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Comentario</span>
+                        <span style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>
+                          {pedidoSeleccionado.comentario || pedidoSeleccionado.Comentario}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-4 pl-0 mx-auto mt-5">
+                    <img
+                      className="round-img mr-4"
+                      style={{ width: '100%', borderRadius: '50%', objectFit: 'cover', aspectRatio: 1 }}
+                      src={pedidoSeleccionado.user_foto || pedidoSeleccionado.userFoto || pedidoSeleccionado.foto || pedidoSeleccionado.UsuarioFoto || `${process.env.PUBLIC_URL || ''}/img/logo-preview.png`}
+                      alt={pedidoSeleccionado.user_name || pedidoSeleccionado.userName || pedidoSeleccionado.UsuarioNombre || 'Usuario'}
+                      onError={(e) => {
+                        e.target.src = `${process.env.PUBLIC_URL || ''}/img/logo-preview.png`;
+                      }}
+                    />
+                  </div>
+                  <div className="col-12 modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary mr-2"
+                      onClick={() => {
+                        setMostrarModal(false);
+                        setPedidoSeleccionado(null);
+                      }}
+                    >
+                      Cerrar
+                    </button>
+                    {(pedidoSeleccionado.estado || pedidoSeleccionado.Estado) === 'P' && (
+                      <button
+                        type="button"
+                        className="btn btn-success"
+                        onClick={handleDespachar}
+                        disabled={isLoading}
+                      >
+                        <i className="fa fa-check mr-2"></i>
+                        Despachar
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          ) : pedidosFiltrados.length === 0 ? (
-            <div className="despacho-empty-state">
-              <div className="despacho-empty-banner">
-                <p className="despacho-empty-text">
-                  {filtro
-                    ? 'No se encontraron pedidos con la búsqueda ingresada'
-                    : 'No hay platos registrados'}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table despacho-tabla">
-                <thead className="despacho-tabla-header">
-                  <tr>
-                    <th>Pedido</th>
-                    <th>Usuario</th>
-                    <th>Plato</th>
-                    <th>Importe</th>
-                    <th>Fecha</th>
-                    <th>Estado</th>
-                    <th>Acción</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pedidosFiltrados.map((pedido, index) => {
-                    const pedidoId = pedido.id || pedido.Id || pedido.ID;
-                    const fechaHora = pedido.fecha_hora || pedido.fechaHora || pedido.fecha || '';
-                    const nombreCompleto = `${pedido.user_name || pedido.userName || pedido.nombre || ''} ${pedido.user_lastName || pedido.userLastName || pedido.apellido || ''}`.trim();
-                    const monto = pedido.monto || pedido.Monto || pedido.importe || pedido.Importe || 0;
-                    const estado = pedido.estado || pedido.Estado || 'P';
-                    
-                    return (
-                      <tr key={pedidoId || index}>
-                        <td>{pedidoId || '-'}</td>
-                        <td>{nombreCompleto || '-'}</td>
-                        <td>{pedido.descripcion || pedido.Descripcion || pedido.plato || pedido.Plato || '-'}</td>
-                        <td>{formatearImporte(monto)}</td>
-                        <td>{formatearFecha(fechaHora)}</td>
-                        <td>{obtenerEstado(estado)}</td>
-                        <td>
-                          {estado === 'P' && (
-                            <button
-                              className="btn btn-success btn-sm"
-                              onClick={() => handleDespachar(pedido)}
-                              disabled={isLoading}
-                              title="Marcar como despachado"
-                            >
-                              <i className="fa fa-check"></i> Despachar
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
   );
 };

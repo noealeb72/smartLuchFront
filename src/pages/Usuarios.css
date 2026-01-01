@@ -281,6 +281,11 @@ body.modal-open {
   border-bottom-right-radius: 0 !important;
 }
 
+/* Campo nombre de usuario con bordes rectos */
+#username {
+  border-radius: 0 !important;
+}
+
 /* Botón de limpiar búsqueda sin bordes redondeados y misma altura que el input */
 .input-group .input-group-append {
   height: 100% !important;

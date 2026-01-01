@@ -22,24 +22,34 @@ const MenuItem = memo(({ item, index, defaultImage, bonificacionDisponible, cant
         </div>
         <div className="col-md-8">
           <div className="card-body">
-            <h5 className="card-title">{item.descripcion}</h5>
+            <div style={{ fontSize: '1.25rem', color: '#212529', fontWeight: 'normal', marginBottom: '0.5rem' }}>
+              {item.descripcion}
+            </div>
             <p className="card-text">{item.ingredientes}</p>
             <p>
               <span style={{ fontSize: '0.8em' }}>* Plan Nutricional: </span>
               <span style={{ color: '#343a40', fontWeight: 500, fontSize: '0.8em' }}>
-                {item.plannutricional}
+                {item.plannutricional || 'N/A'}
               </span>
             </p>
-            <p>
-              <strong>Importe:</strong>
+            {item.cantidadDisponible !== undefined && item.cantidadDisponible > 0 && (
+              <p style={{ fontSize: '0.875rem' }}>
+                <span>Disponible: </span>
+                <span style={{ color: '#28a745', fontWeight: 500 }}>
+                  {item.cantidadDisponible}
+                </span>
+              </p>
+            )}
+            <p style={{ fontSize: '0.875rem' }}>
+              <span>Importe:</span>
               {item.costo === 0 ? (
-                <span> Sin costo</span>
+                <span> $0.00</span>
               ) : item.aplicarBonificacion ? (
                 <>
                   <span style={{ textDecoration: 'line-through', color: '#6c757d' }}>
                     ${item.costo.toFixed(2)}
                   </span>
-                  <span className="text-success font-weight-bold ml-2">
+                  <span className="text-success ml-2" style={{ fontWeight: 'normal' }}>
                     ${item.precioFinal.toFixed(2)}
                   </span>
                 </>
