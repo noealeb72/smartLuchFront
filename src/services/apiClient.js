@@ -126,14 +126,15 @@ api.interceptors.response.use(
           }
         }
         error.message = backendMessage || 'No autorizado. Verifica tus credenciales.';
-        error.redirectToLogin = true; // Redirigir al login si no está autorizado
-        // NO redirigir automáticamente si ya estamos en login (para mostrar el error)
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          localStorage.clear();
-          setTimeout(() => {
-            window.location.href = '/login';
-          }, 100);
+        error.redirectToLogin = true; // Marcar para redirigir al login si no está autorizado
+        
+        // NO redirigir automáticamente desde el interceptor
+        // Dejar que cada componente maneje el error según su lógica
+        // Solo redirigir si estamos en la página de login (para mostrar el error)
+        if (typeof window !== 'undefined' && window.location.pathname.includes('/login')) {
+          // Si ya estamos en login, no hacer nada más
         }
+        // Los componentes individuales decidirán si redirigir o no
       } else if (status === 405) {
         error.message = 'Método HTTP no permitido. El endpoint no acepta este tipo de solicitud.';
       } else if (status === 500) {

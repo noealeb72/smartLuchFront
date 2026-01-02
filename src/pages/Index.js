@@ -37,8 +37,6 @@ const Index = () => {
   const requestInProgressRef = useRef(false);
   // Ref para rastrear si el componente está montado
   const isMountedRef = useRef(true);
-  // Ref para contar las llamadas a la API web
-  const contadorApiWebRef = useRef(0);
 
   // Cargar datos desde /api/inicio/web siempre que se monte el componente o se recargue la página
   useEffect(() => {
@@ -76,8 +74,6 @@ const Index = () => {
         }
         
         // Siempre llamar a inicioService pasando el id del usuario
-        contadorApiWebRef.current += 1;
-        console.log(`[API Web] Llamada #${contadorApiWebRef.current}`);
         const data = await inicioService.getInicioWeb(usuarioId);
         
         if (!isMountedRef.current) {
@@ -222,62 +218,6 @@ const Index = () => {
     setPedidosVigentes(pedidosHoy);
   }, [pedidosHoy]);
 
-  // Actualizar datos cada 2 segundos sin mostrar loading
-  useEffect(() => {
-    // Solo iniciar el intervalo si hay un usuario autenticado
-    if (!user?.id && !usuarioData?.id) {
-      return;
-    }
-
-    const actualizarDatosSilencioso = async () => {
-      try {
-        const usuarioId = user?.id || usuarioData?.id;
-        if (!usuarioId) return;
-
-        const token = localStorage.getItem('token');
-        if (!token || token === 'null' || token === 'undefined') {
-          return;
-        }
-
-        // Llamar a la API sin mostrar loading
-        contadorApiWebRef.current += 1;
-        console.log(`[API Web] Llamada #${contadorApiWebRef.current}`);
-        const data = await inicioService.getInicioWeb(usuarioId);
-        
-        // Actualizar datos silenciosamente
-        if (isMountedRef.current) {
-          try {
-            actualizarDatos(data);
-          } catch (errorActualizar) {
-            // Error silencioso
-          }
-
-          // Actualizar nombre y apellido si vienen en la respuesta
-          if (data.Usuario) {
-            const nombre = data.Usuario.Nombre || data.Usuario.nombre || '';
-            const apellido = data.Usuario.Apellido || data.Usuario.apellido || '';
-            setUsuarioNombre(nombre);
-            setUsuarioApellido(apellido);
-          }
-
-          // Actualizar pedidos vigentes
-          const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
-          setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
-        }
-      } catch (error) {
-        // Error silencioso, no mostrar nada al usuario
-        // Solo ignorar errores de red o del servidor
-      }
-    };
-
-    // Establecer intervalo de 2 segundos
-    const intervalId = setInterval(actualizarDatosSilencioso, 2000);
-
-    // Limpiar intervalo al desmontar el componente
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [user?.id, usuarioData?.id, actualizarDatos]);
 
   // Seleccionar primer turno si hay turnos disponibles y no hay uno seleccionado
   useEffect(() => {
@@ -806,8 +746,8 @@ const Index = () => {
 
       // Construir el DTO según ComandaCreateDto
       // Npedido: No se envía, el backend lo genera automáticamente
+      // UsuarioId: Se envía como parámetro separado en la URL, no en el DTO
       const comandaDto = {
-        UsuarioId: parseInt(usuarioId),
         PlatoId: parseInt(platoId),
         MenuddId: parseInt(menuId), // ID del menú del día (Id del objeto del menú del día)
         TurnoId: parseInt(turnoId),
@@ -824,7 +764,7 @@ const Index = () => {
         JerarquiaId: parseInt(jerarquiaId),
       };
 
-      await comandasService.crearPedido(comandaDto);
+      await comandasService.crearPedido(comandaDto, parseInt(usuarioId));
 
       // Consumir bonificación si aplica
       if (pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1) {
@@ -844,28 +784,26 @@ const Index = () => {
       });
 
       // Cerrar modal y recargar datos
-      setShowConfirmModal(false);
-      setPedidoComentario('');
+        setShowConfirmModal(false);
+        setPedidoComentario('');
       
-      // Recargar datos desde /api/inicio/web
-      try {
-        setIsLoading(true);
-        // Usar inicioService pasando el id del usuario
-        const usuarioId = user?.id;
-        if (!usuarioId) {
-          throw new Error('No se encontró el ID del usuario');
-        }
-        contadorApiWebRef.current += 1;
-        console.log(`[API Web] Llamada #${contadorApiWebRef.current}`);
+        // Recargar datos desde /api/inicio/web
+        try {
+          setIsLoading(true);
+          // Usar inicioService pasando el id del usuario
+          const usuarioId = user?.id;
+          if (!usuarioId) {
+            throw new Error('No se encontró el ID del usuario');
+          }
         const data = await inicioService.getInicioWeb(usuarioId);
         actualizarDatos(data);
-        const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
-        setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
-      } catch (error) {
-        // Error silencioso, ya se mostrará en el siguiente render
-      } finally {
-        setIsLoading(false);
-      }
+          const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
+          setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
+        } catch (error) {
+          // Error silencioso, ya se mostrará en el siguiente render
+        } finally {
+          setIsLoading(false);
+        }
     } catch (error) {
       // Si hay error de conexión, el interceptor ya redirige automáticamente
       if (!error.redirectToLogin) {
@@ -901,7 +839,7 @@ const Index = () => {
         }
         
         if (errorHtml) {
-          Swal.fire({
+        Swal.fire({
             title: errorTitle,
             html: errorHtml,
             icon: 'error',
@@ -912,10 +850,10 @@ const Index = () => {
           Swal.fire({
             title: errorTitle,
             text: errorMessage,
-            icon: 'error',
-            confirmButtonText: 'Aceptar',
-            confirmButtonColor: '#F34949',
-          });
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
         }
       }
     }
@@ -1008,12 +946,12 @@ const Index = () => {
           return;
         }
         
-        await comandasService.actualizarPedido(
+      await comandasService.actualizarPedido(
           pedidoId,
-          nuevoEstado,
-          pedidoCalificacion,
-          ''
-        );
+        nuevoEstado,
+        pedidoCalificacion,
+        ''
+      );
       }
 
       Swal.fire({
@@ -1026,29 +964,27 @@ const Index = () => {
       });
 
       // Cerrar modales y recargar datos
-      setShowCancelModal(false);
-      setShowReceiveModal(false);
-      setPedidoCalificacion(1);
+        setShowCancelModal(false);
+        setShowReceiveModal(false);
+        setPedidoCalificacion(1);
       
-      // Recargar datos desde /api/inicio/web después de actualizar pedido
-      try {
-        setIsLoading(true);
-        // Usar inicioService pasando el id del usuario
-        const usuarioId = user?.id;
-        if (!usuarioId) {
-          throw new Error('No se encontró el ID del usuario');
-        }
-        contadorApiWebRef.current += 1;
-        console.log(`[API Web] Llamada #${contadorApiWebRef.current}`);
+        // Recargar datos desde /api/inicio/web después de actualizar pedido
+        try {
+          setIsLoading(true);
+          // Usar inicioService pasando el id del usuario
+          const usuarioId = user?.id;
+          if (!usuarioId) {
+            throw new Error('No se encontró el ID del usuario');
+          }
         const data = await inicioService.getInicioWeb(usuarioId);
         actualizarDatos(data);
-        const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
-        setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
-      } catch (error) {
-        // Error silencioso, ya se mostrará en el siguiente render
-      } finally {
-        setIsLoading(false);
-      }
+          const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
+          setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
+        } catch (error) {
+          // Error silencioso, ya se mostrará en el siguiente render
+        } finally {
+          setIsLoading(false);
+        }
     } catch (error) {
       // Si hay error de conexión, el interceptor ya redirige automáticamente
       if (!error.redirectToLogin) {
@@ -1073,13 +1009,13 @@ const Index = () => {
       
       try {
         // Siempre llamar a getMenuByTurno (por-turno)
-        const hoy = new Date().toISOString().split('T')[0];
-        const planta = usuarioData?.plantaId || user?.plantaId || '';
-        const centro = usuarioData?.centroCostoId || user?.centroCostoId || '';
-        const jerarquia = usuarioData?.jerarquiaId || user?.jerarquiaId || '';
-        const proyecto = usuarioData?.proyectoId || user?.proyectoId || '';
+          const hoy = new Date().toISOString().split('T')[0];
+          const planta = usuarioData?.plantaId || user?.plantaId || '';
+          const centro = usuarioData?.centroCostoId || user?.centroCostoId || '';
+          const jerarquia = usuarioData?.jerarquiaId || user?.jerarquiaId || '';
+          const proyecto = usuarioData?.proyectoId || user?.proyectoId || '';
         const turnoIdParam = turnoId; // Usar el turnoId que ya tenemos
-        
+          
         const menuData = await menuService.getMenuByTurno(planta, centro, jerarquia, proyecto, turnoIdParam, hoy);
         
         // Procesar los datos recibidos
@@ -1389,26 +1325,26 @@ const Index = () => {
                     });
 
                     return pedidosFiltrados.length === 0 ? (
-                      <div className="card mt-2 pl-2" role="status" aria-live="polite">
-                        <div className="card-body text-center py-4">
-                          <h5 className="text-muted">No hay pedidos vigentes</h5>
-                          <p className="text-muted mb-0">No tienes pedidos pendientes de recibir o cancelar en este momento.</p>
-                        </div>
+                    <div className="card mt-2 pl-2" role="status" aria-live="polite">
+                      <div className="card-body text-center py-4">
+                        <h5 className="text-muted">No hay pedidos vigentes</h5>
+                        <p className="text-muted mb-0">No tienes pedidos pendientes de recibir o cancelar en este momento.</p>
                       </div>
-                    ) : (
-                      <div className="card mt-2 pl-2">
+                    </div>
+                  ) : (
+                    <div className="card mt-2 pl-2">
                         {pedidosFiltrados.map((pedido, index) => (
-                          <PedidoVigente
+                        <PedidoVigente
                             key={pedido.Id || pedido.id || pedido.Npedido || pedido.npedido || pedido.user_npedido || pedido.user_Pedido?.id || index}
-                            pedido={pedido}
-                            index={index}
-                            defaultImage={defaultImage}
-                            onCancelar={handleCancelarPedido}
-                            onRecibir={handleRecibirPedido}
+                          pedido={pedido}
+                          index={index}
+                          defaultImage={defaultImage}
+                          onCancelar={handleCancelarPedido}
+                          onRecibir={handleRecibirPedido}
                             isLast={index === pedidosFiltrados.length - 1}
-                          />
-                        ))}
-                      </div>
+                        />
+                      ))}
+                    </div>
                     );
                   })()}
 
@@ -1722,7 +1658,7 @@ const Index = () => {
                     <div className="alert alert-warning" style={{ fontSize: '0.9em', padding: '0.75rem' }}>
                       <i className="fas fa-exclamation-triangle"></i>
                       ¿Está seguro de que desea cancelar este pedido?
-                    </div>
+                </div>
                   </div>
                   <div className="col-8 pl-4">
                     <div className="container row d-flex align-items-start">
@@ -1748,7 +1684,7 @@ const Index = () => {
                     <div className="container row">
                       <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Plan Nutricional</span>
                       <span>
-                        {pedidoSeleccionado.PlanNutricional || pedidoSeleccionado.planNutricional || pedidoSeleccionado.plannutricional || '-'}
+                        {pedidoSeleccionado.NutricionalNombre || pedidoSeleccionado.nutricionalNombre || pedidoSeleccionado.PlanNutricional || pedidoSeleccionado.planNutricional || pedidoSeleccionado.plannutricional || '-'}
                       </span>
                     </div>
                     {(pedidoSeleccionado.Comentario || pedidoSeleccionado.comentario) && (pedidoSeleccionado.Comentario || pedidoSeleccionado.comentario).trim() !== '' && (
@@ -1797,19 +1733,19 @@ const Index = () => {
                     />
                   </div>
                   <div className="col-12 modal-footer">
-                    <button
-                      type="button"
+                  <button
+                    type="button"
                       className="btn btn-secondary mr-2"
-                      onClick={() => {
-                        setShowCancelModal(false);
-                        setPedidoSeleccionado(null);
-                      }}
-                    >
+                    onClick={() => {
+                      setShowCancelModal(false);
+                      setPedidoSeleccionado(null);
+                    }}
+                  >
                       Mantener pedido
-                    </button>
+                  </button>
                     <button type="button" className="btn btn-danger" onClick={() => actualizaPedido('C')}>
                       Cancelar pedido
-                    </button>
+                  </button>
                   </div>
                 </div>
               </div>

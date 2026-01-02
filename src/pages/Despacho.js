@@ -6,6 +6,9 @@ import { getApiBaseUrl } from '../services/configService';
 import Swal from 'sweetalert2';
 import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import './Despacho.css';
 import './Usuarios.css';
 
@@ -18,8 +21,22 @@ const Despacho = () => {
   const [pedidosFiltrados, setPedidosFiltrados] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filtro, setFiltro] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('P'); // Filtro por estado (por defecto: Pendiente)
   const [mostrarModal, setMostrarModal] = useState(false);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
+  
+  // Estados para el modal de impresión
+  const [mostrarModalImpresion, setMostrarModalImpresion] = useState(false);
+  const [columnasSeleccionadas, setColumnasSeleccionadas] = useState({
+    npedido: true,
+    usuario: true,
+    plato: true,
+    importe: true,
+    fecha: true,
+    estado: true,
+    turno: false,
+    comentario: false,
+  });
 
   // Cargar pedidos pendientes
   const cargarPedidos = useCallback(async () => {
@@ -61,30 +78,38 @@ const Despacho = () => {
     cargarPedidos();
   }, [cargarPedidos]);
 
-  // Filtrar pedidos por texto
+  // Filtrar pedidos por texto y estado
   useEffect(() => {
-    if (!filtro.trim()) {
-      setPedidosFiltrados(pedidos);
-      return;
+    let filtrados = pedidos;
+
+    // Filtrar por texto
+    if (filtro.trim()) {
+      const textoFiltro = filtro.toLowerCase();
+      filtrados = filtrados.filter((pedido) => {
+        const nombre = (pedido.user_name || pedido.userName || pedido.nombre || '').toLowerCase();
+        const apellido = (pedido.user_lastName || pedido.userLastName || pedido.apellido || '').toLowerCase();
+        const legajo = (pedido.user_fileNumber || pedido.userFileNumber || pedido.legajo || '').toString().toLowerCase();
+        const plato = (pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || pedido.plato || pedido.Plato || '').toLowerCase();
+        const npedido = (pedido.Npedido || pedido.npedido || '').toString().toLowerCase();
+        
+        return nombre.includes(textoFiltro) ||
+               apellido.includes(textoFiltro) ||
+               legajo.includes(textoFiltro) ||
+               plato.includes(textoFiltro) ||
+               npedido.includes(textoFiltro);
+      });
     }
 
-    const textoFiltro = filtro.toLowerCase();
-    const filtrados = pedidos.filter((pedido) => {
-      const nombre = (pedido.user_name || pedido.userName || pedido.nombre || '').toLowerCase();
-      const apellido = (pedido.user_lastName || pedido.userLastName || pedido.apellido || '').toLowerCase();
-      const legajo = (pedido.user_fileNumber || pedido.userFileNumber || pedido.legajo || '').toString().toLowerCase();
-      const plato = (pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || pedido.plato || pedido.Plato || '').toLowerCase();
-      const npedido = (pedido.Npedido || pedido.npedido || '').toString().toLowerCase();
-      
-      return nombre.includes(textoFiltro) ||
-             apellido.includes(textoFiltro) ||
-             legajo.includes(textoFiltro) ||
-             plato.includes(textoFiltro) ||
-             npedido.includes(textoFiltro);
-    });
+    // Filtrar por estado
+    if (filtroEstado) {
+      filtrados = filtrados.filter((pedido) => {
+        const estado = pedido.Estado || pedido.estado || '';
+        return estado === filtroEstado;
+      });
+    }
     
     setPedidosFiltrados(filtrados);
-  }, [filtro, pedidos]);
+  }, [filtro, filtroEstado, pedidos]);
 
   // Abrir modal de información del pedido
   const handleVerDetalle = (pedido) => {
@@ -200,6 +225,222 @@ const Despacho = () => {
     );
   };
 
+  // Funciones de impresión
+  const handleExportarPDF = useCallback(() => {
+    try {
+      if (pedidosFiltrados.length === 0) {
+        Swal.fire({
+          title: 'Sin datos',
+          text: 'No hay pedidos para imprimir',
+          icon: 'warning',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      const doc = new jsPDF();
+
+      // Título centrado
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.setFontSize(14);
+      const titulo = 'Listado de Despacho de Platos';
+      const tituloWidth = doc.getTextWidth(titulo);
+      const tituloX = (pageWidth - tituloWidth) / 2;
+      doc.text(titulo, tituloX, 15);
+
+      // Fecha centrada con letra más chica
+      const fecha = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      doc.setFontSize(9);
+      const fechaTexto = `Generado el: ${fecha}`;
+      const fechaWidth = doc.getTextWidth(fechaTexto);
+      const fechaX = (pageWidth - fechaWidth) / 2;
+      doc.text(fechaTexto, fechaX, 22);
+
+      // Construir headers y datos
+      const headers = [];
+      const tableData = [];
+
+      // Agregar columnas según selección
+      if (columnasSeleccionadas.npedido) headers.push('Nº Pedido');
+      if (columnasSeleccionadas.usuario) headers.push('Usuario');
+      if (columnasSeleccionadas.plato) headers.push('Plato');
+      if (columnasSeleccionadas.importe) headers.push('Importe ($)');
+      if (columnasSeleccionadas.fecha) headers.push('Fecha');
+      if (columnasSeleccionadas.estado) headers.push('Estado');
+      if (columnasSeleccionadas.turno) headers.push('Turno');
+      if (columnasSeleccionadas.comentario) headers.push('Comentario');
+
+      pedidosFiltrados.forEach((pedido) => {
+        const fila = [];
+        if (columnasSeleccionadas.npedido) {
+          fila.push(pedido.Npedido || pedido.npedido || '-');
+        }
+        if (columnasSeleccionadas.usuario) {
+          const nombre = pedido.user_name || pedido.userName || pedido.nombre || '';
+          const apellido = pedido.user_lastName || pedido.userLastName || pedido.apellido || '';
+          fila.push(`${nombre} ${apellido}`.trim() || '-');
+        }
+        if (columnasSeleccionadas.plato) {
+          fila.push(pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || '-');
+        }
+        if (columnasSeleccionadas.importe) {
+          const importe = pedido.Importe || pedido.importe || pedido.Monto || pedido.monto || 0;
+          fila.push(`$${parseFloat(importe).toFixed(2)}`);
+        }
+        if (columnasSeleccionadas.fecha) {
+          fila.push(formatearFecha(pedido.Fecha || pedido.fecha));
+        }
+        if (columnasSeleccionadas.estado) {
+          const estado = pedido.Estado || pedido.estado;
+          const estadoTexto = estado === 'P' ? 'Pendiente' : estado === 'D' ? 'Devuelto' : estado === 'C' ? 'Cancelado' : estado === 'R' ? 'Recibido' : estado === 'E' ? 'En Aceptación' : estado || '-';
+          fila.push(estadoTexto);
+        }
+        if (columnasSeleccionadas.turno) {
+          fila.push(pedido.TurnoNombre || pedido.turnoNombre || pedido.turno || '-');
+        }
+        if (columnasSeleccionadas.comentario) {
+          fila.push(pedido.Comentario || pedido.comentario || '-');
+        }
+        tableData.push(fila);
+      });
+
+      doc.autoTable({
+        startY: 28,
+        head: [headers],
+        body: tableData,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [52, 58, 64], fontStyle: 'bold', halign: 'center' },
+      });
+
+      doc.save('despacho-platos.pdf');
+      setMostrarModalImpresion(false);
+    } catch (error) {
+      Swal.fire({
+        title: 'Error',
+        text: error.message || 'Error al generar el PDF',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    }
+  }, [pedidosFiltrados, columnasSeleccionadas]);
+
+  const handleExportarExcel = useCallback(() => {
+    try {
+      if (pedidosFiltrados.length === 0) {
+        Swal.fire({
+          title: 'Sin datos',
+          text: 'No hay pedidos para exportar',
+          icon: 'warning',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      // Construir headers
+      const headers = [];
+      if (columnasSeleccionadas.npedido) headers.push('Nº Pedido');
+      if (columnasSeleccionadas.usuario) headers.push('Usuario');
+      if (columnasSeleccionadas.plato) headers.push('Plato');
+      if (columnasSeleccionadas.importe) headers.push('Importe ($)');
+      if (columnasSeleccionadas.fecha) headers.push('Fecha');
+      if (columnasSeleccionadas.estado) headers.push('Estado');
+      if (columnasSeleccionadas.turno) headers.push('Turno');
+      if (columnasSeleccionadas.comentario) headers.push('Comentario');
+
+      // Construir datos
+      const worksheetData = pedidosFiltrados.map((pedido) => {
+        const fila = [];
+        if (columnasSeleccionadas.npedido) {
+          fila.push(pedido.Npedido || pedido.npedido || '-');
+        }
+        if (columnasSeleccionadas.usuario) {
+          const nombre = pedido.user_name || pedido.userName || pedido.nombre || '';
+          const apellido = pedido.user_lastName || pedido.userLastName || pedido.apellido || '';
+          fila.push(`${nombre} ${apellido}`.trim() || '-');
+        }
+        if (columnasSeleccionadas.plato) {
+          fila.push(pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || '-');
+        }
+        if (columnasSeleccionadas.importe) {
+          const importe = pedido.Importe || pedido.importe || pedido.Monto || pedido.monto || 0;
+          fila.push(parseFloat(importe).toFixed(2));
+        }
+        if (columnasSeleccionadas.fecha) {
+          fila.push(formatearFecha(pedido.Fecha || pedido.fecha));
+        }
+        if (columnasSeleccionadas.estado) {
+          const estado = pedido.Estado || pedido.estado;
+          const estadoTexto = estado === 'P' ? 'Pendiente' : estado === 'D' ? 'Devuelto' : estado === 'C' ? 'Cancelado' : estado === 'R' ? 'Recibido' : estado === 'E' ? 'En Aceptación' : estado || '-';
+          fila.push(estadoTexto);
+        }
+        if (columnasSeleccionadas.turno) {
+          fila.push(pedido.TurnoNombre || pedido.turnoNombre || pedido.turno || '-');
+        }
+        if (columnasSeleccionadas.comentario) {
+          fila.push(pedido.Comentario || pedido.comentario || '-');
+        }
+        return fila;
+      });
+
+      // Obtener fecha formateada
+      const fecha = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      const numColumnas = headers.length;
+
+      // Crear datos con título y fecha
+      const datosConTitulo = [
+        [],
+        ['Listado de Despacho de Platos'],
+        [`Generado el: ${fecha}`],
+        [],
+        headers,
+        ...worksheetData,
+      ];
+
+      const worksheet = XLSX.utils.aoa_to_sheet(datosConTitulo);
+
+      // Fusionar celdas para centrar título y fecha
+      worksheet['!merges'] = [
+        { s: { r: 1, c: 0 }, e: { r: 1, c: numColumnas - 1 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: numColumnas - 1 } },
+        { s: { r: 3, c: 0 }, e: { r: 3, c: numColumnas - 1 } },
+      ];
+
+      // Ajustar el ancho de las columnas
+      const colWidths = headers.map(() => ({ wch: 18 }));
+      worksheet['!cols'] = colWidths;
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Despacho');
+      XLSX.writeFile(workbook, 'despacho-platos.xlsx');
+
+      setMostrarModalImpresion(false);
+    } catch (error) {
+      Swal.fire({
+        title: 'Error',
+        text: error.message || 'Error al generar el archivo Excel',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    }
+  }, [pedidosFiltrados, columnasSeleccionadas]);
+
 
   return (
       <div className="container-fluid" style={{ padding: 0 }}>
@@ -228,6 +469,7 @@ const Despacho = () => {
               gap: '0.75rem',
               marginBottom: '1rem',
               flexWrap: 'nowrap',
+              justifyContent: 'space-between',
             }}
           >
             <div style={{ flex: '1', minWidth: '200px', maxWidth: '100%' }}>
@@ -236,6 +478,50 @@ const Despacho = () => {
                 setFiltro={setFiltro}
                 placeholder="Buscar pedidos..."
               />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+              <select
+                className="form-control"
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+                style={{
+                  minWidth: '150px',
+                  padding: '0.375rem 0.75rem',
+                  fontSize: '0.875rem',
+                  borderRadius: '0.25rem',
+                  border: '1px solid #ced4da',
+                }}
+              >
+                <option value="">Todos los estados</option>
+                <option value="P">Pendiente</option>
+                <option value="D">Devuelto</option>
+                <option value="C">Cancelado</option>
+                <option value="R">Recibido</option>
+                <option value="E">En Aceptación</option>
+              </select>
+              {pedidosFiltrados.length > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => setMostrarModalImpresion(true)}
+                  title="Opciones de impresión"
+                  style={{
+                    backgroundColor: '#007bff',
+                    borderColor: '#007bff',
+                    color: 'white',
+                    padding: '0.375rem 0.75rem',
+                    fontSize: '0.875rem',
+                    borderRadius: '0.25rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    flexShrink: 0,
+                  }}
+                >
+                  <i className="fa fa-print" aria-hidden="true"></i>
+                  Imprimir
+                </button>
+              )}
             </div>
           </div>
 
@@ -639,6 +925,229 @@ const Despacho = () => {
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de opciones de impresión */}
+        {mostrarModalImpresion && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1050,
+              padding: '1rem',
+            }}
+            onClick={() => setMostrarModalImpresion(false)}
+          >
+            <div
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '0.25rem',
+                padding: '1.5rem',
+                maxWidth: '600px',
+                width: '90%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h4 style={{ margin: 0 }}>Opciones de Impresión</h4>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setMostrarModalImpresion(false)}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    fontSize: '1.5rem',
+                    color: '#6c757d',
+                    cursor: 'pointer',
+                    padding: 0,
+                    width: '30px',
+                    height: '30px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <i className="fa fa-times"></i>
+                </button>
+              </div>
+
+              {/* Selección de columnas */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h5 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '600' }}>
+                  Columnas a incluir:
+                </h5>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '0.5rem 1rem',
+                    maxWidth: '50%',
+                    justifyContent: 'start',
+                  }}
+                >
+                  {Object.keys(columnasSeleccionadas).map((columna) => {
+                    const labels = {
+                      npedido: 'Nº Pedido',
+                      usuario: 'Usuario',
+                      plato: 'Plato',
+                      importe: 'Importe',
+                      fecha: 'Fecha',
+                      estado: 'Estado',
+                      turno: 'Turno',
+                      comentario: 'Comentario',
+                    };
+
+                    const labelTexto = labels[columna] || columna;
+
+                    return (
+                      <label
+                        key={columna}
+                        htmlFor={`col-${columna}`}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.375rem',
+                          margin: 0,
+                          padding: 0,
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          textAlign: 'left',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          id={`col-${columna}`}
+                          checked={columnasSeleccionadas[columna] || false}
+                          onChange={(e) => {
+                            setColumnasSeleccionadas((prev) => ({
+                              ...prev,
+                              [columna]: e.target.checked,
+                            }));
+                          }}
+                          style={{
+                            margin: 0,
+                            flexShrink: 0,
+                            width: '18px',
+                            height: '18px',
+                            cursor: 'pointer',
+                          }}
+                        />
+                        <span style={{ whiteSpace: 'nowrap' }}>
+                          {labelTexto}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div style={{ 
+                display: 'flex', 
+                gap: '0.75rem', 
+                justifyContent: 'flex-end',
+                marginTop: '1.5rem',
+                paddingTop: '1.5rem',
+                borderTop: '1px solid #e0e0e0'
+              }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setMostrarModalImpresion(false)}
+                  style={{
+                    backgroundColor: '#6c757d',
+                    borderColor: '#6c757d',
+                    color: 'white',
+                    padding: '0.625rem 1.5rem',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    border: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#5a6268';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#6c757d';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={handleExportarPDF}
+                  style={{
+                    backgroundColor: '#dc3545',
+                    borderColor: '#dc3545',
+                    color: 'white',
+                    padding: '0.625rem 1.5rem',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    border: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#c82333';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#dc3545';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  Exportar PDF
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={handleExportarExcel}
+                  style={{
+                    backgroundColor: '#28a745',
+                    borderColor: '#28a745',
+                    color: 'white',
+                    padding: '0.625rem 1.5rem',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    border: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#218838';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#28a745';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  Exportar Excel
+                </button>
               </div>
             </div>
           </div>

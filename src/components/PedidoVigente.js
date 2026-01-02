@@ -123,7 +123,7 @@ const PedidoVigente = memo(({ pedido, index, defaultImage, onCancelar, onRecibir
               <p>
                 <span style={{ fontSize: '0.8em' }}>* Plan Nutricional: </span>
                 <span style={{ color: '#343a40', fontWeight: 500, fontSize: '0.8em' }}>
-                  {pedido.PlanNutricional || pedido.planNutricional || pedido.plannutricional || '-'}
+                  {pedido.NutricionalNombre || pedido.nutricionalNombre || pedido.PlanNutricional || pedido.planNutricional || pedido.plannutricional || '-'}
                 </span>
                 {(pedido.Invitado === true || pedido.invitado === true) && <span className="badge badge-secondary">Invitado</span>}
               </p>
