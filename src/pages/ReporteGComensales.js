@@ -285,120 +285,106 @@ const ReporteGComensales = () => {
         plantaId ? parseInt(plantaId) : null // Convertir a número si existe
       );
       
-      // Debug: Ver qué datos vienen del backend
-      console.log('📸 [ReporteGComensales] Datos recibidos del backend:', {
-        foto: data.foto || data.Foto,
-        tieneFoto: !!(data.foto || data.Foto),
-        keys: Object.keys(data),
-        usuarioSeleccionadoFoto: usuarioSeleccionado?.foto || usuarioSeleccionado?.Foto
-      });
+      // Mostrar estructura completa del DTO recibido
+      console.log('✅ [ReporteGComensales] DTO completo recibido:', JSON.stringify(data, null, 2));
+      console.log('✅ [ReporteGComensales] Keys del objeto data:', Object.keys(data));
+      console.log('✅ [ReporteGComensales] data.usuario:', data.usuario);
+      console.log('✅ [ReporteGComensales] data.consumidos:', data.consumidos);
+      console.log('✅ [ReporteGComensales] data.resumen:', data.resumen);
       
-      // Mapear los datos según la estructura del backend
-      const historialCompleto = (data.consumidos || []).map(comanda => {
-        // Asegurar que descripcionPlato sea siempre un string
-        let descripcionPlato = comanda.descripcionPlato;
-        
-        // Si descripcionPlato es un objeto, extraer la propiedad descripcion o nombre
-        if (descripcionPlato && typeof descripcionPlato === 'object') {
-          descripcionPlato = descripcionPlato.descripcion || 
-                            descripcionPlato.Descripcion || 
-                            descripcionPlato.nombre || 
-                            descripcionPlato.Nombre || 
-                            'N/A';
-        }
-        
-        // Asegurar que sea string o null/undefined
-        if (descripcionPlato && typeof descripcionPlato !== 'string') {
-          descripcionPlato = String(descripcionPlato);
-        }
-        
-        return {
-          id: comanda.id,
-          fecha: comanda.fecha,
-          monto: comanda.monto,
-          estado: comanda.estado,
-          platoId: comanda.platoId,
-          descripcionPlato: descripcionPlato || 'N/A',
-          bonificado: comanda.bonificado,
-          plato: descripcionPlato || 'N/A'
-        };
-      });
+      // Extraer datos del DTO según la estructura: { usuario, consumidos, resumen }
+      // Intentar con diferentes variantes de nombres (mayúsculas/minúsculas)
+      const usuarioData = data.usuario || data.Usuario || {};
+      const consumidos = Array.isArray(data.consumidos) ? data.consumidos : 
+                        Array.isArray(data.Consumidos) ? data.Consumidos : [];
+      const resumen = data.resumen || data.Resumen || {};
+      
+      console.log('✅ [ReporteGComensales] usuarioData extraído:', usuarioData);
+      console.log('✅ [ReporteGComensales] consumidos extraído (cantidad):', consumidos.length);
+      console.log('✅ [ReporteGComensales] resumen extraído:', resumen);
+      
+      // Mapear los consumidos a formato interno
+      const historialCompleto = consumidos.map(comanda => ({
+        id: comanda.id ?? comanda.Id ?? comanda.ID,
+        npedido: comanda.npedido ?? comanda.Npedido ?? comanda.NPedido,
+        fecha: comanda.fecha ?? comanda.Fecha,
+        monto: parseFloat(comanda.monto ?? comanda.Monto ?? 0),
+        bonificado: comanda.bonificado ?? comanda.Bonificado ?? false,
+        invitado: comanda.invitado ?? comanda.Invitado ?? false,
+        calificacion: comanda.calificacion ?? comanda.Calificacion ?? null,
+        estado: comanda.estado ?? comanda.Estado ?? 'N/A',
+        comentario: comanda.comentario ?? comanda.Comentario ?? null,
+        platoId: comanda.platoId ?? comanda.PlatoId,
+        platoDescripcion: comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A',
+        turnoId: comanda.turnoId ?? comanda.TurnoId,
+        turnoNombre: comanda.turnoNombre ?? comanda.TurnoNombre ?? 'N/A',
+        planNutricional: comanda.planNutricional ?? comanda.PlanNutricional ?? 'N/A',
+        plantaId: comanda.plantaId ?? comanda.PlantaId,
+        plantaNombre: comanda.plantaNombre ?? comanda.PlantaNombre ?? 'N/A',
+        centroCostoId: comanda.centroCostoId ?? comanda.CentroCostoId,
+        centroCostoNombre: comanda.centroCostoNombre ?? comanda.CentroCostoNombre ?? 'N/A',
+        proyectoId: comanda.proyectoId ?? comanda.ProyectoId,
+        proyectoNombre: comanda.proyectoNombre ?? comanda.ProyectoNombre ?? 'N/A',
+        jerarquiaId: comanda.jerarquiaId ?? comanda.JerarquiaId,
+        jerarquiaNombre: comanda.jerarquiaNombre ?? comanda.JerarquiaNombre ?? 'N/A',
+        platoImporte: parseFloat(comanda.platoImporte ?? comanda.PlatoImporte ?? 0),
+        foto: comanda.foto ?? comanda.Foto ?? null,
+        descripcionPlato: comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A',
+        plato: comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A'
+      }));
       
       // Paginar el historial
       const historialPaginado = paginarHistorial(historialCompleto, 1);
-      
-      // Obtener nombres de las entidades relacionadas desde el usuario seleccionado o datos del backend
-      const planNutricionalNombre = (() => {
-        const v = data.plannutricional;
-        if (!v) return usuarioSeleccionado?.plannutricional_nombre || usuarioSeleccionado?.planNutricionalNombre || null;
-        if (typeof v === 'object') return v.nombre || v.Nombre || v.descripcion || v.Descripcion || null;
-        return v;
-      })();
 
-      // Obtener foto del usuario (buscar en múltiples variantes)
-      const obtenerFoto = () => {
-        // Buscar en data del backend (variantes posibles)
-        const fotoData = data.foto || data.Foto || data.fotoUsuario || data.FotoUsuario;
-        if (fotoData) return fotoData;
-        
-        // Buscar en usuarioSeleccionado (variantes posibles)
-        const fotoUsuario = usuarioSeleccionado?.foto || 
-                           usuarioSeleccionado?.Foto || 
-                           usuarioSeleccionado?.fotoUsuario || 
-                           usuarioSeleccionado?.FotoUsuario;
-        if (fotoUsuario) return fotoUsuario;
-        
-        return null;
-      };
-
-      // Normalizar los datos del reporte según la estructura sugerida
+      // Normalizar los datos del reporte según la estructura del DTO
       const reporteData = {
-        // Sección 1: Header con datos del usuario
+        // Sección 1: Header con datos del usuario (desde data.usuario)
         usuario: {
-          foto: obtenerFoto(),
-          nombreCompleto: `${data.nombre || ''} ${data.apellido || ''}`.trim() || 
+          foto: usuarioData.foto ?? usuarioData.Foto ?? null,
+          nombreCompleto: `${usuarioData.nombre ?? usuarioData.Nombre ?? ''} ${usuarioData.apellido ?? usuarioData.Apellido ?? ''}`.trim() || 
                          `${usuarioSeleccionado?.nombre || ''} ${usuarioSeleccionado?.apellido || ''}`.trim(),
-          legajo: data.legajo || legajo || usuarioSeleccionado?.legajo || '',
-          dni: data.dni || usuarioSeleccionado?.dni || '',
-          domicilio: data.domicilio || usuarioSeleccionado?.domicilio || null
+          legajo: usuarioData.legajo ?? usuarioData.Legajo ?? legajo ?? usuarioSeleccionado?.legajo ?? '',
+          dni: usuarioData.dni ?? usuarioData.Dni ?? usuarioData.DNI ?? usuarioSeleccionado?.dni ?? '',
+          cuil: usuarioData.cuil ?? usuarioData.Cuil ?? usuarioData.CUIL ?? usuarioSeleccionado?.cuil ?? null,
+          id: usuarioData.id ?? usuarioData.Id ?? usuarioData.ID
         },
         
-        // Sección 2: Información organizacional
+        // Sección 2: Información organizacional (desde data.usuario)
         organizacion: {
-          planta: usuarioSeleccionado?.planta_nombre || usuarioSeleccionado?.plantaNombre || usuarioSeleccionado?.planta || 'N/A',
-          centroCosto: usuarioSeleccionado?.centrodecosto_nombre || usuarioSeleccionado?.centroDeCostoNombre || usuarioSeleccionado?.centrodecosto || 'N/A',
-          proyecto: usuarioSeleccionado?.proyecto_nombre || usuarioSeleccionado?.proyectoNombre || usuarioSeleccionado?.proyecto || 'N/A',
-          jerarquia: usuarioSeleccionado?.jerarquia_nombre || usuarioSeleccionado?.jerarquiaNombre || usuarioSeleccionado?.jerarquia || 'N/A',
-          planNutricional: planNutricionalNombre || 'N/A'
+          planta: usuarioData.plantaNombre ?? usuarioData.PlantaNombre ?? usuarioData.planta ?? usuarioData.Planta ?? usuarioSeleccionado?.planta_nombre ?? usuarioSeleccionado?.plantaNombre ?? 'N/A',
+          centroCosto: usuarioData.centroCostoNombre ?? usuarioData.CentroCostoNombre ?? usuarioData.centroCosto ?? usuarioData.CentroCosto ?? usuarioSeleccionado?.centrodecosto_nombre ?? usuarioSeleccionado?.centroDeCostoNombre ?? 'N/A',
+          proyecto: usuarioData.proyectoNombre ?? usuarioData.ProyectoNombre ?? usuarioData.proyecto ?? usuarioData.Proyecto ?? usuarioSeleccionado?.proyecto_nombre ?? usuarioSeleccionado?.proyectoNombre ?? 'N/A',
+          jerarquia: usuarioData.jerarquiaNombre ?? usuarioData.JerarquiaNombre ?? usuarioData.jerarquia ?? usuarioData.Jerarquia ?? usuarioSeleccionado?.jerarquia_nombre ?? usuarioSeleccionado?.jerarquiaNombre ?? 'N/A',
+          planNutricional: usuarioData.planNutricionalNombre ?? usuarioData.PlanNutricionalNombre ?? usuarioData.planNutricional ?? usuarioData.PlanNutricional ?? 'N/A'
         },
         
-        // Sección 3: Resumen de bonificaciones
-        bonificaciones: {
-          total: data.bonificados || 0,
-          invitadoAcumulado: usuarioSeleccionado?.bonificacionesInvitado || usuarioSeleccionado?.bonificaciones_invitado || 0,
-          invitadoRango: data.bonificadosInvitados || 0
+        // Sección 3: Resumen (desde data.resumen)
+        resumen: {
+          cantidadPlatos: resumen.cantidadPlatos ?? resumen.CantidadPlatos ?? resumen.cantidad_platos ?? resumen.Cantidad_Platos ?? (consumidos.length > 0 ? consumidos.length : 0),
+          promedioCalificacion: resumen.promedioCalificacion ?? resumen.PromedioCalificacion ?? resumen.promedio_calificacion ?? resumen.Promedio_Calificacion ?? 0,
+          cantidadDevueltos: resumen.cantidadDevueltos ?? resumen.CantidadDevueltos ?? resumen.cantidad_devueltos ?? resumen.Cantidad_Devueltos ?? 0,
+          costoTotal: parseFloat(resumen.costoTotal ?? resumen.CostoTotal ?? resumen.costo_total ?? resumen.Costo_Total ?? 0)
         },
         
-        // Sección 4: Estadísticas del período
-        estadisticas: {
-          montoTotal: data.monto || 0,
-          ultimoEstado: data.ultimoEstado || null,
-          ultimoPlato: data.ultimoPlato || null,
-          cantidadPlatosDistintos: (data.descripcionesPlatos || []).length
-        },
-        
-        // Sección 5: Tabla de comandas
+        // Sección 4: Tabla de comandas (desde data.consumidos)
         comandas: historialCompleto.map(comanda => ({
           fecha: comanda.fecha,
-          plato: comanda.descripcionPlato || comanda.plato || 'N/A',
+          plato: comanda.platoDescripcion || comanda.plato || 'N/A',
           monto: comanda.monto || 0,
           estado: comanda.estado || 'N/A',
           bonificado: comanda.bonificado ? 'Sí' : 'No',
-          invitado: comanda.invitado ? 'Sí' : 'No'
+          invitado: comanda.invitado ? 'Sí' : 'No',
+          calificacion: comanda.calificacion || null,
+          comentario: comanda.comentario || null,
+          npedido: comanda.npedido,
+          turnoNombre: comanda.turnoNombre || 'N/A',
+          plantaNombre: comanda.plantaNombre || 'N/A',
+          centroCostoNombre: comanda.centroCostoNombre || 'N/A',
+          proyectoNombre: comanda.proyectoNombre || 'N/A',
+          jerarquiaNombre: comanda.jerarquiaNombre || 'N/A',
+          planNutricional: comanda.planNutricional || 'N/A',
+          platoImporte: comanda.platoImporte || 0
         })),
-        
-        // Sección 6: Lista de platos
-        platosDistintos: data.descripcionesPlatos || [],
         
         // Datos adicionales para compatibilidad
         historialCompleto: historialCompleto,
@@ -407,6 +393,10 @@ const ReporteGComensales = () => {
         totalPages: historialPaginado.totalPages,
         currentPage: 1
       };
+      
+      console.log('✅ [ReporteGComensales] reporteData final creado:', JSON.stringify(reporteData, null, 2));
+      console.log('✅ [ReporteGComensales] reporteData.resumen:', reporteData.resumen);
+      console.log('✅ [ReporteGComensales] reporteData.comandas.length:', reporteData.comandas.length);
       
       setReporte(reporteData);
       setMostrarReporte(true);
@@ -556,16 +546,48 @@ const ReporteGComensales = () => {
     return textoLimpio;
   };
 
-  const getEstadoColor = (estado) => {
-    const estadoLower = (estado || '').toLowerCase();
-    if (estadoLower.includes('aceptación') || estadoLower.includes('aceptacion')) {
-      return '#28a745'; // Verde
-    } else if (estadoLower.includes('devuelto')) {
-      return '#6c757d'; // Gris
-    } else if (estadoLower.includes('pendiente')) {
-      return '#ffc107'; // Amarillo
-    }
-    return '#343a40'; // Negro por defecto
+  // Obtener estado del pedido con badge de color (igual que en Despacho)
+  const obtenerEstadoBadge = (estado) => {
+    const estadoStr = (estado || '').toString().toUpperCase();
+    const estados = {
+      'P': { texto: 'Pendiente', color: '#ffffff', bgColor: '#ff9800' }, // Naranja con texto blanco
+      'D': { texto: 'Devuelto', color: '#6c757d', bgColor: '#f5f5f5' }, // Gris
+      'C': { texto: 'Cancelado', color: '#dc3545', bgColor: '#f8d7da' }, // Rojo
+      'R': { texto: 'Recibido', color: '#28a745', bgColor: '#d4edda' }, // Verde
+      'E': { texto: 'En Aceptación', color: '#007bff', bgColor: '#cce5ff' }, // Azul
+    };
+    
+    const estadoInfo = estados[estadoStr] || { texto: estado || '-', color: '#6c757d', bgColor: '#f5f5f5' };
+    
+    return (
+      <span
+        style={{
+          display: 'inline-block',
+          padding: '0.25rem 0.75rem',
+          borderRadius: '0.375rem',
+          fontSize: '0.875rem',
+          fontWeight: '500',
+          color: estadoInfo.color,
+          backgroundColor: estadoInfo.bgColor,
+          border: 'none',
+        }}
+      >
+        {estadoInfo.texto}
+      </span>
+    );
+  };
+
+  // Función auxiliar para obtener el texto del estado (para PDF)
+  const obtenerTextoEstado = (estado) => {
+    const estadoStr = (estado || '').toString().toUpperCase();
+    const estados = {
+      'P': 'Pendiente',
+      'D': 'Devuelto',
+      'C': 'Cancelado',
+      'R': 'Recibido',
+      'E': 'En Aceptación',
+    };
+    return estados[estadoStr] || estado || 'N/A';
   };
 
   // Exportar reporte a PDF
@@ -630,8 +652,8 @@ const ReporteGComensales = () => {
       yPos += 6;
       doc.text(`DNI: ${reporte.usuario.dni || 'N/A'}`, 14, yPos);
       yPos += 6;
-      if (reporte.usuario.domicilio) {
-        doc.text(`Domicilio: ${reporte.usuario.domicilio}`, 14, yPos);
+      if (reporte.usuario.cuil) {
+        doc.text(`CUIL: ${reporte.usuario.cuil}`, 14, yPos);
         yPos += 6;
       }
       yPos += 4;
@@ -655,36 +677,21 @@ const ReporteGComensales = () => {
       doc.text(`Plan Nutricional: ${reporte.organizacion.planNutricional}`, 14, yPos);
       yPos += 10;
       
-      // Sección 3: Resumen de bonificaciones
+      // Sección 3: Resumen del reporte
       doc.setFontSize(12);
       doc.setFont(undefined, 'bold');
-      doc.text('Resumen de Bonificaciones', 14, yPos);
+      doc.text('Resumen del Reporte', 14, yPos);
       yPos += 8;
       
       doc.setFontSize(10);
       doc.setFont(undefined, 'normal');
-      doc.text(`Total bonificados: ${reporte.bonificaciones.total || 0}`, 14, yPos);
+      doc.text(`Cantidad de platos: ${reporte.resumen?.cantidadPlatos || reporte.comandas?.length || 0}`, 14, yPos);
       yPos += 6;
-      doc.text(`Invitado acumulado: ${reporte.bonificaciones.invitadoAcumulado || 0}`, 14, yPos);
+      doc.text(`Promedio calificación: ${reporte.resumen?.promedioCalificacion ? reporte.resumen.promedioCalificacion.toFixed(2) : 'N/A'}`, 14, yPos);
       yPos += 6;
-      doc.text(`Invitado en rango: ${reporte.bonificaciones.invitadoRango || 0}`, 14, yPos);
-      yPos += 10;
-      
-      // Sección 4: Estadísticas del período
-      doc.setFontSize(12);
-      doc.setFont(undefined, 'bold');
-      doc.text('Estadísticas del Período', 14, yPos);
-      yPos += 8;
-      
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      doc.text(`Monto total: ${formatearMoneda(reporte.estadisticas.montoTotal || 0)}`, 14, yPos);
+      doc.text(`Cantidad devueltos: ${reporte.resumen?.cantidadDevueltos || 0}`, 14, yPos);
       yPos += 6;
-      doc.text(`Último estado: ${traducirEstado(reporte.estadisticas.ultimoEstado) || 'N/A'}`, 14, yPos);
-      yPos += 6;
-      doc.text(`Último plato: ${reporte.estadisticas.ultimoPlato || 'N/A'}`, 14, yPos);
-      yPos += 6;
-      doc.text(`Cantidad de platos distintos: ${reporte.estadisticas.cantidadPlatosDistintos || 0}`, 14, yPos);
+      doc.text(`Costo total: ${formatearMoneda(reporte.resumen?.costoTotal || 0)}`, 14, yPos);
       yPos += 10;
       
       // Sección 5: Historial de Pedidos
@@ -698,19 +705,20 @@ const ReporteGComensales = () => {
         const tableData = reporte.comandas.map((comanda) => {
           return [
             formatearFechaHora(comanda.fecha),
-            comanda.plato || 'N/A',
-            traducirEstado(comanda.estado),
-            comanda.bonificado,
-            comanda.invitado,
-            formatearMoneda(comanda.monto || 0)
+            comanda.npedido || '-',
+            comanda.plato || comanda.platoDescripcion || 'N/A',
+            comanda.turnoNombre || 'N/A',
+            obtenerTextoEstado(comanda.estado),
+            comanda.bonificado === 'Sí' || comanda.bonificado === true ? 'Sí' : 'No',
+            formatearMoneda(comanda.monto || comanda.platoImporte || 0)
           ];
         });
         
         doc.autoTable({
           startY: yPos,
-          head: [['Fecha', 'Plato', 'Estado', 'Bonificación', 'Invitado', 'Costo']],
+          head: [['Fecha', 'Nº Pedido', 'Plato', 'Turno', 'Estado', 'Bonificación', 'Importe']],
           body: tableData,
-          styles: { fontSize: 8 },
+          styles: { fontSize: 7 },
           headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { top: yPos }
@@ -1091,21 +1099,26 @@ const ReporteGComensales = () => {
                   <div className="row align-items-center">
                     {/* Información del usuario - Columnas izquierda y centro */}
                     <div className="col-md-9">
-                      {/* Primera fila: Nombre, DNI, Legajo */}
+                      {/* Primera fila: Nombre, DNI, Legajo, CUIL */}
                       <div className="row mb-3">
-                        <div className="col-md-4">
+                        <div className="col-md-3">
                           <div>
                             <strong>Nombre:</strong> {reporte.usuario.nombreCompleto || 'N/A'}
                           </div>
                         </div>
-                        <div className="col-md-4">
+                        <div className="col-md-3">
                           <div>
                             <strong>DNI:</strong> {reporte.usuario.dni || 'N/A'}
                           </div>
                         </div>
-                        <div className="col-md-4">
+                        <div className="col-md-3">
                           <div>
                             <strong>Legajo:</strong> {reporte.usuario.legajo || 'N/A'}
+                          </div>
+                        </div>
+                        <div className="col-md-3">
+                          <div>
+                            <strong>CUIL:</strong> {reporte.usuario.cuil || 'N/A'}
                           </div>
                         </div>
                       </div>
@@ -1143,21 +1156,30 @@ const ReporteGComensales = () => {
                         </div>
                       </div>
                       
-                      {/* Cuarta fila: Platos consumidos, Bonificaciones, Costo total */}
+                      {/* Cuarta fila: Resumen del reporte */}
                       <div className="row">
-                        <div className="col-md-4">
+                        <div className="col-md-3">
                           <div>
-                            <strong>Platos consumidos:</strong> {reporte.comandas ? reporte.comandas.length : 0}
+                            <strong>Cantidad de platos:</strong> {reporte.resumen?.cantidadPlatos || reporte.comandas?.length || 0}
                           </div>
                         </div>
-                        <div className="col-md-4">
+                        <div className="col-md-3">
                           <div>
-                            <strong>Bonificados del mes:</strong> {reporte.bonificaciones.total || 0}
+                            <strong>Promedio calificación:</strong> {
+                              reporte.resumen?.promedioCalificacion !== null && reporte.resumen?.promedioCalificacion !== undefined 
+                                ? reporte.resumen.promedioCalificacion.toFixed(2) 
+                                : 'N/A'
+                            }
                           </div>
                         </div>
-                        <div className="col-md-4">
+                        <div className="col-md-3">
                           <div>
-                            <strong>Costo total:</strong> {formatearMoneda(reporte.estadisticas.montoTotal || 0)}
+                            <strong>Cantidad devueltos:</strong> {reporte.resumen?.cantidadDevueltos || 0}
+                          </div>
+                        </div>
+                        <div className="col-md-3">
+                          <div>
+                            <strong>Costo total:</strong> {formatearMoneda(reporte.resumen?.costoTotal || 0)}
                           </div>
                         </div>
                       </div>
@@ -1166,86 +1188,124 @@ const ReporteGComensales = () => {
                     {/* Foto del comensal - Columna derecha */}
                     <div className="col-md-3 text-center">
                       {(() => {
-                        const foto = reporte.usuario.foto;
-                        if (foto) {
-                          // La foto ya viene con el prefijo data:image/jpeg;base64, desde el backend
-                          // Solo necesitamos usarla directamente
+                        // Priorizar Foto que viene con prefijo data:image/jpeg;base64,
+                        const foto = reporte.usuario.foto || reporte.usuario.Foto;
+                        let fotoUrl = null;
+                        
+                        if (foto && foto.trim() !== '') {
+                          // Si ya tiene el prefijo data:, usarlo directamente
+                          if (foto.startsWith('data:')) {
+                            fotoUrl = foto;
+                          }
+                          // Si es una URL completa (http/https), usarla tal cual
+                          else if (foto.startsWith('http://') || foto.startsWith('https://')) {
+                            fotoUrl = foto;
+                          }
+                          // Si es base64 puro (sin prefijo), agregar el prefijo data:image/jpeg;base64,
+                          else if (typeof foto === 'string') {
+                            // Limpiar posibles espacios y saltos de línea
+                            const fotoLimpia = foto.trim().replace(/\s/g, '');
+                            // Verificar si es base64 puro (caracteres válidos de base64)
+                            if (/^[A-Za-z0-9+/=]+$/.test(fotoLimpia) && fotoLimpia.length > 50) {
+                              fotoUrl = `data:image/jpeg;base64,${fotoLimpia}`;
+                            }
+                            // Si es una ruta de uploads/, construir la URL completa
+                            else if (foto.startsWith('/uploads/') || foto.includes('uploads/')) {
+                              const { getApiBaseUrl } = require('../services/configService');
+                              const baseUrl = getApiBaseUrl();
+                              
+                              let rutaRelativa = foto;
+                              if (foto.includes('uploads/') && !foto.startsWith('/uploads/')) {
+                                const indiceUploads = foto.indexOf('uploads/');
+                                rutaRelativa = `/${foto.substring(indiceUploads)}`;
+                              }
+                              
+                              const partes = rutaRelativa.split('/');
+                              let nombreArchivo = partes.pop();
+                              const rutaBase = partes.join('/');
+                              
+                              if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
+                                try {
+                                  nombreArchivo = decodeURIComponent(nombreArchivo);
+                                } catch (e) {}
+                              }
+                              
+                              if (nombreArchivo.includes(' ') || /[^a-zA-Z0-9._-]/.test(nombreArchivo)) {
+                                nombreArchivo = encodeURIComponent(nombreArchivo);
+                              }
+                              
+                              fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivo}`;
+                            }
+                            // Si es solo un nombre de archivo o ruta relativa, construir la URL completa
+                            else {
+                              const { getApiBaseUrl } = require('../services/configService');
+                              const baseUrl = getApiBaseUrl();
+                              const rutaNormalizada = foto.startsWith('/') ? foto : `/${foto}`;
+                              fotoUrl = `${baseUrl}${rutaNormalizada}`;
+                            }
+                          }
+                        }
+                        
+                        // Solo mostrar la imagen si hay una URL válida
+                        if (fotoUrl) {
                           return (
-                            <>
-                              <img
-                                src={foto}
-                                alt="Foto del comensal"
-                                style={{
-                                  width: '150px',
-                                  height: '150px',
-                                  borderRadius: '50%',
-                                  objectFit: 'cover',
-                                  border: '3px solid #dee2e6',
-                                  marginBottom: '0.5rem',
-                                  display: 'block',
-                                  margin: '0 auto 0.5rem'
-                                }}
-                                onError={(e) => {
-                                  // Si falla la carga, mostrar el fallback
-                                  e.target.style.display = 'none';
-                                  const parent = e.target.parentElement;
-                                  if (parent) {
-                                    const fallback = parent.querySelector('.sin-foto-fallback');
-                                    if (fallback) {
-                                      fallback.style.display = 'block';
-                                    }
-                                  }
-                                }}
-                                onLoad={(e) => {
-                                  // Si carga correctamente, ocultar el fallback
-                                  const parent = e.target.parentElement;
-                                  if (parent) {
-                                    const fallback = parent.querySelector('.sin-foto-fallback');
-                                    if (fallback) {
-                                      fallback.style.display = 'none';
-                                    }
-                                  }
-                                }}
-                              />
-                              <div className="sin-foto-fallback" style={{ display: 'none' }}>
-                                <div
-                                  style={{
-                                    width: '150px',
-                                    height: '150px',
-                                    borderRadius: '50%',
-                                    backgroundColor: '#e9ecef',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    margin: '0 auto 0.5rem',
-                                    border: '3px solid #dee2e6'
-                                  }}
-                                >
-                                  <i className="fa fa-user" style={{ fontSize: '4rem', color: '#6c757d' }}></i>
-                                </div>
-                              </div>
-                            </>
-                          );
-                        } else {
-                          // No hay foto, mostrar icono por defecto
-                          return (
-                            <div
+                            <img
+                              src={fotoUrl}
+                              alt="Foto del comensal"
                               style={{
                                 width: '150px',
                                 height: '150px',
                                 borderRadius: '50%',
-                                backgroundColor: '#e9ecef',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                margin: '0 auto 0.5rem',
-                                border: '3px solid #dee2e6'
+                                objectFit: 'cover',
+                                border: '3px solid #dee2e6',
+                                marginBottom: '0.5rem',
+                                display: 'block',
+                                margin: '0 auto 0.5rem'
                               }}
-                            >
-                              <i className="fa fa-user" style={{ fontSize: '4rem', color: '#6c757d' }}></i>
-                            </div>
+                              onError={(e) => {
+                                // Si falla la carga, ocultar la imagen y mostrar el fallback
+                                e.target.style.display = 'none';
+                                const parent = e.target.parentElement;
+                                if (parent) {
+                                  const fallback = parent.querySelector('.sin-foto-fallback');
+                                  if (fallback) {
+                                    fallback.style.display = 'block';
+                                  }
+                                }
+                              }}
+                              onLoad={(e) => {
+                                // Si carga correctamente, ocultar el fallback
+                                const parent = e.target.parentElement;
+                                if (parent) {
+                                  const fallback = parent.querySelector('.sin-foto-fallback');
+                                  if (fallback) {
+                                    fallback.style.display = 'none';
+                                  }
+                                }
+                              }}
+                            />
                           );
                         }
+                        
+                        // Si no hay foto, mostrar icono por defecto
+                        return (
+                          <div
+                            className="sin-foto-fallback"
+                            style={{
+                              width: '150px',
+                              height: '150px',
+                              borderRadius: '50%',
+                              backgroundColor: '#e9ecef',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              margin: '0 auto 0.5rem',
+                              border: '3px solid #dee2e6'
+                            }}
+                          >
+                            <i className="fa fa-user" style={{ fontSize: '4rem', color: '#6c757d' }}></i>
+                          </div>
+                        );
                       })()}
                     </div>
                   </div>
@@ -1274,32 +1334,26 @@ const ReporteGComensales = () => {
                           <thead>
                             <tr>
                               <th>Fecha</th>
+                              <th>Nº Pedido</th>
                               <th>Plato</th>
+                              <th>Turno</th>
                               <th>Estado</th>
                               <th>Bonificación</th>
-                              <th>Costo</th>
+                              <th>Importe</th>
                             </tr>
                           </thead>
                           <tbody>
                             {reporte.historialPedidos.map((pedido, index) => (
                               <tr key={index}>
                                 <td>{formatearFechaHora(pedido.fecha || pedido.Fecha || pedido.fechaPedido)}</td>
-                                <td>{pedido.plato || pedido.descripcionPlato || 'N/A'}</td>
+                                <td>{pedido.npedido || pedido.Npedido || '-'}</td>
+                                <td>{pedido.plato || pedido.descripcionPlato || pedido.platoDescripcion || 'N/A'}</td>
+                                <td>{pedido.turnoNombre || 'N/A'}</td>
                                 <td>
-                                  <span
-                                    className="badge"
-                                    style={{
-                                      backgroundColor: getEstadoColor(pedido.estado),
-                                      color: 'white',
-                                      padding: '0.5rem 1rem',
-                                      borderRadius: '0.25rem'
-                                    }}
-                                  >
-                                    {traducirEstado(pedido.estado)}
-                                  </span>
+                                  {obtenerEstadoBadge(pedido.estado)}
                                 </td>
-                                <td>{pedido.bonificado ? 'Sí' : 'No'}</td>
-                                <td>{formatearMoneda(pedido.monto || 0)}</td>
+                                <td>{pedido.bonificado === 'Sí' || pedido.bonificado === true ? 'Sí' : 'No'}</td>
+                                <td>{formatearMoneda(pedido.monto || pedido.platoImporte || 0)}</td>
                               </tr>
                             ))}
                           </tbody>

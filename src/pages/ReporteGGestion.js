@@ -276,6 +276,7 @@ const ReporteGGestion = () => {
       );
 
       console.log('✅ [ReporteGGestion] Reporte recibido:', resultado);
+      console.log('✅ [ReporteGGestion] Estructura completa del reporte:', JSON.stringify(resultado, null, 2));
       setReporteData(resultado);
     } catch (error) {
       console.error('Error al buscar reporte:', error);
@@ -755,26 +756,215 @@ const ReporteGGestion = () => {
           {/* Sección de resultados del reporte */}
           {reporteData !== null && (
             <div className="form-section" style={{ marginTop: '3rem' }}>
-              <div className="page-title-bar" style={{ marginBottom: '1.5rem', borderRadius: '0.5rem 0.5rem 0 0' }}>
-                <h3 style={{ margin: 0, padding: '0.75rem 1.5rem' }}>
-                  <i className="fa fa-chart-bar mr-2" aria-hidden="true"></i>
-                  Resultados del Reporte
-                </h3>
-              </div>
-              <div className="form-section-content" style={{ padding: '1.5rem', border: '1px solid #dee2e6', borderTop: 'none', borderRadius: '0 0 0.5rem 0.5rem', backgroundColor: 'white' }}>
-                {/* Verificar si hay datos */}
-                {(!reporteData || 
-                  (Array.isArray(reporteData) && reporteData.length === 0) ||
-                  (typeof reporteData === 'object' && Object.keys(reporteData).length === 0)) ? (
-                  <div className="alert alert-info text-center" style={{ margin: 0 }}>
-                    <i className="fa fa-info-circle mr-2"></i>
-                    No hay datos registrados para el reporte
-                  </div>
-                ) : (
-                  <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', fontSize: '0.9rem' }}>
-                    {JSON.stringify(reporteData, null, 2)}
-                  </pre>
-                )}
+              <div style={{ padding: 0 }}>
+                {(() => {
+                  // Extraer datos del reporte (puede venir en diferentes formatos)
+                  const detalles = Array.isArray(reporteData) 
+                    ? reporteData 
+                    : (reporteData.detalles || reporteData.detalle || reporteData.items || reporteData.data || []);
+                  
+                  // Calcular resumen desde los detalles
+                  const cantidadPlatos = detalles.length;
+                  const cantidadDevueltos = detalles.filter(item => 
+                    (item.estado === 'D' || item.Estado === 'D' || item.estado === 'Devuelto' || item.Estado === 'Devuelto')
+                  ).length;
+                  const costoTotal = detalles.reduce((sum, item) => {
+                    const costo = parseFloat(item.costo || item.Costo || item.monto || item.Monto || item.importe || item.Importe || 0);
+                    return sum + (isNaN(costo) ? 0 : costo);
+                  }, 0);
+                  const calificaciones = detalles
+                    .map(item => parseFloat(item.calificacion || item.Calificacion || 0))
+                    .filter(cal => !isNaN(cal) && cal > 0);
+                  const promedioCalificacion = calificaciones.length > 0
+                    ? (calificaciones.reduce((sum, cal) => sum + cal, 0) / calificaciones.length).toFixed(1)
+                    : '0';
+
+                  // Formatear fecha
+                  const formatearFecha = (fecha) => {
+                    if (!fecha) return '-';
+                    try {
+                      const date = new Date(fecha);
+                      if (isNaN(date.getTime())) return fecha;
+                      const dia = String(date.getDate()).padStart(2, '0');
+                      const mes = String(date.getMonth() + 1).padStart(2, '0');
+                      const año = date.getFullYear();
+                      const horas = String(date.getHours()).padStart(2, '0');
+                      const minutos = String(date.getMinutes()).padStart(2, '0');
+                      const segundos = String(date.getSeconds()).padStart(2, '0');
+                      return `${dia}/${mes}/${año} - ${horas}:${minutos}:${segundos}`;
+                    } catch (e) {
+                      return fecha;
+                    }
+                  };
+
+                  // Formatear importe
+                  const formatearImporte = (importe) => {
+                    const num = parseFloat(importe || 0);
+                    if (isNaN(num)) return '$0.00';
+                    return new Intl.NumberFormat('es-AR', {
+                      style: 'currency',
+                      currency: 'ARS',
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    }).format(num);
+                  };
+
+                  // Obtener estado con badge
+                  const obtenerEstadoBadge = (estado) => {
+                    const estadoStr = (estado || '').toString().toUpperCase();
+                    const estados = {
+                      'P': { texto: 'Pendiente', color: '#ffffff', bgColor: '#ff9800' },
+                      'D': { texto: 'Devuelto', color: '#6c757d', bgColor: '#f5f5f5' },
+                      'C': { texto: 'Cancelado', color: '#dc3545', bgColor: '#f8d7da' },
+                      'R': { texto: 'Recibido', color: '#28a745', bgColor: '#d4edda' },
+                      'E': { texto: 'En Aceptación', color: '#007bff', bgColor: '#cce5ff' },
+                    };
+                    
+                    const estadoInfo = estados[estadoStr] || { texto: estado || '-', color: '#6c757d', bgColor: '#f5f5f5' };
+                    
+                    return (
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '0.375rem',
+                          fontSize: '0.875rem',
+                          fontWeight: '500',
+                          color: estadoInfo.color,
+                          backgroundColor: estadoInfo.bgColor,
+                          border: 'none',
+                        }}
+                      >
+                        {estadoInfo.texto}
+                      </span>
+                    );
+                  };
+
+                  return (
+                    <>
+                      {/* Resumen del Reporte */}
+                      <div className="form-section" style={{ marginBottom: '2rem' }}>
+                        <div className="page-title-bar" style={{ marginBottom: '0', borderRadius: '0.5rem 0.5rem 0 0' }}>
+                          <h3 style={{ margin: 0, padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center' }}>
+                            <i className="fa fa-chart-bar mr-2" aria-hidden="true"></i>
+                            Resumen del Reporte
+                          </h3>
+                        </div>
+                        <div className="form-section-content" style={{ 
+                          padding: '1.5rem', 
+                          border: '1px solid #dee2e6', 
+                          borderTop: 'none', 
+                          borderRadius: '0 0 0.5rem 0.5rem', 
+                          backgroundColor: 'white',
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '1.5rem',
+                          justifyContent: 'space-around'
+                        }}>
+                          <div style={{ textAlign: 'center', minWidth: '150px' }}>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#007bff', marginBottom: '0.5rem' }}>
+                              {cantidadPlatos}
+                            </div>
+                            <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Cantidad de platos</div>
+                          </div>
+                          <div style={{ textAlign: 'center', minWidth: '150px' }}>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#28a745', marginBottom: '0.5rem' }}>
+                              {promedioCalificacion}
+                            </div>
+                            <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Promedio de calificación</div>
+                          </div>
+                          <div style={{ textAlign: 'center', minWidth: '150px' }}>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ffc107', marginBottom: '0.5rem' }}>
+                              {cantidadDevueltos}
+                            </div>
+                            <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Cantidad devueltos</div>
+                          </div>
+                          <div style={{ textAlign: 'center', minWidth: '150px' }}>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#17a2b8', marginBottom: '0.5rem' }}>
+                              {formatearImporte(costoTotal)}
+                            </div>
+                            <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Costo total</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Detalle del Reporte */}
+                      <div className="form-section">
+                        <div className="page-title-bar" style={{ marginBottom: '0', borderRadius: '0.5rem 0.5rem 0 0' }}>
+                          <h3 style={{ margin: 0, padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center' }}>
+                            <i className="fa fa-table mr-2" aria-hidden="true"></i>
+                            Detalle del Reporte
+                          </h3>
+                        </div>
+                        <div className="form-section-content" style={{ 
+                          padding: '0', 
+                          border: '1px solid #dee2e6', 
+                          borderTop: 'none', 
+                          borderRadius: '0 0 0.5rem 0.5rem', 
+                          backgroundColor: 'white',
+                          overflowX: 'auto'
+                        }}>
+                          {detalles.length === 0 ? (
+                            <div className="alert alert-info text-center" style={{ margin: '1.5rem' }}>
+                              <i className="fa fa-info-circle mr-2"></i>
+                              No hay datos registrados para el reporte
+                            </div>
+                          ) : (
+                            <table className="table table-striped table-hover" style={{ margin: 0 }}>
+                              <thead style={{ backgroundColor: '#f8f9fa' }}>
+                                <tr>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Fecha</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Planta</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>CC</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Proyecto</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Perfil</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Legajo</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Nombre completo</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Plato</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Estado</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Bonificación</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Costo</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {detalles.map((item, index) => {
+                                  const fecha = item.fecha || item.Fecha || item.fechaCreacion || item.FechaCreacion;
+                                  const planta = item.plantaNombre || item.PlantaNombre || item.planta || item.Planta || '-';
+                                  const centroCosto = item.centroCostoNombre || item.CentroCostoNombre || item.centroCosto || item.CentroCosto || item.CC || '-';
+                                  const proyecto = item.proyectoNombre || item.ProyectoNombre || item.proyecto || item.Proyecto || '-';
+                                  const jerarquia = item.jerarquiaNombre || item.JerarquiaNombre || item.jerarquia || item.Jerarquia || item.perfil || item.Perfil || '-';
+                                  const legajo = item.legajo || item.Legajo || item.userLegajo || item.UserLegajo || '-';
+                                  const nombreCompleto = item.nombreCompleto || item.NombreCompleto || 
+                                    `${item.nombre || item.Nombre || ''} ${item.apellido || item.Apellido || ''}`.trim() || '-';
+                                  const plato = item.platoDescripcion || item.PlatoDescripcion || item.plato || item.Plato || item.descripcion || item.Descripcion || '-';
+                                  const estado = item.estado || item.Estado || '-';
+                                  const bonificado = item.bonificado || item.Bonificado || false;
+                                  const costo = item.costo || item.Costo || item.monto || item.Monto || item.importe || item.Importe || 0;
+
+                                  return (
+                                    <tr key={index}>
+                                      <td style={{ whiteSpace: 'nowrap' }}>{formatearFecha(fecha)}</td>
+                                      <td>{planta}</td>
+                                      <td>{centroCosto}</td>
+                                      <td>{proyecto}</td>
+                                      <td>{jerarquia}</td>
+                                      <td>{legajo}</td>
+                                      <td>{nombreCompleto}</td>
+                                      <td>{plato}</td>
+                                      <td>{obtenerEstadoBadge(estado)}</td>
+                                      <td style={{ textAlign: 'center' }}>{bonificado ? '✓' : ''}</td>
+                                      <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{formatearImporte(costo)}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           )}
