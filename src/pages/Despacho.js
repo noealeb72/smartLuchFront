@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDashboard } from '../contexts/DashboardContext';
 import { apiService } from '../services/apiService';
+import { comandasService } from '../services/comandasService';
 import { getApiBaseUrl } from '../services/configService';
 import Swal from 'sweetalert2';
 import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
 import './Despacho.css';
 import './Usuarios.css';
+
+// Constante para la imagen por defecto (fuera del componente para evitar recreaciones)
+const DEFAULT_IMAGE = `${process.env.PUBLIC_URL || ''}/img/logo-preview.png`;
 
 const Despacho = () => {
   const { turnos } = useDashboard();
@@ -25,57 +29,13 @@ const Despacho = () => {
       const hoy = new Date();
       const fechaHoy = hoy.toISOString().split('T')[0];
       
-      console.log('═══════════════════════════════════════════════════════════');
-      console.log('📤 [Despacho] SOLICITANDO LISTA DE PEDIDOS');
-      console.log('═══════════════════════════════════════════════════════════');
-      console.log('📤 [Despacho] Parámetros enviados:');
-      console.log('  • page: 1');
-      console.log('  • pageSize: 1000');
-      console.log('  • fechaDesde:', fechaHoy);
-      console.log('  • fechaHasta:', fechaHoy);
-      console.log('  • activo: true');
-      console.log('═══════════════════════════════════════════════════════════');
-      
       // Llamar al endpoint /api/comanda/lista con fechaDesde y fechaHasta igual a hoy
       const data = await apiService.getListaComandas(1, 1000, fechaHoy, fechaHoy);
-      
-      console.log('═══════════════════════════════════════════════════════════');
-      console.log('📥 [Despacho] RESPUESTA DE LA API');
-      console.log('═══════════════════════════════════════════════════════════');
-      console.log('📥 [Despacho] Respuesta completa:', data);
-      console.log('📥 [Despacho] Tipo de respuesta:', typeof data);
-      console.log('📥 [Despacho] ¿Es array?:', Array.isArray(data));
-      if (!Array.isArray(data)) {
-        console.log('📥 [Despacho] Propiedades del objeto:', Object.keys(data));
-        if (data.items) {
-          console.log('📥 [Despacho] data.items:', data.items);
-          console.log('📥 [Despacho] Cantidad de items:', data.items?.length || 0);
-        }
-        if (data.data) {
-          console.log('📥 [Despacho] data.data:', data.data);
-          console.log('📥 [Despacho] Cantidad de data:', data.data?.length || 0);
-        }
-        if (data.pedidos) {
-          console.log('📥 [Despacho] data.pedidos:', data.pedidos);
-          console.log('📥 [Despacho] Cantidad de pedidos:', data.pedidos?.length || 0);
-        }
-      } else {
-        console.log('📥 [Despacho] Cantidad de pedidos (array):', data.length);
-        if (data.length > 0) {
-          console.log('📥 [Despacho] Primer pedido:', data[0]);
-          console.log('📥 [Despacho] Estructura del primer pedido:', Object.keys(data[0]));
-        }
-      }
-      console.log('═══════════════════════════════════════════════════════════');
       
       // Normalizar la respuesta (puede venir como array directo o dentro de un objeto con items/data)
       const pedidosArray = Array.isArray(data) 
         ? data 
         : (data.items || data.data || data.pedidos || []);
-      
-      console.log('📋 [Despacho] Pedidos normalizados:', pedidosArray);
-      console.log('📋 [Despacho] Cantidad de pedidos normalizados:', pedidosArray.length);
-      console.log('═══════════════════════════════════════════════════════════');
       
       setPedidos(pedidosArray);
       setPedidosFiltrados(pedidosArray);
@@ -136,12 +96,16 @@ const Despacho = () => {
   const handleDespachar = async () => {
     if (!pedidoSeleccionado) return;
     
-    const pedidoId = pedidoSeleccionado.Id || pedidoSeleccionado.id || pedidoSeleccionado.ID;
+    // Obtener Npedido del pedido seleccionado
+    const npedido = pedidoSeleccionado.Npedido || 
+                   pedidoSeleccionado.npedido || 
+                   pedidoSeleccionado.Id || 
+                   pedidoSeleccionado.id;
     
-    if (!pedidoId) {
+    if (!npedido || npedido <= 0 || isNaN(parseInt(npedido))) {
       Swal.fire({
         title: 'Error',
-        text: 'No se pudo identificar el pedido',
+        text: 'No se pudo obtener el número de pedido.',
         icon: 'error',
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#F34949',
@@ -149,16 +113,16 @@ const Despacho = () => {
       return;
     }
 
+    const npedidoInt = parseInt(npedido);
+
     try {
       setIsLoading(true);
-      await apiService.despacharPedido(pedidoId);
+      await comandasService.despacharPedidoPorNpedido(npedidoInt);
       
       Swal.fire({
         title: '¡Despachado!',
         text: 'El plato ha sido marcado como despachado',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
         showConfirmButton: false,
         timer: 2000,
         timerProgressBar: true,
@@ -210,7 +174,7 @@ const Despacho = () => {
   const obtenerEstadoBadge = (estado) => {
     const estados = {
       'P': { texto: 'Pendiente', color: '#ffffff', bgColor: '#ff9800' }, // Naranja con texto blanco
-      'D': { texto: 'Despachado', color: '#6c757d', bgColor: '#f5f5f5' }, // Gris
+      'D': { texto: 'Devuelto', color: '#6c757d', bgColor: '#f5f5f5' }, // Gris
       'C': { texto: 'Cancelado', color: '#dc3545', bgColor: '#f8d7da' }, // Rojo
       'R': { texto: 'Recibido', color: '#28a745', bgColor: '#d4edda' }, // Verde
       'E': { texto: 'En Aceptación', color: '#007bff', bgColor: '#cce5ff' }, // Azul
@@ -299,7 +263,75 @@ const Despacho = () => {
                   render: (v, row) => {
                     const nombre = row.user_name || row.userName || row.nombre || row.UsuarioNombre || '';
                     const apellido = row.user_lastName || row.userLastName || row.apellido || '';
-                    return `${nombre} ${apellido}`.trim() || '-';
+                    const nombreCompleto = `${nombre} ${apellido}`.trim() || '-';
+                    
+                    // Obtener la foto del usuario - priorizar FotoComensal que viene con prefijo data:
+                    const foto = row.FotoComensal || row.fotoComensal || row.user_foto || row.userFoto || row.foto || row.UsuarioFoto;
+                    let fotoUrl = null;
+                    
+                    if (foto && foto.trim() !== '') {
+                      // Si ya tiene el prefijo data:, usarlo directamente (FotoComensal viene así)
+                      if (foto.startsWith('data:')) {
+                        fotoUrl = foto;
+                      }
+                      // Si es una URL completa (http/https), usarla tal cual
+                      else if (foto.startsWith('http://') || foto.startsWith('https://')) {
+                        fotoUrl = foto;
+                      }
+                      // Si es base64 puro (sin prefijo), agregar el prefijo
+                      else if (typeof foto === 'string' && !foto.startsWith('/') && !foto.includes('uploads/') && /^[A-Za-z0-9+/=]+$/.test(foto)) {
+                        fotoUrl = `data:image/jpeg;base64,${foto}`;
+                      }
+                      // Si es una ruta de uploads/, construir la URL completa
+                      else if (foto.startsWith('/uploads/') || foto.includes('uploads/')) {
+                        const baseUrl = getApiBaseUrl();
+                        let rutaRelativa = foto;
+                        if (foto.includes('uploads/') && !foto.startsWith('/uploads/')) {
+                          const indiceUploads = foto.indexOf('uploads/');
+                          rutaRelativa = `/${foto.substring(indiceUploads)}`;
+                        }
+                        const partes = rutaRelativa.split('/');
+                        let nombreArchivo = partes.pop();
+                        const rutaBase = partes.join('/');
+                        if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
+                          try {
+                            nombreArchivo = decodeURIComponent(nombreArchivo);
+                          } catch (e) {}
+                        }
+                        if (nombreArchivo.includes(' ') || /[^a-zA-Z0-9._-]/.test(nombreArchivo)) {
+                          nombreArchivo = encodeURIComponent(nombreArchivo);
+                        }
+                        fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivo}`;
+                      }
+                      // Si es solo un nombre de archivo o ruta relativa, construir la URL completa
+                      else {
+                        const baseUrl = getApiBaseUrl();
+                        const rutaNormalizada = foto.startsWith('/') ? foto : `/${foto}`;
+                        fotoUrl = `${baseUrl}${rutaNormalizada}`;
+                      }
+                    }
+                    
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {fotoUrl && (
+                          <img
+                            src={fotoUrl}
+                            alt={nombreCompleto}
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              flexShrink: 0,
+                            }}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <span>{nombreCompleto}</span>
+                      </div>
+                    );
                   },
                 },
                 {
@@ -344,17 +376,17 @@ const Despacho = () => {
                   align: 'center',
                   render: (v, row) => {
                     const estado = row.Estado || row.estado || 'P';
-                    return (
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                    if (estado === 'P') {
+                      return (
                         <button
                           className="btn btn-sm"
                           onClick={() => handleVerDetalle(row)}
                           disabled={isLoading}
-                          title="Ver todos los datos de la comanda"
+                          title="Ver detalle y despachar"
                           style={{ 
-                            backgroundColor: '#007bff',
+                            backgroundColor: '#343a40',
                             color: 'white',
-                            border: '1px solid #007bff',
+                            border: '1px solid #343a40',
                             whiteSpace: 'nowrap',
                             padding: '0.25rem 0.5rem',
                             display: 'inline-flex',
@@ -363,36 +395,13 @@ const Despacho = () => {
                             gap: '0.25rem',
                             cursor: 'pointer',
                             borderRadius: '0.25rem',
-                            fontSize: '0.875rem',
                           }}
                         >
-                          <i className="fa fa-eye"></i>
+                          <i className="fa fa-truck"></i>
                         </button>
-                        {estado === 'P' && (
-                          <button
-                            className="btn btn-sm"
-                            onClick={() => handleVerDetalle(row)}
-                            disabled={isLoading}
-                            title="Ver detalle y despachar"
-                            style={{ 
-                              backgroundColor: '#343a40',
-                              color: 'white',
-                              border: '1px solid #343a40',
-                              whiteSpace: 'nowrap',
-                              padding: '0.25rem 0.5rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.25rem',
-                              cursor: 'pointer',
-                              borderRadius: '0.25rem',
-                            }}
-                          >
-                            <i className="fa fa-truck"></i>
-                          </button>
-                        )}
-                      </div>
-                    );
+                      );
+                    }
+                    return '-';
                   },
                 },
               ]}
@@ -427,6 +436,7 @@ const Despacho = () => {
               overflow: 'auto',
               padding: '20px',
               boxSizing: 'border-box',
+              margin: 0,
             }} 
             tabIndex="-1" 
             role="dialog"
@@ -442,15 +452,14 @@ const Despacho = () => {
                 position: 'relative',
                 width: '100%',
                 maxWidth: '600px',
-                margin: 'auto',
-                transform: 'none',
-                top: 'auto',
-                left: 'auto',
-                right: 'auto',
-                bottom: 'auto',
+                margin: 'auto !important',
+                transform: 'none !important',
+                top: 'auto !important',
+                left: 'auto !important',
+                right: 'auto !important',
+                bottom: 'auto !important',
                 alignSelf: 'center',
                 flexShrink: 0,
-                minHeight: 'auto',
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -527,20 +536,90 @@ const Despacho = () => {
                     )}
                   </div>
                   <div className="col-4 pl-0 mx-auto mt-5">
-                    <img
-                      className="round-img mr-4"
-                      style={{ width: '100%', borderRadius: '50%', objectFit: 'cover', aspectRatio: 1 }}
-                      src={pedidoSeleccionado.user_foto || pedidoSeleccionado.userFoto || pedidoSeleccionado.foto || pedidoSeleccionado.UsuarioFoto || `${process.env.PUBLIC_URL || ''}/img/logo-preview.png`}
-                      alt={pedidoSeleccionado.user_name || pedidoSeleccionado.userName || pedidoSeleccionado.UsuarioNombre || 'Usuario'}
-                      onError={(e) => {
-                        e.target.src = `${process.env.PUBLIC_URL || ''}/img/logo-preview.png`;
-                      }}
-                    />
+                    {(() => {
+                      // Priorizar FotoComensal que viene con prefijo data:
+                      const foto = pedidoSeleccionado?.FotoComensal || pedidoSeleccionado?.fotoComensal || pedidoSeleccionado?.user_foto || pedidoSeleccionado?.userFoto || pedidoSeleccionado?.foto || pedidoSeleccionado?.UsuarioFoto;
+                      
+                      let fotoUrl = null;
+                      
+                      if (foto && foto.trim() !== '') {
+                        // Si ya tiene el prefijo data:, usarlo directamente (FotoComensal viene así)
+                        if (foto.startsWith('data:')) {
+                          fotoUrl = foto;
+                        }
+                        // Si es una URL completa (http/https), usarla tal cual
+                        else if (foto.startsWith('http://') || foto.startsWith('https://')) {
+                          fotoUrl = foto;
+                        }
+                        // Si es base64 puro (sin prefijo), agregar el prefijo
+                        // Verificar si parece ser base64 (caracteres alfanuméricos, +, /, =)
+                        else if (typeof foto === 'string' && !foto.startsWith('/') && !foto.includes('uploads/') && /^[A-Za-z0-9+/=]+$/.test(foto)) {
+                          fotoUrl = `data:image/jpeg;base64,${foto}`;
+                        }
+                        // Si es una ruta de uploads/, construir la URL completa
+                        else if (foto.startsWith('/uploads/') || foto.includes('uploads/')) {
+                          const baseUrl = getApiBaseUrl();
+                          
+                          // Si contiene 'uploads/' pero no empieza con '/', extraer la parte relativa
+                          let rutaRelativa = foto;
+                          if (foto.includes('uploads/') && !foto.startsWith('/uploads/')) {
+                            const indiceUploads = foto.indexOf('uploads/');
+                            rutaRelativa = `/${foto.substring(indiceUploads)}`;
+                          }
+                          
+                          // Decodificar primero para obtener el nombre original, luego codificar solo si es necesario
+                          const partes = rutaRelativa.split('/');
+                          let nombreArchivo = partes.pop();
+                          const rutaBase = partes.join('/');
+                          
+                          // Si el nombre ya está codificado (contiene % pero no espacios), decodificarlo primero
+                          if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
+                            try {
+                              nombreArchivo = decodeURIComponent(nombreArchivo);
+                            } catch (e) {
+                              // Error al decodificar
+                            }
+                          }
+                          
+                          // Codificar solo si hay espacios o caracteres especiales
+                          if (nombreArchivo.includes(' ') || /[^a-zA-Z0-9._-]/.test(nombreArchivo)) {
+                            nombreArchivo = encodeURIComponent(nombreArchivo);
+                          }
+                          
+                          fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivo}`;
+                        }
+                        // Si es solo un nombre de archivo o ruta relativa, construir la URL completa
+                        else {
+                          const baseUrl = getApiBaseUrl();
+                          const rutaNormalizada = foto.startsWith('/') ? foto : `/${foto}`;
+                          fotoUrl = `${baseUrl}${rutaNormalizada}`;
+                        }
+                      }
+                      
+                      // Solo mostrar la imagen si hay una URL válida
+                      if (fotoUrl) {
+                        return (
+                          <img
+                            className="round-img mr-4"
+                            style={{ width: '100%', borderRadius: '50%', objectFit: 'cover', aspectRatio: 1 }}
+                            src={fotoUrl}
+                            alt={pedidoSeleccionado?.user_name || pedidoSeleccionado?.userName || pedidoSeleccionado?.UsuarioNombre || 'Usuario'}
+                            onError={(e) => {
+                              // Si falla la carga, ocultar la imagen en lugar de cargar logo-preview
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        );
+                      }
+                      
+                      // Si no hay foto, no mostrar nada (no cargar logo-preview)
+                      return null;
+                    })()}
                   </div>
                   <div className="col-12 modal-footer">
                     <button
                       type="button"
-                      className="btn btn-secondary mr-2"
+                      className="btn btn-danger mr-2"
                       onClick={() => {
                         setMostrarModal(false);
                         setPedidoSeleccionado(null);
@@ -551,11 +630,10 @@ const Despacho = () => {
                     {(pedidoSeleccionado.estado || pedidoSeleccionado.Estado) === 'P' && (
                       <button
                         type="button"
-                        className="btn btn-success"
+                        className="btn btn-dark"
                         onClick={handleDespachar}
                         disabled={isLoading}
                       >
-                        <i className="fa fa-check mr-2"></i>
                         Despachar
                       </button>
                     )}

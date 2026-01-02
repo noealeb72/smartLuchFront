@@ -75,20 +75,37 @@ const PedidoVigente = memo(({ pedido, index, defaultImage, onCancelar, onRecibir
               e.target.src = defaultImage;
             }}
           />
-          <button
-            type="button"
-            onClick={() => onCancelar(pedido)}
-            className="btn btn-outline-danger btn-sm mt-2"
-          >
-            Cancelar pedido
-          </button>
-          {pedido.paraRetirar && (
+          {/* Mostrar botón según el Estado: 'E' = Recibir pedido (verde), 'P' = Cancelar pedido (rojo) */}
+          {(pedido.Estado === 'E' || pedido.estado === 'E') ? (
             <button
               type="button"
               onClick={() => onRecibir(pedido)}
-              className="btn btn-outline-success btn-sm mt-2"
+              className="btn btn-success btn-sm mt-2"
+              style={{ backgroundColor: '#28a745', borderColor: '#28a745', color: 'white' }}
             >
               Recibir pedido
+            </button>
+          ) : (
+            /* Mostrar botón "Cancelar pedido" si el Estado es 'P' (Pendiente) */
+            <button
+              type="button"
+              onClick={() => onCancelar(pedido)}
+              className="btn btn-outline-danger btn-sm mt-2"
+              style={{ 
+                borderColor: '#dc3545', 
+                color: '#dc3545',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#dc3545';
+                e.target.style.color = '#ffffff';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = '#dc3545';
+              }}
+            >
+              Cancelar pedido
             </button>
           )}
         </div>

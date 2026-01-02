@@ -37,6 +37,8 @@ const Index = () => {
   const requestInProgressRef = useRef(false);
   // Ref para rastrear si el componente está montado
   const isMountedRef = useRef(true);
+  // Ref para contar las llamadas a la API web
+  const contadorApiWebRef = useRef(0);
 
   // Cargar datos desde /api/inicio/web siempre que se monte el componente o se recargue la página
   useEffect(() => {
@@ -74,6 +76,8 @@ const Index = () => {
         }
         
         // Siempre llamar a inicioService pasando el id del usuario
+        contadorApiWebRef.current += 1;
+        console.log(`[API Web] Llamada #${contadorApiWebRef.current}`);
         const data = await inicioService.getInicioWeb(usuarioId);
         
         if (!isMountedRef.current) {
@@ -217,6 +221,63 @@ const Index = () => {
   useEffect(() => {
     setPedidosVigentes(pedidosHoy);
   }, [pedidosHoy]);
+
+  // Actualizar datos cada 2 segundos sin mostrar loading
+  useEffect(() => {
+    // Solo iniciar el intervalo si hay un usuario autenticado
+    if (!user?.id && !usuarioData?.id) {
+      return;
+    }
+
+    const actualizarDatosSilencioso = async () => {
+      try {
+        const usuarioId = user?.id || usuarioData?.id;
+        if (!usuarioId) return;
+
+        const token = localStorage.getItem('token');
+        if (!token || token === 'null' || token === 'undefined') {
+          return;
+        }
+
+        // Llamar a la API sin mostrar loading
+        contadorApiWebRef.current += 1;
+        console.log(`[API Web] Llamada #${contadorApiWebRef.current}`);
+        const data = await inicioService.getInicioWeb(usuarioId);
+        
+        // Actualizar datos silenciosamente
+        if (isMountedRef.current) {
+          try {
+            actualizarDatos(data);
+          } catch (errorActualizar) {
+            // Error silencioso
+          }
+
+          // Actualizar nombre y apellido si vienen en la respuesta
+          if (data.Usuario) {
+            const nombre = data.Usuario.Nombre || data.Usuario.nombre || '';
+            const apellido = data.Usuario.Apellido || data.Usuario.apellido || '';
+            setUsuarioNombre(nombre);
+            setUsuarioApellido(apellido);
+          }
+
+          // Actualizar pedidos vigentes
+          const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
+          setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
+        }
+      } catch (error) {
+        // Error silencioso, no mostrar nada al usuario
+        // Solo ignorar errores de red o del servidor
+      }
+    };
+
+    // Establecer intervalo de 2 segundos
+    const intervalId = setInterval(actualizarDatosSilencioso, 2000);
+
+    // Limpiar intervalo al desmontar el componente
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [user?.id, usuarioData?.id, actualizarDatos]);
 
   // Seleccionar primer turno si hay turnos disponibles y no hay uno seleccionado
   useEffect(() => {
@@ -389,7 +450,7 @@ const Index = () => {
             plannutricional: menuItem.NutricionalNombre || menuItem.nutricionalNombre || menuItem.PlanNutricionalNombre || menuItem.planNutricionalNombre || null,
             presentacion: fotoUrl,
             ingredientes: null,
-            cantidadDisponible: menuItem.Disponible !== undefined ? parseInt(menuItem.Disponible) : (menuItem.disponible !== undefined ? parseInt(menuItem.disponible) : 0),
+            cantidadDisponible: menuItem.Cantidad !== undefined ? parseInt(menuItem.Cantidad) : (menuItem.cantidad !== undefined ? parseInt(menuItem.cantidad) : 0),
             aplicarBonificacion: false,
             precioFinal: costo,
           };
@@ -516,7 +577,7 @@ const Index = () => {
             plannutricional: menuItem.NutricionalNombre || menuItem.nutricionalNombre || menuItem.PlanNutricionalNombre || menuItem.planNutricionalNombre || menuItem.plannutricional || menuItem.PlanNutricional || menuItem.plan_nutricional || null,
             presentacion: fotoUrl,
             ingredientes: menuItem.ingredientes || menuItem.Ingredientes || menuItem.ingrediente || menuItem.Ingrediente || null,
-            cantidadDisponible: menuItem.Disponible !== undefined ? parseInt(menuItem.Disponible) : (menuItem.disponible !== undefined ? parseInt(menuItem.disponible) : (menuItem.cantidad_disponible !== undefined ? parseInt(menuItem.cantidad_disponible) : (menuItem.cantidadDisponible !== undefined ? parseInt(menuItem.cantidadDisponible) : 0))),
+            cantidadDisponible: menuItem.Cantidad !== undefined ? parseInt(menuItem.Cantidad) : (menuItem.cantidad !== undefined ? parseInt(menuItem.cantidad) : 0),
             aplicarBonificacion: false,
             precioFinal: costo,
           };
@@ -763,39 +824,6 @@ const Index = () => {
         JerarquiaId: parseInt(jerarquiaId),
       };
 
-      console.log('═══════════════════════════════════════════════════════════');
-      console.log('📤 [Index] CONFIRMAR PEDIDO - DATOS A ENVIAR');
-      console.log('═══════════════════════════════════════════════════════════');
-      console.log('📦 DTO COMPLETO (ComandaCreateDto):');
-      console.log(JSON.stringify(comandaDto, null, 2));
-      console.log('');
-      console.log('📋 DETALLE DE CAMPOS:');
-      console.log('  • UsuarioId:', comandaDto.UsuarioId);
-      console.log('  • PlatoId:', comandaDto.PlatoId);
-      console.log('  • MenuddId:', comandaDto.MenuddId, '(ID del menú del día)');
-      console.log('  • TurnoId:', comandaDto.TurnoId);
-      console.log('  • Fecha:', comandaDto.Fecha);
-      console.log('  • Monto:', comandaDto.Monto);
-      console.log('  • Bonificado:', comandaDto.Bonificado);
-      console.log('  • Invitado:', comandaDto.Invitado);
-      console.log('  • Calificacion:', comandaDto.Calificacion);
-      console.log('  • Estado:', comandaDto.Estado);
-      console.log('  • Comentario:', comandaDto.Comentario || '(vacío)');
-      console.log('  • PlantaId:', comandaDto.PlantaId);
-      console.log('  • CentroDeCostoId:', comandaDto.CentroDeCostoId);
-      console.log('  • ProyectoId:', comandaDto.ProyectoId);
-      console.log('  • JerarquiaId:', comandaDto.JerarquiaId);
-      console.log('');
-      console.log('🔍 DATOS DEL PEDIDO SELECCIONADO:');
-      console.log('  • Código:', pedidoSeleccionado.codigo);
-      console.log('  • Descripción:', pedidoSeleccionado.descripcion);
-      console.log('  • PlatoId (del objeto):', pedidoSeleccionado.platoId);
-      console.log('  • MenuId (del objeto, será MenuddId en DTO):', pedidoSeleccionado.menuId);
-      console.log('  • Costo:', pedidoSeleccionado.costo);
-      console.log('  • Precio Final:', pedidoSeleccionado.precioFinal);
-      console.log('  • Aplicar Bonificación:', pedidoSeleccionado.aplicarBonificacion);
-      console.log('═══════════════════════════════════════════════════════════');
-
       await comandasService.crearPedido(comandaDto);
 
       // Consumir bonificación si aplica
@@ -810,36 +838,35 @@ const Index = () => {
         title: '¡Pedido Enviado!',
         text: '',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-      }).then(async () => {
-        setShowConfirmModal(false);
-        setPedidoComentario('');
-        // Recargar datos desde /api/inicio/web
-        try {
-          setIsLoading(true);
-          // Usar inicioService pasando el id del usuario
-          const usuarioId = user?.id;
-          if (!usuarioId) {
-            throw new Error('No se encontró el ID del usuario');
-          }
-          const data = await inicioService.getInicioWeb(usuarioId);
-          actualizarDatos(data);
-          const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
-          setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
-        } catch (error) {
-          // Error silencioso, ya se mostrará en el siguiente render
-        } finally {
-          setIsLoading(false);
-        }
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
       });
-    } catch (error) {
-      console.error('[Index] Error al crear pedido:', error);
-      console.error('[Index] error.response:', error.response);
-      console.error('[Index] error.response?.data:', error.response?.data);
+
+      // Cerrar modal y recargar datos
+      setShowConfirmModal(false);
+      setPedidoComentario('');
       
+      // Recargar datos desde /api/inicio/web
+      try {
+        setIsLoading(true);
+        // Usar inicioService pasando el id del usuario
+        const usuarioId = user?.id;
+        if (!usuarioId) {
+          throw new Error('No se encontró el ID del usuario');
+        }
+        contadorApiWebRef.current += 1;
+        console.log(`[API Web] Llamada #${contadorApiWebRef.current}`);
+        const data = await inicioService.getInicioWeb(usuarioId);
+        actualizarDatos(data);
+        const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
+        setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
+      } catch (error) {
+        // Error silencioso, ya se mostrará en el siguiente render
+      } finally {
+        setIsLoading(false);
+      }
+    } catch (error) {
       // Si hay error de conexión, el interceptor ya redirige automáticamente
       if (!error.redirectToLogin) {
         let errorTitle = 'Error';
@@ -895,7 +922,7 @@ const Index = () => {
   }, [pedidoSeleccionado, user, pedidoComentario, bonificacionDisponible, cantidadBonificacionesHoy, porcentajeBonificacion, selectedTurno, actualizarDatos]);
 
   const actualizaPedido = useCallback(async (nuevoEstado) => {
-    if (!pedidoSeleccionado || !pedidoSeleccionado.user_Pedido) {
+    if (!pedidoSeleccionado) {
       Swal.fire({
         title: 'Error',
         text: 'No hay un pedido seleccionado.',
@@ -907,41 +934,121 @@ const Index = () => {
     }
 
     try {
-      await comandasService.actualizarPedido(
-        pedidoSeleccionado.user_Pedido.id,
-        nuevoEstado,
-        pedidoCalificacion,
-        ''
-      );
+      // Obtener Npedido de múltiples ubicaciones posibles (priorizando las más comunes)
+      const npedido = pedidoSeleccionado.Npedido || 
+                     pedidoSeleccionado.npedido || 
+                     pedidoSeleccionado.user_npedido ||
+                     pedidoSeleccionado.user_Pedido?.npedido || 
+                     pedidoSeleccionado.user_Pedido?.Npedido || 
+                     pedidoSeleccionado.user_Pedido?.id ||
+                     pedidoSeleccionado.user_Pedido?.Id ||
+                     pedidoSeleccionado.Id ||
+                     pedidoSeleccionado.id;
+      
+      // Si el estado es 'C' (Cancelar), usar el endpoint específico de cancelar
+      if (nuevoEstado === 'C') {
+        if (!npedido || npedido <= 0 || isNaN(parseInt(npedido))) {
+          Swal.fire({
+            title: 'Error',
+            text: 'No se pudo obtener el número de pedido.',
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#F34949',
+          });
+          return;
+        }
+
+        const npedidoInt = parseInt(npedido);
+        await comandasService.cancelarPedido(npedidoInt);
+      } else if (nuevoEstado === 'D') {
+        // Si el estado es 'D' (Devolver), usar el endpoint específico de devolver
+        if (!npedido || npedido <= 0 || isNaN(parseInt(npedido))) {
+          Swal.fire({
+            title: 'Error',
+            text: 'No se pudo obtener el número de pedido.',
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#F34949',
+          });
+          return;
+        }
+
+        const npedidoInt = parseInt(npedido);
+        await comandasService.devolverPedido(npedidoInt);
+      } else if (nuevoEstado === 'R') {
+        // Si el estado es 'R' (Recibir), usar el endpoint específico de recibir
+        if (!npedido || npedido <= 0 || isNaN(parseInt(npedido))) {
+          Swal.fire({
+            title: 'Error',
+            text: 'No se pudo obtener el número de pedido.',
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#F34949',
+          });
+          return;
+        }
+
+        const npedidoInt = parseInt(npedido);
+        await comandasService.recibirPedido(npedidoInt);
+      } else {
+        // Para otros estados, usar el método actualizarPedido
+        const pedidoId = pedidoSeleccionado.user_Pedido?.id || 
+                        pedidoSeleccionado.user_Pedido?.Id ||
+                        pedidoSeleccionado.Id ||
+                        pedidoSeleccionado.id;
+        
+        if (!pedidoId) {
+          Swal.fire({
+            title: 'Error',
+            text: 'No se pudo obtener el ID del pedido.',
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#F34949',
+          });
+          return;
+        }
+        
+        await comandasService.actualizarPedido(
+          pedidoId,
+          nuevoEstado,
+          pedidoCalificacion,
+          ''
+        );
+      }
 
       Swal.fire({
         title: 'Operación correcta',
         text: '',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
-      }).then(async () => {
-        setShowCancelModal(false);
-        setShowReceiveModal(false);
-        setPedidoCalificacion(1);
-        // Recargar datos desde /api/inicio/web después de actualizar pedido
-        try {
-          setIsLoading(true);
-          // Usar inicioService pasando el id del usuario
-          const usuarioId = user?.id;
-          if (!usuarioId) {
-            throw new Error('No se encontró el ID del usuario');
-          }
-          const data = await inicioService.getInicioWeb(usuarioId);
-          actualizarDatos(data);
-          const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
-          setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
-        } catch (error) {
-          // Error silencioso, ya se mostrará en el siguiente render
-        } finally {
-          setIsLoading(false);
-        }
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
       });
+
+      // Cerrar modales y recargar datos
+      setShowCancelModal(false);
+      setShowReceiveModal(false);
+      setPedidoCalificacion(1);
+      
+      // Recargar datos desde /api/inicio/web después de actualizar pedido
+      try {
+        setIsLoading(true);
+        // Usar inicioService pasando el id del usuario
+        const usuarioId = user?.id;
+        if (!usuarioId) {
+          throw new Error('No se encontró el ID del usuario');
+        }
+        contadorApiWebRef.current += 1;
+        console.log(`[API Web] Llamada #${contadorApiWebRef.current}`);
+        const data = await inicioService.getInicioWeb(usuarioId);
+        actualizarDatos(data);
+        const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
+        setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
+      } catch (error) {
+        // Error silencioso, ya se mostrará en el siguiente render
+      } finally {
+        setIsLoading(false);
+      }
     } catch (error) {
       // Si hay error de conexión, el interceptor ya redirige automáticamente
       if (!error.redirectToLogin) {
@@ -974,7 +1081,6 @@ const Index = () => {
         const turnoIdParam = turnoId; // Usar el turnoId que ya tenemos
         
         const menuData = await menuService.getMenuByTurno(planta, centro, jerarquia, proyecto, turnoIdParam, hoy);
-          console.log('✅ [Index] Menú recibido de getMenuByTurno:', menuData);
         
         // Procesar los datos recibidos
         if (Array.isArray(menuData) && menuData.length > 0) {
@@ -1054,7 +1160,7 @@ const Index = () => {
             ) || 0;
             const plannutricional = menuItem.NutricionalNombre || menuItem.nutricionalNombre || menuItem.PlanNutricionalNombre || menuItem.planNutricionalNombre || menuItem.plannutricional || menuItem.PlanNutricional || menuItem.plan_nutricional || null;
             const ingredientes = menuItem.ingredientes || menuItem.Ingredientes || menuItem.ingrediente || menuItem.Ingrediente || null;
-            const disponible = menuItem.Disponible !== undefined ? parseInt(menuItem.Disponible) : (menuItem.disponible !== undefined ? parseInt(menuItem.disponible) : (menuItem.cantidad_disponible !== undefined ? parseInt(menuItem.cantidad_disponible) : (menuItem.cantidadDisponible !== undefined ? parseInt(menuItem.cantidadDisponible) : 0)));
+            const cantidad = menuItem.Cantidad !== undefined ? parseInt(menuItem.Cantidad) : (menuItem.cantidad !== undefined ? parseInt(menuItem.cantidad) : 0);
 
             // Obtener el PlatoId real
             const platoIdReal = (menuItem.PlatoId !== undefined && menuItem.PlatoId !== 0) 
@@ -1072,7 +1178,7 @@ const Index = () => {
               plannutricional: plannutricional,
               presentacion: fotoUrl,
               ingredientes: ingredientes,
-              cantidadDisponible: disponible,
+              cantidadDisponible: cantidad,
               aplicarBonificacion: false,
               precioFinal: costo,
             };
@@ -1275,28 +1381,36 @@ const Index = () => {
                 <div className="col-12 col-md-8 pt-3 mx-auto">
                   <h4 className="mt-4 text-smart-primary">Tu próximo pedido reservado</h4>
 
-                  {pedidosVigentes.length === 0 ? (
-                    <div className="card mt-2 pl-2" role="status" aria-live="polite">
-                      <div className="card-body text-center py-4">
-                        <h5 className="text-muted">No hay pedidos vigentes</h5>
-                        <p className="text-muted mb-0">No tienes pedidos pendientes de recibir o cancelar en este momento.</p>
+                  {(() => {
+                    // Filtrar pedidos que tienen Estado 'E' (En Aceptación) o 'P' (Pendiente)
+                    const pedidosFiltrados = pedidosVigentes.filter((pedido) => {
+                      const estado = pedido.Estado || pedido.estado;
+                      return estado === 'E' || estado === 'P';
+                    });
+
+                    return pedidosFiltrados.length === 0 ? (
+                      <div className="card mt-2 pl-2" role="status" aria-live="polite">
+                        <div className="card-body text-center py-4">
+                          <h5 className="text-muted">No hay pedidos vigentes</h5>
+                          <p className="text-muted mb-0">No tienes pedidos pendientes de recibir o cancelar en este momento.</p>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="card mt-2 pl-2">
-                      {pedidosVigentes.map((pedido, index) => (
-                        <PedidoVigente
-                          key={pedido.Id || pedido.id || pedido.Npedido || pedido.npedido || pedido.user_npedido || pedido.user_Pedido?.id || index}
-                          pedido={pedido}
-                          index={index}
-                          defaultImage={defaultImage}
-                          onCancelar={handleCancelarPedido}
-                          onRecibir={handleRecibirPedido}
-                          isLast={index === pedidosVigentes.length - 1}
-                        />
-                      ))}
-                    </div>
-                  )}
+                    ) : (
+                      <div className="card mt-2 pl-2">
+                        {pedidosFiltrados.map((pedido, index) => (
+                          <PedidoVigente
+                            key={pedido.Id || pedido.id || pedido.Npedido || pedido.npedido || pedido.user_npedido || pedido.user_Pedido?.id || index}
+                            pedido={pedido}
+                            index={index}
+                            defaultImage={defaultImage}
+                            onCancelar={handleCancelarPedido}
+                            onRecibir={handleRecibirPedido}
+                            isLast={index === pedidosFiltrados.length - 1}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })()}
 
                   {turnoDisponible && (
                     <>
@@ -1705,11 +1819,50 @@ const Index = () => {
 
         {/* Modal Recibir */}
         {showReceiveModal && pedidoSeleccionado && (
-          <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1" role="dialog">
-            <div className="modal-dialog modal-lg" role="document" style={{ maxWidth: '600px' }}>
+          <div 
+            className="modal fade show" 
+            style={{ 
+              display: 'flex',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              zIndex: 1050,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              overflow: 'auto',
+              padding: '20px',
+              boxSizing: 'border-box',
+              margin: '0 !important',
+            }} 
+            tabIndex="-1" 
+            role="dialog"
+          >
+            <div 
+              className="modal-dialog modal-lg" 
+              role="document"
+              style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '600px',
+                margin: 'auto !important',
+                transform: 'none',
+                top: 'auto',
+                left: 'auto',
+                right: 'auto',
+                bottom: 'auto',
+                alignSelf: 'center',
+                flexShrink: 0,
+                minHeight: 'auto',
+              }}
+            >
               <div className="modal-content">
-                <div className="modal-header" style={{ backgroundColor: '#343a40', color: 'white' }}>
-                  <h5 className="modal-title" style={{ color: 'white' }}>
+                <div className="modal-header" style={{ backgroundColor: '#343a40', color: 'white', padding: '10px 15px' }}>
+                  <h5 className="modal-title" style={{ color: 'white', fontSize: '16px', margin: 0, fontWeight: 500 }}>
                     Recepción del pedido
                   </h5>
                   <button
@@ -1727,7 +1880,7 @@ const Index = () => {
                 </div>
                 <div className="modal-body">
                   <div className="mb-3">
-                    <small className="text-muted">
+                    <small style={{ color: '#000000' }}>
                       <i className="fa fa-info-circle mr-1" aria-hidden="true"></i>
                       Tu calificación nos ayuda a mejorar la calidad del servicio y los platos que ofrecemos.
                     </small>
@@ -1740,25 +1893,57 @@ const Index = () => {
                     id="pedidoCalificacion"
                     value={pedidoCalificacion}
                     onChange={(e) => setPedidoCalificacion(parseInt(e.target.value))}
-                    style={{ fontSize: '18px', border: '1px solid #ddd', boxShadow: 'none', backgroundColor: '#fff' }}
+                    style={{ 
+                      fontSize: '18px', 
+                      border: '1px solid #ddd', 
+                      boxShadow: 'none', 
+                      backgroundColor: '#fff',
+                      color: '#000000',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.color = '#000000';
+                      e.target.style.borderColor = '#ddd';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.color = '#000000';
+                      e.target.style.borderColor = '#ddd';
+                    }}
                   >
-                    <option key="calificacion-1" value="1">⭐ 1 estrella</option>
-                    <option key="calificacion-2" value="2">⭐⭐ 2 estrellas</option>
-                    <option key="calificacion-3" value="3">⭐⭐⭐ 3 estrellas</option>
-                    <option key="calificacion-4" value="4">⭐⭐⭐⭐ 4 estrellas</option>
-                    <option key="calificacion-5" value="5">⭐⭐⭐⭐⭐ 5 estrellas</option>
+                    <option key="calificacion-1" value="1" style={{ color: '#000000' }}>⭐ 1 estrella</option>
+                    <option key="calificacion-2" value="2" style={{ color: '#000000' }}>⭐⭐ 2 estrellas</option>
+                    <option key="calificacion-3" value="3" style={{ color: '#000000' }}>⭐⭐⭐ 3 estrellas</option>
+                    <option key="calificacion-4" value="4" style={{ color: '#000000' }}>⭐⭐⭐⭐ 4 estrellas</option>
+                    <option key="calificacion-5" value="5" style={{ color: '#000000' }}>⭐⭐⭐⭐⭐ 5 estrellas</option>
                   </select>
                 </div>
                 <div className="modal-footer">
                   <button
                     type="button"
                     className="btn btn-danger"
+                    onClick={() => {
+                      setShowReceiveModal(false);
+                      setPedidoSeleccionado(null);
+                      setPedidoCalificacion(1);
+                    }}
+                    style={{ backgroundColor: '#dc3545', borderColor: '#dc3545', color: 'white' }}
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
                     onClick={() => actualizaPedido('D')}
+                    style={{ backgroundColor: '#343a40', borderColor: '#343a40', color: 'white' }}
                   >
                     Devolver pedido
                   </button>
-                  <button type="button" className="btn btn-dark" onClick={() => actualizaPedido('R')}>
-                    Aceptar plato
+                  <button 
+                    type="button" 
+                    className="btn"
+                    onClick={() => actualizaPedido('R')}
+                    style={{ backgroundColor: '#28a745', borderColor: '#28a745', color: 'white' }}
+                  >
+                    Recibir pedido
                   </button>
                 </div>
               </div>

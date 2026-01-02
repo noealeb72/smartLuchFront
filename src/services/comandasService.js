@@ -108,5 +108,121 @@ export const comandasService = {
     clearApiCache();
     return response.data;
   },
+
+  /**
+   * Cancela un pedido
+   * PUT /api/comanda/cancelar
+   * Usa el DTO ComandaAccionDto con Npedido
+   */
+  cancelarPedido: async (npedido) => {
+    const baseUrl = getApiBaseUrl();
+    const token = localStorage.getItem('token');
+    
+    const headers = {
+      'Content-Type': 'application/json; charset=utf-8',
+    };
+    
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const dto = {
+      Npedido: parseInt(npedido),
+    };
+    
+    const response = await api.put(`${baseUrl}/api/comanda/cancelar`, dto, {
+      headers,
+    });
+    
+    clearApiCache();
+    return response.data;
+  },
+
+  /**
+   * Despacha un pedido
+   * PUT /api/comanda/despachar
+   * Usa el DTO ComandaAccionDto con Npedido
+   */
+  despacharPedidoPorNpedido: async (npedido) => {
+    const baseUrl = getApiBaseUrl();
+    const token = localStorage.getItem('token');
+    
+    const headers = {
+      'Content-Type': 'application/json; charset=utf-8',
+    };
+    
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const dto = {
+      Npedido: parseInt(npedido),
+    };
+    
+    const response = await api.put(`${baseUrl}/api/comanda/despachar`, dto, {
+      headers,
+    });
+    
+    clearApiCache();
+    return response.data;
+  },
+
+  /**
+   * Devuelve un pedido
+   * POST /api/comanda/devolver
+   * Usa el DTO ComandaAccionDto con Npedido
+   */
+  devolverPedido: async (npedido) => {
+    const baseUrl = getApiBaseUrl();
+    const token = localStorage.getItem('token');
+    
+    const headers = {
+      'Content-Type': 'application/json; charset=utf-8',
+    };
+    
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const dto = {
+      Npedido: parseInt(npedido),
+    };
+    
+    const response = await api.post(`${baseUrl}/api/comanda/devolver`, dto, {
+      headers,
+    });
+    
+    clearApiCache();
+    return response.data;
+  },
+
+  /**
+   * Recibe un pedido
+   * PUT /api/comanda/recibir
+   * Usa el DTO ComandaAccionDto con Npedido
+   */
+  recibirPedido: async (npedido) => {
+    const baseUrl = getApiBaseUrl();
+    const token = localStorage.getItem('token');
+    
+    const headers = {
+      'Content-Type': 'application/json; charset=utf-8',
+    };
+    
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const dto = {
+      Npedido: parseInt(npedido),
+    };
+    
+    const response = await api.put(`${baseUrl}/api/comanda/recibir`, dto, {
+      headers,
+    });
+    
+    clearApiCache();
+    return response.data;
+  },
 };
 
