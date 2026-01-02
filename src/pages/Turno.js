@@ -566,11 +566,18 @@ const Turno = () => {
       doc.setFontSize(10);
       doc.text(`Exportado el: ${fecha}`, 14, 22);
       
-      const tableData = turnos.map(turno => [
-        turno.nombre || turno.Nombre || '-',
-        formatearHora(turno.hora_desde || turno.horaDesde || turno.horadesde),
-        formatearHora(turno.hora_hasta || turno.horaHasta || turno.horahasta)
-      ]);
+      const tableData = turnos.map(turno => {
+        // Buscar horaDesde en diferentes formatos posibles (igual que en la tabla)
+        const horaDesde = turno.hora_desde || turno.horaDesde || turno.horadesde || turno.HoraDesde || turno.Hora_Desde || turno.horaDesde || '';
+        // Buscar horaHasta en diferentes formatos posibles (igual que en la tabla)
+        const horaHasta = turno.hora_hasta || turno.horaHasta || turno.horahasta || turno.HoraHasta || turno.Hora_Hasta || turno.horaHasta || '';
+        
+        return [
+          turno.nombre || turno.Nombre || '-',
+          formatearHora(horaDesde),
+          formatearHora(horaHasta)
+        ];
+      });
       
       doc.autoTable({
         startY: 28,
@@ -606,11 +613,18 @@ const Turno = () => {
   // Exportar a Excel
   const handleExportarExcel = () => {
     try {
-      const datosExcel = turnos.map(turno => ({
-        'Nombre': turno.nombre || turno.Nombre || '',
-        'Hora Desde': formatearHora(turno.hora_desde || turno.horaDesde || turno.horadesde),
-        'Hora Hasta': formatearHora(turno.hora_hasta || turno.horaHasta || turno.horahasta)
-      }));
+      const datosExcel = turnos.map(turno => {
+        // Buscar horaDesde en diferentes formatos posibles (igual que en la tabla)
+        const horaDesde = turno.hora_desde || turno.horaDesde || turno.horadesde || turno.HoraDesde || turno.Hora_Desde || turno.horaDesde || '';
+        // Buscar horaHasta en diferentes formatos posibles (igual que en la tabla)
+        const horaHasta = turno.hora_hasta || turno.horaHasta || turno.horahasta || turno.HoraHasta || turno.Hora_Hasta || turno.horaHasta || '';
+        
+        return {
+          'Nombre': turno.nombre || turno.Nombre || '',
+          'Hora Desde': formatearHora(horaDesde),
+          'Hora Hasta': formatearHora(horaHasta)
+        };
+      });
       
       const ws = XLSX.utils.json_to_sheet(datosExcel);
       const wb = XLSX.utils.book_new();

@@ -3,6 +3,8 @@ import { apiService } from '../services/apiService';
 import { catalogosService } from '../services/catalogosService';
 import { platosService } from '../services/platosService';
 import Swal from 'sweetalert2';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import './Usuarios.css';
 
 const ReporteGGestion = () => {
@@ -242,6 +244,170 @@ const ReporteGGestion = () => {
 
   // Estado para almacenar los resultados del reporte
   const [reporteData, setReporteData] = useState(null);
+
+  // Exportar reporte a PDF
+  const handleExportarPDF = useCallback(() => {
+    if (!reporteData) {
+      Swal.fire({
+        title: 'Error',
+        text: 'No hay datos para exportar',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+      return;
+    }
+
+    try {
+      // Extraer detalles del reporte
+      const detalles = Array.isArray(reporteData) 
+        ? reporteData 
+        : (reporteData.detalles || reporteData.detalle || reporteData.items || reporteData.data || []);
+
+      if (detalles.length === 0) {
+        Swal.fire({
+          title: 'Error',
+          text: 'No hay datos para exportar',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      const JSPDF = jsPDF.default || jsPDF;
+      const doc = new JSPDF();
+      
+      // Título del reporte
+      doc.setFontSize(16);
+      doc.text('Reporte de Gestión', 14, 15);
+      
+      // Fecha de generación
+      const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      doc.setFontSize(10);
+      doc.text(`Generado el: ${fechaGeneracion}`, 14, 22);
+      
+      // Período del reporte
+      const periodo = `${formData.fechaDesde || '-'} - ${formData.fechaHasta || '-'}`;
+      doc.text(`Período: ${periodo}`, 14, 28);
+      
+      let yPos = 38;
+      
+      // Función auxiliar para obtener el texto del estado
+      const obtenerTextoEstado = (estado) => {
+        const estadoStr = (estado || '').toString().toUpperCase();
+        const estados = {
+          'P': 'Pendiente',
+          'D': 'Devuelto',
+          'C': 'Cancelado',
+          'R': 'Recibido',
+          'E': 'En Aceptación',
+        };
+        return estados[estadoStr] || estado || 'N/A';
+      };
+
+      // Formatear fecha
+      const formatearFecha = (fecha) => {
+        if (!fecha) return '-';
+        try {
+          const date = new Date(fecha);
+          if (isNaN(date.getTime())) return fecha;
+          const dia = String(date.getDate()).padStart(2, '0');
+          const mes = String(date.getMonth() + 1).padStart(2, '0');
+          const año = date.getFullYear();
+          const horas = String(date.getHours()).padStart(2, '0');
+          const minutos = String(date.getMinutes()).padStart(2, '0');
+          const segundos = String(date.getSeconds()).padStart(2, '0');
+          return `${dia}/${mes}/${año} - ${horas}:${minutos}:${segundos}`;
+        } catch (e) {
+          return fecha;
+        }
+      };
+
+      // Formatear importe
+      const formatearImporte = (importe) => {
+        const num = parseFloat(importe || 0);
+        if (isNaN(num)) return '$0.00';
+        return new Intl.NumberFormat('es-AR', {
+          style: 'currency',
+          currency: 'ARS',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(num);
+      };
+
+      // Preparar datos de la tabla
+      const tableData = detalles.map((item) => {
+        const fecha = item.fecha || item.Fecha || item.fechaCreacion || item.FechaCreacion;
+        const planta = item.plantaNombre || item.PlantaNombre || item.planta || item.Planta || '-';
+        const centroCosto = item.centroCostoNombre || item.CentroCostoNombre || item.centroCosto || item.CentroCosto || item.CC || '-';
+        const proyecto = item.proyectoNombre || item.ProyectoNombre || item.proyecto || item.Proyecto || '-';
+        const jerarquia = item.jerarquiaNombre || item.JerarquiaNombre || item.jerarquia || item.Jerarquia || item.perfil || item.Perfil || '-';
+        const legajo = item.legajo || item.Legajo || item.userLegajo || item.UserLegajo || '-';
+        const nombreCompleto = item.nombreCompleto || item.NombreCompleto || 
+          `${item.nombre || item.Nombre || ''} ${item.apellido || item.Apellido || ''}`.trim() || '-';
+        const plato = item.platoDescripcion || item.PlatoDescripcion || item.plato || item.Plato || item.descripcion || item.Descripcion || '-';
+        const estado = item.estado || item.Estado || '-';
+        const bonificado = item.bonificado || item.Bonificado || false;
+        const costo = item.costo || item.Costo || item.monto || item.Monto || item.importe || item.Importe || 0;
+
+        return [
+          formatearFecha(fecha),
+          planta,
+          centroCosto,
+          proyecto,
+          jerarquia,
+          bonificado ? 'Sí' : 'No',
+          legajo,
+          nombreCompleto,
+          plato,
+          obtenerTextoEstado(estado),
+          formatearImporte(costo)
+        ];
+      });
+      
+      doc.autoTable({
+        startY: yPos,
+        head: [['Fecha', 'Planta', 'CC', 'Proyecto', 'Perfil', 'Bonificación', 'Legajo', 'Nombre completo', 'Plato', 'Estado', 'Costo']],
+        body: tableData,
+        styles: { fontSize: 7 },
+        headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        margin: { top: yPos }
+      });
+      
+      // Nombre del archivo
+      const fechaArchivo = new Date().toISOString().split('T')[0];
+      const fileName = `reporte_gestion_${fechaArchivo}.pdf`;
+      
+      doc.save(fileName);
+      
+      Swal.fire({
+        title: 'Éxito',
+        text: 'El reporte se ha exportado correctamente en formato PDF',
+        icon: 'success',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
+      });
+    } catch (error) {
+      console.error('Error al exportar PDF:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Error al exportar el reporte a PDF',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    }
+  }, [reporteData, formData]);
 
   // Buscar reporte
   const handleBuscar = async () => {
@@ -890,11 +1056,40 @@ const ReporteGGestion = () => {
 
                       {/* Detalle del Reporte */}
                       <div className="form-section">
-                        <div className="page-title-bar" style={{ marginBottom: '0', borderRadius: '0.5rem 0.5rem 0 0' }}>
-                          <h3 style={{ margin: 0, padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center' }}>
+                        <div className="page-title-bar" style={{ marginBottom: '0', borderRadius: '0.5rem 0.5rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <h3 style={{ margin: 0, padding: '0.75rem 1.5rem', flex: 1, display: 'flex', alignItems: 'center' }}>
                             <i className="fa fa-table mr-2" aria-hidden="true"></i>
                             Detalle del Reporte
                           </h3>
+                          {detalles.length > 0 && (
+                            <button
+                              type="button"
+                              className="btn"
+                              onClick={handleExportarPDF}
+                              style={{
+                                backgroundColor: '#dc3545',
+                                border: 'none',
+                                color: 'white',
+                                padding: '0.5rem 1rem',
+                                fontSize: '1.25rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '0.25rem',
+                                marginRight: '1rem'
+                              }}
+                              title="Exportar reporte a PDF"
+                              onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = '#c82333';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = '#dc3545';
+                              }}
+                            >
+                              <i className="fa fa-file-pdf"></i>
+                            </button>
+                          )}
                         </div>
                         <div className="form-section-content" style={{ 
                           padding: '0', 
@@ -918,11 +1113,11 @@ const ReporteGGestion = () => {
                                   <th style={{ whiteSpace: 'nowrap' }}>CC</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Proyecto</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Perfil</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Bonificación</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Legajo</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Nombre completo</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Plato</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Estado</th>
-                                  <th style={{ whiteSpace: 'nowrap' }}>Bonificación</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Costo</th>
                                 </tr>
                               </thead>
@@ -948,11 +1143,11 @@ const ReporteGGestion = () => {
                                       <td>{centroCosto}</td>
                                       <td>{proyecto}</td>
                                       <td>{jerarquia}</td>
+                                      <td style={{ textAlign: 'center' }}>{bonificado ? '✓' : ''}</td>
                                       <td>{legajo}</td>
                                       <td>{nombreCompleto}</td>
                                       <td>{plato}</td>
                                       <td>{obtenerEstadoBadge(estado)}</td>
-                                      <td style={{ textAlign: 'center' }}>{bonificado ? '✓' : ''}</td>
                                       <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{formatearImporte(costo)}</td>
                                     </tr>
                                   );

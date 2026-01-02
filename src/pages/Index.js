@@ -1171,12 +1171,12 @@ const Index = () => {
         </div>
       )}
 
-      <section id="gtco-welcome" className="bg-white section-padding" aria-live="polite">
+      <section id="gtco-welcome" className="bg-white section-padding" aria-live="polite" style={{ paddingTop: '3rem', marginTop: '1rem' }}>
           <div className="container">
             <div className="section-content">
               <div className="row">
                 {/* Bienvenida - Desktop */}
-                <div className="container-fluid mt-4 row ocultar-en-movil" style={{ marginLeft: 0, marginRight: 0, paddingLeft: '1rem', paddingRight: '1rem' }}>
+                <div className="container-fluid mt-4 row ocultar-en-movil" style={{ marginLeft: 0, marginRight: 0, paddingLeft: '1rem', paddingRight: '1rem', marginTop: '2rem' }}>
                   <div className="col-sm-6 col-12 bienvenida">
                     <h3>
                       Bienvenido {usuarioNombre || usuarioData?.nombre || user?.nombre || ''} {usuarioApellido || usuarioData?.apellido || user?.apellido || ''}

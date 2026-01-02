@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import { mapUsuarios } from '../utils/dataMapper';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { getApiBaseUrl } from '../services/configService';
 import './Usuarios.css';
 
 const ReporteGComensales = () => {
@@ -293,8 +294,29 @@ const ReporteGComensales = () => {
       console.log('✅ [ReporteGComensales] data.resumen:', data.resumen);
       
       // Extraer datos del DTO según la estructura: { usuario, consumidos, resumen }
-      // Intentar con diferentes variantes de nombres (mayúsculas/minúsculas)
-      const usuarioData = data.usuario || data.Usuario || {};
+      // Si los datos del usuario están en el nivel superior (Id, Nombre, Apellido, Dni, Foto), usarlos directamente
+      // Si están anidados en usuario/Usuario, usar esos
+      let usuarioData = {};
+      if (data.usuario || data.Usuario) {
+        usuarioData = data.usuario || data.Usuario;
+      } else if (data.Id || data.Nombre || data.Apellido || data.Dni || data.Foto) {
+        // Los datos del usuario están en el nivel superior del DTO
+        usuarioData = {
+          id: data.Id || data.id,
+          nombre: data.Nombre || data.nombre,
+          apellido: data.Apellido || data.apellido,
+          dni: data.Dni || data.dni,
+          cuil: data.Cuil || data.cuil,
+          foto: data.Foto || data.foto,
+          legajo: data.Legajo || data.legajo,
+          planNutricionalNombre: data.PlanNutricionalNombre || data.planNutricionalNombre,
+          plantaNombre: data.PlantaNombre || data.plantaNombre,
+          centroCostoNombre: data.CentroCostoNombre || data.centroCostoNombre,
+          proyectoNombre: data.ProyectoNombre || data.proyectoNombre,
+          jerarquiaNombre: data.JerarquiaNombre || data.jerarquiaNombre
+        };
+      }
+      
       const consumidos = Array.isArray(data.consumidos) ? data.consumidos : 
                         Array.isArray(data.Consumidos) ? data.Consumidos : [];
       const resumen = data.resumen || data.Resumen || {};
@@ -315,7 +337,7 @@ const ReporteGComensales = () => {
         estado: comanda.estado ?? comanda.Estado ?? 'N/A',
         comentario: comanda.comentario ?? comanda.Comentario ?? null,
         platoId: comanda.platoId ?? comanda.PlatoId,
-        platoDescripcion: comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A',
+        platoDescripcion: comanda.descripcionPlato ?? comanda.DescripcionPlato ?? comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A',
         turnoId: comanda.turnoId ?? comanda.TurnoId,
         turnoNombre: comanda.turnoNombre ?? comanda.TurnoNombre ?? 'N/A',
         planNutricional: comanda.planNutricional ?? comanda.PlanNutricional ?? 'N/A',
@@ -329,12 +351,30 @@ const ReporteGComensales = () => {
         jerarquiaNombre: comanda.jerarquiaNombre ?? comanda.JerarquiaNombre ?? 'N/A',
         platoImporte: parseFloat(comanda.platoImporte ?? comanda.PlatoImporte ?? 0),
         foto: comanda.foto ?? comanda.Foto ?? null,
-        descripcionPlato: comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A',
-        plato: comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A'
+        descripcionPlato: comanda.descripcionPlato ?? comanda.DescripcionPlato ?? comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A',
+        plato: comanda.descripcionPlato ?? comanda.DescripcionPlato ?? comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A'
       }));
       
       // Paginar el historial
       const historialPaginado = paginarHistorial(historialCompleto, 1);
+
+      // Calcular métricas del resumen antes de crear el objeto reporteData
+      // Contar cantidad de devueltos: platos con estado 'D'
+      const cantidadDevueltos = consumidos.filter(comanda => {
+        const estado = (comanda.estado ?? comanda.Estado ?? '').toString().toUpperCase();
+        return estado === 'D';
+      }).length;
+      
+      // Calcular costo total: sumar solo los platos con estado 'R' (Recibido)
+      const costoTotal = consumidos
+        .filter(comanda => {
+          const estado = (comanda.estado ?? comanda.Estado ?? '').toString().toUpperCase();
+          return estado === 'R';
+        })
+        .reduce((total, comanda) => {
+          const monto = parseFloat(comanda.monto ?? comanda.Monto ?? comanda.platoImporte ?? comanda.PlatoImporte ?? 0);
+          return total + monto;
+        }, 0);
 
       // Normalizar los datos del reporte según la estructura del DTO
       const reporteData = {
@@ -362,14 +402,14 @@ const ReporteGComensales = () => {
         resumen: {
           cantidadPlatos: resumen.cantidadPlatos ?? resumen.CantidadPlatos ?? resumen.cantidad_platos ?? resumen.Cantidad_Platos ?? (consumidos.length > 0 ? consumidos.length : 0),
           promedioCalificacion: resumen.promedioCalificacion ?? resumen.PromedioCalificacion ?? resumen.promedio_calificacion ?? resumen.Promedio_Calificacion ?? 0,
-          cantidadDevueltos: resumen.cantidadDevueltos ?? resumen.CantidadDevueltos ?? resumen.cantidad_devueltos ?? resumen.Cantidad_Devueltos ?? 0,
-          costoTotal: parseFloat(resumen.costoTotal ?? resumen.CostoTotal ?? resumen.costo_total ?? resumen.Costo_Total ?? 0)
+          cantidadDevueltos: cantidadDevueltos,
+          costoTotal: costoTotal
         },
         
         // Sección 4: Tabla de comandas (desde data.consumidos)
         comandas: historialCompleto.map(comanda => ({
           fecha: comanda.fecha,
-          plato: comanda.platoDescripcion || comanda.plato || 'N/A',
+          plato: comanda.descripcionPlato || comanda.platoDescripcion || comanda.plato || 'N/A',
           monto: comanda.monto || 0,
           estado: comanda.estado || 'N/A',
           bonificado: comanda.bonificado ? 'Sí' : 'No',
@@ -687,8 +727,12 @@ const ReporteGComensales = () => {
       doc.setFont(undefined, 'normal');
       doc.text(`Cantidad de platos: ${reporte.resumen?.cantidadPlatos || reporte.comandas?.length || 0}`, 14, yPos);
       yPos += 6;
-      doc.text(`Promedio calificación: ${reporte.resumen?.promedioCalificacion ? reporte.resumen.promedioCalificacion.toFixed(2) : 'N/A'}`, 14, yPos);
-      yPos += 6;
+      if (reporte.resumen?.promedioCalificacion !== null && 
+          reporte.resumen?.promedioCalificacion !== undefined && 
+          reporte.resumen?.promedioCalificacion > 0) {
+        doc.text(`Promedio calificación: ${reporte.resumen.promedioCalificacion.toFixed(2)}`, 14, yPos);
+        yPos += 6;
+      }
       doc.text(`Cantidad devueltos: ${reporte.resumen?.cantidadDevueltos || 0}`, 14, yPos);
       yPos += 6;
       doc.text(`Costo total: ${formatearMoneda(reporte.resumen?.costoTotal || 0)}`, 14, yPos);
@@ -706,7 +750,7 @@ const ReporteGComensales = () => {
           return [
             formatearFechaHora(comanda.fecha),
             comanda.npedido || '-',
-            comanda.plato || comanda.platoDescripcion || 'N/A',
+            comanda.descripcionPlato || comanda.plato || comanda.platoDescripcion || 'N/A',
             comanda.turnoNombre || 'N/A',
             obtenerTextoEstado(comanda.estado),
             comanda.bonificado === 'Sí' || comanda.bonificado === true ? 'Sí' : 'No',
@@ -1063,29 +1107,6 @@ const ReporteGComensales = () => {
           {/* Sección del Reporte */}
           {mostrarReporte && reporte && (
             <div id="reporte-section" style={{ marginTop: '3rem' }}>
-              {/* Botón de exportar PDF - Solo mostrar si hay pedidos */}
-              {reporte.comandas && reporte.comandas.length > 0 && (
-                <div className="d-flex justify-content-end mb-3">
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={handleExportarPDF}
-                    style={{
-                      backgroundColor: '#dc3545',
-                      borderColor: '#dc3545',
-                      color: 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '0.5rem 1rem'
-                    }}
-                    title="Exportar reporte a PDF"
-                  >
-                    <i className="fa fa-file-pdf mr-2"></i>
-                    Exportar a PDF
-                  </button>
-                </div>
-              )}
 
               {/* Tarjeta de Perfil del Comensal */}
               <div className="form-section" style={{ marginBottom: '2rem' }}>
@@ -1123,35 +1144,26 @@ const ReporteGComensales = () => {
                         </div>
                       </div>
                       
-                      {/* Segunda fila: Planta, Proyecto, Centro de Costo */}
+                      {/* Segunda fila: Planta, Proyecto (misma columna que DNI), Perfil nutricional, Jerarquía */}
                       <div className="row mb-3">
-                        <div className="col-md-4">
+                        <div className="col-md-3">
                           <div>
                             <strong>Planta:</strong> {reporte.organizacion.planta || 'N/A'}
                           </div>
                         </div>
-                        <div className="col-md-4">
+                        <div className="col-md-3">
                           <div>
                             <strong>Proyecto:</strong> {reporte.organizacion.proyecto || 'N/A'}
                           </div>
                         </div>
-                        <div className="col-md-4">
-                          <div>
-                            <strong>Centro de Costo:</strong> {reporte.organizacion.centroCosto || 'N/A'}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Tercera fila: Jerarquía y Perfil nutricional */}
-                      <div className="row mb-3">
-                        <div className="col-md-4">
-                          <div>
-                            <strong>Jerarquía:</strong> {limpiarJerarquia(reporte.organizacion.jerarquia) || 'N/A'}
-                          </div>
-                        </div>
-                        <div className="col-md-4">
+                        <div className="col-md-3">
                           <div>
                             <strong>Perfil nutricional:</strong> {reporte.organizacion.planNutricional || 'N/A'}
+                          </div>
+                        </div>
+                        <div className="col-md-3">
+                          <div>
+                            <strong>Jerarquía:</strong> {limpiarJerarquia(reporte.organizacion.jerarquia) || 'N/A'}
                           </div>
                         </div>
                       </div>
@@ -1163,15 +1175,15 @@ const ReporteGComensales = () => {
                             <strong>Cantidad de platos:</strong> {reporte.resumen?.cantidadPlatos || reporte.comandas?.length || 0}
                           </div>
                         </div>
-                        <div className="col-md-3">
-                          <div>
-                            <strong>Promedio calificación:</strong> {
-                              reporte.resumen?.promedioCalificacion !== null && reporte.resumen?.promedioCalificacion !== undefined 
-                                ? reporte.resumen.promedioCalificacion.toFixed(2) 
-                                : 'N/A'
-                            }
+                        {reporte.resumen?.promedioCalificacion !== null && 
+                         reporte.resumen?.promedioCalificacion !== undefined && 
+                         reporte.resumen?.promedioCalificacion > 0 && (
+                          <div className="col-md-3">
+                            <div>
+                              <strong>Promedio calificación:</strong> {reporte.resumen.promedioCalificacion.toFixed(2)}
+                            </div>
                           </div>
-                        </div>
+                        )}
                         <div className="col-md-3">
                           <div>
                             <strong>Cantidad devueltos:</strong> {reporte.resumen?.cantidadDevueltos || 0}
@@ -1188,36 +1200,50 @@ const ReporteGComensales = () => {
                     {/* Foto del comensal - Columna derecha */}
                     <div className="col-md-3 text-center">
                       {(() => {
-                        // Priorizar Foto que viene con prefijo data:image/jpeg;base64,
+                        // Priorizar Foto que viene directamente de la base de datos en formato base64
+                        // La foto viene como: "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
                         const foto = reporte.usuario.foto || reporte.usuario.Foto;
                         let fotoUrl = null;
                         
+                        console.log('🔍 [ReporteGComensales] Procesando foto del usuario:', {
+                          tieneFoto: !!foto,
+                          tipo: typeof foto,
+                          longitud: foto ? foto.length : 0,
+                          primerosCaracteres: foto ? foto.substring(0, 50) : null,
+                          empiezaConData: foto ? foto.trim().startsWith('data:') : false
+                        });
+                        
                         if (foto && foto.trim() !== '') {
-                          // Si ya tiene el prefijo data:, usarlo directamente
-                          if (foto.startsWith('data:')) {
-                            fotoUrl = foto;
+                          const fotoTrimmed = foto.trim();
+                          
+                          // Si ya tiene el prefijo data:, usarlo directamente (caso más común desde la BD)
+                          if (fotoTrimmed.startsWith('data:')) {
+                            fotoUrl = fotoTrimmed;
+                            console.log('✅ [ReporteGComensales] Foto con prefijo data: detectada, usando directamente');
                           }
                           // Si es una URL completa (http/https), usarla tal cual
-                          else if (foto.startsWith('http://') || foto.startsWith('https://')) {
-                            fotoUrl = foto;
+                          else if (fotoTrimmed.startsWith('http://') || fotoTrimmed.startsWith('https://')) {
+                            fotoUrl = fotoTrimmed;
                           }
-                          // Si es base64 puro (sin prefijo), agregar el prefijo data:image/jpeg;base64,
-                          else if (typeof foto === 'string') {
+                          // Si es base64 puro (viene directamente de la base de datos), agregar el prefijo
+                          else if (typeof fotoTrimmed === 'string') {
                             // Limpiar posibles espacios y saltos de línea
-                            const fotoLimpia = foto.trim().replace(/\s/g, '');
-                            // Verificar si es base64 puro (caracteres válidos de base64)
+                            const fotoLimpia = fotoTrimmed.replace(/\s/g, '');
+                            
+                            // Verificar si es base64 puro (caracteres válidos de base64: A-Z, a-z, 0-9, +, /, =)
+                            // Base64 típicamente tiene al menos 100 caracteres para una imagen pequeña
                             if (/^[A-Za-z0-9+/=]+$/.test(fotoLimpia) && fotoLimpia.length > 50) {
+                              // Agregar el prefijo data:image/jpeg;base64, para que el navegador pueda renderizarlo
                               fotoUrl = `data:image/jpeg;base64,${fotoLimpia}`;
                             }
                             // Si es una ruta de uploads/, construir la URL completa
-                            else if (foto.startsWith('/uploads/') || foto.includes('uploads/')) {
-                              const { getApiBaseUrl } = require('../services/configService');
+                            else if (fotoTrimmed.startsWith('/uploads/') || fotoTrimmed.includes('uploads/')) {
                               const baseUrl = getApiBaseUrl();
                               
-                              let rutaRelativa = foto;
-                              if (foto.includes('uploads/') && !foto.startsWith('/uploads/')) {
-                                const indiceUploads = foto.indexOf('uploads/');
-                                rutaRelativa = `/${foto.substring(indiceUploads)}`;
+                              let rutaRelativa = fotoTrimmed;
+                              if (fotoTrimmed.includes('uploads/') && !fotoTrimmed.startsWith('/uploads/')) {
+                                const indiceUploads = fotoTrimmed.indexOf('uploads/');
+                                rutaRelativa = `/${fotoTrimmed.substring(indiceUploads)}`;
                               }
                               
                               const partes = rutaRelativa.split('/');
@@ -1238,9 +1264,8 @@ const ReporteGComensales = () => {
                             }
                             // Si es solo un nombre de archivo o ruta relativa, construir la URL completa
                             else {
-                              const { getApiBaseUrl } = require('../services/configService');
                               const baseUrl = getApiBaseUrl();
-                              const rutaNormalizada = foto.startsWith('/') ? foto : `/${foto}`;
+                              const rutaNormalizada = fotoTrimmed.startsWith('/') ? fotoTrimmed : `/${fotoTrimmed}`;
                               fotoUrl = `${baseUrl}${rutaNormalizada}`;
                             }
                           }
@@ -1314,11 +1339,40 @@ const ReporteGComensales = () => {
 
               {/* Sección 5: Tabla de comandas */}
               <div className="form-section" style={{ marginBottom: '2rem' }}>
-                <div className="page-title-bar" style={{ marginBottom: '1.5rem', borderRadius: '0.5rem 0.5rem 0 0' }}>
-                  <h3 style={{ margin: 0, padding: '0.75rem 1.5rem' }}>
+                <div className="page-title-bar" style={{ marginBottom: '1.5rem', borderRadius: '0.5rem 0.5rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0, padding: '0.75rem 1.5rem', flex: 1 }}>
                     <i className="fa fa-utensils mr-2" aria-hidden="true"></i>
                     Historial de Pedidos ({formatearFecha(formData.fechaDesde)} - {formatearFecha(formData.fechaHasta)})
                   </h3>
+                  {reporte.comandas && reporte.comandas.length > 0 && (
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={handleExportarPDF}
+                      style={{
+                        backgroundColor: '#dc3545',
+                        border: 'none',
+                        color: 'white',
+                        padding: '0.5rem 1rem',
+                        fontSize: '1.25rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '0.25rem',
+                        marginRight: '1rem'
+                      }}
+                      title="Exportar reporte a PDF"
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#c82333';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = '#dc3545';
+                      }}
+                    >
+                      <i className="fa fa-file-pdf"></i>
+                    </button>
+                  )}
                 </div>
                 <div className="form-section-content" style={{ padding: '1.5rem' }}>
                   {isCargandoHistorial ? (
@@ -1347,7 +1401,7 @@ const ReporteGComensales = () => {
                               <tr key={index}>
                                 <td>{formatearFechaHora(pedido.fecha || pedido.Fecha || pedido.fechaPedido)}</td>
                                 <td>{pedido.npedido || pedido.Npedido || '-'}</td>
-                                <td>{pedido.plato || pedido.descripcionPlato || pedido.platoDescripcion || 'N/A'}</td>
+                                <td>{pedido.descripcionPlato || pedido.plato || pedido.platoDescripcion || 'N/A'}</td>
                                 <td>{pedido.turnoNombre || 'N/A'}</td>
                                 <td>
                                   {obtenerEstadoBadge(pedido.estado)}

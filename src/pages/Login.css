@@ -88,7 +88,7 @@
   position: absolute;
   height: 220px;
   width: 220px;
-  top: -70px;
+  top: -50px;
   left: 50%;
   transform: translateX(-50%);
   border-radius: 50%;
@@ -125,7 +125,7 @@
 .welcome-title {
   text-align: center;
   margin-bottom: 2rem;
-  margin-top: 2.5rem;
+  margin-top: 3.5rem;
 }
 
 .welcome-title h4 {
@@ -425,7 +425,7 @@
   .brand_logo_container {
     height: 200px;
     width: 200px;
-    top: -60px;
+    top: -40px;
     padding: 18px;
   }
 
@@ -534,7 +534,7 @@
   .brand_logo_container {
     height: 160px;
     width: 160px;
-    top: -40px;
+    top: -20px;
     padding: 14px;
     border-width: 5px;
   }
@@ -599,7 +599,7 @@
   .brand_logo_container {
     height: 180px;
     width: 180px;
-    top: -50px;
+    top: -30px;
     padding: 16px;
   }
 
@@ -639,7 +639,7 @@
   .brand_logo_container {
     height: 160px;
     width: 160px;
-    top: -40px;
+    top: -20px;
     padding: 14px;
   }
 
