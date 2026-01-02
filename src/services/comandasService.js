@@ -198,8 +198,8 @@ export const comandasService = {
 
   /**
    * Devuelve un pedido
-   * POST /api/comanda/devolver
-   * Usa el DTO ComandaAccionDto con Npedido
+   * PUT /api/comanda/{npedido}/devolver
+   * Usa el DTO ComandaAccionDto con Npedido en el body
    */
   devolverPedido: async (npedido) => {
     const baseUrl = getApiBaseUrl();
@@ -213,11 +213,12 @@ export const comandasService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
+    const npedidoInt = parseInt(npedido);
     const dto = {
-      Npedido: parseInt(npedido),
+      Npedido: npedidoInt,
     };
     
-    const response = await api.post(`${baseUrl}/api/comanda/devolver`, dto, {
+    const response = await api.put(`${baseUrl}/api/comanda/${npedidoInt}/devolver`, dto, {
       headers,
     });
     
@@ -227,8 +228,8 @@ export const comandasService = {
 
   /**
    * Recibe un pedido
-   * PUT /api/comanda/recibir
-   * Usa el DTO ComandaAccionDto con Npedido
+   * PUT /api/comanda/{npedido}/recibir
+   * El npedido va en la ruta, no en el body
    */
   recibirPedido: async (npedido) => {
     const baseUrl = getApiBaseUrl();
@@ -242,11 +243,9 @@ export const comandasService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    const dto = {
-      Npedido: parseInt(npedido),
-    };
+    const npedidoInt = parseInt(npedido);
     
-    const response = await api.put(`${baseUrl}/api/comanda/recibir`, dto, {
+    const response = await api.put(`${baseUrl}/api/comanda/${npedidoInt}/recibir`, null, {
       headers,
     });
     

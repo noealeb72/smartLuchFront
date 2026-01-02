@@ -49,6 +49,9 @@ const Despacho = () => {
       // Llamar al endpoint /api/comanda/lista con fechaDesde y fechaHasta igual a hoy
       const data = await apiService.getListaComandas(1, 1000, fechaHoy, fechaHoy);
       
+      // Mostrar en log lo que devuelve la API de despacho
+      console.log('[Despacho] 📥 Respuesta completa de /api/comanda/lista:', JSON.stringify(data, null, 2));
+      
       // Normalizar la respuesta (puede venir como array directo o dentro de un objeto con items/data)
       const pedidosArray = Array.isArray(data) 
         ? data 
@@ -551,12 +554,12 @@ const Despacho = () => {
                     const apellido = row.user_lastName || row.userLastName || row.apellido || '';
                     const nombreCompleto = `${nombre} ${apellido}`.trim() || '-';
                     
-                    // Obtener la foto del usuario - priorizar FotoComensal que viene con prefijo data:
-                    const foto = row.FotoComensal || row.fotoComensal || row.user_foto || row.userFoto || row.foto || row.UsuarioFoto;
+                    // Obtener la foto del usuario - priorizar Foto que viene con prefijo data:image/jpeg;base64,
+                    const foto = row.Foto || row.foto || row.FotoComensal || row.fotoComensal || row.user_foto || row.userFoto || row.UsuarioFoto;
                     let fotoUrl = null;
                     
                     if (foto && foto.trim() !== '') {
-                      // Si ya tiene el prefijo data:, usarlo directamente (FotoComensal viene así)
+                      // Si ya tiene el prefijo data:, usarlo directamente
                       if (foto.startsWith('data:')) {
                         fotoUrl = foto;
                       }
@@ -564,42 +567,48 @@ const Despacho = () => {
                       else if (foto.startsWith('http://') || foto.startsWith('https://')) {
                         fotoUrl = foto;
                       }
-                      // Si es base64 puro (sin prefijo), agregar el prefijo
-                      else if (typeof foto === 'string' && !foto.startsWith('/') && !foto.includes('uploads/') && /^[A-Za-z0-9+/=]+$/.test(foto)) {
-                        fotoUrl = `data:image/jpeg;base64,${foto}`;
-                      }
-                      // Si es una ruta de uploads/, construir la URL completa
-                      else if (foto.startsWith('/uploads/') || foto.includes('uploads/')) {
-                        const baseUrl = getApiBaseUrl();
-                        let rutaRelativa = foto;
-                        if (foto.includes('uploads/') && !foto.startsWith('/uploads/')) {
-                          const indiceUploads = foto.indexOf('uploads/');
-                          rutaRelativa = `/${foto.substring(indiceUploads)}`;
+                      // Si es base64 puro (sin prefijo), agregar el prefijo data:image/jpeg;base64,
+                      // Verificar si parece ser base64: solo caracteres alfanuméricos, +, /, = y posiblemente espacios/saltos de línea
+                      else if (typeof foto === 'string') {
+                        // Limpiar posibles espacios y saltos de línea
+                        const fotoLimpia = foto.trim().replace(/\s/g, '');
+                        // Verificar si es base64 puro (caracteres válidos de base64)
+                        if (/^[A-Za-z0-9+/=]+$/.test(fotoLimpia) && fotoLimpia.length > 50) {
+                          fotoUrl = `data:image/jpeg;base64,${fotoLimpia}`;
                         }
-                        const partes = rutaRelativa.split('/');
-                        let nombreArchivo = partes.pop();
-                        const rutaBase = partes.join('/');
-                        if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
-                          try {
-                            nombreArchivo = decodeURIComponent(nombreArchivo);
-                          } catch (e) {}
+                        // Si es una ruta de uploads/, construir la URL completa
+                        else if (foto.startsWith('/uploads/') || foto.includes('uploads/')) {
+                          const baseUrl = getApiBaseUrl();
+                          let rutaRelativa = foto;
+                          if (foto.includes('uploads/') && !foto.startsWith('/uploads/')) {
+                            const indiceUploads = foto.indexOf('uploads/');
+                            rutaRelativa = `/${foto.substring(indiceUploads)}`;
+                          }
+                          const partes = rutaRelativa.split('/');
+                          let nombreArchivo = partes.pop();
+                          const rutaBase = partes.join('/');
+                          if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
+                            try {
+                              nombreArchivo = decodeURIComponent(nombreArchivo);
+                            } catch (e) {}
+                          }
+                          if (nombreArchivo.includes(' ') || /[^a-zA-Z0-9._-]/.test(nombreArchivo)) {
+                            nombreArchivo = encodeURIComponent(nombreArchivo);
+                          }
+                          fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivo}`;
                         }
-                        if (nombreArchivo.includes(' ') || /[^a-zA-Z0-9._-]/.test(nombreArchivo)) {
-                          nombreArchivo = encodeURIComponent(nombreArchivo);
+                        // Si es solo un nombre de archivo o ruta relativa, construir la URL completa
+                        else {
+                          const baseUrl = getApiBaseUrl();
+                          const rutaNormalizada = foto.startsWith('/') ? foto : `/${foto}`;
+                          fotoUrl = `${baseUrl}${rutaNormalizada}`;
                         }
-                        fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivo}`;
-                      }
-                      // Si es solo un nombre de archivo o ruta relativa, construir la URL completa
-                      else {
-                        const baseUrl = getApiBaseUrl();
-                        const rutaNormalizada = foto.startsWith('/') ? foto : `/${foto}`;
-                        fotoUrl = `${baseUrl}${rutaNormalizada}`;
                       }
                     }
                     
                     return (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {fotoUrl && (
+                        {fotoUrl ? (
                           <img
                             src={fotoUrl}
                             alt={nombreCompleto}
@@ -609,13 +618,14 @@ const Despacho = () => {
                               borderRadius: '50%',
                               objectFit: 'cover',
                               flexShrink: 0,
+                              border: '1px solid #dee2e6',
                             }}
                             onError={(e) => {
                               e.target.style.display = 'none';
                             }}
                           />
-                        )}
-                        <span>{nombreCompleto}</span>
+                        ) : null}
+                        <span style={{ flex: 1 }}>{nombreCompleto}</span>
                       </div>
                     );
                   },
@@ -823,8 +833,8 @@ const Despacho = () => {
                   </div>
                   <div className="col-4 pl-0 mx-auto mt-5">
                     {(() => {
-                      // Priorizar FotoComensal que viene con prefijo data:
-                      const foto = pedidoSeleccionado?.FotoComensal || pedidoSeleccionado?.fotoComensal || pedidoSeleccionado?.user_foto || pedidoSeleccionado?.userFoto || pedidoSeleccionado?.foto || pedidoSeleccionado?.UsuarioFoto;
+                      // Priorizar Foto que viene con prefijo data:image/jpeg;base64,
+                      const foto = pedidoSeleccionado?.Foto || pedidoSeleccionado?.foto || pedidoSeleccionado?.FotoComensal || pedidoSeleccionado?.fotoComensal || pedidoSeleccionado?.user_foto || pedidoSeleccionado?.userFoto || pedidoSeleccionado?.UsuarioFoto;
                       
                       let fotoUrl = null;
                       
@@ -837,48 +847,53 @@ const Despacho = () => {
                         else if (foto.startsWith('http://') || foto.startsWith('https://')) {
                           fotoUrl = foto;
                         }
-                        // Si es base64 puro (sin prefijo), agregar el prefijo
-                        // Verificar si parece ser base64 (caracteres alfanuméricos, +, /, =)
-                        else if (typeof foto === 'string' && !foto.startsWith('/') && !foto.includes('uploads/') && /^[A-Za-z0-9+/=]+$/.test(foto)) {
-                          fotoUrl = `data:image/jpeg;base64,${foto}`;
-                        }
-                        // Si es una ruta de uploads/, construir la URL completa
-                        else if (foto.startsWith('/uploads/') || foto.includes('uploads/')) {
-                          const baseUrl = getApiBaseUrl();
-                          
-                          // Si contiene 'uploads/' pero no empieza con '/', extraer la parte relativa
-                          let rutaRelativa = foto;
-                          if (foto.includes('uploads/') && !foto.startsWith('/uploads/')) {
-                            const indiceUploads = foto.indexOf('uploads/');
-                            rutaRelativa = `/${foto.substring(indiceUploads)}`;
+                        // Si es base64 puro (sin prefijo), agregar el prefijo data:image/jpeg;base64,
+                        // Verificar si parece ser base64: solo caracteres alfanuméricos, +, /, = y posiblemente espacios/saltos de línea
+                        else if (typeof foto === 'string') {
+                          // Limpiar posibles espacios y saltos de línea
+                          const fotoLimpia = foto.trim().replace(/\s/g, '');
+                          // Verificar si es base64 puro (caracteres válidos de base64)
+                          if (/^[A-Za-z0-9+/=]+$/.test(fotoLimpia) && fotoLimpia.length > 50) {
+                            fotoUrl = `data:image/jpeg;base64,${fotoLimpia}`;
                           }
-                          
-                          // Decodificar primero para obtener el nombre original, luego codificar solo si es necesario
-                          const partes = rutaRelativa.split('/');
-                          let nombreArchivo = partes.pop();
-                          const rutaBase = partes.join('/');
-                          
-                          // Si el nombre ya está codificado (contiene % pero no espacios), decodificarlo primero
-                          if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
-                            try {
-                              nombreArchivo = decodeURIComponent(nombreArchivo);
-                            } catch (e) {
-                              // Error al decodificar
+                          // Si es una ruta de uploads/, construir la URL completa
+                          else if (foto.startsWith('/uploads/') || foto.includes('uploads/')) {
+                            const baseUrl = getApiBaseUrl();
+                            
+                            // Si contiene 'uploads/' pero no empieza con '/', extraer la parte relativa
+                            let rutaRelativa = foto;
+                            if (foto.includes('uploads/') && !foto.startsWith('/uploads/')) {
+                              const indiceUploads = foto.indexOf('uploads/');
+                              rutaRelativa = `/${foto.substring(indiceUploads)}`;
                             }
+                            
+                            // Decodificar primero para obtener el nombre original, luego codificar solo si es necesario
+                            const partes = rutaRelativa.split('/');
+                            let nombreArchivo = partes.pop();
+                            const rutaBase = partes.join('/');
+                            
+                            // Si el nombre ya está codificado (contiene % pero no espacios), decodificarlo primero
+                            if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
+                              try {
+                                nombreArchivo = decodeURIComponent(nombreArchivo);
+                              } catch (e) {
+                                // Error al decodificar
+                              }
+                            }
+                            
+                            // Codificar solo si hay espacios o caracteres especiales
+                            if (nombreArchivo.includes(' ') || /[^a-zA-Z0-9._-]/.test(nombreArchivo)) {
+                              nombreArchivo = encodeURIComponent(nombreArchivo);
+                            }
+                            
+                            fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivo}`;
                           }
-                          
-                          // Codificar solo si hay espacios o caracteres especiales
-                          if (nombreArchivo.includes(' ') || /[^a-zA-Z0-9._-]/.test(nombreArchivo)) {
-                            nombreArchivo = encodeURIComponent(nombreArchivo);
+                          // Si es solo un nombre de archivo o ruta relativa, construir la URL completa
+                          else {
+                            const baseUrl = getApiBaseUrl();
+                            const rutaNormalizada = foto.startsWith('/') ? foto : `/${foto}`;
+                            fotoUrl = `${baseUrl}${rutaNormalizada}`;
                           }
-                          
-                          fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivo}`;
-                        }
-                        // Si es solo un nombre de archivo o ruta relativa, construir la URL completa
-                        else {
-                          const baseUrl = getApiBaseUrl();
-                          const rutaNormalizada = foto.startsWith('/') ? foto : `/${foto}`;
-                          fotoUrl = `${baseUrl}${rutaNormalizada}`;
                         }
                       }
                       

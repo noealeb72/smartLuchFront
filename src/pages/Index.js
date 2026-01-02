@@ -745,7 +745,7 @@ const Index = () => {
       const bonificado = !!pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1;
 
       // Construir el DTO según ComandaCreateDto
-      // Npedido: No se envía, el backend lo genera automáticamente
+      // Id y Npedido: No se envían, el backend los genera automáticamente
       // UsuarioId: Se envía como parámetro separado en la URL, no en el DTO
       const comandaDto = {
         PlatoId: parseInt(platoId),
@@ -762,6 +762,7 @@ const Index = () => {
         CentroDeCostoId: parseInt(centroDeCostoId),
         ProyectoId: parseInt(proyectoId),
         JerarquiaId: parseInt(jerarquiaId),
+        PlatoImporte: monto, // Importe del plato (usualmente igual a Monto)
       };
 
       await comandasService.crearPedido(comandaDto, parseInt(usuarioId));
