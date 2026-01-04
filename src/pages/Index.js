@@ -218,6 +218,94 @@ const Index = () => {
     setPedidosVigentes(pedidosHoy);
   }, [pedidosHoy]);
 
+  // Actualización periódica cada 2 segundos usando /api/inicio/web-actualizado
+  useEffect(() => {
+    // Verificar que haya usuario autenticado
+    const token = localStorage.getItem('token');
+    if (!token || token === 'null' || token === 'undefined') {
+      return;
+    }
+
+    const usuarioId = user?.id || usuarioData?.id;
+    if (!usuarioId) {
+      return;
+    }
+
+    // Función para actualizar datos
+    const actualizarDatosPeriodicamente = async () => {
+      // Evitar múltiples llamadas simultáneas
+      if (requestInProgressRef.current) {
+        return;
+      }
+
+      try {
+        // Obtener fecha del día en formato 'YYYY-MM-DD'
+        const hoy = new Date();
+        const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+        
+        // Obtener turnoId si hay un turno seleccionado
+        const turnoId = selectedTurno?.id || selectedTurno?.Id || selectedTurno?.ID || null;
+        
+        // Llamar al endpoint de actualización con la fecha del día
+        const data = await inicioService.getInicioWebActualizado(usuarioId, fechaHoy, turnoId);
+        
+        // Si hay datos, actualizar el contexto
+        if (data && isMountedRef.current) {
+          try {
+            actualizarDatos(data);
+            
+            // Actualizar pedidos vigentes solo si hay cambios
+            const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
+            const nuevosPedidos = Array.isArray(pedidosData) ? pedidosData : [];
+            
+            // Solo actualizar si los datos realmente cambiaron (comparación profunda)
+            setPedidosVigentes(prevPedidos => {
+              if (!prevPedidos || prevPedidos.length !== nuevosPedidos.length) {
+                return nuevosPedidos;
+              }
+              // Comparar por ID/Npedido para evitar actualizaciones innecesarias
+              const prevIds = new Set(prevPedidos.map(p => p?.Id || p?.id || p?.Npedido || p?.npedido).filter(Boolean));
+              const nuevosIds = new Set(nuevosPedidos.map(p => p?.Id || p?.id || p?.Npedido || p?.npedido).filter(Boolean));
+              if (prevIds.size !== nuevosIds.size) {
+                return nuevosPedidos;
+              }
+              for (const id of prevIds) {
+                if (!nuevosIds.has(id)) {
+                  return nuevosPedidos;
+                }
+              }
+              // Si los IDs son iguales, mantener la referencia anterior para evitar re-render
+              return prevPedidos;
+            });
+          } catch (errorActualizar) {
+            // Continuar aunque haya error en actualizarDatos
+          }
+        }
+      } catch (error) {
+        // Silenciar errores de actualización periódica (excepto 401)
+        if (error.response?.status === 401) {
+          // En caso de 401, limpiar y redirigir
+          localStorage.clear();
+          window.location.href = '/login';
+        }
+        // Para otros errores, simplemente ignorar y continuar
+      }
+    };
+
+    // Ejecutar inmediatamente la primera vez
+    actualizarDatosPeriodicamente();
+
+    // Configurar intervalo para ejecutar cada 2 segundos
+    const intervalId = setInterval(() => {
+      actualizarDatosPeriodicamente();
+    }, 2000);
+
+    // Limpiar intervalo al desmontar o cuando cambien las dependencias
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [user?.id, usuarioData?.id, selectedTurno, actualizarDatos]);
+
 
   // Seleccionar primer turno si hay turnos disponibles y no hay uno seleccionado
   useEffect(() => {
@@ -796,8 +884,8 @@ const Index = () => {
           if (!usuarioId) {
             throw new Error('No se encontró el ID del usuario');
           }
-        const data = await inicioService.getInicioWeb(usuarioId);
-        actualizarDatos(data);
+          const data = await inicioService.getInicioWeb(usuarioId);
+          actualizarDatos(data);
           const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
           setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
         } catch (error) {
@@ -928,7 +1016,8 @@ const Index = () => {
         }
 
         const npedidoInt = parseInt(npedido);
-        await comandasService.recibirPedido(npedidoInt);
+        // Enviar la calificación del select al backend
+        await comandasService.recibirPedido(npedidoInt, pedidoCalificacion);
       } else {
         // Para otros estados, usar el método actualizarPedido
         const pedidoId = pedidoSeleccionado.user_Pedido?.id || 
@@ -977,8 +1066,8 @@ const Index = () => {
           if (!usuarioId) {
             throw new Error('No se encontró el ID del usuario');
           }
-        const data = await inicioService.getInicioWeb(usuarioId);
-        actualizarDatos(data);
+          const data = await inicioService.getInicioWeb(usuarioId);
+          actualizarDatos(data);
           const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
           setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
         } catch (error) {
@@ -1006,7 +1095,46 @@ const Index = () => {
     if (turnoSeleccionado) {
       setSelectedTurno(turnoSeleccionado);
       setMenuItems([]); // Limpiar menú anterior mientras carga el nuevo
-      setIsLoading(true);
+      // No mostrar loading para que la actualización sea más suave
+      
+      // Actualizar inmediatamente con el nuevo turnoId
+      const usuarioId = user?.id || usuarioData?.id;
+      if (usuarioId) {
+        try {
+          // Obtener fecha del día en formato 'YYYY-MM-DD'
+          const hoy = new Date();
+          const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+          
+          const data = await inicioService.getInicioWebActualizado(usuarioId, fechaHoy, turnoId);
+          if (data) {
+            actualizarDatos(data);
+            const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
+            const nuevosPedidos = Array.isArray(pedidosData) ? pedidosData : [];
+            
+            // Solo actualizar si los datos realmente cambiaron (comparación profunda)
+            setPedidosVigentes(prevPedidos => {
+              if (!prevPedidos || prevPedidos.length !== nuevosPedidos.length) {
+                return nuevosPedidos;
+              }
+              // Comparar por ID/Npedido para evitar actualizaciones innecesarias
+              const prevIds = new Set(prevPedidos.map(p => p?.Id || p?.id || p?.Npedido || p?.npedido).filter(Boolean));
+              const nuevosIds = new Set(nuevosPedidos.map(p => p?.Id || p?.id || p?.Npedido || p?.npedido).filter(Boolean));
+              if (prevIds.size !== nuevosIds.size) {
+                return nuevosPedidos;
+              }
+              for (const id of prevIds) {
+                if (!nuevosIds.has(id)) {
+                  return nuevosPedidos;
+                }
+              }
+              // Si los IDs son iguales, mantener la referencia anterior para evitar re-render
+              return prevPedidos;
+            });
+          }
+        } catch (error) {
+          // Silenciar error, continuar con la carga del menú
+        }
+      }
       
       try {
         // Siempre llamar a getMenuByTurno (por-turno)
@@ -1129,17 +1257,11 @@ const Index = () => {
         }
       } catch (error) {
         setMenuItems([]);
-        if (!error.redirectToLogin) {
-          Swal.fire({
-            title: 'Error',
-            text: error.message || 'No se pudo cargar el menú del turno seleccionado',
-            icon: 'error',
-            confirmButtonText: 'Aceptar',
-            confirmButtonColor: '#F34949',
-          });
+        // Silenciar error para que la actualización sea más suave, solo mostrar si es crítico
+        if (!error.redirectToLogin && error.message && !error.message.includes('401')) {
+          // Solo mostrar error si no es de autenticación
+          console.error('Error al cargar menú:', error);
         }
-      } finally {
-        setIsLoading(false);
       }
     }
   }, [turnos, usuarioData, user, defaultImage]);
@@ -1181,6 +1303,11 @@ const Index = () => {
                     <h3>
                       Bienvenido {usuarioNombre || usuarioData?.nombre || user?.nombre || ''} {usuarioApellido || usuarioData?.apellido || user?.apellido || ''}
                     </h3>
+                    {(usuarioData?.planNutricionalNombre || usuarioData?.PlanNutricionalNombre || user?.planNutricionalNombre || user?.plannutricional) && (
+                      <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
+                        Plan Nutricional: {usuarioData?.planNutricionalNombre || usuarioData?.PlanNutricionalNombre || user?.planNutricionalNombre || user?.plannutricional || '-'}
+                      </h5>
+                    )}
                     {usuarioData?.bonificaciones !== undefined && usuarioData?.bonificaciones !== null && parseInt(usuarioData.bonificaciones) > 0 && (
                       <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
                         Bonificaciones por día: {usuarioData.bonificaciones}
@@ -1243,6 +1370,12 @@ const Index = () => {
                     <h3>
                       <i className="lnr lnr-user"></i> Bienvenido {usuarioData?.nombre || user?.nombre || ''} {usuarioData?.apellido || user?.apellido || ''}
                     </h3>
+                    {(usuarioData?.planNutricionalNombre || usuarioData?.PlanNutricionalNombre || user?.planNutricionalNombre || user?.plannutricional) && (
+                      <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
+                        <i className="lnr lnr-heart"></i>&nbsp;&nbsp;
+                        Plan Nutricional: {usuarioData?.planNutricionalNombre || usuarioData?.PlanNutricionalNombre || user?.planNutricionalNombre || user?.plannutricional || '-'}
+                      </h5>
+                    )}
                     {usuarioData?.bonificaciones !== undefined && usuarioData?.bonificaciones !== null && usuarioData?.bonificaciones !== '' && parseInt(usuarioData.bonificaciones) > 0 && (
                       <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
                         <i className="lnr lnr-gift"></i>&nbsp;&nbsp;
@@ -1328,7 +1461,7 @@ const Index = () => {
                     return pedidosFiltrados.length === 0 ? (
                     <div className="card mt-2 pl-2" role="status" aria-live="polite">
                       <div className="card-body text-center py-4">
-                        <h5 className="text-muted">No hay pedidos vigentes</h5>
+                        <h5 className="text-muted" style={{ fontWeight: 'bold' }}>No hay pedidos vigentes</h5>
                         <p className="text-muted mb-0">No tienes pedidos pendientes de recibir o cancelar en este momento.</p>
                       </div>
                     </div>

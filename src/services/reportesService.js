@@ -94,7 +94,8 @@ export const reportesService = {
     proyectoId = null,
     plantaId = null,
     jerarquiaId = null,
-    centrodecostoId = null
+    centrodecostoId = null,
+    estado = null
   ) => {
     const baseUrl = getApiBaseUrl();
     
@@ -146,6 +147,11 @@ export const reportesService = {
     
     if (centrodecostoId !== null && centrodecostoId !== undefined && centrodecostoId !== '' && !isNaN(parseInt(centrodecostoId))) {
       params.centrodecostoId = parseInt(centrodecostoId);
+    }
+    
+    // Agregar estado si está presente
+    if (estado !== null && estado !== undefined && estado !== '') {
+      params.estado = estado;
     }
     
     console.log('📤 [reportesService] Llamando a /api/reporte/General con parámetros:', params);

@@ -332,28 +332,48 @@ h3, h4, h5, h6, .h3, .h4, .h5, .h6 {
 /* Excluir el login de estos estilos globales */
 .form-control:not(.login-container .form-control):not(.user_card .form-control),
 .form-select:not(.login-container .form-select):not(.user_card .form-select),
-input:not(.login-container input):not(.user_card input),
+input:not(.login-container input):not(.user_card input):not([type="checkbox"]):not([type="radio"]),
 textarea:not(.login-container textarea):not(.user_card textarea),
 select:not(.login-container select):not(.user_card select) {
   font-family: var(--smart-font-primary) !important;
   color: var(--smart-gray-dark) !important;
+  border: 1px solid var(--smart-gray-light) !important;
   border-color: var(--smart-gray-light) !important;
   background-color: var(--smart-white) !important;
   box-sizing: border-box !important;
   overflow: visible !important;
   min-width: 0 !important;
+  padding: 0.375rem 0.75rem !important;
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  border-radius: 0.25rem !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+  display: block !important;
+  width: 100% !important;
 }
 
 /* Asegurar que los select no se corten (excluir login) */
 select.form-control:not(.login-container select):not(.user_card select),
 select:not(.login-container select):not(.user_card select) {
   padding-right: 2.5rem !important;
+  padding: 0.375rem 0.75rem !important;
+  padding-right: 2.5rem !important;
   appearance: auto !important;
   -webkit-appearance: menulist !important;
   -moz-appearance: menulist !important;
   background-image: none !important;
+  background-color: var(--smart-white) !important;
   overflow: visible !important;
   text-overflow: ellipsis !important;
+  min-height: calc(1.5em + 0.75rem + 2px) !important;
+  height: auto !important;
+  font-family: var(--smart-font-primary) !important;
+  color: var(--smart-gray-dark) !important;
+  border: 1px solid var(--smart-gray-light) !important;
+  border-radius: 0.25rem !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  width: 100% !important;
 }
 
 /* Excluir el login de estos estilos de focus */

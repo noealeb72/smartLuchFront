@@ -97,3 +97,23 @@ select.form-control {
   box-sizing: border-box !important;
 }
 
+/* Transiciones suaves para evitar parpadeo */
+#gtco-welcome,
+.bienvenida,
+.card,
+.menu-item-container {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+/* Evitar reflow/repaint innecesarios */
+.card {
+  will-change: auto;
+  transform: translateZ(0);
+}
+
+/* Optimización para listas */
+.menu-items-list,
+.pedidos-vigentes-list {
+  contain: layout style paint;
+}
+

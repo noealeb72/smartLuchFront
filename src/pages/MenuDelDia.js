@@ -46,6 +46,7 @@ const MenuDelDia = () => {
     centroCosto: true,
     planta: true,
     cantidad: true,
+    comandadas: true,
     fecha: false,
     estado: false,
   });
@@ -629,6 +630,12 @@ const MenuDelDia = () => {
       datos.push(cantidad.toString());
     }
 
+    if (columnas.comandadas) {
+      headers.push('Asignados');
+      const comandadas = menu.Comandas || menu.comandas || menu.comandadas || 0;
+      datos.push(comandadas.toString());
+    }
+
     if (columnas.fecha) {
       headers.push('Fecha');
       const fechaMenu = menu.fecha 
@@ -719,6 +726,7 @@ const MenuDelDia = () => {
         incluirJerarquia: cols.jerarquia || false,
         incluirCentroCosto: cols.centroCosto || false,
         incluirCantidad: cols.cantidad || false,
+        incluirComandadas: cols.comandadas || false,
         incluirEstado: cols.estado || false,
       };
 
@@ -799,6 +807,7 @@ const MenuDelDia = () => {
         Jerarquia: 'Jerarquía',
         CentroCosto: 'Centro de Costo',
         Cantidad: 'Cantidad',
+        Comandadas: 'Asignados',
         Estado: 'Estado',
         // También soportar camelCase por si acaso
         plato: 'Plato',
@@ -810,6 +819,7 @@ const MenuDelDia = () => {
         jerarquia: 'Jerarquía',
         centroCosto: 'Centro de Costo',
         cantidad: 'Cantidad',
+        comandadas: 'Asignados',
         estado: 'Estado',
       };
 
@@ -891,6 +901,7 @@ const MenuDelDia = () => {
         incluirJerarquia: cols.jerarquia || false,
         incluirCentroCosto: cols.centroCosto || false,
         incluirCantidad: cols.cantidad || false,
+        incluirComandadas: cols.comandadas || false,
         incluirEstado: cols.estado || false,
       };
 
@@ -940,6 +951,7 @@ const MenuDelDia = () => {
         Jerarquia: 'Jerarquía',
         CentroCosto: 'Centro de Costo',
         Cantidad: 'Cantidad',
+        Comandadas: 'Asignados',
         Estado: 'Estado',
         // También soportar camelCase por si acaso
         plato: 'Plato',
@@ -951,6 +963,7 @@ const MenuDelDia = () => {
         jerarquia: 'Jerarquía',
         centroCosto: 'Centro de Costo',
         cantidad: 'Cantidad',
+        comandadas: 'Asignados',
         estado: 'Estado',
       };
 
@@ -1890,7 +1903,46 @@ const MenuDelDia = () => {
                 key: 'cantidad',
                 field: 'cantidad',
                 label: 'Cantidad',
-                render: (v, row) => row.cantidad || row.Cantidad || row.Cant || 0,
+                render: (v, row) => {
+                  const cantidad = row.cantidad || row.Cantidad || row.Cant || 0;
+                  const comandadas = row.Comandas || row.comandas || row.comandadas || 0;
+                  const disponible = Math.max(0, cantidad - comandadas);
+                  return (
+                    <span>
+                      <span 
+                        style={{ 
+                          position: 'relative',
+                          color: '#6c757d', 
+                          marginRight: '8px',
+                          display: 'inline-block'
+                        }}
+                      >
+                        {cantidad}
+                        <span
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: 0,
+                            right: 0,
+                            height: '2px',
+                            background: '#6c757d',
+                            transform: 'rotate(-15deg)',
+                            transformOrigin: 'center',
+                          }}
+                        />
+                      </span>
+                      <span style={{ fontWeight: 'bold', color: '#28a745' }}>
+                        {disponible}
+                      </span>
+                    </span>
+                  );
+                },
+              },
+              {
+                key: 'comandadas',
+                field: 'comandadas',
+                label: 'Asignados',
+                render: (v, row) => row.Comandas || row.comandas || row.comandadas || 0,
               },
             ]}
             data={menus}
@@ -2058,6 +2110,7 @@ const MenuDelDia = () => {
                       centroCosto: 'Centro de Costo',
                       planta: 'Planta',
                       cantidad: 'Cantidad',
+                      comandadas: 'Asignados',
                       fecha: 'Fecha',
                       estado: 'Estado',
                     };

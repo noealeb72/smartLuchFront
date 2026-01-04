@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import './Usuarios.css';
+import '../styles/smartstyle.css';
 
 const ReporteGGestion = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +35,7 @@ const ReporteGGestion = () => {
     proyectoId: '',
     plantaId: '',
     jerarquiaId: '',
+    estado: '',
   });
 
   // Cargar catálogos desde el backend
@@ -356,6 +358,8 @@ const ReporteGGestion = () => {
         const estado = item.estado || item.Estado || '-';
         const bonificado = item.bonificado || item.Bonificado || false;
         const costo = item.costo || item.Costo || item.monto || item.Monto || item.importe || item.Importe || 0;
+        const bonificacion = bonificado ? costo : 0;
+        const importeBonificado = costo - bonificacion;
 
         return [
           formatearFecha(fecha),
@@ -363,18 +367,19 @@ const ReporteGGestion = () => {
           centroCosto,
           proyecto,
           jerarquia,
-          bonificado ? 'Sí' : 'No',
           legajo,
           nombreCompleto,
           plato,
           obtenerTextoEstado(estado),
-          formatearImporte(costo)
+          formatearImporte(costo),
+          formatearImporte(bonificacion),
+          formatearImporte(importeBonificado)
         ];
       });
       
       doc.autoTable({
         startY: yPos,
-        head: [['Fecha', 'Planta', 'CC', 'Proyecto', 'Perfil', 'Bonificación', 'Legajo', 'Nombre completo', 'Plato', 'Estado', 'Costo']],
+        head: [['Fecha', 'Planta', 'CC', 'Proyecto', 'Perfil', 'Legajo', 'Nombre completo', 'Plato', 'Estado', 'Costo', 'Bonificación', 'Importe bonificado']],
         body: tableData,
         styles: { fontSize: 7 },
         headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
@@ -427,6 +432,7 @@ const ReporteGGestion = () => {
         plantaId: formData.plantaId || null,
         jerarquiaId: formData.jerarquiaId || null,
         centrodecostoId: formData.centroDeCostoId || null, // Mapear centroDeCostoId a centrodecostoId
+        estado: formData.estado || null,
       };
 
       console.log('📤 [ReporteGGestion] Llamando a getReporteGeneral con parámetros:', params);
@@ -438,7 +444,8 @@ const ReporteGGestion = () => {
         params.proyectoId,
         params.plantaId,
         params.jerarquiaId,
-        params.centrodecostoId
+        params.centrodecostoId,
+        params.estado
       );
 
       console.log('✅ [ReporteGGestion] Reporte recibido:', resultado);
@@ -874,44 +881,65 @@ const ReporteGGestion = () => {
                       </select>
                     </div>
                   </div>
-                </div>
-                
-                <div className="row mt-3" style={{ marginLeft: 0, marginRight: 0 }}>
-                  {/* Tercera fila - Botón Buscar */}
-                  <div className="col-md-12 d-flex justify-content-end">
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={handleBuscar}
-                      disabled={isBuscando || isLoading}
-                      style={{
-                        backgroundColor: '#6c757d',
-                        borderColor: '#6c757d',
-                        color: 'white',
-                        height: 'calc(1.5em + 0.75rem + 2px)',
-                        minHeight: 'calc(1.5em + 0.75rem + 2px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.85rem',
-                        padding: '0.375rem 0.75rem',
-                        whiteSpace: 'nowrap',
-                        width: 'auto',
-                        minWidth: '120px'
-                      }}
-                    >
-                      {isBuscando ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
-                          Buscando...
-                        </>
-                      ) : (
-                        <>
-                          <i className="fa fa-search mr-2"></i>
-                          Buscar
-                        </>
-                      )}
-                    </button>
+                  <div className="col-md-3">
+                    <div className="form-group">
+                      <label htmlFor="estado">
+                        Estado
+                      </label>
+                      <select
+                        className="form-control"
+                        id="estado"
+                        name="estado"
+                        value={formData.estado || ''}
+                        onChange={handleInputChange}
+                        disabled={isLoading}
+                      >
+                        <option value="">-- Todos --</option>
+                        <option value="P">Pendiente</option>
+                        <option value="R">Recibido</option>
+                        <option value="D">Devuelto</option>
+                        <option value="C">Cancelado</option>
+                        <option value="E">En Aceptación</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="col-md-3 ml-auto">
+                    <div className="form-group">
+                      <label style={{ visibility: 'hidden' }}>Buscar</label>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={handleBuscar}
+                        disabled={isBuscando || isLoading}
+                        style={{
+                          backgroundColor: '#6c757d',
+                          borderColor: '#6c757d',
+                          color: 'white',
+                          height: '38px',
+                          minHeight: '38px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.85rem',
+                          padding: '0.375rem 0.75rem',
+                          whiteSpace: 'nowrap',
+                          width: '100%',
+                          minWidth: '120px'
+                        }}
+                      >
+                        {isBuscando ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
+                            Buscando...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fa fa-search mr-2"></i>
+                            Buscar
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -934,16 +962,19 @@ const ReporteGGestion = () => {
                   const cantidadDevueltos = detalles.filter(item => 
                     (item.estado === 'D' || item.Estado === 'D' || item.estado === 'Devuelto' || item.Estado === 'Devuelto')
                   ).length;
-                  const costoTotal = detalles.reduce((sum, item) => {
-                    const costo = parseFloat(item.costo || item.Costo || item.monto || item.Monto || item.importe || item.Importe || 0);
-                    return sum + (isNaN(costo) ? 0 : costo);
-                  }, 0);
-                  const calificaciones = detalles
-                    .map(item => parseFloat(item.calificacion || item.Calificacion || 0))
-                    .filter(cal => !isNaN(cal) && cal > 0);
-                  const promedioCalificacion = calificaciones.length > 0
-                    ? (calificaciones.reduce((sum, cal) => sum + cal, 0) / calificaciones.length).toFixed(1)
-                    : '0';
+                  const cantidadRecibidos = detalles.filter(item => {
+                    const estado = (item.estado || item.Estado || '').toString().toUpperCase();
+                    return estado === 'R';
+                  }).length;
+                  const costoTotal = detalles
+                    .filter(item => {
+                      const estado = (item.estado || item.Estado || '').toString().toUpperCase();
+                      return estado === 'R';
+                    })
+                    .reduce((sum, item) => {
+                      const costo = parseFloat(item.costo || item.Costo || item.monto || item.Monto || item.importe || item.Importe || 0);
+                      return sum + (isNaN(costo) ? 0 : costo);
+                    }, 0);
 
                   // Formatear fecha
                   const formatearFecha = (fecha) => {
@@ -1035,9 +1066,9 @@ const ReporteGGestion = () => {
                           </div>
                           <div style={{ textAlign: 'center', minWidth: '150px' }}>
                             <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#28a745', marginBottom: '0.5rem' }}>
-                              {promedioCalificacion}
+                              {cantidadRecibidos}
                             </div>
-                            <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Promedio de calificación</div>
+                            <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Cantidad recibidos</div>
                           </div>
                           <div style={{ textAlign: 'center', minWidth: '150px' }}>
                             <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ffc107', marginBottom: '0.5rem' }}>
@@ -1113,12 +1144,13 @@ const ReporteGGestion = () => {
                                   <th style={{ whiteSpace: 'nowrap' }}>CC</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Proyecto</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Perfil</th>
-                                  <th style={{ whiteSpace: 'nowrap' }}>Bonificación</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Legajo</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Nombre completo</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Plato</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Estado</th>
                                   <th style={{ whiteSpace: 'nowrap' }}>Costo</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Bonificación</th>
+                                  <th style={{ whiteSpace: 'nowrap' }}>Importe bonificado</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1135,6 +1167,8 @@ const ReporteGGestion = () => {
                                   const estado = item.estado || item.Estado || '-';
                                   const bonificado = item.bonificado || item.Bonificado || false;
                                   const costo = item.costo || item.Costo || item.monto || item.Monto || item.importe || item.Importe || 0;
+                                  const bonificacion = bonificado ? costo : 0;
+                                  const importeBonificado = costo - bonificacion;
 
                                   return (
                                     <tr key={index}>
@@ -1143,12 +1177,13 @@ const ReporteGGestion = () => {
                                       <td>{centroCosto}</td>
                                       <td>{proyecto}</td>
                                       <td>{jerarquia}</td>
-                                      <td style={{ textAlign: 'center' }}>{bonificado ? '✓' : ''}</td>
                                       <td>{legajo}</td>
                                       <td>{nombreCompleto}</td>
                                       <td>{plato}</td>
                                       <td>{obtenerEstadoBadge(estado)}</td>
                                       <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{formatearImporte(costo)}</td>
+                                      <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{formatearImporte(bonificacion)}</td>
+                                      <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{formatearImporte(importeBonificado)}</td>
                                     </tr>
                                   );
                                 })}

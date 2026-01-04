@@ -231,7 +231,7 @@ export const comandasService = {
    * PUT /api/comanda/{npedido}/recibir
    * El npedido va en la ruta, no en el body
    */
-  recibirPedido: async (npedido) => {
+  recibirPedido: async (npedido, calificacion = null) => {
     const baseUrl = getApiBaseUrl();
     const token = localStorage.getItem('token');
     
@@ -245,7 +245,17 @@ export const comandasService = {
     
     const npedidoInt = parseInt(npedido);
     
-    const response = await api.put(`${baseUrl}/api/comanda/${npedidoInt}/recibir`, null, {
+    // Preparar DTO con Npedido y Calificacion si está disponible
+    const dto = {
+      Npedido: npedidoInt
+    };
+    
+    // Agregar calificación si está disponible
+    if (calificacion !== null && calificacion !== undefined) {
+      dto.Calificacion = parseInt(calificacion);
+    }
+    
+    const response = await api.put(`${baseUrl}/api/comanda/${npedidoInt}/recibir`, dto, {
       headers,
     });
     
