@@ -70,25 +70,7 @@ const Login = () => {
       const message = error.message || 'Error de comunicación con el servidor';
       setErrorMsg(message);
       setShowError(true);
-
-      // Mostrar SweetAlert (responsive)
-      Swal.fire({
-        title: '⚠️ Error en el Login',
-        text: message,
-        icon: 'error',
-        iconHtml: '<i class="fas fa-times-circle" style="color: #F34949; font-size: 3rem;"></i>',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
-        width: isMobile ? '90%' : '400px',
-        padding: isMobile ? '1rem' : '1.5rem',
-        allowOutsideClick: true,
-        allowEscapeKey: true,
-        allowEnterKey: true,
-        showCloseButton: false,
-        focusConfirm: true,
-        backdrop: true,
-        timerProgressBar: false,
-      });
+      // No mostrar ningún popup, solo mostrar el error en la página
     }
   };
 
@@ -115,15 +97,20 @@ const Login = () => {
 
             <div className="d-flex justify-content-center form_container">
               <form onSubmit={handleSubmit} noValidate>
-                {showError && (
-                  <span id="error-msg" className="error-msg">
-                    {errorMsg}
-                  </span>
-                )}
-
                 <div className="welcome-title">
                   <h4>Bienvenido</h4>
                   <p>Ingresa tus credenciales para continuar</p>
+                  {showError && (
+                    <p style={{ 
+                      color: '#F34949', 
+                      fontWeight: 600, 
+                      marginTop: '0.5rem', 
+                      fontSize: '0.95rem',
+                      marginBottom: 0
+                    }}>
+                      {errorMsg}
+                    </p>
+                  )}
                 </div>
 
                 <div className="input-group mb-3" style={{ marginBottom: isMobile ? '0.75rem' : '1.25rem' }}>
@@ -160,24 +147,12 @@ const Login = () => {
                     placeholder="Contraseña"
                     autoComplete="current-password"
                     required
-                    style={{ borderLeft: 'none', paddingLeft: '0.75rem' }}
                   />
                   <div className="input-group-append">
                     <button
                       className="btn btn-outline-secondary password-toggle-btn"
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      style={{
-                        borderLeft: 'none',
-                        borderColor: '#ced4da',
-                        backgroundColor: '#fff',
-                        cursor: 'pointer',
-                        padding: '0.85rem 0.75rem',
-                        fontSize: '1rem',
-                        minWidth: '45px',
-                        borderTopRightRadius: '0',
-                        borderBottomRightRadius: '0'
-                      }}
                     >
                       <i className={showPassword ? "fa fa-eye-slash" : "fa fa-eye"}></i>
                     </button>
@@ -197,10 +172,30 @@ const Login = () => {
                   <button
                     type="submit"
                     className="btn login_btn"
-                    disabled={!isFormValid()}
-                    style={{ fontWeight: 600, letterSpacing: '0.5px', borderRadius: '8px' }}
+                    disabled={!isFormValid() || isLoading}
+                    style={{ 
+                      fontWeight: 600, 
+                      letterSpacing: '0.5px', 
+                      borderRadius: '8px',
+                      position: 'relative',
+                      minWidth: '120px'
+                    }}
                   >
-                    Ingresar <i className="fas fa-arrow-right ml-2"></i>
+                    {isLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true" style={{ 
+                          width: '1rem', 
+                          height: '1rem', 
+                          borderWidth: '0.15em',
+                          marginRight: '0.5rem'
+                        }}></span>
+                        Ingresando...
+                      </>
+                    ) : (
+                      <>
+                        Ingresar <i className="fas fa-arrow-right ml-2"></i>
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

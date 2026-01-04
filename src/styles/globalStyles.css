@@ -712,11 +712,28 @@ a:focus {
 /* Asegurar que los select dentro de col-* no se corten */
 [class*="col-"] select,
 [class*="col-"] .form-control,
-[class*="col-"] input {
+[class*="col-"] input:not([type="checkbox"]):not([type="radio"]) {
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
   overflow: visible !important;
+  font-family: var(--smart-font-primary) !important;
+  color: var(--smart-gray-dark) !important;
+  border: 1px solid var(--smart-gray-light) !important;
+  background-color: var(--smart-white) !important;
+  padding: 0.375rem 0.75rem !important;
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  border-radius: 0.25rem !important;
+}
+
+/* Estilos específicos para selects dentro de columnas */
+[class*="col-"] select {
+  padding-right: 2.5rem !important;
+  min-height: calc(1.5em + 0.75rem + 2px) !important;
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+  -moz-appearance: menulist !important;
 }
 
 /* Estilo específico para el input de búsqueda */
@@ -772,5 +789,129 @@ a:focus {
   flex-wrap: nowrap !important;
   align-items: stretch !important;
   margin-left: 0 !important;
+}
+
+/* ============================================
+   ESTILOS FORZADOS PARA INPUTS Y SELECTS
+   Asegurar que siempre se apliquen correctamente
+   ============================================ */
+
+/* Estilos base más específicos para inputs de texto */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea,
+select {
+  font-family: var(--smart-font-primary) !important;
+  color: var(--smart-gray-dark) !important;
+  border: 1px solid var(--smart-gray-light) !important;
+  background-color: var(--smart-white) !important;
+  box-sizing: border-box !important;
+  padding: 0.375rem 0.75rem !important;
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  border-radius: 0.25rem !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+  width: 100% !important;
+  display: block !important;
+}
+
+/* Excluir login y user_card */
+.login-container input[type="text"],
+.login-container input[type="email"],
+.login-container input[type="password"],
+.login-container input[type="number"],
+.login-container input[type="date"],
+.login-container input[type="time"],
+.login-container input[type="datetime-local"],
+.login-container input[type="search"],
+.login-container input[type="tel"],
+.login-container input[type="url"],
+.login-container textarea,
+.login-container select,
+.user_card input[type="text"],
+.user_card input[type="email"],
+.user_card input[type="password"],
+.user_card input[type="number"],
+.user_card input[type="date"],
+.user_card input[type="time"],
+.user_card input[type="datetime-local"],
+.user_card input[type="search"],
+.user_card input[type="tel"],
+.user_card input[type="url"],
+.user_card textarea,
+.user_card select {
+  /* No aplicar estilos forzados aquí */
+}
+
+/* Estilos específicos para selects */
+select:not(.login-container select):not(.user_card select) {
+  padding-right: 2.5rem !important;
+  min-height: calc(1.5em + 0.75rem + 2px) !important;
+  height: auto !important;
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+  -moz-appearance: menulist !important;
+  background-image: none !important;
+  overflow: visible !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Estilos de focus */
+input[type="text"]:focus:not(.login-container input):not(.user_card input),
+input[type="email"]:focus:not(.login-container input):not(.user_card input),
+input[type="password"]:focus:not(.login-container input):not(.user_card input),
+input[type="number"]:focus:not(.login-container input):not(.user_card input),
+input[type="date"]:focus:not(.login-container input):not(.user_card input),
+input[type="time"]:focus:not(.login-container input):not(.user_card input),
+input[type="datetime-local"]:focus:not(.login-container input):not(.user_card input),
+input[type="search"]:focus:not(.login-container input):not(.user_card input),
+input[type="tel"]:focus:not(.login-container input):not(.user_card input),
+input[type="url"]:focus:not(.login-container input):not(.user_card input),
+textarea:focus:not(.login-container textarea):not(.user_card textarea),
+select:focus:not(.login-container select):not(.user_card select) {
+  border-color: var(--smart-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(243, 73, 73, 0.25) !important;
+  outline: none !important;
+}
+
+/* Asegurar que los form-control también tengan estos estilos */
+.form-control:not(.login-container .form-control):not(.user_card .form-control) {
+  font-family: var(--smart-font-primary) !important;
+  color: var(--smart-gray-dark) !important;
+  border: 1px solid var(--smart-gray-light) !important;
+  background-color: var(--smart-white) !important;
+  padding: 0.375rem 0.75rem !important;
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  border-radius: 0.25rem !important;
+  width: 100% !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+/* Asegurar que los form-group no corten los campos */
+.form-group:not(.login-container .form-group):not(.user_card .form-group) {
+  overflow: visible !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Asegurar que los labels tengan el estilo correcto */
+.form-group label:not(.login-container label):not(.user_card label),
+.form-label:not(.login-container .form-label):not(.user_card .form-label) {
+  font-family: var(--smart-font-primary) !important;
+  color: var(--smart-gray-dark) !important;
+  font-weight: 500 !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
 }
 

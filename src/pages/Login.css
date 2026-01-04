@@ -23,12 +23,7 @@
   box-sizing: border-box;
   
   /* Fondo estático */
-  background: linear-gradient(135deg, 
-    var(--smart-gray-lightest) 0%, 
-    #ffffff 25%,
-    var(--smart-primary-bg) 50%,
-    #ffffff 75%,
-    var(--smart-gray-lightest) 100%);
+  background: #f8f9fa;
 }
 
 /* Decoraciones de fondo estáticas */
@@ -169,18 +164,25 @@
 .input-group-text {
   background: linear-gradient(135deg, var(--smart-primary) 0%, var(--smart-primary-dark) 100%) !important;
   color: var(--smart-white) !important;
-  border: none !important;
+  border: 2px solid var(--smart-gray-lighter) !important;
+  border-right: none !important;
   border-radius: 12px 0 0 12px !important;
-  padding: 1rem 1.25rem !important;
+  padding: 0.75rem 1rem !important;
   transition: all 0.3s ease;
   font-size: 1rem !important;
-  min-height: 52px;
+  height: calc(1.5em + 0.75rem + 4px) !important;
+  min-height: calc(1.5em + 0.75rem + 4px) !important;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
   font-family: var(--smart-font-primary);
+}
+
+/* Iconos dentro del input-group-text más grandes */
+.input-group-text i {
+  font-size: 1.15rem !important;
 }
 
 .form-control {
@@ -243,23 +245,32 @@
   justify-content: center !important;
   white-space: nowrap !important;
   transition: all 0.3s ease !important;
-  min-height: 52px !important;
   box-sizing: border-box !important;
   border: 2px solid var(--smart-gray-lighter) !important;
   border-left: none !important;
   border-radius: 0 12px 12px 0 !important;
   background: var(--smart-white) !important;
-  padding: 1rem 1rem !important;
-  font-size: 1rem !important;
-  min-width: 52px;
+  padding: 0.75rem 0.5rem !important;
+  font-size: 0.95rem !important;
+  min-width: 42px !important;
+  width: 42px !important;
+  height: calc(1.5em + 0.75rem + 4px) !important;
+  min-height: calc(1.5em + 0.75rem + 4px) !important;
+  max-height: calc(1.5em + 0.75rem + 4px) !important;
   color: var(--smart-gray-medium) !important;
   margin-left: -2px !important;
+  line-height: 1.5 !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 .password-toggle-btn:hover {
   background-color: var(--smart-gray-lightest) !important;
   border-color: var(--smart-primary-light) !important;
   color: var(--smart-primary) !important;
+  border-top-color: var(--smart-primary-light) !important;
+  border-bottom-color: var(--smart-primary-light) !important;
+  border-right-color: var(--smart-primary-light) !important;
 }
 
 .password-toggle-btn:focus {
@@ -282,18 +293,71 @@
   border-right: none !important;
   border-top-right-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
+  border: 2px solid var(--smart-gray-lighter) !important;
+  border-left: none !important;
+  border-right: none !important;
+  height: calc(1.5em + 0.75rem + 4px) !important;
+  min-height: calc(1.5em + 0.75rem + 4px) !important;
+  max-height: calc(1.5em + 0.75rem + 4px) !important;
+  line-height: 1.5 !important;
+  padding: 0.75rem !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 0 !important;
 }
 
 /* Unir visualmente el input de contraseña con el botón del ojo */
 .input-group:hover .input_pass,
 .input-group .input_pass:focus {
   border-right: none !important;
+  border-color: var(--smart-primary) !important;
+  border-top-color: var(--smart-primary) !important;
+  border-bottom-color: var(--smart-primary) !important;
+  z-index: 1 !important;
 }
 
 .input-group:hover .input_pass ~ .input-group-append .password-toggle-btn,
 .input-group .input_pass:focus ~ .input-group-append .password-toggle-btn {
   border-color: var(--smart-primary) !important;
-  border-left-color: var(--smart-primary) !important;
+  border-top-color: var(--smart-primary) !important;
+  border-bottom-color: var(--smart-primary) !important;
+  border-right-color: var(--smart-primary) !important;
+  border-left: 2px solid var(--smart-primary) !important;
+  z-index: 2 !important;
+}
+
+/* Asegurar que el input-group tenga la misma altura para todos los elementos */
+.input-group .input-group-text,
+.input-group .form-control,
+.input-group .password-toggle-btn {
+  height: calc(1.5em + 0.75rem + 4px) !important;
+  min-height: calc(1.5em + 0.75rem + 4px) !important;
+  max-height: calc(1.5em + 0.75rem + 4px) !important;
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+/* Asegurar que el input de contraseña y el botón se vean como uno solo */
+.input-group .input_pass {
+  border-right: none !important;
+  margin-right: 0 !important;
+}
+
+.input-group .password-toggle-btn {
+  border-left: none !important;
+  margin-left: -2px !important;
+}
+
+/* Eliminar cualquier espacio entre el input y el botón */
+.input-group .input-group-append {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Asegurar que no haya gap entre elementos */
+.input-group > .form-control.input_pass + .input-group-append {
+  margin-left: -2px !important;
 }
 
 /* Checkbox moderno */
@@ -335,7 +399,7 @@
     0 4px 10px rgba(243, 73, 73, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-  padding: 1rem 3rem !important;
+  padding: 1rem 2rem !important;
   font-size: 1.1rem !important;
   font-weight: 700 !important;
   letter-spacing: 0.5px;
@@ -343,6 +407,9 @@
   position: relative;
   overflow: hidden;
   font-family: var(--smart-font-primary);
+  width: auto !important;
+  min-width: 180px !important;
+  max-width: 250px !important;
 }
 
 .login_btn::before {
