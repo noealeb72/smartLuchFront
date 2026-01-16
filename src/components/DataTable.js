@@ -77,10 +77,25 @@ const DataTable = ({
       emptyMessage.includes('registrados')
     );
     
+    // Detectar si es el mensaje de "No hay pedidos pendientes" (color rojo del navbar)
+    const isNoPedidosPendientes = emptyMessage && (
+      emptyMessage.includes('No hay pedidos pendientes')
+    );
+    
     return (
       <div 
-        className={isSearchMessage || isNoRecordsMessage ? "alert" : "alert alert-info"}
-        style={isSearchMessage || isNoRecordsMessage ? {
+        className={isSearchMessage || isNoRecordsMessage || isNoPedidosPendientes ? "alert" : "alert alert-info"}
+        style={isNoPedidosPendientes ? {
+          backgroundColor: 'rgba(243, 73, 73, 0.1)',
+          borderColor: '#F34949',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          color: '#F34949',
+          padding: '0.75rem 1.25rem',
+          marginBottom: '1rem',
+          borderRadius: '0.25rem',
+          fontWeight: '500'
+        } : (isSearchMessage || isNoRecordsMessage ? {
           backgroundColor: 'var(--smart-primary-bg)',
           borderColor: 'var(--smart-primary)',
           borderWidth: '1px',
@@ -89,7 +104,7 @@ const DataTable = ({
           padding: '0.75rem 1.25rem',
           marginBottom: '1rem',
           borderRadius: '0.25rem'
-        } : {}}
+        } : {})}
       >
         {emptyMessage}
       </div>

@@ -31,7 +31,7 @@ const MenuDelDia = () => {
   const [menus, setMenus] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filtro, setFiltro] = useState('');
-  const [soloActivos, setSoloActivos] = useState(true);
+  const [filtroActivo, setFiltroActivo] = useState('activo');
   const [vista, setVista] = useState('lista'); // 'lista' | 'editar' | 'crear'
   const [fechaSeleccionada, setFechaSeleccionada] = useState(obtenerFechaLocal()); // Fecha de hoy por defecto
   
@@ -162,6 +162,10 @@ const MenuDelDia = () => {
         // Solo pasar los parámetros que acepta el endpoint según la firma del método
         // public HttpResponseMessage ObtenerLista(int page, int pageSize, DateTime? fechaDesde, 
         // DateTime? fechaHasta, string search, bool activo)
+        // Convertir filtroActivo a boolean para el backend
+        // 'activo' -> true, 'inactivo' -> false
+        const soloActivos = filtroActivo === 'activo' ? true : false;
+        
         const filtros = {
           activo: soloActivos, // true para activos, false para de baja
           fechaDesde: fechaFiltro,
@@ -209,7 +213,7 @@ const MenuDelDia = () => {
         setIsLoading(false);
       }
     },
-    [pageSize, soloActivos, fechaSeleccionada, usuarioData]
+    [pageSize, filtroActivo, fechaSeleccionada, usuarioData]
   );
 
   useEffect(() => {
@@ -220,7 +224,7 @@ const MenuDelDia = () => {
   useEffect(() => {
     // Cargar menús inmediatamente con la fecha de hoy, sin esperar a que los platos estén cargados
     cargarMenus(currentPage, filtro, fechaSeleccionada);
-  }, [currentPage, filtro, soloActivos, cargarMenus, fechaSeleccionada]);
+  }, [currentPage, filtro, filtroActivo, cargarMenus, fechaSeleccionada]);
 
   // Auto-seleccionar valores cuando hay un solo elemento disponible en los catálogos
   // SOLO en modo editar, NO en modo crear (en crear siempre debe estar "-- Seleccionar --")
@@ -1671,81 +1675,77 @@ const MenuDelDia = () => {
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
+              alignItems: 'flex-end',
+              gap: '0.25rem',
               marginBottom: '1rem',
               flexWrap: 'nowrap',
             }}
           >
-            <div style={{ flex: '1', minWidth: '200px', maxWidth: '100%' }}>
+            <div style={{ flex: '1 1 0%', minWidth: '100px', maxWidth: '65%', marginTop: '2rem' }}>
               <Buscador
                 filtro={filtro}
                 setFiltro={handleFiltroChange}
-                placeholder="Filtrar por plato, turno..."
-              />
+              placeholder="Filtrar por plato, turno..."
+            />
             </div>
 
             {/* Calendario para seleccionar fecha */}
-            <div style={{ flexShrink: 0, maxWidth: '170px' }}>
+            <div style={{ flexShrink: 0, maxWidth: '170px', marginLeft: '-0.5rem', marginBottom: '1rem' }}>
               <input
                 type="date"
                 className="form-control"
                 value={fechaSeleccionada}
                 onChange={handleFechaChange}
-                style={{
-                  height: '38px',
-                  fontSize: '0.875rem',
-                  padding: '0.4rem 0.5rem',
-                  border: '1px solid #ced4da',
-                  borderRadius: '0.25rem',
+              style={{
+                  height: 'calc(1.5em + 1rem + 2px)',
+                  fontSize: '0.9rem',
+                  padding: '0.5rem 0.75rem',
+                border: '1px solid #ced4da',
+                borderRadius: '0.25rem',
                   width: '100%',
                 }}
                 title="Seleccionar fecha"
               />
             </div>
 
-            {/* Filtro de menús activos */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0.375rem 0.75rem',
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #ced4da',
-                borderRadius: '0.25rem',
-                height: '38px',
-                flexShrink: 0,
-              }}
-            >
-              <input
-                type="checkbox"
-                id="soloActivos"
-                checked={soloActivos}
+            {/* Filtro de menús activos/inactivos */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0, marginLeft: '1rem', marginBottom: '1rem' }}>
+              <label style={{ 
+                margin: 0, 
+                fontSize: '0.875rem', 
+                color: '#495057', 
+                whiteSpace: 'nowrap',
+                fontWeight: 'normal'
+              }}>
+                Estado:
+              </label>
+              <select
+                className="form-control"
+                value={filtroActivo}
                 onChange={(e) => {
-                  setSoloActivos(e.target.checked);
+                  setFiltroActivo(e.target.value);
                   setCurrentPage(1);
                 }}
                 style={{
-                  marginRight: '0.5rem',
-                  cursor: 'pointer',
-                }}
-              />
-              <label
-                htmlFor="soloActivos"
-                style={{
-                  margin: 0,
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
+                  padding: '0.5rem 0.75rem',
+                  fontSize: '0.9rem',
+                  border: '1px solid #ced4da',
+                  borderRadius: '0.25rem',
+                  backgroundColor: 'white',
                   color: '#495057',
-                  userSelect: 'none',
-                  whiteSpace: 'nowrap',
+                  cursor: 'pointer',
+                  width: 'auto',
+                  minWidth: 'fit-content',
+                  height: 'calc(1.5em + 1rem + 2px)',
+                  flexShrink: 0,
                 }}
               >
-                {soloActivos ? 'Menús activos' : 'Menús de baja'}
-              </label>
+                <option value="activo">Activos</option>
+                <option value="inactivo">Inactivos</option>
+              </select>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, marginLeft: '4rem', marginBottom: '1rem' }}>
               <button
                 type="button"
                 className="btn"
@@ -1758,7 +1758,7 @@ const MenuDelDia = () => {
                   color: 'white',
                   padding: '0.375rem 0.5rem',
                   width: '36px',
-                  height: '38px',
+                  height: 'calc(1.5em + 1rem + 2px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1777,8 +1777,8 @@ const MenuDelDia = () => {
             maxWidth: '100%',
             boxSizing: 'border-box'
           }}>
-            <DataTable
-              columns={[
+          <DataTable
+            columns={[
               {
                 key: 'plato',
                 field: 'plato',
@@ -1903,37 +1903,49 @@ const MenuDelDia = () => {
                 key: 'cantidad',
                 field: 'cantidad',
                 label: 'Cantidad',
+                align: 'center',
                 render: (v, row) => {
                   const cantidad = row.cantidad || row.Cantidad || row.Cant || 0;
                   const comandadas = row.Comandas || row.comandas || row.comandadas || 0;
                   const disponible = Math.max(0, cantidad - comandadas);
+                  
+                  // Si asignados es mayor a 0, mostrar cantidad tachada y resultado al lado
+                  if (comandadas > 0) {
+                  return (
+                      <span>
+                    <span
+                      style={{
+                            position: 'relative',
+                            color: '#6c757d', 
+                            marginRight: '8px',
+                            display: 'inline-block'
+                          }}
+                        >
+                          {cantidad}
+                          <span
+                            style={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: 0,
+                              right: 0,
+                              height: '2px',
+                              background: '#6c757d',
+                              transform: 'rotate(-15deg)',
+                              transformOrigin: 'center',
+                            }}
+                          />
+                        </span>
+                        <span style={{ fontWeight: 'bold', color: '#28a745' }}>
+                          {disponible}
+                        </span>
+                      </span>
+                    );
+                  }
+                  
+                  // Si asignados es 0, solo mostrar la cantidad sin tachar
                   return (
                     <span>
-                      <span 
-                        style={{ 
-                          position: 'relative',
-                          color: '#6c757d', 
-                          marginRight: '8px',
-                          display: 'inline-block'
-                        }}
-                      >
-                        {cantidad}
-                        <span
-                          style={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: 0,
-                            right: 0,
-                            height: '2px',
-                            background: '#6c757d',
-                            transform: 'rotate(-15deg)',
-                            transformOrigin: 'center',
-                          }}
-                        />
-                      </span>
-                      <span style={{ fontWeight: 'bold', color: '#28a745' }}>
-                        {disponible}
-                      </span>
+                      {cantidad}
                     </span>
                   );
                 },
@@ -1942,6 +1954,7 @@ const MenuDelDia = () => {
                 key: 'comandadas',
                 field: 'comandadas',
                 label: 'Asignados',
+                align: 'center',
                 render: (v, row) => row.Comandas || row.comandas || row.comandadas || 0,
               },
             ]}
@@ -2026,7 +2039,7 @@ const MenuDelDia = () => {
             totalItems={totalItems}
             enablePagination={true}
           />
-          </div>
+        </div>
         </div>
 
         {/* Modal de opciones de impresión */}
@@ -2528,7 +2541,7 @@ const MenuDelDia = () => {
   // ===== formulario crear/editar =====
   return (
     <div className="container-fluid" style={{ padding: 0, backgroundColor: 'white' }}>
-        <div className="page-title-bar">
+      <div className="page-title-bar">
         <div
           style={{
             display: 'flex',
@@ -2618,15 +2631,15 @@ const MenuDelDia = () => {
                       ) : (
                         <>
                           {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                          {planesNutricionales.map((plan) => {
-                            const planId = plan.id || plan.Id || plan.ID;
-                            const planNombre = plan.nombre || plan.Nombre || plan.descripcion || plan.Descripcion || '';
-                            return (
-                              <option key={planId} value={String(planId)}>
-                                {planNombre}
-                              </option>
-                            );
-                          })}
+                      {planesNutricionales.map((plan) => {
+                        const planId = plan.id || plan.Id || plan.ID;
+                        const planNombre = plan.nombre || plan.Nombre || plan.descripcion || plan.Descripcion || '';
+                        return (
+                          <option key={planId} value={String(planId)}>
+                            {planNombre}
+                          </option>
+                        );
+                      })}
                         </>
                       )}
                     </select>
@@ -2641,9 +2654,9 @@ const MenuDelDia = () => {
                       <div className="input-group">
                         <input
                           type="text"
-                          className="form-control"
-                          id="platoId"
-                          name="platoId"
+                      className="form-control"
+                      id="platoId"
+                      name="platoId"
                           value={busquedaPlato}
                           onChange={(e) => {
                             const valor = e.target.value;
@@ -2667,7 +2680,7 @@ const MenuDelDia = () => {
                             ? 'Primero seleccione un Plan Nutricional' 
                             : 'Buscar plato por nombre o código...'}
                           disabled={!formData.plannutricional_id || formData.plannutricional_id === ''}
-                          required
+                      required
                           style={{
                             fontSize: '0.875rem',
                             padding: '0.4rem 0.75rem',
@@ -2732,10 +2745,10 @@ const MenuDelDia = () => {
                           }}
                         >
                           {platosBuscados.map((plato) => {
-                            const platoId = plato.id || plato.Id || plato.ID;
-                            const platoNombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
+                        const platoId = plato.id || plato.Id || plato.ID;
+                        const platoNombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
                             const platoCodigo = plato.codigo || plato.Codigo || '';
-                            return (
+                        return (
                               <div
                                 key={platoId}
                                 onClick={() => {
@@ -2764,9 +2777,9 @@ const MenuDelDia = () => {
                                   </div>
                                 )}
                               </div>
-                            );
-                          })}
-                        </div>
+                        );
+                      })}
+                  </div>
                       )}
                       
                       {/* Mensaje cuando no hay resultados */}
@@ -2789,7 +2802,7 @@ const MenuDelDia = () => {
                           }}
                         >
                           No se encontraron platos que coincidan con "{busquedaPlato}"
-                        </div>
+                </div>
                       )}
                     </div>
                     
@@ -2908,15 +2921,15 @@ const MenuDelDia = () => {
                       ) : (
                         <>
                           {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                          {jerarquias.map((jerarquia) => {
-                            const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID;
-                            const jerarquiaNombre = jerarquia.nombre || jerarquia.Nombre || jerarquia.descripcion || jerarquia.Descripcion || '';
-                            return (
-                              <option key={jerarquiaId} value={String(jerarquiaId)}>
-                                {jerarquiaNombre}
-                              </option>
-                            );
-                          })}
+                      {jerarquias.map((jerarquia) => {
+                        const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID;
+                        const jerarquiaNombre = jerarquia.nombre || jerarquia.Nombre || jerarquia.descripcion || jerarquia.Descripcion || '';
+                        return (
+                          <option key={jerarquiaId} value={String(jerarquiaId)}>
+                            {jerarquiaNombre}
+                          </option>
+                        );
+                      })}
                         </>
                       )}
                     </select>
@@ -2954,15 +2967,15 @@ const MenuDelDia = () => {
                       ) : (
                         <>
                           {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                          {turnos.map((turno) => {
-                            const turnoId = turno.id || turno.Id || turno.ID;
-                            const turnoNombre = turno.nombre || turno.Nombre || turno.descripcion || turno.Descripcion || '';
-                            return (
-                              <option key={turnoId} value={String(turnoId)}>
-                                {turnoNombre}
-                              </option>
-                            );
-                          })}
+                      {turnos.map((turno) => {
+                        const turnoId = turno.id || turno.Id || turno.ID;
+                        const turnoNombre = turno.nombre || turno.Nombre || turno.descripcion || turno.Descripcion || '';
+                        return (
+                          <option key={turnoId} value={String(turnoId)}>
+                            {turnoNombre}
+                          </option>
+                        );
+                      })}
                         </>
                       )}
                     </select>
@@ -3000,15 +3013,15 @@ const MenuDelDia = () => {
                       ) : (
                         <>
                           {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                          {proyectos.map((proyecto) => {
-                            const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
-                            const proyectoNombre = proyecto.nombre || proyecto.Nombre || proyecto.descripcion || proyecto.Descripcion || '';
-                            return (
-                              <option key={proyectoId} value={String(proyectoId)}>
-                                {proyectoNombre}
-                              </option>
-                            );
-                          })}
+                      {proyectos.map((proyecto) => {
+                        const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
+                        const proyectoNombre = proyecto.nombre || proyecto.Nombre || proyecto.descripcion || proyecto.Descripcion || '';
+                        return (
+                          <option key={proyectoId} value={String(proyectoId)}>
+                            {proyectoNombre}
+                          </option>
+                        );
+                      })}
                         </>
                       )}
                     </select>
@@ -3046,15 +3059,15 @@ const MenuDelDia = () => {
                       ) : (
                         <>
                           {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                          {centrosDeCosto.map((centro) => {
-                            const centroId = centro.id || centro.Id || centro.ID;
-                            const centroNombre = centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion || '';
-                            return (
-                              <option key={centroId} value={String(centroId)}>
-                                {centroNombre}
-                              </option>
-                            );
-                          })}
+                      {centrosDeCosto.map((centro) => {
+                        const centroId = centro.id || centro.Id || centro.ID;
+                        const centroNombre = centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion || '';
+                        return (
+                          <option key={centroId} value={String(centroId)}>
+                            {centroNombre}
+                          </option>
+                        );
+                      })}
                         </>
                       )}
                     </select>
@@ -3092,15 +3105,15 @@ const MenuDelDia = () => {
                       ) : (
                         <>
                           {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                          {plantas.map((planta) => {
-                            const plantaId = planta.id || planta.Id || planta.ID;
-                            const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
-                            return (
-                              <option key={plantaId} value={String(plantaId)}>
-                                {plantaNombre}
-                              </option>
-                            );
-                          })}
+                      {plantas.map((planta) => {
+                        const plantaId = planta.id || planta.Id || planta.ID;
+                        const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
+                        return (
+                          <option key={plantaId} value={String(plantaId)}>
+                            {plantaNombre}
+                          </option>
+                        );
+                      })}
                         </>
                       )}
                     </select>

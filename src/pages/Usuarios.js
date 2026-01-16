@@ -108,13 +108,13 @@ const Usuarios = () => {
       
       // Si hay error de conexión, el interceptor ya redirige automáticamente
       if (!error.redirectToLogin) {
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error',
           text: error.message || 'Error al cargar los usuarios',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
       }
       
       setUsuarios([]);
@@ -311,13 +311,13 @@ const Usuarios = () => {
       // Obtener el ID del usuario
       const usuarioId = usuario.id || usuario.Id || usuario.ID;
       if (!usuarioId) {
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error',
           text: 'No se pudo obtener el ID del usuario',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
         setIsLoading(false);
         return;
       }
@@ -326,19 +326,29 @@ const Usuarios = () => {
       const usuarioCompleto = await apiService.getUsuarioPorId(usuarioId);
       const usuarioParaEditar = usuarioCompleto || usuario;
       
+      console.log('[Usuarios] 📥 Datos del usuario recibidos del API:', JSON.stringify(usuarioParaEditar, null, 2));
+      console.log('[Usuarios] 🔍 Buscando plan nutricional ID en:', {
+        'PlanNutricionalId': usuarioParaEditar.PlanNutricionalId,
+        'planNutricionalId': usuarioParaEditar.planNutricionalId,
+        'plannutricional_id': usuarioParaEditar.plannutricional_id,
+        'PlanNutricional': usuarioParaEditar.PlanNutricional,
+        'planNutricional': usuarioParaEditar.planNutricional,
+        'plan_nutricional_id': usuarioParaEditar.plan_nutricional_id
+      });
+      
       setUsuarioEditando(usuarioParaEditar);
     
       // Función auxiliar para obtener el ID correctamente, buscando en múltiples variantes
       const obtenerId = (arrayOpciones, campoNombre) => {
         // Buscar en múltiples variantes de nombres (camelCase, snake_case, PascalCase)
-        const variantes = [
+        let variantes = [
           `${campoNombre}_id`,
           `${campoNombre}Id`,
           `${campoNombre}ID`,
           `${campoNombre}_Id`,
           `${campoNombre}_ID`,
           campoNombre,
-          // PascalCase
+          // PascalCase específicos
           campoNombre === 'jerarquia' ? 'JerarquiaId' : 
           campoNombre === 'plannutricional' ? 'PlanNutricionalId' :
           campoNombre === 'planta' ? 'PlantaId' :
@@ -346,29 +356,82 @@ const Usuarios = () => {
           campoNombre === 'proyecto' ? 'ProyectoId' : null
         ].filter(v => v !== null);
         
+        // Agregar variantes adicionales específicas para plan nutricional
+        if (campoNombre === 'plannutricional') {
+          variantes = [
+            ...variantes,
+            'plannutricional_id',
+            'planNutricionalId',
+            'PlanNutricionalId',
+            'PLANNUTRICIONAL_ID',
+            'plan_nutricional_id',
+            'planNutricional_id',
+            'PlanNutricional_id',
+            'plannutricionalId',
+            'PlannutricionalId',
+            'Plannutricional_id'
+          ];
+        }
+        
         let idValue = null;
         for (const variante of variantes) {
           if (usuarioParaEditar[variante] !== undefined && usuarioParaEditar[variante] !== null && usuarioParaEditar[variante] !== '') {
             idValue = usuarioParaEditar[variante];
+            console.log(`[Usuarios] ✅ Encontrado ${campoNombre} ID en variante "${variante}":`, idValue);
             break;
           }
         }
         
-        // Si hay un solo valor disponible, usarlo automáticamente
-        if ((!idValue || idValue === '' || idValue === 0) && arrayOpciones.length === 1) {
-          idValue = arrayOpciones[0].id;
+        // Si no se encontró en las variantes directas, buscar en objetos anidados (solo para plan nutricional)
+        if (!idValue && campoNombre === 'plannutricional') {
+          const planNutricionalObj = usuarioParaEditar.PlanNutricional || usuarioParaEditar.planNutricional || usuarioParaEditar.plan_nutricional || null;
+          if (planNutricionalObj && typeof planNutricionalObj === 'object') {
+            idValue = planNutricionalObj.id || planNutricionalObj.Id || planNutricionalObj.ID || null;
+            if (idValue) {
+              console.log(`[Usuarios] ✅ Encontrado plan nutricional ID en objeto anidado:`, idValue);
+            }
+          }
         }
         
-        // Convertir a string para que coincida con los valores de las opciones
+        // Validar que el ID encontrado existe en las opciones disponibles
         if (idValue !== null && idValue !== undefined && idValue !== '') {
-          return String(idValue);
+          const idValueStr = String(idValue);
+          const idValueNum = parseInt(idValue);
+          
+          // Buscar coincidencia en las opciones disponibles
+          const opcionEncontrada = arrayOpciones.find(opcion => {
+            const opcionId = String(opcion.id || opcion.Id || opcion.ID || '');
+            const opcionIdNum = parseInt(opcion.id || opcion.Id || opcion.ID || 0);
+            return opcionId === idValueStr || opcionIdNum === idValueNum;
+          });
+          
+          if (opcionEncontrada) {
+            console.log(`[Usuarios] ✅ ID ${idValueStr} validado, corresponde a:`, opcionEncontrada.nombre || opcionEncontrada.Nombre || 'Sin nombre');
+            return idValueStr;
+          } else {
+            console.log(`[Usuarios] ⚠️ ID ${idValueStr} encontrado pero NO existe en las opciones disponibles, se ignorará`);
+            idValue = null; // Invalidar el ID si no existe en las opciones
+          }
         }
+        
+        // NO asignar automáticamente si hay múltiples opciones - solo si realmente no se encontró y hay una sola opción
+        // Esto evita asignar "Diabético" cuando hay otros planes disponibles
+        if ((!idValue || idValue === '' || idValue === 0) && arrayOpciones.length === 1) {
+          console.log(`[Usuarios] ⚠️ No se encontró ${campoNombre} ID válido, usando única opción disponible:`, arrayOpciones[0].id);
+          idValue = arrayOpciones[0].id || arrayOpciones[0].Id || arrayOpciones[0].ID;
+          return String(idValue);
+        } else if (!idValue && arrayOpciones.length > 1) {
+          console.log(`[Usuarios] ⚠️ No se encontró ${campoNombre} ID válido y hay múltiples opciones disponibles, dejando vacío`);
+        }
+        
         return '';
       };
       
       // Obtener IDs como strings
       const jerarquiaId = obtenerId(jerarquias, 'jerarquia');
       const planId = obtenerId(planesNutricionales, 'plannutricional');
+      console.log('[Usuarios] 🎯 Plan Nutricional ID final obtenido:', planId);
+      console.log('[Usuarios] 📋 Planes nutricionales disponibles:', planesNutricionales.map(p => ({ id: p.id || p.Id || p.ID, nombre: p.nombre || p.Nombre || p.NOMBRE })));
       const plantaId = obtenerId(plantas, 'planta');
       const centroId = obtenerId(centrosDeCosto, 'centrodecosto');
       const proyectoId = obtenerId(proyectos, 'proyecto');
@@ -384,6 +447,27 @@ const Usuarios = () => {
         fotoParaMostrar = `data:image/jpeg;base64,${fotoUsuario}`;
       }
       
+      // Convertir fecha de ingreso al formato YYYY-MM-DD para el input date
+      let fechaIngresoFormateada = '';
+      const fechaIngresoRaw = usuarioParaEditar.fecha_ingreso || usuarioParaEditar.fechaIngreso || usuarioParaEditar.FechaIngreso || '';
+      if (fechaIngresoRaw) {
+        try {
+          // Si viene en formato ISO (con hora), extraer solo la fecha
+          const fecha = new Date(fechaIngresoRaw);
+          if (!isNaN(fecha.getTime())) {
+            // Formatear a YYYY-MM-DD
+            const año = fecha.getFullYear();
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            fechaIngresoFormateada = `${año}-${mes}-${dia}`;
+          } else if (typeof fechaIngresoRaw === 'string' && fechaIngresoRaw.includes('-')) {
+            // Si ya viene en formato YYYY-MM-DD o similar, extraer solo la parte de la fecha
+            fechaIngresoFormateada = fechaIngresoRaw.split('T')[0].split(' ')[0];
+          }
+        } catch (e) {
+          console.error('[Usuarios] Error al formatear fecha de ingreso:', e);
+        }
+      }
       
       setFormData({
         id: usuarioParaEditar.id || usuarioParaEditar.Id || usuarioParaEditar.ID,
@@ -400,7 +484,7 @@ const Usuarios = () => {
         proyecto_id: proyectoId,
         jerarquia_id: jerarquiaId,
         plannutricional_id: planId,
-        fecha_ingreso: usuarioParaEditar.fecha_ingreso || usuarioParaEditar.fechaIngreso || usuarioParaEditar.FechaIngreso || '',
+        fecha_ingreso: fechaIngresoFormateada,
         contrato: usuarioParaEditar.contrato || usuarioParaEditar.Contrato || '',
         contraseña: '', // Siempre vacío al editar
         confirmarContraseña: '', // Siempre vacío al editar
@@ -413,13 +497,13 @@ const Usuarios = () => {
       setShowConfirmPassword(false);
       setVista('editar');
     } catch (error) {
-      Swal.fire({
+      Swal.fire(configurarSwal({
         title: 'Error',
         text: error.message || 'Error al cargar los datos del usuario',
         icon: 'error',
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#F34949',
-      });
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -487,7 +571,7 @@ const Usuarios = () => {
       const fileName = `usuarios_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
       
-      Swal.fire({
+      Swal.fire(configurarSwal({
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato PDF',
         icon: 'success',
@@ -495,16 +579,16 @@ const Usuarios = () => {
         timerProgressBar: true,
         showConfirmButton: false,
         allowOutsideClick: true,
-      });
+      }));
     } catch (error) {
       // Error al exportar PDF
-      Swal.fire({
-        title: 'Error',
-        text: 'Error al exportar el listado a PDF',
-        icon: 'error',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
-      });
+        Swal.fire(configurarSwal({
+          title: 'Error',
+          text: 'Error al exportar el listado a PDF',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        }));
     }
   };
 
@@ -545,7 +629,7 @@ const Usuarios = () => {
       const fileName = `usuarios_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
       
-      Swal.fire({
+      Swal.fire(configurarSwal({
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato Excel',
         icon: 'success',
@@ -553,16 +637,16 @@ const Usuarios = () => {
         timerProgressBar: true,
         showConfirmButton: false,
         allowOutsideClick: true,
-      });
+      }));
     } catch (error) {
       // Error al exportar Excel
-      Swal.fire({
-        title: 'Error',
-        text: 'Error al exportar el listado a Excel',
-        icon: 'error',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
-      });
+        Swal.fire(configurarSwal({
+          title: 'Error',
+          text: 'Error al exportar el listado a Excel',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        }));
     }
   };
 
@@ -572,25 +656,25 @@ const Usuarios = () => {
     if (file) {
       // Validar que sea una imagen
       if (!file.type.startsWith('image/')) {
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error',
           text: 'El archivo debe ser una imagen',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
         return;
       }
       
       // Validar tamaño (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error',
           text: 'La imagen no debe superar los 5MB',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
         return;
       }
 
@@ -619,6 +703,39 @@ const Usuarios = () => {
     if (fileInput) {
       fileInput.value = '';
     }
+  };
+
+  // Función helper para configurar Swal.fire() sin campos de formulario
+  const configurarSwal = (config) => {
+    return {
+      ...config,
+      input: false,
+      inputAttributes: {},
+      inputOptions: {},
+      inputValidator: null,
+      inputValue: '',
+      didOpen: () => {
+        // Ocultar cualquier elemento de formulario que SweetAlert2 pueda crear
+        setTimeout(() => {
+          const swalInputs = document.querySelectorAll('.swal2-input, .swal2-select, .swal2-textarea, .swal2-file, .swal2-file-label');
+          swalInputs.forEach(el => {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+            el.style.height = '0';
+            el.style.width = '0';
+            el.style.padding = '0';
+            el.style.margin = '0';
+            el.style.opacity = '0';
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+          });
+        }, 10);
+        // Ejecutar didOpen personalizado si existe
+        if (config.didOpen) {
+          config.didOpen();
+        }
+      },
+    };
   };
 
   // Validar formulario
@@ -753,15 +870,96 @@ const Usuarios = () => {
 
     // Mostrar todos los errores
     if (errores.length > 0) {
-      Swal.fire({
+      // Mapeo de mensajes de error a nombres de campos en español
+      const nombresCampos = {
+        'El legajo es requerido': 'Legajo',
+        'El DNI es requerido': 'DNI',
+        'El CUIL es requerido': 'CUIL',
+        'La jerarquía es requerida': 'Jerarquía',
+        'El plan nutricional es requerido': 'Plan Nutricional',
+        'La planta es requerida': 'Planta',
+        'El centro de costo es requerido': 'Centro de Costo',
+        'El proyecto es requerido': 'Proyecto',
+        'La contraseña es requerida y debe tener al menos 6 caracteres': 'Contraseña',
+        'Las contraseñas no coinciden': 'Confirmar Contraseña',
+        'El nombre es requerido': 'Nombre',
+        'El apellido es requerido': 'Apellido',
+      };
+
+      // Crear lista de errores con viñetas (bullets)
+      const erroresFormateados = errores.map(error => {
+        const nombreCampo = nombresCampos[error] || error.replace('El ', '').replace('La ', '').replace(' es requerido', '').replace(' es requerida', '').replace(' y debe tener al menos 6 caracteres', '');
+        return `<li style="margin-bottom: 6px;">${nombreCampo}</li>`;
+      });
+
+      // Si hay más de 5 errores, mostrar en dos columnas
+      let htmlErrores;
+      if (errores.length > 5) {
+        const mitad = Math.ceil(erroresFormateados.length / 2);
+        const columna1 = erroresFormateados.slice(0, mitad).join('');
+        const columna2 = erroresFormateados.slice(mitad).join('');
+        htmlErrores = `
+          <div style="display: flex; gap: 20px;">
+            <ul style="list-style-type: disc; padding-left: 20px; margin: 0; flex: 1;">${columna1}</ul>
+            <ul style="list-style-type: disc; padding-left: 20px; margin: 0; flex: 1;">${columna2}</ul>
+          </div>
+        `;
+      } else {
+        htmlErrores = `<ul style="list-style-type: disc; padding-left: 20px; margin: 0;">${erroresFormateados.join('')}</ul>`;
+      }
+
+      const htmlMensaje = `
+        <div style="text-align: left; margin-top: 10px;">
+          <div style="margin-bottom: 10px;">Los siguientes campos son obligatorios:</div>
+          ${htmlErrores}
+        </div>
+      `;
+      
+      Swal.fire(configurarSwal({
         title: 'Error de validación',
-        html: '<div style="text-align: left;"><p>Los siguientes campos son obligatorios:</p><ul style="margin: 0; padding-left: 20px;">' + 
-              errores.map(err => `<li>${err}</li>`).join('') + 
-              '</ul></div>',
+        html: htmlMensaje,
         icon: 'error',
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#F34949',
-      }).then(() => {
+        allowOutsideClick: false,
+        allowEscapeKey: true,
+        width: errores.length > 5 ? '600px' : '500px',
+        backdrop: true,
+        target: document.body,
+        customClass: {
+          container: 'swal2-container-custom',
+          popup: 'swal2-popup-custom'
+        },
+        didOpen: () => {
+          // Asegurar que el popup esté completamente aislado del formulario
+          const swalContainer = document.querySelector('.swal2-container');
+          if (swalContainer) {
+            swalContainer.style.zIndex = '99999';
+            swalContainer.style.position = 'fixed';
+          }
+          // Ocultar cualquier elemento del formulario que pueda estar visible
+          const formInputs = document.querySelectorAll('form input, form select, form textarea, form button[type="file"]');
+          formInputs.forEach(input => {
+            if (input.style) {
+              input.setAttribute('data-original-display', input.style.display || '');
+              input.style.display = 'none';
+            }
+          });
+        },
+        willClose: () => {
+          // Restaurar elementos del formulario
+          const formInputs = document.querySelectorAll('form input, form select, form textarea, form button[type="file"]');
+          formInputs.forEach(input => {
+            const originalDisplay = input.getAttribute('data-original-display');
+            if (originalDisplay !== null) {
+              input.style.display = originalDisplay;
+              input.removeAttribute('data-original-display');
+            } else if (input.style) {
+              input.style.display = '';
+            }
+          });
+        }
+      })).then(() => {
         // Después de cerrar el modal, mover el foco al primer campo con error
         if (primerCampoConError) {
           const campo = document.getElementById(primerCampoConError);
@@ -917,58 +1115,58 @@ const Usuarios = () => {
       // Solo validar si hay múltiples opciones disponibles (si hay una sola opción, ya se asignó automáticamente)
       if (jerarquias.length > 1 && (!jerarquiaId || isNaN(jerarquiaId) || jerarquiaId <= 0)) {
         console.error('❌ [Usuarios] Error: La jerarquía es requerida');
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error de validación',
           text: 'La jerarquía es requerida. Por favor, seleccione una jerarquía.',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
         setIsLoading(false);
         return;
       }
       if (planesNutricionales.length > 1 && (!planNutricionalId || isNaN(planNutricionalId) || planNutricionalId <= 0)) {
         console.error('❌ [Usuarios] Error: El plan nutricional es requerido');
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error de validación',
           text: 'El plan nutricional es requerido. Por favor, seleccione un plan nutricional.',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
         setIsLoading(false);
         return;
       }
       if (plantas.length > 1 && (!plantaId || isNaN(plantaId) || plantaId <= 0)) {
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error de validación',
           text: 'La planta es requerida. Por favor, seleccione una planta.',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
         setIsLoading(false);
         return;
       }
       if (centrosDeCosto.length > 1 && (!centroCostoId || isNaN(centroCostoId) || centroCostoId <= 0)) {
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error de validación',
           text: 'El centro de costo es requerido. Por favor, seleccione un centro de costo.',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
         setIsLoading(false);
         return;
       }
       if (proyectos.length > 1 && (!proyectoId || isNaN(proyectoId) || proyectoId <= 0)) {
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error de validación',
           text: 'El proyecto es requerido. Por favor, seleccione un proyecto.',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
         setIsLoading(false);
         return;
       }
@@ -976,26 +1174,26 @@ const Usuarios = () => {
       // Validar que Legajo y Dni sean válidos
       const legajoValue = parseInt(datosActualizados.legajo);
       if (!legajoValue || isNaN(legajoValue) || legajoValue <= 0) {
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error de validación',
           text: 'El legajo debe ser un número mayor a 0',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
         setIsLoading(false);
         return;
       }
       
       const dniValue = datosActualizados.dni ? parseInt(datosActualizados.dni) : 0;
       if (!dniValue || isNaN(dniValue) || dniValue < 1000000 || dniValue > 99999999) {
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error de validación',
           text: 'El DNI debe ser un número válido entre 1000000 y 99999999',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
         setIsLoading(false);
         return;
       }
@@ -1060,14 +1258,30 @@ const Usuarios = () => {
         ProyectoId: proyectoId,
         JerarquiaId: jerarquiaId,
         Bonificaciones: (() => {
-          const valor = datosActualizados.bonificaciones || formData.bonificaciones || '0';
+          // Tomar el valor directamente de formData (estado actual del formulario)
+          const valor = formData.bonificaciones !== undefined && formData.bonificaciones !== null && formData.bonificaciones !== '' 
+            ? String(formData.bonificaciones).trim() 
+            : (datosActualizados.bonificaciones !== undefined && datosActualizados.bonificaciones !== null && datosActualizados.bonificaciones !== ''
+              ? String(datosActualizados.bonificaciones).trim()
+              : '0');
+          console.log('🔵 [Usuarios] Bonificaciones - valor del campo:', valor, 'formData.bonificaciones:', formData.bonificaciones);
           const parsed = parseInt(valor, 10);
-          return isNaN(parsed) ? 0 : parsed;
+          const resultado = isNaN(parsed) ? 0 : parsed;
+          console.log('🔵 [Usuarios] Bonificaciones - valor parseado:', resultado);
+          return resultado;
         })(),
         BonificacionesInvitado: (() => {
-          const valor = datosActualizados.bonificaciones_invitado || formData.bonificaciones_invitado || '0';
+          // Tomar el valor directamente de formData (estado actual del formulario)
+          const valor = formData.bonificaciones_invitado !== undefined && formData.bonificaciones_invitado !== null && formData.bonificaciones_invitado !== ''
+            ? String(formData.bonificaciones_invitado).trim()
+            : (datosActualizados.bonificaciones_invitado !== undefined && datosActualizados.bonificaciones_invitado !== null && datosActualizados.bonificaciones_invitado !== ''
+              ? String(datosActualizados.bonificaciones_invitado).trim()
+              : '0');
+          console.log('🔵 [Usuarios] Bonificaciones Invitado - valor del campo:', valor, 'formData.bonificaciones_invitado:', formData.bonificaciones_invitado);
           const parsed = parseInt(valor, 10);
-          return isNaN(parsed) ? 0 : parsed;
+          const resultado = isNaN(parsed) ? 0 : parsed;
+          console.log('🔵 [Usuarios] Bonificaciones Invitado - valor parseado:', resultado);
+          return resultado;
         })(),
         Email: datosActualizados.email ? datosActualizados.email.trim() : null,
         Telefono: datosActualizados.telefono ? datosActualizados.telefono.trim() : null,
@@ -1088,13 +1302,13 @@ const Usuarios = () => {
       if (!usuarioEditando) {
         // Al crear, la contraseña es obligatoria
         if (!passwordValue || passwordValue.length < 6) {
-          Swal.fire({
+          Swal.fire(configurarSwal({
             title: 'Error de validación',
             text: 'La contraseña es requerida y debe tener al menos 6 caracteres',
             icon: 'error',
             confirmButtonText: 'Aceptar',
             confirmButtonColor: '#F34949',
-          }).then(() => {
+          })).then(() => {
             const campo = document.getElementById('contraseña');
             if (campo) {
               campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1108,13 +1322,13 @@ const Usuarios = () => {
       } else if (passwordValue && passwordValue.length > 0) {
         // Al editar, solo incluir si se está cambiando (no vacía)
         if (passwordValue.length < 6) {
-          Swal.fire({
+          Swal.fire(configurarSwal({
             title: 'Error de validación',
             text: 'La contraseña debe tener al menos 6 caracteres',
             icon: 'error',
             confirmButtonText: 'Aceptar',
             confirmButtonColor: '#F34949',
-          }).then(() => {
+          })).then(() => {
             const campo = document.getElementById('contraseña');
             if (campo) {
               campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1129,20 +1343,21 @@ const Usuarios = () => {
       
       // Verificar que la contraseña esté presente si es necesario
       if (!usuarioEditando && !usuarioData.Password) {
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Error',
           text: 'Error interno: La contraseña no se capturó correctamente. Por favor, intente nuevamente.',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
-        });
+        }));
         setIsLoading(false);
         return;
       }
       
       if (usuarioEditando) {
+        console.log('📤 [Usuarios] Datos enviados para ACTUALIZAR usuario:', JSON.stringify(usuarioData, null, 2));
         await apiService.actualizarUsuario(usuarioData);
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Éxito',
           text: 'Usuario actualizado correctamente',
           icon: 'success',
@@ -1150,10 +1365,11 @@ const Usuarios = () => {
           timerProgressBar: true,
           showConfirmButton: false,
           allowOutsideClick: true,
-        });
+        }));
       } else {
+        console.log('📤 [Usuarios] Datos enviados para CREAR usuario:', JSON.stringify(usuarioData, null, 2));
         await apiService.crearUsuario(usuarioData);
-        Swal.fire({
+        Swal.fire(configurarSwal({
           title: 'Éxito',
           text: 'Usuario creado correctamente',
           icon: 'success',
@@ -1161,22 +1377,37 @@ const Usuarios = () => {
           timerProgressBar: true,
           showConfirmButton: false,
           allowOutsideClick: true,
-        });
+        }));
       }
 
       handleVolverALista();
       cargarUsuarios(currentPage, filtro, filtroActivo === 'activo');
     } catch (error) {
+      // Detectar errores de timeout
+      const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout') || error.message?.includes('Tiempo de espera');
+      
+      // Si hay error de conexión o timeout con redirectToLogin=true, el interceptor ya redirige automáticamente
+      // En ese caso, no mostrar popup ni logs detallados porque el usuario será redirigido al login
+      if (error.redirectToLogin) {
+        // El interceptor se encarga de la redirección, no hacer nada más aquí
+        return;
+      }
+      
+      // Solo mostrar logs y popup si no hay redirección
       console.error('❌ [Usuarios] Error al guardar usuario:', error);
       console.error('❌ [Usuarios] error.response:', error.response);
       console.error('❌ [Usuarios] error.response?.data:', error.response?.data);
       
-      // Si hay error de conexión, el interceptor ya redirige automáticamente
-      // Solo mostrar el error si no es un error de conexión
       if (!error.redirectToLogin) {
         let errorTitle = 'Error';
         let errorMessage = error.message || 'Error al guardar el usuario';
-        let errorHtml = null;
+        let erroresArray = null;
+        
+        // Si es un timeout, mostrar mensaje específico
+        if (isTimeout) {
+          errorTitle = 'Tiempo de espera agotado';
+          errorMessage = 'El servidor está tardando demasiado en responder. Por favor, verifica tu conexión y que el backend esté funcionando correctamente.';
+        }
         
         // Verificar si el backend devolvió errores de validación en formato JSON
         if (error.response && error.response.data) {
@@ -1185,12 +1416,7 @@ const Usuarios = () => {
           // Si hay un array de errores, mostrarlos todos
           if (responseData.errors && Array.isArray(responseData.errors) && responseData.errors.length > 0) {
             errorTitle = responseData.message || 'Errores de validación';
-            errorHtml = '<div style="text-align: left;"><p>Los siguientes errores fueron encontrados:</p><ul style="margin: 0; padding-left: 20px;">' +
-              responseData.errors.map(err => {
-                const fieldName = err.field ? err.field.replace('dto.', '') : 'Campo desconocido';
-                return `<li><strong>${fieldName}:</strong> ${err.message || 'Error de validación'}</li>`;
-              }).join('') +
-              '</ul></div>';
+            erroresArray = responseData.errors;
           } else if (responseData.error) {
             // Si hay un campo "error" con el mensaje (ej: "Ya existe un usuario con el mismo legajo.")
             errorTitle = 'Error';
@@ -1205,22 +1431,101 @@ const Usuarios = () => {
           }
         }
         
-        if (errorHtml) {
-          Swal.fire({
+        if (erroresArray && Array.isArray(erroresArray) && erroresArray.length > 0) {
+          // Crear texto plano con los errores para evitar que se muestren campos del formulario
+          const errorText = erroresArray.map(err => {
+            const fieldName = err.field ? err.field.replace('dto.', '').replace('Dto.', '').replace('Dto', '') : 'Campo desconocido';
+            return `${fieldName}: ${err.message || 'Error de validación'}`;
+          }).join('\n');
+          
+          Swal.fire(configurarSwal({
             title: errorTitle,
-            html: errorHtml,
+            text: `Los siguientes errores fueron encontrados:\n\n${errorText}`,
             icon: 'error',
             confirmButtonText: 'Aceptar',
             confirmButtonColor: '#F34949',
-          });
+            allowOutsideClick: false,
+            allowEscapeKey: true,
+            width: '500px',
+            backdrop: true,
+            target: document.body,
+            customClass: {
+              container: 'swal2-container-custom',
+              popup: 'swal2-popup-custom'
+            },
+            didOpen: () => {
+              // Asegurar que el popup esté completamente aislado del formulario
+              const swalContainer = document.querySelector('.swal2-container');
+              if (swalContainer) {
+                swalContainer.style.zIndex = '99999';
+                swalContainer.style.position = 'fixed';
+              }
+              // Ocultar cualquier elemento del formulario que pueda estar visible
+              const formInputs = document.querySelectorAll('form input, form select, form textarea, form button[type="file"]');
+              formInputs.forEach(input => {
+                if (input.style) {
+                  input.setAttribute('data-original-display', input.style.display || '');
+                  input.style.display = 'none';
+                }
+              });
+            },
+            willClose: () => {
+              // Restaurar elementos del formulario
+              const formInputs = document.querySelectorAll('form input, form select, form textarea, form button[type="file"]');
+              formInputs.forEach(input => {
+                const originalDisplay = input.getAttribute('data-original-display');
+                if (originalDisplay !== null) {
+                  input.style.display = originalDisplay;
+                  input.removeAttribute('data-original-display');
+                } else if (input.style) {
+                  input.style.display = '';
+                }
+              });
+            }
+          }));
         } else {
-          Swal.fire({
+          Swal.fire(configurarSwal({
             title: errorTitle,
             text: errorMessage,
             icon: 'error',
             confirmButtonText: 'Aceptar',
             confirmButtonColor: '#F34949',
-          });
+            backdrop: true,
+            target: document.body,
+            customClass: {
+              container: 'swal2-container-custom',
+              popup: 'swal2-popup-custom'
+            },
+            didOpen: () => {
+              // Asegurar que el popup esté completamente aislado del formulario
+              const swalContainer = document.querySelector('.swal2-container');
+              if (swalContainer) {
+                swalContainer.style.zIndex = '99999';
+                swalContainer.style.position = 'fixed';
+              }
+              // Ocultar cualquier elemento del formulario que pueda estar visible
+              const formInputs = document.querySelectorAll('form input, form select, form textarea, form button[type="file"]');
+              formInputs.forEach(input => {
+                if (input.style) {
+                  input.setAttribute('data-original-display', input.style.display || '');
+                  input.style.display = 'none';
+                }
+              });
+            },
+            willClose: () => {
+              // Restaurar elementos del formulario
+              const formInputs = document.querySelectorAll('form input, form select, form textarea, form button[type="file"]');
+              formInputs.forEach(input => {
+                const originalDisplay = input.getAttribute('data-original-display');
+                if (originalDisplay !== null) {
+                  input.style.display = originalDisplay;
+                  input.removeAttribute('data-original-display');
+                } else if (input.style) {
+                  input.style.display = '';
+                }
+              });
+            }
+          }));
         }
       }
     } finally {
@@ -2010,20 +2315,7 @@ const Usuarios = () => {
             {tabActivo === 'seguridad' && (
               <div className="form-section">
                 <div className="form-section-content">
-                {/* Campos señuelo para que el navegador use el autocompletado */}
-                <input
-                  type="text"
-                  name="fake-username"
-                  autoComplete="username"
-                  style={{ display: 'none' }}
-                />
-                <input
-                  type="password"
-                  name="fake-password"
-                  autoComplete="new-password"
-                  style={{ display: 'none' }}
-                />
-
+                
                 <div className="row">
                   <div className="col-md-6">
                     <div className="form-group">
@@ -2044,21 +2336,35 @@ const Usuarios = () => {
                           required={!usuarioEditando}
                           minLength={usuarioEditando && !formData.contraseña ? 0 : 6}
                           placeholder={usuarioEditando ? 'Escriba la nueva contraseña' : ''}
-                          style={{ borderRight: 'none', fontSize: '0.85rem', borderTopRightRadius: '0', borderBottomRightRadius: '0' }}
+                          style={{ 
+                            borderRight: 'none', 
+                            fontSize: '0.85rem', 
+                            borderTopRightRadius: '0', 
+                            borderBottomRightRadius: '0',
+                            height: 'calc(1.5em + 0.8rem + 2px)',
+                            minHeight: 'calc(1.5em + 0.8rem + 2px)',
+                            lineHeight: '1.5',
+                            boxSizing: 'border-box',
+                            borderColor: formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña ? '#dc3545' : undefined
+                          }}
                         />
-                        <div className="input-group-append">
+                        <div className="input-group-append" style={{ marginLeft: '-4px' }}>
                           <button
                             className="btn btn-outline-secondary password-toggle-btn"
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
                             style={{
                               borderLeft: 'none',
-                              borderColor: '#ced4da',
+                              borderColor: formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña ? '#dc3545' : '#ced4da',
                               backgroundColor: '#fff',
                               cursor: 'pointer',
-                              padding: '0.375rem 0.6rem 0.375rem 0.5rem',
+                              padding: '0.4rem 0.6rem 0.4rem 0.5rem',
                               fontSize: '0.85rem',
-                              minWidth: '45px'
+                              minWidth: '45px',
+                              marginLeft: '-2px',
+                              height: 'calc(1.5em + 0.8rem + 2px)',
+                              minHeight: 'calc(1.5em + 0.8rem + 2px)',
+                              boxSizing: 'border-box'
                             }}
                           >
                             <i className={showPassword ? "fa fa-eye-slash" : "fa fa-eye"}></i>
@@ -2083,27 +2389,59 @@ const Usuarios = () => {
                           onChange={handleInputChange}
                           required={!usuarioEditando || formData.contraseña}
                           placeholder={usuarioEditando ? 'Confirme la nueva contraseña' : ''}
-                          style={{ borderRight: 'none', fontSize: '0.85rem', borderTopRightRadius: '0', borderBottomRightRadius: '0' }}
+                          style={{ 
+                            borderRight: 'none', 
+                            fontSize: '0.85rem', 
+                            borderTopRightRadius: '0', 
+                            borderBottomRightRadius: '0',
+                            height: 'calc(1.5em + 0.8rem + 2px)',
+                            minHeight: 'calc(1.5em + 0.8rem + 2px)',
+                            lineHeight: '1.5',
+                            boxSizing: 'border-box',
+                            borderColor: formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña ? '#dc3545' : undefined
+                          }}
                         />
-                        <div className="input-group-append">
+                        <div className="input-group-append" style={{ marginLeft: '-4px' }}>
                           <button
                             className="btn btn-outline-secondary password-toggle-btn"
                             type="button"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                             style={{
                               borderLeft: 'none',
-                              borderColor: '#ced4da',
+                              borderColor: formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña ? '#dc3545' : '#ced4da',
                               backgroundColor: '#fff',
                               cursor: 'pointer',
-                              padding: '0.375rem 0.6rem 0.375rem 0.5rem',
+                              padding: '0.4rem 0.6rem 0.4rem 0.5rem',
                               fontSize: '0.85rem',
-                              minWidth: '45px'
+                              minWidth: '45px',
+                              marginLeft: '-2px',
+                              height: 'calc(1.5em + 0.8rem + 2px)',
+                              minHeight: 'calc(1.5em + 0.8rem + 2px)',
+                              boxSizing: 'border-box'
                             }}
                           >
                             <i className={showConfirmPassword ? "fa fa-eye-slash" : "fa fa-eye"}></i>
                           </button>
                         </div>
                       </div>
+                      {formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña && (
+                        <small style={{ color: '#dc3545', display: 'flex', alignItems: 'center', marginTop: '0.25rem', textAlign: 'left' }}>
+                          <i className="fa fa-exclamation-circle" style={{ marginRight: '0.5rem' }}></i>
+                          Las contraseñas no coinciden
+                        </small>
+                      )}
+                      {formData.contraseña && formData.confirmarContraseña && formData.contraseña === formData.confirmarContraseña && formData.contraseña.length >= 6 && (
+                        <small style={{ color: '#28a745', display: 'flex', alignItems: 'center', marginTop: '0.25rem', textAlign: 'left' }}>
+                          <i className="fa fa-check-circle" style={{ marginRight: '0.5rem' }}></i>
+                          Las contraseñas coinciden
+                        </small>
+                      )}
+                      {!formData.contraseña && !formData.confirmarContraseña && (
+                        <small style={{ color: '#6c757d', display: 'flex', alignItems: 'center', marginTop: '0.25rem', fontStyle: 'italic', textAlign: 'left' }}>
+                          <i className="fa fa-info-circle" style={{ marginRight: '0.5rem' }}></i>
+                          Las contraseñas deben ser iguales
+                        </small>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2303,16 +2641,16 @@ const Usuarios = () => {
           onDelete={(usuario) => {
             // No permitir eliminar al usuario root
             if (usuario.username === 'root') {
-              Swal.fire({
+              Swal.fire(configurarSwal({
                 title: 'No permitido',
                 text: 'No se puede eliminar al usuario root porque es un usuario del sistema.',
                 icon: 'warning',
                 confirmButtonText: 'Aceptar',
                 confirmButtonColor: '#F34949',
-              });
+              }));
               return;
             }
-            Swal.fire({
+            Swal.fire(configurarSwal({
               title: '¿Está seguro?',
               text: `¿Desea dar de baja al usuario ${usuario.nombre} ${usuario.apellido}?`,
               icon: 'warning',
@@ -2321,11 +2659,11 @@ const Usuarios = () => {
               cancelButtonColor: '#6c757d',
               confirmButtonText: 'Sí, dar de baja',
               cancelButtonText: 'Cancelar',
-            }).then(async (result) => {
+            })).then(async (result) => {
               if (result.isConfirmed) {
                 try {
                   await apiService.eliminarUsuario(usuario.id);
-                  Swal.fire({
+                  Swal.fire(configurarSwal({
                     title: 'Dado de baja',
                     text: 'Usuario dado de baja correctamente',
                     icon: 'success',
@@ -2333,18 +2671,18 @@ const Usuarios = () => {
                     timerProgressBar: true,
                     showConfirmButton: false,
                     allowOutsideClick: true,
-                  });
+                  }));
                   cargarUsuarios(currentPage, filtro, filtroActivo === 'activo');
                 } catch (error) {
                   // Si hay error de conexión, el interceptor ya redirige automáticamente
                   if (!error.redirectToLogin) {
-                    Swal.fire({
+                    Swal.fire(configurarSwal({
                       title: 'Error',
                       text: error.message || 'Error al dar de baja el usuario',
                       icon: 'error',
                       confirmButtonText: 'Aceptar',
                       confirmButtonColor: '#F34949',
-                    });
+                    }));
                   }
                 }
               }
@@ -2411,7 +2749,7 @@ const Usuarios = () => {
               return (
                 <button
                   onClick={async () => {
-                    Swal.fire({
+                    Swal.fire(configurarSwal({
                       title: '¿Está seguro?',
                       text: `¿Desea activar al usuario ${usuario.nombre || ''} ${usuario.apellido || ''}?`,
                       icon: 'question',
@@ -2420,11 +2758,11 @@ const Usuarios = () => {
                       cancelButtonColor: '#6c757d',
                       confirmButtonText: 'Sí, activar',
                       cancelButtonText: 'Cancelar',
-                    }).then(async (result) => {
+                    })).then(async (result) => {
                       if (result.isConfirmed) {
                         try {
                           await apiService.activarUsuario(usuario.id);
-                          Swal.fire({
+                          Swal.fire(configurarSwal({
                             title: 'Activado',
                             text: 'Usuario activado correctamente',
                             icon: 'success',
@@ -2432,18 +2770,18 @@ const Usuarios = () => {
                             timerProgressBar: true,
                             showConfirmButton: false,
                             allowOutsideClick: true,
-                          });
+                          }));
                           cargarUsuarios(currentPage, filtro, filtroActivo === 'activo');
                         } catch (error) {
                           // Si hay error de conexión, el interceptor ya redirige automáticamente
                           if (!error.redirectToLogin) {
-                            Swal.fire({
+                            Swal.fire(configurarSwal({
                               title: 'Error',
                               text: error.message || 'Error al activar el usuario',
                               icon: 'error',
                               confirmButtonText: 'Aceptar',
                               confirmButtonColor: '#F34949',
-                            });
+                            }));
                           }
                         }
                       }

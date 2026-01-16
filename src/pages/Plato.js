@@ -17,7 +17,7 @@ const Plato = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [platoEditando, setPlatoEditando] = useState(null);
   const [filtro, setFiltro] = useState('');
-  const [soloActivos, setSoloActivos] = useState(true); // Por defecto mostrar solo activos
+  const [filtroActivo, setFiltroActivo] = useState('activo'); // 'activo', 'inactivo', 'todos'
   const [vista, setVista] = useState('lista'); // 'lista' | 'editar' | 'crear'
   const [planesNutricionales, setPlanesNutricionales] = useState([]);
   const [imagenAmpliada, setImagenAmpliada] = useState(null); // URL de la imagen ampliada
@@ -134,7 +134,10 @@ const Plato = () => {
     async (page = 1, searchTerm = '') => {
       try {
         setIsLoading(true);
-        // Pasar el parámetro activo al backend (true por defecto, false si soloActivos está desmarcado)
+        // Convertir filtroActivo a boolean para el backend
+        // 'activo' -> true, 'inactivo' -> false, 'todos' -> null
+        const soloActivos = filtroActivo === 'activo' ? true : filtroActivo === 'inactivo' ? false : null;
+        // Pasar el parámetro activo al backend
         const data = await platosService.obtenerPlatosLista(page, pageSize, searchTerm, soloActivos);
 
         // Verificar si el backend devuelve datos paginados o todos los datos
@@ -203,7 +206,7 @@ const Plato = () => {
         setIsLoading(false);
       }
     },
-    [pageSize, soloActivos]
+    [pageSize, filtroActivo]
   );
 
   useEffect(() => {
@@ -212,7 +215,7 @@ const Plato = () => {
 
   useEffect(() => {
     cargarPlatos(currentPage, filtro);
-  }, [currentPage, filtro, soloActivos, cargarPlatos]);
+  }, [currentPage, filtro, filtroActivo, cargarPlatos]);
 
   // Cerrar modal de imagen ampliada con tecla ESC
   useEffect(() => {
@@ -1517,7 +1520,7 @@ const esPlatoInactivo = (plato) => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.75rem',
+              gap: '8.0rem',
               marginBottom: '1rem',
               flexWrap: 'nowrap',
             }}
@@ -1530,48 +1533,43 @@ const esPlatoInactivo = (plato) => {
               />
             </div>
 
-            {/* Filtro de platos activos */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0.375rem 0.75rem',
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #ced4da',
-                borderRadius: '0.25rem',
-                height: '38px',
-                flexShrink: 0,
-              }}
-            >
-              <input
-                type="checkbox"
-                id="soloActivos"
-                checked={soloActivos}
-                onChange={(e) => {
-                  setSoloActivos(e.target.checked);
-                  setCurrentPage(1);
-                }}
-                style={{
-                  marginRight: '0.5rem',
-                  cursor: 'pointer',
-                }}
-              />
-              <label
-                htmlFor="soloActivos"
-                style={{
-                  margin: 0,
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  color: '#495057',
-                  userSelect: 'none',
+            <div style={{ display: 'flex', gap: '5.0rem', alignItems: 'center', flexShrink: 0, flexWrap: 'nowrap' }}>
+              {/* Filtro de platos activos/inactivos */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
+                <label style={{ 
+                  margin: 0, 
+                  fontSize: '0.875rem', 
+                  color: '#495057', 
                   whiteSpace: 'nowrap',
-                }}
-              >
-                {soloActivos ? 'Platos activos' : 'Platos de baja'}
-              </label>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                  fontWeight: 'normal'
+                }}>
+                  Estado:
+                </label>
+                <select
+                  className="form-control"
+                  value={filtroActivo}
+                  onChange={(e) => {
+                    setFiltroActivo(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  style={{
+                    padding: '0.375rem 0.5rem',
+                    fontSize: '0.85rem',
+                    border: '1px solid #ced4da',
+                    borderRadius: '0.25rem',
+                    backgroundColor: 'white',
+                    color: '#495057',
+                    cursor: 'pointer',
+                    width: 'auto',
+                    minWidth: 'fit-content',
+                    height: '38px',
+                    flexShrink: 0,
+                  }}
+                >
+                  <option value="activo">Activos</option>
+                  <option value="inactivo">Inactivos</option>
+                </select>
+              </div>
               <button
                 type="button"
                 className="btn"
@@ -2630,32 +2628,32 @@ const esPlatoInactivo = (plato) => {
                           src={formData.imagenPreview}
                           alt="Vista previa"
                           style={{
-                            width: '100%',
+                              width: '100%',
                             height: '95px',
                             minHeight: '95px',
                             borderRadius: '0.25rem',
                             border: '1px solid #ced4da',
                             padding: '0.4rem',
-                            objectFit: 'cover',
-                            display: 'block',
+                              objectFit: 'cover',
+                              display: 'block',
                             boxSizing: 'border-box',
-                          }}
-                          onError={(e) => {
-                            console.error('❌ [Plato] Error al cargar imagen en vista previa');
-                            console.error('❌ [Plato] imagenPreview (desde Foto):', formData.imagenPreview);
-                            console.error('❌ [Plato] URL intentada por el navegador:', e.target.src);
-                            console.error('❌ [Plato] Verificar que la imagen exista en: public/uploads/platos/');
-                          }}
-                          onLoad={() => {
-                            console.log('✅ [Plato] Imagen cargada correctamente en vista previa');
-                            console.log('✅ [Plato] URL de la imagen (desde Foto):', formData.imagenPreview);
-                          }}
-                        />
+                            }}
+                            onError={(e) => {
+                              console.error('❌ [Plato] Error al cargar imagen en vista previa');
+                              console.error('❌ [Plato] imagenPreview (desde Foto):', formData.imagenPreview);
+                              console.error('❌ [Plato] URL intentada por el navegador:', e.target.src);
+                              console.error('❌ [Plato] Verificar que la imagen exista en: public/uploads/platos/');
+                            }}
+                            onLoad={() => {
+                              console.log('✅ [Plato] Imagen cargada correctamente en vista previa');
+                              console.log('✅ [Plato] URL de la imagen (desde Foto):', formData.imagenPreview);
+                            }}
+                          />
                         <button
                           type="button"
                           className="btn btn-sm btn-danger"
                           onClick={handleEliminarImagen}
-                          style={{
+                          style={{ 
                             position: 'absolute',
                             top: '0',
                             right: '0',

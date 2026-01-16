@@ -520,7 +520,7 @@ body.modal-open {
 
 .password-toggle-btn {
   font-size: 0.85rem !important;
-  padding: 0.375rem 0.6rem 0.375rem 0.5rem !important;
+  padding: 0.4rem 0.6rem 0.4rem 0.5rem !important;
   min-height: calc(1.5em + 0.8rem + 2px) !important;
   height: calc(1.5em + 0.8rem + 2px) !important;
   display: flex !important;
@@ -533,5 +533,23 @@ body.modal-open {
 
 .password-toggle-btn i {
   font-size: 1.1rem !important;
+}
+
+/* Ocultar campos de formulario que SweetAlert2 crea automáticamente */
+.swal2-popup .swal2-input,
+.swal2-popup .swal2-select,
+.swal2-popup .swal2-textarea,
+.swal2-popup .swal2-file,
+.swal2-popup input[type="file"],
+.swal2-popup .swal2-file-label {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
 }
 

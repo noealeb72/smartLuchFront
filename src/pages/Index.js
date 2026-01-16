@@ -469,6 +469,14 @@ const Index = () => {
             ? menuItem.platoId
             : (menuItem.Id || menuItem.id);
 
+          // Calcular cantidad disponible considerando asignados
+          const cantidad = menuItem.Cantidad !== undefined ? parseInt(menuItem.Cantidad) : (menuItem.cantidad !== undefined ? parseInt(menuItem.cantidad) : 0);
+          const asignados = menuItem.Comandas !== undefined ? parseInt(menuItem.Comandas) : (menuItem.comandas !== undefined ? parseInt(menuItem.comandas) : (menuItem.comandadas !== undefined ? parseInt(menuItem.comandadas) : 0));
+          
+          // Si asignados es 0, no hacer nada (usar cantidad original)
+          // Si asignados es mayor a 0, hacer la cuenta (cantidad - asignados)
+          const cantidadDisponible = asignados > 0 ? Math.max(0, cantidad - asignados) : cantidad;
+
           const plato = {
             codigo: codigoFinal,
             platoId: platoIdReal, // Guardar el PlatoId para usarlo al crear la comanda
@@ -478,7 +486,7 @@ const Index = () => {
             plannutricional: menuItem.NutricionalNombre || menuItem.nutricionalNombre || menuItem.PlanNutricionalNombre || menuItem.planNutricionalNombre || null,
             presentacion: fotoUrl,
             ingredientes: null,
-            cantidadDisponible: menuItem.Cantidad !== undefined ? parseInt(menuItem.Cantidad) : (menuItem.cantidad !== undefined ? parseInt(menuItem.cantidad) : 0),
+            cantidadDisponible: cantidadDisponible,
             aplicarBonificacion: false,
             precioFinal: costo,
           };
@@ -596,6 +604,14 @@ const Index = () => {
             0
           ) || 0;
 
+          // Calcular cantidad disponible considerando asignados
+          const cantidad = menuItem.Cantidad !== undefined ? parseInt(menuItem.Cantidad) : (menuItem.cantidad !== undefined ? parseInt(menuItem.cantidad) : 0);
+          const asignados = menuItem.Comandas !== undefined ? parseInt(menuItem.Comandas) : (menuItem.comandas !== undefined ? parseInt(menuItem.comandas) : (menuItem.comandadas !== undefined ? parseInt(menuItem.comandadas) : 0));
+          
+          // Si asignados es 0, no hacer nada (usar cantidad original)
+          // Si asignados es mayor a 0, hacer la cuenta (cantidad - asignados)
+          const cantidadDisponible = asignados > 0 ? Math.max(0, cantidad - asignados) : cantidad;
+
           const plato = {
             codigo: codigo,
             platoId: menuItem.PlatoId || menuItem.platoId || menuItem.Id || menuItem.id, // Guardar el PlatoId para usarlo al crear la comanda
@@ -605,7 +621,7 @@ const Index = () => {
             plannutricional: menuItem.NutricionalNombre || menuItem.nutricionalNombre || menuItem.PlanNutricionalNombre || menuItem.planNutricionalNombre || menuItem.plannutricional || menuItem.PlanNutricional || menuItem.plan_nutricional || null,
             presentacion: fotoUrl,
             ingredientes: menuItem.ingredientes || menuItem.Ingredientes || menuItem.ingrediente || menuItem.Ingrediente || null,
-            cantidadDisponible: menuItem.Cantidad !== undefined ? parseInt(menuItem.Cantidad) : (menuItem.cantidad !== undefined ? parseInt(menuItem.cantidad) : 0),
+            cantidadDisponible: cantidadDisponible,
             aplicarBonificacion: false,
             precioFinal: costo,
           };
@@ -1234,6 +1250,13 @@ const Index = () => {
               ? menuItem.platoId
               : (menuItem.Id || menuItem.id);
 
+            // Calcular cantidad disponible considerando asignados
+            const asignados = menuItem.Comandas !== undefined ? parseInt(menuItem.Comandas) : (menuItem.comandas !== undefined ? parseInt(menuItem.comandas) : (menuItem.comandadas !== undefined ? parseInt(menuItem.comandadas) : 0));
+            
+            // Si asignados es 0, no hacer nada (usar cantidad original)
+            // Si asignados es mayor a 0, hacer la cuenta (cantidad - asignados)
+            const cantidadDisponible = asignados > 0 ? Math.max(0, cantidad - asignados) : cantidad;
+
             const plato = {
               codigo: codigo,
               platoId: platoIdReal, // Guardar el PlatoId para usarlo al crear la comanda
@@ -1243,7 +1266,7 @@ const Index = () => {
               plannutricional: plannutricional,
               presentacion: fotoUrl,
               ingredientes: ingredientes,
-              cantidadDisponible: cantidad,
+              cantidadDisponible: cantidadDisponible,
               aplicarBonificacion: false,
               precioFinal: costo,
             };
