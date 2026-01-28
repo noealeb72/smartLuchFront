@@ -1,8 +1,6 @@
-import React, { memo, lazy, Suspense, useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { getApiBaseUrl } from '../services/configService';
-
-// Lazy load del QRCode solo cuando se necesita
-const QRCodeSVG = lazy(() => import('qrcode.react').then(module => ({ default: module.QRCodeSVG })));
+import { QRCodeSVG } from 'qrcode.react';
 
 const PedidoVigente = memo(({ pedido, index, defaultImage, onCancelar, onRecibir, isLast }) => {
   // Obtener el Npedido para el QR
@@ -131,9 +129,7 @@ const PedidoVigente = memo(({ pedido, index, defaultImage, onCancelar, onRecibir
             <div className="col-sm-6">
               {npedido && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <Suspense fallback={<div className="text-center">Cargando QR...</div>}>
-                    <QRCodeSVG value={String(npedido)} size={150} level="M" />
-                  </Suspense>
+                  <QRCodeSVG value={String(npedido)} size={150} level="M" />
                 </div>
               )}
             </div>

@@ -107,6 +107,10 @@ const Despacho = () => {
     if (filtroEstado) {
       filtrados = filtrados.filter((pedido) => {
         const estado = pedido.Estado || pedido.estado || '';
+        // Si el filtro es "P" (Pendiente), incluir tanto "P" como "PT"
+        if (filtroEstado === 'P') {
+          return estado === 'P' || estado === 'PT';
+        }
         return estado === filtroEstado;
       });
     }
@@ -142,14 +146,86 @@ const Despacho = () => {
     }
 
     const npedidoInt = parseInt(npedido);
+    const estado = pedidoSeleccionado.Estado || pedidoSeleccionado.estado;
 
     try {
       setIsLoading(true);
-      await comandasService.despacharPedidoPorNpedido(npedidoInt);
+      
+      // Si el estado es "PT", llamar a recibirPedido (envía estado "R")
+      if (estado === 'PT') {
+        await comandasService.recibirPedido(npedidoInt);
+        
+        Swal.fire({
+          title: '¡Recibido!',
+          text: 'El pedido ha sido marcado como recibido',
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
+      } else {
+        // Si el estado es "P", llamar a despacharPedidoPorNpedido (envía estado "D")
+        await comandasService.despacharPedidoPorNpedido(npedidoInt);
+        
+        Swal.fire({
+          title: '¡Despachado!',
+          text: 'El plato ha sido marcado como despachado',
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
+      }
+
+      // Cerrar modal y recargar pedidos
+      setMostrarModal(false);
+      setPedidoSeleccionado(null);
+      await cargarPedidos();
+    } catch (error) {
+      if (!error.redirectToLogin) {
+        Swal.fire({
+          title: 'Error',
+          text: error.message || (estado === 'PT' ? 'Error al recibir el pedido' : 'Error al despachar el pedido'),
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Devolver un pedido
+  const handleDevolver = async () => {
+    if (!pedidoSeleccionado) return;
+    
+    // Obtener Npedido del pedido seleccionado
+    const npedido = pedidoSeleccionado.Npedido || 
+                   pedidoSeleccionado.npedido || 
+                   pedidoSeleccionado.Id || 
+                   pedidoSeleccionado.id;
+    
+    if (!npedido || npedido <= 0 || isNaN(parseInt(npedido))) {
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo obtener el número de pedido.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+      return;
+    }
+
+    const npedidoInt = parseInt(npedido);
+
+    try {
+      setIsLoading(true);
+      await comandasService.devolverPedido(npedidoInt);
       
       Swal.fire({
-        title: '¡Despachado!',
-        text: 'El plato ha sido marcado como despachado',
+        title: '¡Devuelto!',
+        text: 'El pedido ha sido marcado como devuelto',
         icon: 'success',
         showConfirmButton: false,
         timer: 2000,
@@ -164,7 +240,7 @@ const Despacho = () => {
       if (!error.redirectToLogin) {
         Swal.fire({
           title: 'Error',
-          text: error.message || 'Error al despachar el pedido',
+          text: error.message || 'Error al devolver el pedido',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -202,6 +278,7 @@ const Despacho = () => {
   const obtenerEstadoBadge = (estado) => {
     const estados = {
       'P': { texto: 'Pendiente', color: '#ffffff', bgColor: '#ff9800' }, // Naranja con texto blanco
+      'PT': { texto: 'Pendiente Totem', color: '#ffffff', bgColor: '#ff9800' }, // Naranja con texto blanco
       'D': { texto: 'Devuelto', color: '#6c757d', bgColor: '#f5f5f5' }, // Gris
       'C': { texto: 'Cancelado', color: '#dc3545', bgColor: '#f8d7da' }, // Rojo
       'R': { texto: 'Recibido', color: '#28a745', bgColor: '#d4edda' }, // Verde
@@ -302,7 +379,7 @@ const Despacho = () => {
         }
         if (columnasSeleccionadas.estado) {
           const estado = pedido.Estado || pedido.estado;
-          const estadoTexto = estado === 'P' ? 'Pendiente' : estado === 'D' ? 'Devuelto' : estado === 'C' ? 'Cancelado' : estado === 'R' ? 'Recibido' : estado === 'E' ? 'En Aceptación' : estado || '-';
+          const estadoTexto = estado === 'P' ? 'Pendiente' : estado === 'PT' ? 'Pendiente Totem' : estado === 'D' ? 'Devuelto' : estado === 'C' ? 'Cancelado' : estado === 'R' ? 'Recibido' : estado === 'E' ? 'En Aceptación' : estado || '-';
           fila.push(estadoTexto);
         }
         if (columnasSeleccionadas.turno) {
@@ -382,7 +459,7 @@ const Despacho = () => {
         }
         if (columnasSeleccionadas.estado) {
           const estado = pedido.Estado || pedido.estado;
-          const estadoTexto = estado === 'P' ? 'Pendiente' : estado === 'D' ? 'Devuelto' : estado === 'C' ? 'Cancelado' : estado === 'R' ? 'Recibido' : estado === 'E' ? 'En Aceptación' : estado || '-';
+          const estadoTexto = estado === 'P' ? 'Pendiente' : estado === 'PT' ? 'Pendiente Totem' : estado === 'D' ? 'Devuelto' : estado === 'C' ? 'Cancelado' : estado === 'R' ? 'Recibido' : estado === 'E' ? 'En Aceptación' : estado || '-';
           fila.push(estadoTexto);
         }
         if (columnasSeleccionadas.turno) {
@@ -672,7 +749,7 @@ const Despacho = () => {
                   align: 'center',
                   render: (v, row) => {
                     const estado = row.Estado || row.estado || 'P';
-                    if (estado === 'P') {
+                    if (estado === 'P' || estado === 'PT') {
                       return (
                         <button
                           className="btn btn-sm"
@@ -925,15 +1002,40 @@ const Despacho = () => {
                         setMostrarModal(false);
                         setPedidoSeleccionado(null);
                       }}
+                      style={{
+                        backgroundColor: '#dc3545',
+                        borderColor: '#dc3545',
+                        color: 'white',
+                      }}
                     >
                       Cerrar
                     </button>
-                    {(pedidoSeleccionado.estado || pedidoSeleccionado.Estado) === 'P' && (
+                    {((pedidoSeleccionado.estado || pedidoSeleccionado.Estado) === 'PT') && (
                       <button
                         type="button"
-                        className="btn btn-dark"
+                        className="btn mr-2"
+                        onClick={handleDevolver}
+                        disabled={isLoading}
+                        style={{
+                          backgroundColor: '#343a40',
+                          borderColor: '#343a40',
+                          color: 'white',
+                        }}
+                      >
+                        Devolver pedido
+                      </button>
+                    )}
+                    {((pedidoSeleccionado.estado || pedidoSeleccionado.Estado) === 'P' || (pedidoSeleccionado.estado || pedidoSeleccionado.Estado) === 'PT') && (
+                      <button
+                        type="button"
+                        className="btn"
                         onClick={handleDespachar}
                         disabled={isLoading}
+                        style={{
+                          backgroundColor: '#28a745',
+                          borderColor: '#28a745',
+                          color: 'white',
+                        }}
                       >
                         Despachar
                       </button>

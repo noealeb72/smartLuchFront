@@ -117,3 +117,43 @@ select.form-control {
   contain: layout style paint;
 }
 
+/* Ocultar elementos de formulario dentro de popups de SweetAlert2 */
+.swal2-popup form,
+.swal2-popup input[type="file"],
+.swal2-popup input[type="text"]:not(.swal2-input),
+.swal2-popup input[type="email"]:not(.swal2-input),
+.swal2-popup textarea:not(.swal2-textarea),
+.swal2-popup button:not(.swal2-confirm):not(.swal2-cancel):not(.swal2-close):not(.swal2-deny),
+.swal2-popup label[for*="file"],
+.swal2-popup .swal2-file,
+.swal2-popup .swal2-file-label,
+/* Ocultar los elementos de formulario de SweetAlert2 cuando no se usan */
+.swal2-popup .swal2-input,
+.swal2-popup .swal2-select,
+.swal2-popup .swal2-textarea {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* Ocultar elementos que contengan texto sobre archivos */
+.swal2-popup *:not(.swal2-title):not(.swal2-icon):not(.swal2-content) {
+  /* Solo ocultar si contiene texto específico sobre archivos */
+}
+
+.swal2-popup *:has-text("Examinar"),
+.swal2-popup *:has-text("No se ha seleccionado ningún archivo"),
+.swal2-popup *:has-text("Seleccionar archivo") {
+  display: none !important;
+  visibility: hidden !important;
+}
+

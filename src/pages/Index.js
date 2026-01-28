@@ -15,6 +15,8 @@ const Index = () => {
   const { user } = useAuth();
   const { turnos, pedidosHoy, menuDelDia, usuarioData, actualizarDatos } = useDashboard();
   const [isLoading, setIsLoading] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
+  const loadingTimeoutRef = useRef(null);
   const [selectedTurno, setSelectedTurno] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
   const [pedidosVigentes, setPedidosVigentes] = useState(pedidosHoy);
@@ -125,8 +127,9 @@ const Index = () => {
           title: 'Error al cargar datos',
           text: error.message || 'Error al cargar los datos iniciales',
           icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
         });
       } finally {
         // Siempre quitar el loading, incluso si el componente está desmontado
@@ -217,6 +220,30 @@ const Index = () => {
   useEffect(() => {
     setPedidosVigentes(pedidosHoy);
   }, [pedidosHoy]);
+
+  // Controlar cuándo mostrar el spinner con un delay mínimo para evitar parpadeos breves
+  useEffect(() => {
+    if (isLoading) {
+      // Si isLoading se pone en true, esperar 200ms antes de mostrar el spinner
+      loadingTimeoutRef.current = setTimeout(() => {
+        setShowLoading(true);
+      }, 200);
+    } else {
+      // Si isLoading se pone en false, ocultar inmediatamente y limpiar el timeout
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+      setShowLoading(false);
+    }
+    
+    // Limpiar timeout al desmontar
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, [isLoading]);
 
   // Actualización periódica cada 2 segundos usando /api/inicio/web-actualizado
   useEffect(() => {
@@ -500,6 +527,7 @@ const Index = () => {
       }
     } else if (selectedTurno && (!menuDelDia || menuDelDia.length === 0)) {
       // Si hay turno seleccionado pero no hay menuDelDia, intentar cargar desde el API
+      // No mostrar loading para evitar parpadeo cuando se actualiza después de enviar/cancelar pedido
       cargarMenuDesdeAPI();
     } else if (!selectedTurno) {
       setMenuItems([]);
@@ -510,7 +538,8 @@ const Index = () => {
     if (!selectedTurno) return;
 
     try {
-      setIsLoading(true);
+      // No mostrar loading para evitar parpadeo cuando se actualiza después de enviar/cancelar pedido
+      // setIsLoading(true);
 
       const turnoId = selectedTurno.id || selectedTurno.Id || selectedTurno.ID;
       if (!turnoId) {
@@ -640,13 +669,15 @@ const Index = () => {
           title: 'Error',
           text: errorMessage,
           icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
         });
       }
       setMenuItems([]);
     } finally {
-      setIsLoading(false);
+      // No quitar loading porque no lo pusimos en true para evitar parpadeo
+      // setIsLoading(false);
     }
   }, [selectedTurno, defaultImage, usuarioData, user]);
 
@@ -688,8 +719,9 @@ const Index = () => {
         title: 'Error',
         text: 'No se ha seleccionado un turno válido.',
         icon: 'error',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
       });
       return;
     }
@@ -711,8 +743,9 @@ const Index = () => {
         title: 'Ya tienes un pedido en este turno',
         text: 'No es posible hacer más de un pedido en el mismo turno del mismo día.',
         icon: 'error',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
       });
       return;
     }
@@ -732,8 +765,9 @@ const Index = () => {
           title: 'Error',
           text: 'No se pudo obtener el ID del usuario',
           icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
         });
         return;
       }
@@ -781,8 +815,9 @@ const Index = () => {
           title: 'Error',
           text: 'No se pudo obtener el ID del plato. Por favor, recarga la página e intenta nuevamente.',
           icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
         });
         return;
       }
@@ -792,8 +827,9 @@ const Index = () => {
           title: 'Error',
           text: 'No se pudo obtener el ID del menú. Por favor, recarga la página e intenta nuevamente.',
           icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
         });
         return;
       }
@@ -803,8 +839,9 @@ const Index = () => {
           title: 'Error',
           text: 'No se pudo obtener el ID del menú. Por favor, recarga la página e intenta nuevamente.',
           icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
         });
         return;
       }
@@ -816,8 +853,9 @@ const Index = () => {
           title: 'Error',
           text: 'No se pudo obtener el ID del turno',
           icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
         });
         return;
       }
@@ -833,8 +871,9 @@ const Index = () => {
           title: 'Error',
           text: 'Faltan datos del usuario (planta, centro de costo, proyecto o jerarquía)',
           icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
         });
         return;
       }
@@ -886,15 +925,137 @@ const Index = () => {
         showConfirmButton: false,
         timer: 2000,
         timerProgressBar: true,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          // Remover required de todos los inputs de archivo en la página ANTES de que se renderice
+          const allFileInputs = document.querySelectorAll('input[type="file"]');
+          allFileInputs.forEach(input => {
+            input.removeAttribute('required');
+            // Ocultar temporalmente todos los inputs de archivo de la página
+            input.style.display = 'none';
+          });
+          
+          // Función para ocultar elementos de formulario dentro del popup
+          const ocultarElementosFormulario = () => {
+            const swalPopup = document.querySelector('.swal2-popup');
+            if (!swalPopup) return;
+            
+            // Aplicar estilos directamente con !important usando setProperty
+            const style = document.createElement('style');
+            style.id = 'swal-hide-forms-enviado';
+            style.textContent = `
+              .swal2-popup form,
+              .swal2-popup input[type="file"],
+              .swal2-popup input[type="text"]:not(.swal2-input),
+              .swal2-popup input[type="email"]:not(.swal2-input),
+              .swal2-popup textarea:not(.swal2-textarea),
+              .swal2-popup button:not(.swal2-confirm):not(.swal2-cancel):not(.swal2-close):not(.swal2-deny),
+              .swal2-popup label[for*="file"],
+              .swal2-popup .swal2-file,
+              .swal2-popup .swal2-file-label,
+              .swal2-popup .swal2-input,
+              .swal2-popup .swal2-select,
+              .swal2-popup .swal2-textarea {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                width: 0 !important;
+                overflow: hidden !important;
+                opacity: 0 !important;
+                position: absolute !important;
+                left: -9999px !important;
+                pointer-events: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+              }
+            `;
+            // Remover estilo anterior si existe
+            const existingStyle = document.getElementById('swal-hide-forms-enviado');
+            if (existingStyle) existingStyle.remove();
+            document.head.appendChild(style);
+            
+            // Ocultar elementos directamente - ESPECÍFICAMENTE los elementos de SweetAlert2
+            const swal2Input = swalPopup.querySelector('.swal2-input');
+            if (swal2Input) {
+              swal2Input.style.setProperty('display', 'none', 'important');
+            }
+            
+            const swal2Select = swalPopup.querySelector('.swal2-select');
+            if (swal2Select) {
+              swal2Select.style.setProperty('display', 'none', 'important');
+            }
+            
+            const swal2Textarea = swalPopup.querySelector('.swal2-textarea');
+            if (swal2Textarea) {
+              swal2Textarea.style.setProperty('display', 'none', 'important');
+            }
+            
+            const forms = swalPopup.querySelectorAll('form');
+            forms.forEach(form => {
+              form.style.setProperty('display', 'none', 'important');
+            });
+            
+            const fileInputs = swalPopup.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+              input.style.setProperty('display', 'none', 'important');
+              input.removeAttribute('required');
+            });
+            
+            const textInputs = swalPopup.querySelectorAll('input[type="text"], input[type="email"]');
+            textInputs.forEach(input => {
+              if (!input.classList.contains('swal2-input')) {
+                input.style.setProperty('display', 'none', 'important');
+              }
+            });
+            
+            const textareas = swalPopup.querySelectorAll('textarea');
+            textareas.forEach(textarea => {
+              if (!textarea.classList.contains('swal2-textarea')) {
+                textarea.style.setProperty('display', 'none', 'important');
+              }
+            });
+            
+            // Ocultar elementos con texto sobre archivos
+            const allElements = swalPopup.querySelectorAll('*');
+            allElements.forEach(element => {
+              if (element.classList.contains('swal2-title') || 
+                  element.classList.contains('swal2-icon') || 
+                  element.classList.contains('swal2-content') ||
+                  element.closest('.swal2-title') ||
+                  element.closest('.swal2-icon')) {
+                return;
+              }
+              
+              const text = (element.textContent || '').trim();
+              if (text === 'No se ha seleccionado ningún archivo.' || 
+                  text === 'No se ha seleccionado ningún archivo' ||
+                  (text.includes('Examinar') && !element.closest('.swal2-title'))) {
+                element.style.setProperty('display', 'none', 'important');
+              }
+            });
+            
+            // Limpiar el estilo después de 3 segundos
+            setTimeout(() => {
+              const styleToRemove = document.getElementById('swal-hide-forms-enviado');
+              if (styleToRemove) styleToRemove.remove();
+            }, 3000);
+          };
+          
+          // Ejecutar inmediatamente y después de un pequeño delay
+          ocultarElementosFormulario();
+          setTimeout(ocultarElementosFormulario, 50);
+          setTimeout(ocultarElementosFormulario, 150);
+        },
       });
 
       // Cerrar modal y recargar datos
         setShowConfirmModal(false);
         setPedidoComentario('');
       
-        // Recargar datos desde /api/inicio/web
+        // Recargar datos desde /api/inicio/web en segundo plano (sin mostrar loading para evitar parpadeo)
         try {
-          setIsLoading(true);
           // Usar inicioService pasando el id del usuario
           const usuarioId = user?.id;
           if (!usuarioId) {
@@ -906,8 +1067,6 @@ const Index = () => {
           setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
         } catch (error) {
           // Error silencioso, ya se mostrará en el siguiente render
-        } finally {
-          setIsLoading(false);
         }
     } catch (error) {
       // Si hay error de conexión, el interceptor ya redirige automáticamente
@@ -970,8 +1129,9 @@ const Index = () => {
         title: 'Error',
         text: 'No hay un pedido seleccionado.',
         icon: 'error',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
       });
       return;
     }
@@ -995,8 +1155,9 @@ const Index = () => {
             title: 'Error',
             text: 'No se pudo obtener el número de pedido.',
             icon: 'error',
-            confirmButtonText: 'Aceptar',
-            confirmButtonColor: '#F34949',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
           });
           return;
         }
@@ -1010,8 +1171,9 @@ const Index = () => {
             title: 'Error',
             text: 'No se pudo obtener el número de pedido.',
             icon: 'error',
-            confirmButtonText: 'Aceptar',
-            confirmButtonColor: '#F34949',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
           });
           return;
         }
@@ -1025,8 +1187,9 @@ const Index = () => {
             title: 'Error',
             text: 'No se pudo obtener el número de pedido.',
             icon: 'error',
-            confirmButtonText: 'Aceptar',
-            confirmButtonColor: '#F34949',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
           });
           return;
         }
@@ -1046,8 +1209,9 @@ const Index = () => {
             title: 'Error',
             text: 'No se pudo obtener el ID del pedido.',
             icon: 'error',
-            confirmButtonText: 'Aceptar',
-            confirmButtonColor: '#F34949',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
           });
           return;
         }
@@ -1067,6 +1231,129 @@ const Index = () => {
         showConfirmButton: false,
         timer: 2000,
         timerProgressBar: true,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          // Remover required de todos los inputs de archivo en la página ANTES de que se renderice
+          const allFileInputs = document.querySelectorAll('input[type="file"]');
+          allFileInputs.forEach(input => {
+            input.removeAttribute('required');
+            // Ocultar temporalmente todos los inputs de archivo de la página
+            input.style.display = 'none';
+          });
+          
+          // Función para ocultar elementos de formulario dentro del popup
+          const ocultarElementosFormulario = () => {
+            const swalPopup = document.querySelector('.swal2-popup');
+            if (!swalPopup) return;
+            
+            // Aplicar estilos directamente con !important usando setProperty
+            const style = document.createElement('style');
+            style.id = 'swal-hide-forms-cancelar';
+            style.textContent = `
+              .swal2-popup form,
+              .swal2-popup input[type="file"],
+              .swal2-popup input[type="text"]:not(.swal2-input),
+              .swal2-popup input[type="email"]:not(.swal2-input),
+              .swal2-popup textarea:not(.swal2-textarea),
+              .swal2-popup button:not(.swal2-confirm):not(.swal2-cancel):not(.swal2-close):not(.swal2-deny),
+              .swal2-popup label[for*="file"],
+              .swal2-popup .swal2-file,
+              .swal2-popup .swal2-file-label,
+              .swal2-popup .swal2-input,
+              .swal2-popup .swal2-select,
+              .swal2-popup .swal2-textarea {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                width: 0 !important;
+                overflow: hidden !important;
+                opacity: 0 !important;
+                position: absolute !important;
+                left: -9999px !important;
+                pointer-events: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+              }
+            `;
+            // Remover estilo anterior si existe
+            const existingStyle = document.getElementById('swal-hide-forms-cancelar');
+            if (existingStyle) existingStyle.remove();
+            document.head.appendChild(style);
+            
+            // Ocultar elementos directamente - ESPECÍFICAMENTE los elementos de SweetAlert2
+            const swal2Input = swalPopup.querySelector('.swal2-input');
+            if (swal2Input) {
+              swal2Input.style.setProperty('display', 'none', 'important');
+            }
+            
+            const swal2Select = swalPopup.querySelector('.swal2-select');
+            if (swal2Select) {
+              swal2Select.style.setProperty('display', 'none', 'important');
+            }
+            
+            const swal2Textarea = swalPopup.querySelector('.swal2-textarea');
+            if (swal2Textarea) {
+              swal2Textarea.style.setProperty('display', 'none', 'important');
+            }
+            
+            const forms = swalPopup.querySelectorAll('form');
+            forms.forEach(form => {
+              form.style.setProperty('display', 'none', 'important');
+            });
+            
+            const fileInputs = swalPopup.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+              input.style.setProperty('display', 'none', 'important');
+              input.removeAttribute('required');
+            });
+            
+            const textInputs = swalPopup.querySelectorAll('input[type="text"], input[type="email"]');
+            textInputs.forEach(input => {
+              if (!input.classList.contains('swal2-input')) {
+                input.style.setProperty('display', 'none', 'important');
+              }
+            });
+            
+            const textareas = swalPopup.querySelectorAll('textarea');
+            textareas.forEach(textarea => {
+              if (!textarea.classList.contains('swal2-textarea')) {
+                textarea.style.setProperty('display', 'none', 'important');
+              }
+            });
+            
+            // Ocultar elementos con texto sobre archivos
+            const allElements = swalPopup.querySelectorAll('*');
+            allElements.forEach(element => {
+              if (element.classList.contains('swal2-title') || 
+                  element.classList.contains('swal2-icon') || 
+                  element.classList.contains('swal2-content') ||
+                  element.closest('.swal2-title') ||
+                  element.closest('.swal2-icon')) {
+                return;
+              }
+              
+              const text = (element.textContent || '').trim();
+              if (text === 'No se ha seleccionado ningún archivo.' || 
+                  text === 'No se ha seleccionado ningún archivo' ||
+                  (text.includes('Examinar') && !element.closest('.swal2-title'))) {
+                element.style.setProperty('display', 'none', 'important');
+              }
+            });
+            
+            // Limpiar el estilo después de 3 segundos
+            setTimeout(() => {
+              const styleToRemove = document.getElementById('swal-hide-forms-cancelar');
+              if (styleToRemove) styleToRemove.remove();
+            }, 3000);
+          };
+          
+          // Ejecutar inmediatamente y después de un pequeño delay
+          ocultarElementosFormulario();
+          setTimeout(ocultarElementosFormulario, 50);
+          setTimeout(ocultarElementosFormulario, 150);
+        },
       });
 
       // Cerrar modales y recargar datos
@@ -1074,9 +1361,8 @@ const Index = () => {
         setShowReceiveModal(false);
         setPedidoCalificacion(1);
       
-        // Recargar datos desde /api/inicio/web después de actualizar pedido
+        // Recargar datos desde /api/inicio/web después de actualizar pedido en segundo plano (sin mostrar loading para evitar parpadeo)
         try {
-          setIsLoading(true);
           // Usar inicioService pasando el id del usuario
           const usuarioId = user?.id;
           if (!usuarioId) {
@@ -1088,8 +1374,6 @@ const Index = () => {
           setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
         } catch (error) {
           // Error silencioso, ya se mostrará en el siguiente render
-        } finally {
-          setIsLoading(false);
         }
     } catch (error) {
       // Si hay error de conexión, el interceptor ya redirige automáticamente
@@ -1098,8 +1382,9 @@ const Index = () => {
           title: 'Operación Incorrecta',
           text: error.message || 'Error al actualizar el pedido',
           icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
         });
       }
     }
@@ -1153,7 +1438,7 @@ const Index = () => {
       }
       
       try {
-        // Siempre llamar a getMenuByTurno (por-turno)
+        // Siempre llamar a getMenuByTurno (por-turno) - sin mostrar loading para evitar parpadeo
           const hoy = new Date().toISOString().split('T')[0];
           const planta = usuarioData?.plantaId || user?.plantaId || '';
           const centro = usuarioData?.centroCostoId || user?.centroCostoId || '';
@@ -1310,7 +1595,7 @@ const Index = () => {
 
   return (
     <div className="container-fluid" style={{ padding: 0 }}>
-      {isLoading && (
+      {showLoading && (
         <div className="se-pre-con">
           <span className="sr-only">Cargando contenido, por favor espere...</span>
         </div>

@@ -327,13 +327,24 @@ const MenuDelDia = () => {
   // Cargar platos desde el API cuando se seleccione un plan nutricional
   useEffect(() => {
     const cargarPlatosPorPlan = async () => {
-      if (!formData.plannutricional_id || formData.plannutricional_id === '' || formData.plannutricional_id === '-- Seleccionar --') {
+      // Si hay un solo plan nutricional y no está seleccionado en formData, establecerlo
+      let planIdParaUsar = formData.plannutricional_id;
+      if (planesNutricionales.length === 1 && (!planIdParaUsar || planIdParaUsar === '')) {
+        const planId = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
+        planIdParaUsar = String(planId);
+        setFormData(prev => ({
+          ...prev,
+          plannutricional_id: planIdParaUsar
+        }));
+      }
+      
+      if (!planIdParaUsar || planIdParaUsar === '' || planIdParaUsar === '-- Seleccionar --') {
         setPlatosPorPlan([]);
         return;
       }
 
       try {
-        const planId = parseInt(formData.plannutricional_id);
+        const planId = parseInt(planIdParaUsar);
         if (!Number.isInteger(planId) || planId <= 0) {
           setPlatosPorPlan([]);
           return;
@@ -363,7 +374,7 @@ const MenuDelDia = () => {
     };
 
     cargarPlatosPorPlan();
-  }, [formData.plannutricional_id]);
+  }, [formData.plannutricional_id, planesNutricionales.length]);
 
   // Actualizar el nombre del plato cuando se cargan los platosPorPlan y hay un platoId
   useEffect(() => {
@@ -1459,8 +1470,38 @@ const MenuDelDia = () => {
 
   const handleGuardar = async () => {
     try {
+      // Asignar automáticamente valores únicos si hay un solo valor disponible
+      const datosActualizados = { ...formData };
+      
+      // Plan nutricional
+      if (!datosActualizados.plannutricional_id && planesNutricionales.length === 1) {
+        const planId = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
+        datosActualizados.plannutricional_id = String(planId);
+      }
+      
+      // Proyecto
+      if (!datosActualizados.proyectoId && proyectos.length === 1) {
+        const proyectoId = proyectos[0].id || proyectos[0].Id || proyectos[0].ID;
+        datosActualizados.proyectoId = String(proyectoId);
+      }
+      
+      // Centro de costo
+      if (!datosActualizados.centroCostoId && centrosDeCosto.length === 1) {
+        const centroId = centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID;
+        datosActualizados.centroCostoId = String(centroId);
+      }
+      
+      // Planta
+      if (!datosActualizados.plantaId && plantas.length === 1) {
+        const plantaId = plantas[0].id || plantas[0].Id || plantas[0].ID;
+        datosActualizados.plantaId = String(plantaId);
+      }
+      
+      // Actualizar formData con los valores asignados automáticamente
+      setFormData(datosActualizados);
+      
       // Validaciones
-      if (!formData.plannutricional_id) {
+      if (!datosActualizados.plannutricional_id) {
         Swal.fire({
           title: 'Error',
           text: 'Debe seleccionar un plan nutricional',
@@ -1471,7 +1512,7 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!formData.platoId) {
+      if (!datosActualizados.platoId) {
         Swal.fire({
           title: 'Error',
           text: 'Debe seleccionar un plato',
@@ -1482,7 +1523,7 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!formData.turnoId) {
+      if (!datosActualizados.turnoId) {
         Swal.fire({
           title: 'Error',
           text: 'Debe seleccionar un turno',
@@ -1493,7 +1534,7 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!formData.cantidad || parseFloat(formData.cantidad) <= 0) {
+      if (!datosActualizados.cantidad || parseFloat(datosActualizados.cantidad) <= 0) {
         Swal.fire({
           title: 'Error',
           text: 'La cantidad debe ser mayor a 0',
@@ -1504,10 +1545,10 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!formData.fecha) {
+      if (!datosActualizados.fecha) {
         Swal.fire({
           title: 'Error',
-          text: 'Debe seleccionar una fecha',
+          text: 'Debe seleccionar una fecha válida',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -1515,7 +1556,7 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!formData.jerarquiaId) {
+      if (!datosActualizados.jerarquiaId) {
         Swal.fire({
           title: 'Error',
           text: 'Debe seleccionar una jerarquía',
@@ -1526,7 +1567,7 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!formData.proyectoId) {
+      if (!datosActualizados.proyectoId) {
         Swal.fire({
           title: 'Error',
           text: 'Debe seleccionar un proyecto',
@@ -1537,7 +1578,7 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!formData.centroCostoId) {
+      if (!datosActualizados.centroCostoId) {
         Swal.fire({
           title: 'Error',
           text: 'Debe seleccionar un centro de costo',
@@ -1548,7 +1589,7 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!formData.plantaId) {
+      if (!datosActualizados.plantaId) {
         Swal.fire({
           title: 'Error',
           text: 'Debe seleccionar una planta',
@@ -1562,15 +1603,15 @@ const MenuDelDia = () => {
       setIsLoading(true);
 
       const menuData = {
-        PlatoId: parseInt(formData.platoId),
-        TurnoId: parseInt(formData.turnoId),
-        JerarquiaId: formData.jerarquiaId ? parseInt(formData.jerarquiaId) : null,
-        Plannutricional_id: formData.plannutricional_id ? parseInt(formData.plannutricional_id) : null,
-        ProyectoId: formData.proyectoId ? parseInt(formData.proyectoId) : null,
-        CentroCostoId: formData.centroCostoId ? parseInt(formData.centroCostoId) : null,
-        PlantaId: formData.plantaId ? parseInt(formData.plantaId) : null,
-        Cantidad: parseInt(formData.cantidad),
-        Fecha: formData.fecha,
+        PlatoId: parseInt(datosActualizados.platoId),
+        TurnoId: parseInt(datosActualizados.turnoId),
+        JerarquiaId: datosActualizados.jerarquiaId ? parseInt(datosActualizados.jerarquiaId) : null,
+        Plannutricional_id: datosActualizados.plannutricional_id ? parseInt(datosActualizados.plannutricional_id) : null,
+        ProyectoId: datosActualizados.proyectoId ? parseInt(datosActualizados.proyectoId) : null,
+        CentroCostoId: datosActualizados.centroCostoId ? parseInt(datosActualizados.centroCostoId) : null,
+        PlantaId: datosActualizados.plantaId ? parseInt(datosActualizados.plantaId) : null,
+        Cantidad: parseInt(datosActualizados.cantidad),
+        Fecha: datosActualizados.fecha,
       };
 
       if (vista === 'editar') {
@@ -2602,7 +2643,7 @@ const MenuDelDia = () => {
                 <div className="col-md-3">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="plannutricional_id" style={{ marginBottom: '0.25rem' }}>
-                      Plan Nutricional <span style={{ color: '#F34949' }}>*</span>
+                      Plan Nutricional {planesNutricionales.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
                     </label>
                     <select
                       className="form-control"
@@ -2643,10 +2684,30 @@ const MenuDelDia = () => {
                         </>
                       )}
                     </select>
+                    {planesNutricionales.length === 1 && (
+                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <i 
+                          className="fa fa-info-circle" 
+                          title="Solo hay una opción disponible"
+                          style={{ 
+                            color: '#6c757d',
+                            fontSize: '0.875rem',
+                            cursor: 'help',
+                          }}
+                          aria-hidden="true"
+                        ></i>
+                        <span style={{ 
+                          color: '#6c757d',
+                          fontSize: '0.875rem',
+                        }}>
+                          Solo hay una opción disponible
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="col-md-6">
-                  <div className="form-group" style={{ marginBottom: '0.5rem', position: 'relative' }}>
+                  <div className="form-group" style={{ marginBottom: '0.25rem', position: 'relative' }}>
                     <label htmlFor="platoId" style={{ marginBottom: '0.25rem' }}>
                       Plato <span style={{ color: '#F34949' }}>*</span>
                     </label>
@@ -2676,10 +2737,10 @@ const MenuDelDia = () => {
                               setMostrarDropdownPlato(true);
                             }
                           }}
-                          placeholder={!formData.plannutricional_id || formData.plannutricional_id === '' 
+                          placeholder={(!formData.plannutricional_id || formData.plannutricional_id === '') && planesNutricionales.length !== 1
                             ? 'Primero seleccione un Plan Nutricional' 
                             : 'Buscar plato por nombre o código...'}
-                          disabled={!formData.plannutricional_id || formData.plannutricional_id === ''}
+                          disabled={(!formData.plannutricional_id || formData.plannutricional_id === '') && planesNutricionales.length !== 1}
                       required
                           style={{
                             fontSize: '0.875rem',
@@ -2687,7 +2748,7 @@ const MenuDelDia = () => {
                             height: '38px',
                             boxSizing: 'border-box',
                             lineHeight: '1.5',
-                            ...( (!formData.plannutricional_id || formData.plannutricional_id === '') ? {
+                            ...( (!formData.plannutricional_id || formData.plannutricional_id === '') && planesNutricionales.length !== 1 ? {
                               backgroundColor: '#e9ecef',
                               cursor: 'not-allowed',
                               opacity: 0.7,
@@ -2813,8 +2874,8 @@ const MenuDelDia = () => {
                       required
                     />
                     
-                    {(!formData.plannutricional_id || formData.plannutricional_id === '') && (
-                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {(!formData.plannutricional_id || formData.plannutricional_id === '') && planesNutricionales.length !== 1 && (
+                      <div style={{ marginTop: '0.25rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <i 
                           className="fa fa-info-circle" 
                           title="Debe seleccionar el plan nutricional para poder buscar y agregar platos"
@@ -2830,6 +2891,26 @@ const MenuDelDia = () => {
                           fontSize: '0.875rem',
                         }}>
                           Debe seleccionar primero un plan nutricional para poder buscar un plato
+                        </span>
+                      </div>
+                    )}
+                    {planesNutricionales.length === 1 && (
+                      <div style={{ marginTop: '0.25rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <i 
+                          className="fa fa-info-circle" 
+                          title="El plan nutricional está seleccionado automáticamente"
+                          style={{ 
+                            color: '#6c757d',
+                            fontSize: '0.875rem',
+                            cursor: 'help',
+                          }}
+                          aria-hidden="true"
+                        ></i>
+                        <span style={{ 
+                          color: '#6c757d',
+                          fontSize: '0.875rem',
+                        }}>
+                          Seleccionar solamente el plato porque el plan nutricional es {planesNutricionales[0].nombre || planesNutricionales[0].Nombre || planesNutricionales[0].descripcion || planesNutricionales[0].Descripcion || 'N/A'}
                         </span>
                       </div>
                     )}
@@ -2892,7 +2973,7 @@ const MenuDelDia = () => {
                 <div className="col-md-2">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="jerarquiaId" style={{ marginBottom: '0.25rem' }}>
-                      Jerarquía <span style={{ color: '#F34949' }}>*</span>
+                      Jerarquía {jerarquias.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
                     </label>
                     <select
                       className="form-control"
@@ -2933,12 +3014,32 @@ const MenuDelDia = () => {
                         </>
                       )}
                     </select>
+                    {jerarquias.length === 1 && (
+                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <i 
+                          className="fa fa-info-circle" 
+                          title="Solo hay una opción disponible"
+                          style={{ 
+                            color: '#6c757d',
+                            fontSize: '0.875rem',
+                            cursor: 'help',
+                          }}
+                          aria-hidden="true"
+                        ></i>
+                        <span style={{ 
+                          color: '#6c757d',
+                          fontSize: '0.875rem',
+                        }}>
+                          Solo hay una opción disponible
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="col-md-2">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="turnoId" style={{ marginBottom: '0.25rem' }}>
-                      Turno <span style={{ color: '#F34949' }}>*</span>
+                      Turno {turnos.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
                     </label>
                     <select
                       className="form-control"
@@ -2979,12 +3080,32 @@ const MenuDelDia = () => {
                         </>
                       )}
                     </select>
+                    {turnos.length === 1 && (
+                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <i 
+                          className="fa fa-info-circle" 
+                          title="Solo hay una opción disponible"
+                          style={{ 
+                            color: '#6c757d',
+                            fontSize: '0.875rem',
+                            cursor: 'help',
+                          }}
+                          aria-hidden="true"
+                        ></i>
+                        <span style={{ 
+                          color: '#6c757d',
+                          fontSize: '0.875rem',
+                        }}>
+                          Solo hay una opción disponible
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="col-md-2">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="proyectoId" style={{ marginBottom: '0.25rem' }}>
-                      Proyecto <span style={{ color: '#F34949' }}>*</span>
+                      Proyecto {proyectos.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
                     </label>
                     <select
                       className="form-control"
@@ -3025,12 +3146,32 @@ const MenuDelDia = () => {
                         </>
                       )}
                     </select>
+                    {proyectos.length === 1 && (
+                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <i 
+                          className="fa fa-info-circle" 
+                          title="Solo hay una opción disponible"
+                          style={{ 
+                            color: '#6c757d',
+                            fontSize: '0.875rem',
+                            cursor: 'help',
+                          }}
+                          aria-hidden="true"
+                        ></i>
+                        <span style={{ 
+                          color: '#6c757d',
+                          fontSize: '0.875rem',
+                        }}>
+                          Solo hay una opción disponible
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="col-md-3">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="centroCostoId" style={{ marginBottom: '0.25rem' }}>
-                      Centro de costo <span style={{ color: '#F34949' }}>*</span>
+                      Centro de costo {centrosDeCosto.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
                     </label>
                     <select
                       className="form-control"
@@ -3071,12 +3212,32 @@ const MenuDelDia = () => {
                         </>
                       )}
                     </select>
+                    {centrosDeCosto.length === 1 && (
+                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <i 
+                          className="fa fa-info-circle" 
+                          title="Solo hay una opción disponible"
+                          style={{ 
+                            color: '#6c757d',
+                            fontSize: '0.875rem',
+                            cursor: 'help',
+                          }}
+                          aria-hidden="true"
+                        ></i>
+                        <span style={{ 
+                          color: '#6c757d',
+                          fontSize: '0.875rem',
+                        }}>
+                          Solo hay una opción disponible
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="col-md-3">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="plantaId" style={{ marginBottom: '0.25rem' }}>
-                      Planta <span style={{ color: '#F34949' }}>*</span>
+                      Planta {plantas.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
                     </label>
                     <select
                       className="form-control"
@@ -3117,6 +3278,26 @@ const MenuDelDia = () => {
                         </>
                       )}
                     </select>
+                    {plantas.length === 1 && (
+                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <i 
+                          className="fa fa-info-circle" 
+                          title="Solo hay una opción disponible"
+                          style={{ 
+                            color: '#6c757d',
+                            fontSize: '0.875rem',
+                            cursor: 'help',
+                          }}
+                          aria-hidden="true"
+                        ></i>
+                        <span style={{ 
+                          color: '#6c757d',
+                          fontSize: '0.875rem',
+                        }}>
+                          Solo hay una opción disponible
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
