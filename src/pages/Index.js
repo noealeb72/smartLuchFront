@@ -319,17 +319,21 @@ const Index = () => {
       }
     };
 
-    // Ejecutar inmediatamente la primera vez
-    actualizarDatosPeriodicamente();
+    // NO ejecutar inmediatamente la primera vez - esperar 3 segundos después de la carga inicial
+    // para no competir con la carga inicial y mejorar el tiempo de carga
+    const initialDelay = setTimeout(() => {
+      actualizarDatosPeriodicamente();
+    }, 3000);
 
-    // Configurar intervalo para ejecutar cada 2 segundos
+    // Configurar intervalo para ejecutar cada 2 segundos después del delay inicial
     const intervalId = setInterval(() => {
       actualizarDatosPeriodicamente();
     }, 2000);
 
-    // Limpiar intervalo al desmontar o cuando cambien las dependencias
+    // Limpiar intervalo y timeout al desmontar o cuando cambien las dependencias
     return () => {
       clearInterval(intervalId);
+      clearTimeout(initialDelay);
     };
   }, [user?.id, usuarioData?.id, selectedTurno, actualizarDatos]);
 
@@ -385,25 +389,31 @@ const Index = () => {
   }, [inicializarBonificaciones]);
 
   // Cargar menú cuando hay un turno seleccionado, usando menuDelDia del contexto
-  useEffect(() => {
-    if (selectedTurno && menuDelDia && menuDelDia.length > 0) {
-      const turnoId = selectedTurno.id || selectedTurno.Id || selectedTurno.ID;
-      if (!turnoId) {
-        setMenuItems([]);
-        return;
-      }
-      
-      // Filtrar menuDelDia por el turno seleccionado
-      const menuFiltrado = menuDelDia.filter(menu => {
-        const menuTurnoId = menu.TurnoId || menu.turnoId || menu.Turno?.Id || menu.turno?.id;
-        return menuTurnoId === turnoId;
-      });
+  // Optimizado: usar useMemo para procesar el menú de forma eficiente y no bloquear el render
+  const menuItemsProcesados = useMemo(() => {
+    if (!selectedTurno || !menuDelDia || menuDelDia.length === 0) {
+      return [];
+    }
+    
+    const turnoId = selectedTurno.id || selectedTurno.Id || selectedTurno.ID;
+    if (!turnoId) {
+      return [];
+    }
+    
+    // Filtrar menuDelDia por el turno seleccionado
+    const menuFiltrado = menuDelDia.filter(menu => {
+      const menuTurnoId = menu.TurnoId || menu.turnoId || menu.Turno?.Id || menu.turno?.id;
+      return menuTurnoId === turnoId;
+    });
 
-      if (menuFiltrado.length > 0) {
-        const platosMap = new Map();
-        const platos = [];
+    if (menuFiltrado.length === 0) {
+      return [];
+    }
 
-        for (const menuItem of menuFiltrado) {
+    const platosMap = new Map();
+    const platos = [];
+
+    for (const menuItem of menuFiltrado) {
           // Usar PlatoId como código único, pero si es 0, usar el Id del menú
           // Verificar explícitamente si existe (incluyendo 0)
           let codigo = menuItem.PlatoId !== undefined ? menuItem.PlatoId : (menuItem.platoId !== undefined ? menuItem.platoId : null);
@@ -521,18 +531,13 @@ const Index = () => {
           platos.push(plato);
         }
 
-        setMenuItems(platos);
-      } else {
-        setMenuItems([]);
-      }
-    } else if (selectedTurno && (!menuDelDia || menuDelDia.length === 0)) {
-      // Si hay turno seleccionado pero no hay menuDelDia, intentar cargar desde el API
-      // No mostrar loading para evitar parpadeo cuando se actualiza después de enviar/cancelar pedido
-      cargarMenuDesdeAPI();
-    } else if (!selectedTurno) {
-      setMenuItems([]);
-    }
+        return platos;
   }, [selectedTurno, menuDelDia, defaultImage]);
+
+  // Actualizar menuItems cuando cambian los datos procesados
+  useEffect(() => {
+    setMenuItems(menuItemsProcesados);
+  }, [menuItemsProcesados]);
 
   const cargarMenuDesdeAPI = useCallback(async () => {
     if (!selectedTurno) return;
@@ -680,6 +685,16 @@ const Index = () => {
       // setIsLoading(false);
     }
   }, [selectedTurno, defaultImage, usuarioData, user]);
+
+  // Si hay turno seleccionado pero no hay menuDelDia, intentar cargar desde el API
+  useEffect(() => {
+    if (selectedTurno && (!menuDelDia || menuDelDia.length === 0)) {
+      // No mostrar loading para evitar parpadeo cuando se actualiza después de enviar/cancelar pedido
+      cargarMenuDesdeAPI();
+    } else if (!selectedTurno) {
+      setMenuItems([]);
+    }
+  }, [selectedTurno, menuDelDia, cargarMenuDesdeAPI]);
 
 
   // Ya no se necesita cargarMenu, se usa MenuDelDia del contexto

@@ -11,47 +11,32 @@ import { loadConfig } from './configService';
  */
 export const inicioService = {
   getInicioWeb: async (usuarioId) => {
-    console.log('');
-    console.log('═══════════════════════════════════════════════════════════');
-    console.log('🚀 [InicioService] INICIANDO getInicioWeb');
-    console.log('═══════════════════════════════════════════════════════════');
+    // Optimizado: reducir logs para mejorar rendimiento
+    const isDevelopment = process.env.NODE_ENV === 'development';
     
-    console.log('📋 [InicioService] UsuarioId recibido:', usuarioId);
-    console.log('');
+    if (isDevelopment) {
+      console.log('🚀 [InicioService] getInicioWeb - UsuarioId:', usuarioId);
+    }
 
     try {
       // Obtener configuración para la URL base de la API
-      console.log('📋 [InicioService] PASO 1: Obteniendo configuración de la API...');
       const appConfig = await loadConfig(true);
       const baseUrl = appConfig?.apiBaseUrl || getApiBaseUrl() || 'http://localhost:8000';
-      console.log('✅ [InicioService] Base URL obtenida:', baseUrl);
-      console.log('');
       
       // Obtener token de autenticación (si existe)
       const token = localStorage.getItem('token');
-      console.log('📋 [InicioService] Token verificado:', token ? '✅ Presente' : '❌ No hay token');
-      console.log('');
       
       // Convertir usuarioId a número entero si es posible
       const usuarioIdNumero = parseInt(usuarioId, 10);
       const usuarioIdParam = !isNaN(usuarioIdNumero) ? usuarioIdNumero : usuarioId;
-      console.log('📋 [InicioService] UsuarioId procesado:', usuarioIdParam, '(tipo:', typeof usuarioIdParam, ')');
-      console.log('');
       
       // Construir URL completa
-      console.log('📋 [InicioService] PASO 2: Construyendo URL de la API...');
       const url = `${baseUrl}/api/inicio/web?id=${usuarioIdParam}`;
-      console.log('✅ [InicioService] URL base construida:', url);
       
       // Agregar timestamp a la URL para forzar que cada request sea único
       const timestamp = Date.now();
-      const urlWithTimestamp = `${url}&_t=${timestamp}`;
-      console.log('✅ [InicioService] URL final con timestamp:', urlWithTimestamp);
-      console.log('   (Timestamp:', timestamp, '- para evitar caché)');
-      console.log('');
       
       // Preparar headers
-      console.log('📋 [InicioService] PASO 3: Preparando headers HTTP...');
       const headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -64,19 +49,9 @@ export const inicioService = {
       // Agregar token si existe
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
-        console.log('✅ [InicioService] Header Authorization agregado');
       }
-      console.log('✅ [InicioService] Headers configurados');
-      console.log('');
       
       // Hacer la llamada HTTP usando apiClient (que ya maneja el token automáticamente)
-      console.log('📋 [InicioService] PASO 4: Realizando llamada HTTP a la API...');
-      console.log('   🔹 Método: GET');
-      console.log('   🔹 URL:', urlWithTimestamp);
-      console.log('   🔹 Enviando request...');
-      console.log('');
-      
-      const startTime = performance.now();
       const response = await api.get(url, {
         params: {
           id: usuarioIdParam,
@@ -84,26 +59,11 @@ export const inicioService = {
         },
         headers: headers
       });
-      const endTime = performance.now();
-      const duration = (endTime - startTime).toFixed(2);
-      
-      console.log('📥 [InicioService] PASO 5: Respuesta HTTP recibida');
-      console.log('   ⏱️ Tiempo de respuesta:', duration, 'ms');
-      console.log('   📊 Status Code:', response.status);
-      console.log('   📊 Status Text:', response.statusText);
-      console.log('');
       
       // Procesar respuesta exitosa
-      console.log('📋 [InicioService] PASO 6: Procesando respuesta exitosa...');
       const dataRaw = response.data;
-      console.log('✅ [InicioService] Datos JSON recibidos');
-      console.log('');
-      console.log('📊 [InicioService] JSON completo recibido (raw):');
-      console.log(JSON.stringify(dataRaw, null, 2));
-      console.log('');
       
       // Normalizar datos: la API puede devolver Usuario, Turnos, MenuDelDia (mayúsculas)
-      console.log('📋 [InicioService] Normalizando estructura de datos...');
       
       // Normalizar objeto Usuario
       const usuarioRaw = dataRaw.Usuario || dataRaw.usuario || null;
@@ -177,19 +137,10 @@ export const inicioService = {
       
       return data;
     } catch (error) {
-      console.error('');
-      console.error('═══════════════════════════════════════════════════════════');
-      console.error('❌ [InicioService] ERROR en getInicioWeb');
-      console.error('═══════════════════════════════════════════════════════════');
-      console.error('   Mensaje:', error.message);
-      console.error('   Status:', error.response?.status || error.status || 'N/A');
-      
-      if (error.response) {
-        console.error('   Datos de error:', error.response.data);
+      // Solo loggear errores en desarrollo para mejorar rendimiento
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ [InicioService] Error:', error.message, 'Status:', error.response?.status || 'N/A');
       }
-      
-      console.error('═══════════════════════════════════════════════════════════');
-      console.error('');
       throw error;
     }
   },

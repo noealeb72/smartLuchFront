@@ -62,8 +62,17 @@ const Login = () => {
     setShowError(false);
 
     try {
-      await login(username.trim(), password.trim());
-      // Siempre redirigir a index después del login
+      const userData = await login(username.trim(), password.trim());
+      // Iniciar la carga de datos ANTES de navegar para que estén listos cuando llegue a Index
+      if (userData && userData.id) {
+        // Prefetch: iniciar la carga de datos en segundo plano
+        import('../services/inicioService').then(({ inicioService }) => {
+          inicioService.getInicioWeb(userData.id).catch(() => {
+            // Ignorar errores en el prefetch, se cargará normalmente en Index
+          });
+        });
+      }
+      // Redirigir a index después del login
       navigate('/', { replace: true });
     } catch (error) {
       setIsLoading(false);

@@ -26,45 +26,26 @@ export const DashboardProvider = ({ children }) => {
 
   // Funciones para actualizar los datos desde Index
   const actualizarDatos = useCallback((data) => {
-    // Log con stack trace para ver desde dónde se llama
-    console.log('🔄 [DashboardContext] actualizarDatos llamado');
-    console.trace('📍 [DashboardContext] Stack trace de la llamada:');
-    console.log('🔄 [DashboardContext] Datos recibidos:', data);
+    // Optimizado: reducir logs para mejorar rendimiento
+    const isDevelopment = process.env.NODE_ENV === 'development';
     
-    // Normalizar el objeto para el log, eliminando duplicados (priorizar mayúsculas)
-    const dataNormalizado = {
-      Usuario: data.Usuario || data.usuario,
-      Turnos: data.Turnos || data.turnos,
-      MenuDelDia: data.MenuDelDia || data.menuDelDia,
-      PlatosPedidos: data.PlatosPedidos || data.platosPedidos,
-    };
-    console.log('🔄 [DashboardContext] Estructura normalizada de data:', JSON.stringify(dataNormalizado, null, 2));
+    if (isDevelopment) {
+      console.log('🔄 [DashboardContext] actualizarDatos');
+    }
     
     const turnosData = data.Turnos || data.turnos || [];
-    console.log('⏰ [DashboardContext] Turnos recibidos:', turnosData, 'Cantidad:', turnosData.length);
     // Usar PlatosPedidos de la respuesta de api/inicio/web
     const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
-    console.log('🍽️ [DashboardContext] PlatosPedidos recibidos:', pedidosData, 'Cantidad:', pedidosData.length);
     // Usar MenuDelDia de la respuesta de api/inicio/web
     const menuData = data.MenuDelDia || data.menuDelDia || [];
-    console.log('📋 [DashboardContext] MenuDelDia recibido:', menuData, 'Cantidad:', menuData.length);
     
       // Actualizar datos del usuario si vienen en la respuesta
       if (data.Usuario) {
-        console.log('👤 [DashboardContext] Actualizando datos del usuario:', data.Usuario);
         const usuario = data.Usuario;
         
         // Obtener JerarquiaNombre (el backend envía "JerarquiaNombre" con mayúscula J y N)
         // Priorizar exactamente como viene del backend: JerarquiaNombre
         const jerarquiaNombre = usuario.JerarquiaNombre || usuario.jerarquiaNombre || usuario.Jerarquia || usuario.jerarquia || '';
-        
-        console.log('🔍 [DashboardContext] ==========================================');
-        console.log('🔍 [DashboardContext] ACTUALIZANDO USUARIO DESDE API');
-        console.log('🔍 [DashboardContext] ==========================================');
-        console.log('🔍 [DashboardContext] JerarquiaNombre del backend (exacto):', usuario.JerarquiaNombre);
-        console.log('🔍 [DashboardContext] Jerarquía encontrada (final):', jerarquiaNombre);
-        console.log('🔍 [DashboardContext] Usuario completo:', JSON.stringify(usuario, null, 2));
-        console.log('🔍 [DashboardContext] ==========================================');
         
         // NO guardar datos en localStorage, solo actualizar el estado
         // Actualizar el estado del usuario en AuthContext
@@ -85,15 +66,8 @@ export const DashboardProvider = ({ children }) => {
               nombreCompleto: `${usuario.Nombre || usuario.nombre || ''} ${usuario.Apellido || usuario.apellido || ''}`.trim(),
               activo: usuario.Activo !== undefined ? usuario.Activo : (prevUser?.activo !== undefined ? prevUser.activo : true),
             };
-            console.log('✅ [DashboardContext] Usuario actualizado en AuthContext:', nuevoUsuario);
-            console.log('✅ [DashboardContext] Role establecido:', nuevoUsuario.role);
-            console.log('✅ [DashboardContext] Jerarquía nombre establecido:', nuevoUsuario.jerarquia_nombre);
             return nuevoUsuario;
           });
-          console.log('✅ [DashboardContext] Usuario actualizado en AuthContext con jerarquía:', jerarquiaNombre);
-        } else {
-          console.warn('⚠️ [DashboardContext] No se encontró JerarquiaNombre en los datos del usuario');
-          console.warn('⚠️ [DashboardContext] Campos disponibles:', Object.keys(usuario));
         }
       
         // Guardar datos del usuario en el estado (manejar diferentes casos de mayúsculas/minúsculas)
@@ -115,20 +89,11 @@ export const DashboardProvider = ({ children }) => {
           bonificacionesInvitado: usuario.BonificacionesInvitado || usuario.bonificacionesInvitado || 0,
           activo: usuario.Activo !== undefined ? usuario.Activo : (usuario.activo !== undefined ? usuario.activo : true),
         });
-        console.log('✅ [DashboardContext] Datos del usuario actualizados en el estado:', {
-          id: usuario.Id || usuario.id,
-          jerarquiaNombre: jerarquiaNombre,
-          nombre: usuario.Nombre || usuario.nombre,
-          apellido: usuario.Apellido || usuario.apellido
-        });
-      } else {
-        console.log('⚠️ [DashboardContext] No se recibieron datos del Usuario en la respuesta');
       }
     
     setTurnos(Array.isArray(turnosData) ? turnosData : []);
     setPedidosHoy(Array.isArray(pedidosData) ? pedidosData : []);
     setMenuDelDia(Array.isArray(menuData) ? menuData : []);
-    console.log('✅ Datos actualizados - Turnos:', turnosData.length, 'Pedidos:', pedidosData.length, 'MenuDelDia:', menuData.length);
   }, [setUser]); // Solo setUser como dependencia, no user
 
   const value = {
