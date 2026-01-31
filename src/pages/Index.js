@@ -743,8 +743,7 @@ const Index = () => {
 
     // Verificar si ya tiene pedido en el mismo turno
     const fechaHoy = new Date().toISOString().split('T')[0];
-    const turnoActual = selectedTurno.nombre || selectedTurno.Nombre || selectedTurno.descripcion || selectedTurno.Descripcion;
-    
+
     const pedidoMismoTurno = pedidosVigentes.find((pedido) => {
       if (!pedido.user_Pedido) return false;
       const fechaPedido = pedido.user_Pedido.fecha_hora 
@@ -1136,7 +1135,7 @@ const Index = () => {
         }
       }
     }
-  }, [pedidoSeleccionado, user, pedidoComentario, bonificacionDisponible, cantidadBonificacionesHoy, porcentajeBonificacion, selectedTurno, actualizarDatos]);
+  }, [pedidoSeleccionado, user, pedidoComentario, bonificacionDisponible, cantidadBonificacionesHoy, selectedTurno, actualizarDatos, menuDelDia, usuarioData?.centroCostoId, usuarioData?.id, usuarioData?.jerarquiaId, usuarioData?.plantaId, usuarioData?.proyectoId]);
 
   const actualizaPedido = useCallback(async (nuevoEstado) => {
     if (!pedidoSeleccionado) {
@@ -1403,7 +1402,7 @@ const Index = () => {
         });
       }
     }
-  }, [pedidoSeleccionado, pedidoCalificacion, selectedTurno, actualizarDatos]);
+  }, [pedidoSeleccionado, pedidoCalificacion, actualizarDatos, user?.id]);
 
   const onTurnoChanged = useCallback(async (e) => {
     const turnoId = parseInt(e.target.value);
@@ -1581,13 +1580,9 @@ const Index = () => {
       } catch (error) {
         setMenuItems([]);
         // Silenciar error para que la actualización sea más suave, solo mostrar si es crítico
-        if (!error.redirectToLogin && error.message && !error.message.includes('401')) {
-          // Solo mostrar error si no es de autenticación
-          console.error('Error al cargar menú:', error);
-        }
       }
     }
-  }, [turnos, usuarioData, user, defaultImage]);
+  }, [turnos, usuarioData, user, defaultImage, actualizarDatos]);
 
   // Memoizar handlers para evitar recrearlos
   const handleCancelarPedido = useCallback((pedido) => {
@@ -1598,14 +1593,6 @@ const Index = () => {
   const handleRecibirPedido = useCallback((pedido) => {
     setPedidoSeleccionado(pedido);
     setShowReceiveModal(true);
-  }, []);
-
-  // Memoizar valores calculados
-  const fechaHoy = useMemo(() => {
-    const ahora = new Date();
-    return ahora.getFullYear() + '-' +
-      String(ahora.getMonth() + 1).padStart(2, '0') + '-' +
-      String(ahora.getDate()).padStart(2, '0');
   }, []);
 
   return (
@@ -1784,7 +1771,7 @@ const Index = () => {
                     return pedidosFiltrados.length === 0 ? (
                     <div className="card mt-2 pl-2" role="status" aria-live="polite">
                       <div className="card-body text-center py-4">
-                        <h5 className="text-muted" style={{ fontWeight: 'bold' }}>No hay pedidos vigentes</h5>
+                        <h5 className="text-muted index-no-pedidos-vigentes">No hay pedidos vigentes</h5>
                         <p className="text-muted mb-0">No tienes pedidos pendientes de recibir o cancelar en este momento.</p>
                       </div>
                     </div>
@@ -1855,46 +1842,16 @@ const Index = () => {
 
 
         {/* Modales */}
-        {/* Modal Confirmar Pedido */}
+        {/* Modal Confirmar Pedido - centrado en pantalla */}
         {showConfirmModal && pedidoSeleccionado && (
           <div 
-            className="modal fade show" 
-            style={{ 
-              display: 'flex',
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: 1050,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              overflow: 'auto',
-              padding: '20px',
-              boxSizing: 'border-box',
-            }} 
+            className="index-modal-overlay"
             tabIndex="-1" 
             role="dialog"
           >
             <div 
-              className="modal-dialog" 
+              className="index-modal-dialog"
               role="document"
-              style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: '600px',
-                margin: 'auto',
-                transform: 'none',
-                top: 'auto',
-                left: 'auto',
-                right: 'auto',
-                bottom: 'auto',
-                alignSelf: 'center',
-                flexShrink: 0,
-              }}
             >
               <div className="modal-content">
                 <div className="modal-header" style={{ backgroundColor: '#343a40', color: 'white', padding: '10px 15px' }}>
@@ -2210,48 +2167,16 @@ const Index = () => {
           </div>
         )}
 
-        {/* Modal Recibir */}
+        {/* Modal Recibir - centrado en pantalla */}
         {showReceiveModal && pedidoSeleccionado && (
           <div 
-            className="modal fade show" 
-            style={{ 
-              display: 'flex',
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: 1050,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              overflow: 'auto',
-              padding: '20px',
-              boxSizing: 'border-box',
-              margin: '0 !important',
-            }} 
+            className="index-modal-overlay"
             tabIndex="-1" 
             role="dialog"
           >
             <div 
-              className="modal-dialog modal-lg" 
+              className="index-modal-dialog index-modal-dialog-lg"
               role="document"
-              style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: '600px',
-                margin: 'auto !important',
-                transform: 'none',
-                top: 'auto',
-                left: 'auto',
-                right: 'auto',
-                bottom: 'auto',
-                alignSelf: 'center',
-                flexShrink: 0,
-                minHeight: 'auto',
-              }}
             >
               <div className="modal-content">
                 <div className="modal-header" style={{ backgroundColor: '#343a40', color: 'white', padding: '10px 15px' }}>

@@ -53,16 +53,12 @@ export const reportesService = {
       params.plantaId = parseInt(plantaId);
     }
     
-    console.log('📤 [reportesService] Llamando a /api/reporte/User con parámetros:', params);
-    
     try {
       const response = await api.get(`${baseUrl}/api/reporte/User`, {
         params,
       });
-      console.log('✅ [reportesService] Respuesta recibida:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ [reportesService] Error al obtener reporte:', error);
       
       // Mejorar mensaje de error para CORS
       if (!error.response) {
@@ -154,16 +150,12 @@ export const reportesService = {
       params.estado = estado;
     }
     
-    console.log('📤 [reportesService] Llamando a /api/reporte/General con parámetros:', params);
-    
     try {
       const response = await api.get(`${baseUrl}/api/reporte/General`, {
         params,
       });
-      console.log('✅ [reportesService] Respuesta recibida:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ [reportesService] Error al obtener reporte general:', error);
       
       // Mejorar mensaje de error para CORS
       if (!error.response) {

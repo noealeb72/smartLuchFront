@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService } from '../services/apiService';
+import { centrosDeCostoService } from '../services/centrosDeCostoService';
+import { catalogosService } from '../services/catalogosService';
 import { clearApiCache } from '../services/apiClient';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
@@ -43,7 +44,7 @@ const CentroDeCosto = () => {
       const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
       const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
       
-      const data = await apiService.getCentrosDeCostoLista(
+      const data = await centrosDeCostoService.getCentrosDeCostoLista(
         pageToUse,      // page: 1 si hay búsqueda, sino usar el page actual
         pageSizeToUse,  // pageSize: 100 si hay búsqueda, sino usar 5
         searchTerm,     // término de búsqueda
@@ -104,7 +105,7 @@ const CentroDeCosto = () => {
   // Cargar plantas disponibles
   const cargarPlantas = useCallback(async () => {
     try {
-      const data = await apiService.getPlantas();
+      const data = await catalogosService.getPlantas();
       setPlantas(Array.isArray(data) ? data : []);
     } catch (error) {
       setPlantas([]);
@@ -237,7 +238,7 @@ const CentroDeCosto = () => {
       };
 
       if (centroEditando) {
-        await apiService.actualizarCentroDeCosto(centroData);
+        await centrosDeCostoService.actualizarCentroDeCosto(centroData);
         Swal.fire({
           title: 'Éxito',
           text: 'Centro de costo actualizado correctamente',
@@ -248,7 +249,7 @@ const CentroDeCosto = () => {
           allowOutsideClick: true,
         });
       } else {
-        await apiService.crearCentroDeCosto(centroData);
+        await centrosDeCostoService.crearCentroDeCosto(centroData);
         Swal.fire({
           title: 'Éxito',
           text: 'Centro de costo creado correctamente',
@@ -763,7 +764,7 @@ const CentroDeCosto = () => {
             }).then(async (result) => {
               if (result.isConfirmed) {
                 try {
-                  await apiService.eliminarCentroDeCosto(centro.id);
+                  await centrosDeCostoService.eliminarCentroDeCosto(centro.id);
                   Swal.fire({
                     title: 'Éxito',
                     text: 'Centro de costo dado de baja correctamente',
@@ -828,7 +829,7 @@ const CentroDeCosto = () => {
                       if (result.isConfirmed) {
                         try {
                           const centroId = centro.id || centro.Id || centro.ID;
-                          await apiService.activarCentroDeCosto(centroId);
+                          await centrosDeCostoService.activarCentroDeCosto(centroId);
                           Swal.fire({
                             title: 'Activado',
                             text: 'Centro de costo activado correctamente',

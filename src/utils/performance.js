@@ -10,8 +10,7 @@ export const measureRenderTime = (componentName) => {
       const end = performance.now();
       const renderTime = end - start;
       if (renderTime > 16) {
-        // Si tarda más de un frame (16ms), mostrar warning
-        console.warn(`⚠️ ${componentName} tardó ${renderTime.toFixed(2)}ms en renderizar`);
+        // Si tarda más de un frame (16ms), no hacer nada (logs eliminados)
       }
     };
   }

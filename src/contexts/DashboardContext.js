@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { apiService } from '../services/apiService';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
 const DashboardContext = createContext();
@@ -13,26 +12,19 @@ export const useDashboard = () => {
 };
 
 export const DashboardProvider = ({ children }) => {
-  const { user, isAuthenticated, setUser } = useAuth();
+  const { setUser } = useAuth();
   const [turnos, setTurnos] = useState([]);
   const [pedidosHoy, setPedidosHoy] = useState([]);
   const [menuDelDia, setMenuDelDia] = useState([]);
   const [usuarioData, setUsuarioData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [loading] = useState(false);
+  const [error] = useState(null);
 
   // DashboardContext ya no carga datos automáticamente
   // Index se encarga de llamar a /api/inicio/web y actualizar estos estados
 
   // Funciones para actualizar los datos desde Index
   const actualizarDatos = useCallback((data) => {
-    // Optimizado: reducir logs para mejorar rendimiento
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    
-    if (isDevelopment) {
-      console.log('🔄 [DashboardContext] actualizarDatos');
-    }
-    
     const turnosData = data.Turnos || data.turnos || [];
     // Usar PlatosPedidos de la respuesta de api/inicio/web
     const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];

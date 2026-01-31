@@ -20,7 +20,6 @@ const Plato = () => {
   const [filtroActivo, setFiltroActivo] = useState('activo'); // 'activo', 'inactivo', 'todos'
   const [vista, setVista] = useState('lista'); // 'lista' | 'editar' | 'crear'
   const [planesNutricionales, setPlanesNutricionales] = useState([]);
-  const [imagenAmpliada, setImagenAmpliada] = useState(null); // URL de la imagen ampliada
 
   // Estados para el modal de impresión
   const [mostrarModalImpresion, setMostrarModalImpresion] = useState(false);
@@ -171,18 +170,6 @@ const Plato = () => {
           setIsServerSidePagination(true); // Usar paginación del servidor
         }
         
-        // Log para depuración: verificar qué datos vienen del backend
-        console.log('📋 [Plato] Platos cargados:', items.length);
-        if (items.length > 0) {
-          console.log('📋 [Plato] Primer plato de ejemplo:', {
-            id: items[0].id || items[0].Id,
-            codigo: items[0].codigo || items[0].Codigo,
-            descripcion: items[0].descripcion || items[0].Descripcion,
-            Foto: items[0].Foto || items[0].foto || items[0].imagen || items[0].Imagen || 'NO HAY FOTO',
-            todosLosCampos: Object.keys(items[0])
-          });
-        }
-        
         setPlatos(items);
         setCurrentPage(page);
         setTotalPages(totalPagesCount);
@@ -217,26 +204,6 @@ const Plato = () => {
     cargarPlatos(currentPage, filtro);
   }, [currentPage, filtro, filtroActivo, cargarPlatos]);
 
-  // Cerrar modal de imagen ampliada con tecla ESC
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && imagenAmpliada) {
-        setImagenAmpliada(null);
-      }
-    };
-
-    if (imagenAmpliada) {
-      document.addEventListener('keydown', handleEscape);
-      // Prevenir scroll del body cuando el modal está abierto
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
-    };
-  }, [imagenAmpliada]);
-
   // Auto-seleccionar plan nutricional si hay solo uno disponible
   useEffect(() => {
     if (
@@ -250,7 +217,7 @@ const Plato = () => {
         // Actualizar siempre si el valor actual no coincide con el plan único disponible
         // Esto asegura que el valor por defecto se guarde en formData
         if (prev.Plannutricional_id !== idExactoString) {
-          console.log('✅ [Plato] Auto-seleccionando plan nutricional único:', idExactoString);
+
           return {
             ...prev,
             Plannutricional_id: idExactoString
@@ -295,7 +262,7 @@ const Plato = () => {
         ...prev,
         [name]: planValue,
       }));
-      console.log('✅ [Plato] Plan nutricional seleccionado:', planValue);
+
       return;
     }
 
@@ -495,25 +462,12 @@ const Plato = () => {
               platoParaEditar.planNutricional_id.Id ||
               platoParaEditar.planNutricional_id.ID));
 
-        console.log('🔍 [Plato] Obteniendo plan ID del plato (PlatoDetalleDto):', {
-          platoParaEditar: platoParaEditar,
-          Plannutricional_id: platoParaEditar.Plannutricional_id,
-          plannutricional_id: platoParaEditar.plannutricional_id,
-          Plannutricional_nombre: platoParaEditar.Plannutricional_nombre || platoParaEditar.plannutricional_nombre,
-          planIdValueInicial: planIdValue,
-          todasLasPropiedades: Object.keys(platoParaEditar).filter(k => 
-            k.toLowerCase().includes('plan') || k.toLowerCase().includes('nutricional')
-          ),
-          cantidadPlanes: planesNutricionales.length
-        });
-
         // Si no se encontró un plan y hay solo uno disponible, auto-seleccionarlo
         if (
           (!planIdValue || planIdValue === '' || planIdValue === 0 || planIdValue === null) &&
           planesNutricionales.length === 1
         ) {
           planIdValue = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
-          console.log('✅ [Plato] Plan nutricional auto-seleccionado (único disponible):', planIdValue);
         }
 
         // Convertir a string y validar
@@ -522,8 +476,6 @@ const Plato = () => {
           planIdFinal = String(planIdValue);
         }
 
-        console.log('✅ [Plato] Plan ID final:', planIdFinal);
-        console.log('✅ [Plato] Plan ID final (número):', planIdFinal ? parseInt(planIdFinal) : null);
         return planIdFinal;
       };
 
@@ -561,33 +513,30 @@ const Plato = () => {
                      platoParaEditar.imagen || // español
                      platoParaEditar.Imagen || // español PascalCase
                      null;
-        
-        console.log('🔍 [Plato] Obteniendo imagen preview desde Foto:', foto);
-        
+
         if (!foto || foto.trim() === '') {
-          console.log('⚠️ [Plato] No hay foto disponible en Foto');
+
           return null;
         }
         
         // Si ya es una URL completa (http/https), devolverla tal cual
         if (foto.startsWith('http://') || foto.startsWith('https://')) {
-          console.log('✅ [Plato] Foto es URL completa, usando directamente:', foto);
+
           return foto;
         }
         
         // Si es base64, devolverla tal cual
         if (foto.startsWith('data:')) {
-          console.log('✅ [Plato] Foto es base64, usando directamente');
+
           return foto;
         }
         
         // Obtener la URL base del backend
         const baseUrl = getApiBaseUrl();
-        console.log('🔍 [Plato] URL base del backend:', baseUrl);
-        
+
         // Si es una ruta absoluta del sistema de archivos, extraer solo la parte relativa después de 'uploads/platos/'
         if (foto.includes('uploads/platos/')) {
-          console.log('⚠️ [Plato] Foto contiene ruta absoluta del servidor, extrayendo parte relativa...');
+
           // Buscar 'uploads/platos/' en la ruta
           const indiceUploads = foto.indexOf('uploads/platos/');
           if (indiceUploads !== -1) {
@@ -595,8 +544,7 @@ const Plato = () => {
             const parteRelativa = foto.substring(indiceUploads);
             // Construir la ruta relativa: /uploads/platos/nombre_archivo
             const rutaRelativa = `/${parteRelativa}`;
-            console.log('✅ [Plato] Ruta relativa extraída desde Foto:', rutaRelativa);
-            
+
             // Decodificar primero para obtener el nombre original, luego codificar solo si es necesario
             const partes = rutaRelativa.split('/');
             let nombreArchivo = partes.pop();
@@ -608,7 +556,7 @@ const Plato = () => {
                 nombreArchivo = decodeURIComponent(nombreArchivo);
               } catch (e) {
                 // Si falla la decodificación, usar el nombre tal cual
-                console.warn('⚠️ [Plato] No se pudo decodificar el nombre del archivo:', nombreArchivo);
+
               }
             }
             
@@ -620,10 +568,7 @@ const Plato = () => {
             
             // Construir la URL completa del servidor backend
             const fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivoCodificado}`;
-            console.log('✅ [Plato] URL final construida desde Foto (servidor backend):', fotoUrl);
-            console.log('✅ [Plato] Ruta base:', rutaBase);
-            console.log('✅ [Plato] Nombre archivo original:', nombreArchivo);
-            console.log('✅ [Plato] Nombre archivo codificado:', nombreArchivoCodificado);
+
             return fotoUrl;
           }
         }
@@ -641,7 +586,7 @@ const Plato = () => {
               nombreArchivo = decodeURIComponent(nombreArchivo);
             } catch (e) {
               // Si falla la decodificación, usar el nombre tal cual
-              console.warn('⚠️ [Plato] No se pudo decodificar el nombre del archivo:', nombreArchivo);
+
             }
           }
           
@@ -653,16 +598,13 @@ const Plato = () => {
           
           // Construir la URL completa del servidor backend
           const fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivoCodificado}`;
-          console.log('✅ [Plato] Usando Foto directamente (ruta relativa del servidor):', fotoUrl);
-          console.log('✅ [Plato] Nombre archivo original:', nombreArchivo);
-          console.log('✅ [Plato] Nombre archivo codificado:', nombreArchivoCodificado);
+
           return fotoUrl;
         }
         
         // Si es otra ruta relativa, construir URL del servidor backend
         const rutaNormalizada = foto.startsWith('/') ? foto : `/${foto}`;
         const fotoUrl = `${baseUrl}${rutaNormalizada}`;
-        console.log('✅ [Plato] Usando Foto directamente (otra ruta relativa del servidor):', fotoUrl);
         return fotoUrl;
       };
 
@@ -686,18 +628,13 @@ const Plato = () => {
           // Usar el ID exacto del plan encontrado (puede ser id, Id, o ID)
           const idExacto = planEncontrado.id || planEncontrado.Id || planEncontrado.ID;
           planIdFinal = String(idExacto);
-          console.log('✅ [Plato] Plan nutricional encontrado, ID normalizado:', planIdFinal, 'de plan:', planEncontrado);
+
         } else {
-          console.warn('⚠️ [Plato] El plan nutricional ID', planId, 'no existe en los planes disponibles');
-          console.warn('⚠️ [Plato] Planes disponibles:', planesNutricionales.map(p => {
-            const pId = p.id || p.Id || p.ID;
-            return { id: pId, nombre: p.nombre || p.Nombre || p.descripcion || p.Descripcion };
-          }));
           // Si no se encuentra y hay un solo plan disponible, usar ese
           if (planesNutricionales.length === 1) {
             const idExacto = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
             planIdFinal = String(idExacto);
-            console.log('✅ [Plato] Plan nutricional no encontrado, usando plan único disponible:', planIdFinal);
+
           } else {
             planIdFinal = ''; // Si no se encuentra y hay múltiples planes, dejar vacío
           }
@@ -706,23 +643,12 @@ const Plato = () => {
         // Si no hay planId pero hay un solo plan disponible, usar ese
         const idExacto = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
         planIdFinal = String(idExacto);
-        console.log('✅ [Plato] No hay planId en el plato, usando plan único disponible:', planIdFinal);
-      }
 
-      console.log('🔍 [Plato] Asignando datos al formulario:', {
-        planIdOriginal: planId,
-        planIdFinal: planIdFinal,
-        planesDisponibles: planesNutricionales.map(p => {
-          const pId = p.id || p.Id || p.ID;
-          return { id: pId, nombre: p.nombre || p.Nombre || p.descripcion || p.Descripcion };
-        }),
-        formDataPlanNutricionalId: planIdFinal
-      });
+      }
 
       // Obtener la imagen preview antes de asignar al formData
       const imagenPreviewValue = obtenerImagenPreview();
-      console.log('🖼️ [Plato] imagenPreview obtenido:', imagenPreviewValue);
-      console.log('🖼️ [Plato] PUBLIC_URL:', process.env.PUBLIC_URL);
+
 
       // Mapear según el DTO del backend (PlatoDetalleDto)
       setFormData({
@@ -736,19 +662,6 @@ const Plato = () => {
         imagen: null,
         imagenPreview: imagenPreviewValue, // Obtener la ruta de la imagen
         eliminarImagen: false,
-      });
-      
-      console.log('✅ [Plato] FormData actualizado con datos del PlatoDetalleDto:', {
-        id: platoParaEditar.Id || platoParaEditar.id,
-        codigo: platoParaEditar.Codigo || platoParaEditar.codigo,
-        descripcion: platoParaEditar.Descripcion || platoParaEditar.descripcion,
-        costo: platoParaEditar.Costo || platoParaEditar.costo,
-        Plannutricional_id: planIdFinal,
-        imagenPreview: imagenPreviewValue,
-        Plannutricional_nombre: platoParaEditar.Plannutricional_nombre || platoParaEditar.plannutricional_nombre,
-        presentacion,
-        ingredientes,
-        Foto: platoParaEditar.Foto || platoParaEditar.foto
       });
 
       setVista('editar');
@@ -792,9 +705,9 @@ const Plato = () => {
       try {
         // Eliminar el archivo del servidor
         await platosService.eliminarFotoPlato(rutaImagenActual);
-        console.log('✅ [Plato] Imagen eliminada del servidor:', rutaImagenActual);
+
       } catch (error) {
-        console.warn('⚠️ [Plato] No se pudo eliminar la imagen del servidor, pero se continúa:', error);
+
         // No bloquear el flujo si falla la eliminación del archivo
       }
     }
@@ -825,7 +738,7 @@ const Plato = () => {
         const parsedId = parseInt(formData.Plannutricional_id);
         if (!isNaN(parsedId) && parsedId > 0) {
           plannutricionalId = parsedId;
-          console.log('✅ [Plato] Plan nutricional obtenido de formData:', plannutricionalId);
+
         }
       }
       
@@ -834,7 +747,6 @@ const Plato = () => {
         const planId = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
         if (planId && planId > 0) {
           plannutricionalId = planId;
-          console.log('✅ [Plato] Plan nutricional auto-seleccionado (único disponible):', plannutricionalId);
           // Actualizar formData para que el select muestre el valor correcto
           setFormData(prev => ({
             ...prev,
@@ -846,19 +758,9 @@ const Plato = () => {
       // Validar que si hay un plan seleccionado, sea válido (> 0)
       // Según el DTO: [Range(1, int.MaxValue)], así que debe ser > 0
       if (plannutricionalId !== null && plannutricionalId <= 0) {
-        console.warn('⚠️ [Plato] Plan nutricional ID inválido:', plannutricionalId);
+
         plannutricionalId = null;
       }
-
-      console.log('🔍 [Plato] Plan nutricional:', {
-        formDataPlannutricional_id: formData.Plannutricional_id,
-        plannutricionalIdCalculado: plannutricionalId,
-        cantidadPlanes: planesNutricionales.length,
-        planesDisponibles: planesNutricionales.map(p => {
-          const pId = p.id || p.Id || p.ID;
-          return { id: pId, nombre: p.nombre || p.Nombre || p.descripcion || p.Descripcion };
-        })
-      });
 
       // Manejo de la foto: usar la ruta del archivo en la carpeta public/uploads/platos/
       let fotoRuta = null;
@@ -868,16 +770,15 @@ const Plato = () => {
         // Si se marcó eliminar imagen, enviar flag para eliminar
         eliminarFoto = true;
         fotoRuta = null;
-        console.log('🗑️ [Plato] Se eliminará la imagen del plato');
-        
+
         // Obtener la ruta de la imagen actual para eliminarla del servidor
         const rutaImagenActual = platoEditando?.Foto || platoEditando?.foto;
         if (rutaImagenActual) {
           try {
             await platosService.eliminarFotoPlato(rutaImagenActual);
-            console.log('✅ [Plato] Imagen eliminada del servidor:', rutaImagenActual);
+
           } catch (error) {
-            console.warn('⚠️ [Plato] No se pudo eliminar la imagen del servidor:', error);
+
           }
         }
       } else if (formData.Foto && formData.Foto instanceof File) {
@@ -887,26 +788,23 @@ const Plato = () => {
         
         if (rutaImagenAnterior && !formData.imagenPreview?.startsWith('data:')) {
           try {
-            console.log('🗑️ [Plato] Eliminando imagen anterior antes de subir la nueva:', rutaImagenAnterior);
+
             await platosService.eliminarFotoPlato(rutaImagenAnterior);
-            console.log('✅ [Plato] Imagen anterior eliminada del servidor');
+
           } catch (error) {
-            console.warn('⚠️ [Plato] No se pudo eliminar la imagen anterior, pero se continúa:', error);
+
           }
         }
         
         // Si hay un archivo nuevo, enviarlo al backend para que lo guarde
         try {
-          console.log('💾 [Plato] Subiendo archivo al backend para guardarlo');
-          console.log('📋 [Plato] Nombre del archivo:', formData.Foto.name);
-          console.log('📋 [Plato] Tamaño del archivo:', formData.Foto.size, 'bytes');
-          console.log('📋 [Plato] Tipo del archivo:', formData.Foto.type);
-          
+
+
+
+
           // El backend recibirá el archivo, lo guardará en public/uploads/platos/ y retornará la ruta
           fotoRuta = await platosService.subirFotoPlato(formData.Foto);
-          
-          console.log('✅ [Plato] Archivo subido exitosamente, ruta retornada:', fotoRuta);
-          
+
           // Actualizar imagenPreview con la ruta retornada para que se muestre en la vista previa
           // Construir la URL completa para la vista previa
           const fotoUrlParaPreview = fotoRuta.startsWith('/') 
@@ -918,10 +816,9 @@ const Plato = () => {
             imagenPreview: fotoUrlParaPreview,
             Foto: null, // Ya no necesitamos el File, solo la ruta
           }));
-          
-          console.log('✅ [Plato] imagenPreview actualizado con:', fotoUrlParaPreview);
+
         } catch (error) {
-          console.error('❌ [Plato] Error al subir archivo:', error);
+
           Swal.fire({
             title: 'Error al subir imagen',
             html: `No se pudo subir la imagen al servidor.<br><br>
@@ -943,50 +840,40 @@ const Plato = () => {
         if (formData.imagenPreview.startsWith('/uploads/platos/')) {
           // Ya es una ruta relativa, usarla directamente
           fotoRuta = formData.imagenPreview;
-          console.log('✅ [Plato] Usando ruta relativa existente:', fotoRuta);
+
         } else if (formData.imagenPreview.startsWith('http')) {
           // Si es una URL completa, extraer la ruta relativa si es del backend
           const baseUrl = getApiBaseUrl();
           if (formData.imagenPreview.startsWith(baseUrl)) {
             fotoRuta = formData.imagenPreview.replace(baseUrl, '');
-            console.log('✅ [Plato] Ruta extraída de URL del backend:', fotoRuta);
+
             // Asegurar que si es /uploads/platos/, se use directamente
             if (!fotoRuta.startsWith('/uploads/platos/')) {
-              console.warn('⚠️ [Plato] La ruta extraída no es de uploads/platos/, puede no funcionar correctamente');
+
             }
           } else {
             // Si es una URL externa, no podemos usarla
-            console.warn('⚠️ [Plato] URL externa, no se puede usar');
+
             fotoRuta = null;
           }
         } else if (formData.imagenPreview.startsWith('data:')) {
           // Si es base64, no podemos usarla como ruta
-          console.warn('⚠️ [Plato] imagenPreview es base64, no se puede usar como ruta');
+
           fotoRuta = null;
         } else if (formData.imagenPreview.startsWith('uploads/')) {
           // Si es una ruta sin / inicial, normalizarla
           fotoRuta = `/${formData.imagenPreview}`;
-          console.log('✅ [Plato] Ruta normalizada:', fotoRuta);
+
         } else {
           // Cualquier otra cosa, asumir que es una ruta relativa
           fotoRuta = formData.imagenPreview.startsWith('/') ? formData.imagenPreview : `/${formData.imagenPreview}`;
-          console.log('✅ [Plato] Usando imagenPreview como ruta:', fotoRuta);
+
         }
       } else {
         // No hay imagen para enviar
-        console.log('⚠️ [Plato] No hay imagen para enviar');
+
         fotoRuta = null;
       }
-
-      console.log('🔍 [Plato] Estado final de la imagen:', {
-        tieneFoto: !!formData.Foto,
-        tieneImagenPreview: !!formData.imagenPreview,
-        esFile: formData.Foto instanceof File,
-        esURL: formData.imagenPreview && formData.imagenPreview.startsWith('http'),
-        eliminarImagen: formData.eliminarImagen,
-        fotoRutaEnviada: fotoRuta,
-        eliminarFoto: eliminarFoto
-      });
 
       if (platoEditando) {
         const platoData = {
@@ -1002,8 +889,6 @@ const Plato = () => {
           Foto: fotoRuta || null, // El backend espera Foto (string), ruta del archivo (ej: /uploads/platos/imagen.jpg)
           EliminarFoto: eliminarFoto,
         };
-
-        console.log('📤 [Plato] DTO para actualizar:', platoData);
 
         await platosService.actualizarPlato(platoData);
 
@@ -1027,8 +912,6 @@ const Plato = () => {
               : 0,
           Foto: fotoRuta || null, // El backend espera Foto (string), ruta del archivo (ej: /uploads/platos/imagen.jpg)
         };
-
-        console.log('📤 [Plato] DTO para crear:', platoData);
 
         await platosService.crearPlato(platoData);
 
@@ -1066,10 +949,8 @@ const Plato = () => {
         } else if (error.message) {
           errorMessage = error.message;
         }
-        
-        console.error('❌ [Plato] Error completo:', error);
-        console.error('❌ [Plato] Mensaje de error a mostrar:', errorMessage);
-        
+
+
         Swal.fire({
           title: 'Error',
           text: errorMessage,
@@ -1115,11 +996,7 @@ const Plato = () => {
         ...filtrosRequest,
       };
       
-      console.log('[Plato] Datos enviados al endpoint de impresión (PDF):', requestData);
-      
       const platosFiltrados = await platosService.getImpresion(requestData);
-      
-      console.log('[Plato] Respuesta del endpoint de impresión (PDF):', platosFiltrados);
 
       if (!platosFiltrados || platosFiltrados.length === 0) {
         Swal.fire({
@@ -1211,12 +1088,6 @@ const Plato = () => {
         tableData.push(fila);
       });
 
-      console.log('[Plato] Datos finales para PDF:', {
-        headers: headers,
-        totalFilas: tableData.length,
-        datos: tableData
-      });
-
       doc.autoTable({
         startY: 28,
         head: [headers],
@@ -1273,11 +1144,7 @@ const Plato = () => {
         ...filtrosRequest,
       };
       
-      console.log('[Plato] Datos enviados al endpoint de impresión (Excel):', requestData);
-      
       const platosFiltrados = await platosService.getImpresion(requestData);
-      
-      console.log('[Plato] Respuesta del endpoint de impresión (Excel):', platosFiltrados);
       
       if (!platosFiltrados || platosFiltrados.length === 0) {
         Swal.fire({
@@ -1343,12 +1210,6 @@ const Plato = () => {
           fila.push(valor !== null ? String(valor) : '-');
         });
         return fila;
-      });
-
-      console.log('[Plato] Datos finales para Excel:', {
-        headers: headers,
-        totalFilas: worksheetData.length,
-        datos: worksheetData
       });
 
       // Obtener fecha formateada
@@ -1610,17 +1471,10 @@ const esPlatoInactivo = (plato) => {
                     row.Imagen || // español PascalCase
                     null;
 
-                  console.log('🖼️ [Plato] Renderizando imagen para plato:', {
-                    id: row.id || row.Id,
-                    codigo: row.codigo || row.Codigo,
-                    foto: foto,
-                    todosLosCampos: Object.keys(row)
-                  });
-
                   if (foto && foto.trim() !== '') {
                     // Si es una ruta absoluta del sistema de archivos, extraer solo el nombre del archivo
                     if (foto.includes('\\') || (foto.includes('/') && (foto.includes('C:') || foto.includes('D:') || foto.includes('api/plato/imagen')))) {
-                      console.log('⚠️ [Plato] Foto es ruta absoluta del sistema, extrayendo nombre del archivo...');
+
                       // Extraer el nombre del archivo de la ruta
                       let nombreArchivo = foto.split('\\').pop().split('/').pop();
                       // Decodificar URL encoding solo si está codificado (contiene % pero no espacios)
@@ -1629,12 +1483,12 @@ const esPlatoInactivo = (plato) => {
                           nombreArchivo = decodeURIComponent(nombreArchivo);
                         } catch (e) {
                           // Si falla la decodificación, usar el nombre tal cual
-                          console.warn('⚠️ [Plato] No se pudo decodificar el nombre del archivo:', nombreArchivo);
+
                         }
                       }
                       // Construir la ruta relativa para el frontend
                       foto = `/uploads/platos/${nombreArchivo}`;
-                      console.log('✅ [Plato] Ruta normalizada desde ruta absoluta:', foto);
+
                     }
                     
                     let fotoUrl = foto;
@@ -1642,7 +1496,7 @@ const esPlatoInactivo = (plato) => {
                     // Si es una URL completa (http/https) o base64, usarla tal cual
                     if (foto.startsWith('http://') || foto.startsWith('https://') || foto.startsWith('data:')) {
                       fotoUrl = foto;
-                      console.log('✅ [Plato] Foto es URL completa o base64:', fotoUrl);
+
                     } else if (foto.startsWith('/uploads/platos/') || foto.includes('uploads/platos/')) {
                       // Si es una ruta de uploads/platos/, construir la URL completa apuntando al servidor backend
                       const baseUrl = getApiBaseUrl();
@@ -1665,7 +1519,7 @@ const esPlatoInactivo = (plato) => {
                           nombreArchivo = decodeURIComponent(nombreArchivo);
                         } catch (e) {
                           // Si falla la decodificación, usar el nombre tal cual
-                          console.warn('⚠️ [Plato] No se pudo decodificar el nombre del archivo:', nombreArchivo);
+
                         }
                       }
                       
@@ -1681,7 +1535,7 @@ const esPlatoInactivo = (plato) => {
                       const baseUrl = getApiBaseUrl();
                       const rutaNormalizada = foto.startsWith('/') ? foto : `/${foto}`;
                       fotoUrl = `${baseUrl}${rutaNormalizada}`;
-                      console.log('✅ [Plato] Usando ruta relativa del servidor backend:', fotoUrl);
+
                     }
 
                     return (
@@ -1707,7 +1561,26 @@ const esPlatoInactivo = (plato) => {
                             cursor: 'pointer',
                             transition: 'opacity 0.2s',
                           }}
-                          onClick={() => setImagenAmpliada(fotoUrl)}
+                          onClick={() => {
+                            const titulo = row.descripcion || row.Descripcion || 'Imagen del plato';
+                            const tituloEsc = (titulo || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            const urlEsc = fotoUrl.replace(/"/g, '&quot;');
+                            Swal.fire({
+                              title: '',
+                              html: `
+                                <div class="swal-imagen-plato-body">
+                                  <p class="swal-imagen-plato-descripcion">${tituloEsc}</p>
+                                  <div class="swal-imagen-plato-contenido">
+                                    <img src="${urlEsc}" alt="${tituloEsc}" class="swal-imagen-plato-img" />
+                                  </div>
+                                </div>
+                              `,
+                              showConfirmButton: false,
+                              showCloseButton: true,
+                              width: '520px',
+                              customClass: { popup: 'swal-popup-imagen-plato' },
+                            });
+                          }}
                           onMouseEnter={(e) => {
                             e.target.style.opacity = '0.8';
                           }}
@@ -1898,7 +1771,7 @@ const esPlatoInactivo = (plato) => {
               // Verificar si el plato está inactivo
               const isInactivo = esPlatoInactivo(plato);
               
-              // Si el plato está inactivo, mostrar SOLO el botón de activar
+              // Si el plato está inactivo, mostrar SOLO el botón de activar (tilde verde)
               if (isInactivo) {
                 return (
                   <button
@@ -1907,32 +1780,36 @@ const esPlatoInactivo = (plato) => {
                     title="Activar plato"
                     disabled={isLoading}
                     style={{ 
-                      backgroundColor: '#6c757d', 
-                      borderColor: '#6c757d', 
+                      backgroundColor: '#28a745', 
+                      borderColor: '#28a745', 
                       color: 'white',
-                      display: 'inline-block',
-                      padding: '0.25rem 0.75rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.25rem 0.5rem',
                       fontSize: '0.875rem',
                       fontWeight: '400',
                       borderRadius: '0.25rem',
                       transition: 'all 0.2s ease',
                       opacity: isLoading ? 0.6 : 1,
-                      cursor: isLoading ? 'not-allowed' : 'pointer'
+                      cursor: isLoading ? 'not-allowed' : 'pointer',
+                      minWidth: '32px',
                     }}
                     onMouseEnter={(e) => {
                       if (!isLoading) {
-                        e.target.style.backgroundColor = '#5a6268';
-                        e.target.style.borderColor = '#5a6268';
+                        e.target.style.backgroundColor = '#218838';
+                        e.target.style.borderColor = '#218838';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isLoading) {
-                        e.target.style.backgroundColor = '#6c757d';
-                        e.target.style.borderColor = '#6c757d';
+                        e.target.style.backgroundColor = '#28a745';
+                        e.target.style.borderColor = '#28a745';
                       }
                     }}
+                    aria-label="Activar plato"
                   >
-                    <i className="fa fa-check mr-1" style={{ fontSize: '0.8rem' }}></i> Activar
+                    <i className="fa fa-check" style={{ fontSize: '0.9rem' }} title="Activar plato" aria-hidden="true"></i>
                   </button>
                 );
               }
@@ -1950,93 +1827,6 @@ const esPlatoInactivo = (plato) => {
             enablePagination={true}
           />
         </div>
-
-        {/* Modal para imagen ampliada */}
-        {imagenAmpliada && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 9999,
-              cursor: 'pointer',
-            }}
-            onClick={() => setImagenAmpliada(null)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                setImagenAmpliada(null);
-              }
-            }}
-            tabIndex={0}
-          >
-            <div
-              style={{
-                position: 'relative',
-                width: '600px',
-                height: '600px',
-                maxWidth: '90vw',
-                maxHeight: '90vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={imagenAmpliada}
-                alt="Imagen ampliada del plato"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  maxWidth: '600px',
-                  maxHeight: '600px',
-                  objectFit: 'contain',
-                  borderRadius: '0.5rem',
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setImagenAmpliada(null)}
-                style={{
-                  position: 'absolute',
-                  top: '-40px',
-                  right: '0',
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '35px',
-                  height: '35px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  fontSize: '1.2rem',
-                  color: '#333',
-                  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#fff';
-                  e.target.style.transform = 'scale(1.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                  e.target.style.transform = 'scale(1)';
-                }}
-                title="Cerrar (ESC)"
-              >
-                <i className="fa fa-times"></i>
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Modal de opciones de impresión */}
         {mostrarModalImpresion && (
@@ -2638,15 +2428,11 @@ const esPlatoInactivo = (plato) => {
                               display: 'block',
                             boxSizing: 'border-box',
                             }}
-                            onError={(e) => {
-                              console.error('❌ [Plato] Error al cargar imagen en vista previa');
-                              console.error('❌ [Plato] imagenPreview (desde Foto):', formData.imagenPreview);
-                              console.error('❌ [Plato] URL intentada por el navegador:', e.target.src);
-                              console.error('❌ [Plato] Verificar que la imagen exista en: public/uploads/platos/');
+                            onError={() => {
+                              // Error silencioso al cargar imagen
                             }}
                             onLoad={() => {
-                              console.log('✅ [Plato] Imagen cargada correctamente en vista previa');
-                              console.log('✅ [Plato] URL de la imagen (desde Foto):', formData.imagenPreview);
+                              // Imagen cargada exitosamente
                             }}
                           />
                         <button

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService } from '../services/apiService';
+import { planesNutricionalesService } from '../services/planesNutricionalesService';
 import { clearApiCache } from '../services/apiClient';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
@@ -42,7 +42,7 @@ const PlanNutricional = () => {
       const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
       const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
       
-      const data = await apiService.getPlanesNutricionalesLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
+      const data = await planesNutricionalesService.getPlanesNutricionalesLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
       
       // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
       let planesData = [];
@@ -166,7 +166,7 @@ const PlanNutricional = () => {
       };
 
       if (planEditando) {
-        await apiService.actualizarPlanNutricional(planData);
+        await planesNutricionalesService.actualizarPlanNutricional(planData);
         Swal.fire({
           title: 'Éxito',
           text: 'Plan nutricional actualizado correctamente',
@@ -177,7 +177,7 @@ const PlanNutricional = () => {
           allowOutsideClick: true,
         });
       } else {
-        await apiService.crearPlanNutricional(planData);
+        await planesNutricionalesService.crearPlanNutricional(planData);
         Swal.fire({
           title: 'Éxito',
           text: 'Plan nutricional creado correctamente',
@@ -654,7 +654,7 @@ const PlanNutricional = () => {
                     return;
                   }
                   
-                  await apiService.eliminarPlanNutricional(planId);
+                  await planesNutricionalesService.eliminarPlanNutricional(planId);
                   Swal.fire({
                     title: 'Éxito',
                     text: 'Plan nutricional dado de baja correctamente',
@@ -729,7 +729,7 @@ const PlanNutricional = () => {
                       if (result.isConfirmed) {
                         try {
                           const planId = plan.id || plan.Id || plan.ID;
-                          await apiService.activarPlanNutricional(planId);
+                          await planesNutricionalesService.activarPlanNutricional(planId);
                           Swal.fire({
                             title: 'Activado',
                             text: 'Plan nutricional activado correctamente',

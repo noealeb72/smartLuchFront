@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService } from '../services/apiService';
+import { reportesService } from '../services/reportesService';
 import { catalogosService } from '../services/catalogosService';
 import { platosService } from '../services/platosService';
 import Swal from 'sweetalert2';
@@ -51,26 +51,14 @@ const ReporteGGestion = () => {
 
       // El backend devuelve: { id, nombre, descripcion }
       // Normalizar y asegurar que sean arrays
-      console.log('📦 [ReporteGGestion] Datos recibidos de catálogos:', {
-        plantas: plantasData,
-        proyectos: proyectosData,
-        centros: centrosData,
-        jerarquias: jerarquiasData,
-      });
 
       setPlantas(Array.isArray(plantasData) ? plantasData : []);
       setProyectos(Array.isArray(proyectosData) ? proyectosData : []);
       setCentrosDeCosto(Array.isArray(centrosData) ? centrosData : []);
       setJerarquias(Array.isArray(jerarquiasData) ? jerarquiasData : []);
 
-      console.log('✅ [ReporteGGestion] Catálogos normalizados:', {
-        plantas: plantas.length,
-        proyectos: proyectos.length,
-        centros: centrosDeCosto.length,
-        jerarquias: jerarquias.length,
-      });
     } catch (error) {
-      console.error('Error al cargar catálogos:', error);
+
       Swal.fire({
         title: 'Error',
         text: 'Error al cargar los catálogos. Por favor, intente de nuevo más tarde.',
@@ -81,6 +69,9 @@ const ReporteGGestion = () => {
     } finally {
       setIsLoading(false);
     }
+    // Los arrays (centrosDeCosto, jerarquias, plantas, proyectos) se establecen dentro del callback,
+    // por lo que no deben estar en dependencias para evitar loops infinitos
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Cargar catálogos al montar
@@ -141,7 +132,7 @@ const ReporteGGestion = () => {
         setPlatosFiltrados(platosArray);
         setMostrarDropdownPlato(platosArray.length > 0);
       } catch (error) {
-        console.error('Error al buscar platos:', error);
+
         setPlatosFiltrados([]);
         setMostrarDropdownPlato(false);
       } finally {
@@ -403,7 +394,7 @@ const ReporteGGestion = () => {
         allowOutsideClick: true,
       });
     } catch (error) {
-      console.error('Error al exportar PDF:', error);
+
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el reporte a PDF',
@@ -435,9 +426,7 @@ const ReporteGGestion = () => {
         estado: formData.estado || null,
       };
 
-      console.log('📤 [ReporteGGestion] Llamando a getReporteGeneral con parámetros:', params);
-
-      const resultado = await apiService.getReporteGeneral(
+      const resultado = await reportesService.getReporteGeneral(
         params.fechaDesde,
         params.fechaHasta,
         params.platoId,
@@ -448,12 +437,9 @@ const ReporteGGestion = () => {
         params.estado
       );
 
-      console.log('✅ [ReporteGGestion] Reporte recibido:', resultado);
-      console.log('✅ [ReporteGGestion] Estructura completa del reporte:', JSON.stringify(resultado, null, 2));
       setReporteData(resultado);
     } catch (error) {
-      console.error('Error al buscar reporte:', error);
-      
+
       let mensajeError = 'Error al buscar el reporte';
       if (error.response?.data?.error) {
         mensajeError = error.response.data.error;

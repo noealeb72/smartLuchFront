@@ -4,11 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDashboard } from '../contexts/DashboardContext';
 
 const PrivateRoute = ({ children, allowedRoles = [] }) => {
-  const { isAuthenticated, hasAnyRole, loading, user } = useAuth();
+  const { isAuthenticated, loading, getCurrentRole } = useAuth();
   const { usuarioData } = useDashboard();
-
-  // Obtener el role desde user o usuarioData (priorizar user, pero usar usuarioData como fallback)
-  const userRole = user?.role || user?.jerarquia_nombre || usuarioData?.jerarquiaNombre || '';
 
   if (loading) {
     return (
@@ -23,23 +20,14 @@ const PrivateRoute = ({ children, allowedRoles = [] }) => {
   }
 
   // Verificar roles si se especificaron
+  // Usar la función centralizada getCurrentRole para obtener el rol de forma consistente
   if (allowedRoles.length > 0) {
+    const userRole = getCurrentRole(usuarioData);
+    
     // Verificar si el usuario tiene alguno de los roles permitidos
-    const hasRole = allowedRoles.some(role => 
-      userRole === role || 
-      user?.role === role || 
-      user?.jerarquia_nombre === role ||
-      usuarioData?.jerarquiaNombre === role
-    );
+    const hasRole = userRole && allowedRoles.includes(userRole);
 
     if (!hasRole) {
-      console.warn('⚠️ [PrivateRoute] Usuario no tiene rol permitido:', {
-        userRole,
-        allowedRoles,
-        userRoleFromUser: user?.role,
-        userJerarquiaNombre: user?.jerarquia_nombre,
-        usuarioDataJerarquiaNombre: usuarioData?.jerarquiaNombre
-      });
       return <Navigate to="/" replace />;
     }
   }

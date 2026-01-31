@@ -21,28 +21,24 @@ export const AuthProvider = ({ children }) => {
   const loadUserFromStorage = useCallback(() => {
     try {
       const token = localStorage.getItem('token');
-      console.log('🔍 Cargando usuario desde localStorage, token existe:', !!token);
       
       // Solo validar que exista el token
       if (token && token !== 'null' && token !== 'undefined') {
         // Solo guardar el token si no existe un usuario ya cargado (evitar bucles)
         setUser((prevUser) => {
           if (prevUser && prevUser.token === token) {
-            console.log('⏭️ [AuthContext] Usuario ya tiene el mismo token, no actualizar');
             return prevUser;
           }
           const storedUser = {
             token: token,
           };
-          console.log('👤 [AuthContext] Token cargado desde localStorage');
           return storedUser;
         });
       } else {
-        console.log('⚠️ [AuthContext] No hay token válido en localStorage');
         setUser(null);
       }
     } catch (error) {
-      console.error('❌ Error al cargar usuario desde localStorage:', error);
+      // Error silencioso al cargar usuario desde localStorage
     } finally {
       setLoading(false);
     }
@@ -99,7 +95,6 @@ export const AuthProvider = ({ children }) => {
 
       // Guardar SOLO el token en localStorage
       localStorage.setItem('token', token);
-      console.log('🔑 Token guardado en localStorage');
 
       // Crear objeto userData con la información del usuario (sin guardar en localStorage)
       const userData = {
@@ -112,7 +107,6 @@ export const AuthProvider = ({ children }) => {
         role: jerarquia, // Para compatibilidad con código existente
       };
 
-      console.log('👤 Usuario autenticado y guardado:', userData);
       setUser(userData);
       return userData;
     } catch (error) {
@@ -170,6 +164,15 @@ export const AuthProvider = ({ children }) => {
     return user && roles.includes(user.role);
   }, [user]);
 
+  // Función centralizada para obtener el rol actual del usuario
+  // Prioridad: user.role > user.jerarquia_nombre > usuarioData.jerarquiaNombre
+  // Esta función debe ser usada en toda la aplicación para obtener el rol de forma consistente
+  const getCurrentRole = useCallback((usuarioData = null) => {
+    // Si se pasa usuarioData como parámetro, usarlo como fallback
+    // Esto permite que PrivateRoute y otros componentes lo usen sin depender directamente de DashboardContext
+    return user?.role || user?.jerarquia_nombre || usuarioData?.jerarquiaNombre || null;
+  }, [user]);
+
   // Función para actualizar el usuario (usada por DashboardContext)
   const updateUser = useCallback((userData) => {
     setUser((prevUser) => ({
@@ -188,9 +191,10 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated,
       hasRole,
       hasAnyRole,
+      getCurrentRole,
       setUser: updateUser,
     }),
-    [user, loading, login, logout, isAuthenticated, hasRole, hasAnyRole, updateUser]
+    [user, loading, login, logout, isAuthenticated, hasRole, hasAnyRole, getCurrentRole, updateUser]
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

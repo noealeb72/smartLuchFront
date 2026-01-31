@@ -5,7 +5,6 @@ import { catalogosService } from '../services/catalogosService';
 import { turnosService } from '../services/turnosService';
 import { platosService } from '../services/platosService';
 import { useAuth } from '../contexts/AuthContext';
-import { useDashboard } from '../contexts/DashboardContext';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
@@ -16,8 +15,7 @@ import * as XLSX from 'xlsx';
 import './Usuarios.css';
 
 const MenuDelDia = () => {
-  const { user } = useAuth();
-  const { usuarioData } = useDashboard();
+  useAuth();
   
   // Función para obtener la fecha local en formato YYYY-MM-DD
   const obtenerFechaLocal = () => {
@@ -64,7 +62,7 @@ const MenuDelDia = () => {
   // Estados para el buscador de plato
   const [busquedaPlato, setBusquedaPlato] = useState('');
   const [mostrarDropdownPlato, setMostrarDropdownPlato] = useState(false);
-  const [platoSeleccionadoNombre, setPlatoSeleccionadoNombre] = useState('');
+  const [, setPlatoSeleccionadoNombre] = useState('');
   
   // Ref para rastrear el plan nutricional anterior y evitar limpiar el plato en la primera carga
   const planNutricionalAnteriorRef = useRef(null);
@@ -98,6 +96,7 @@ const MenuDelDia = () => {
     centroCostoId: '',
     plantaId: '',
     cantidad: '1',
+    comandadas: 0, // platos ya asignados/comandados (solo al editar; al crear es 0)
     fecha: obtenerFechaLocal(), // Fecha actual en formato YYYY-MM-DD
     activo: true,
   });
@@ -170,13 +169,11 @@ const MenuDelDia = () => {
           activo: soloActivos, // true para activos, false para de baja
           fechaDesde: fechaFiltro,
           fechaHasta: fechaFiltro,
-          search: null, // search siempre null según especificación del usuario
+          search: searchTerm && searchTerm.trim() ? searchTerm.trim() : null,
         };
 
         // Llamar a ObtenerLista de la API
         const data = await menuService.getLista(page, pageSize, filtros);
-
-        console.log('[MenuDelDia] Respuesta de la API al cargar la tabla:', data);
 
         let items = [];
         let totalItemsCount = 0;
@@ -213,7 +210,7 @@ const MenuDelDia = () => {
         setIsLoading(false);
       }
     },
-    [pageSize, filtroActivo, fechaSeleccionada, usuarioData]
+    [pageSize, filtroActivo, fechaSeleccionada]
   );
 
   useEffect(() => {
@@ -374,7 +371,7 @@ const MenuDelDia = () => {
     };
 
     cargarPlatosPorPlan();
-  }, [formData.plannutricional_id, planesNutricionales.length]);
+  }, [formData.plannutricional_id, planesNutricionales]);
 
   // Actualizar el nombre del plato cuando se cargan los platosPorPlan y hay un platoId
   useEffect(() => {
@@ -451,7 +448,7 @@ const MenuDelDia = () => {
     };
   }, []);
 
-  // Actualizar el nombre del plato seleccionado cuando cambia formData.platoId
+  // Actualizar el nombre del plato seleccionado cuando cambia formData.platoId (solo al seleccionar/cargar, no al escribir)
   useEffect(() => {
     if (formData.platoId) {
       const platoId = parseInt(formData.platoId);
@@ -475,11 +472,8 @@ const MenuDelDia = () => {
       
       if (plato) {
         const nombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
-        // Solo actualizar si el nombre es diferente o si está vacío
-        if (!busquedaPlato || busquedaPlato.trim() === '' || busquedaPlato !== nombre) {
-          setPlatoSeleccionadoNombre(nombre);
-          setBusquedaPlato(nombre);
-        }
+        setPlatoSeleccionadoNombre(nombre);
+        setBusquedaPlato(nombre);
       }
     } else {
       setPlatoSeleccionadoNombre('');
@@ -537,7 +531,8 @@ const MenuDelDia = () => {
     cargarMenus(1, filtro, nuevaFecha);
   };
 
-  // Función auxiliar para obtener datos de un menú según las columnas seleccionadas
+  // Función auxiliar para obtener datos de un menú según las columnas seleccionadas (reservada para uso futuro)
+  // eslint-disable-next-line no-unused-vars
   const obtenerDatosMenu = (menu, columnas) => {
     const datos = [];
     const headers = [];
@@ -668,7 +663,8 @@ const MenuDelDia = () => {
     return { headers, datos };
   };
 
-  // Función para filtrar menús según los filtros de impresión
+  // Función para filtrar menús según los filtros de impresión (reservada para uso futuro)
+  // eslint-disable-next-line no-unused-vars
   const filtrarMenusParaImpresion = (menusList, filtros) => {
     return menusList.filter(menu => {
       // Filtro por fecha
@@ -763,11 +759,7 @@ const MenuDelDia = () => {
         ...filtrosRequest,
       };
       
-      console.log('[MenuDelDia] Datos enviados al endpoint de impresión (PDF):', requestData);
-      
       const menusFiltrados = await menuService.getImpresion(requestData);
-      
-      console.log('[MenuDelDia] Respuesta del endpoint de impresión (PDF):', menusFiltrados);
       
       if (!menusFiltrados || menusFiltrados.length === 0) {
         Swal.fire({
@@ -938,11 +930,7 @@ const MenuDelDia = () => {
         ...filtrosRequest,
       };
       
-      console.log('[MenuDelDia] Datos enviados al endpoint de impresión (Excel):', requestData);
-      
       const menusFiltrados = await menuService.getImpresion(requestData);
-      
-      console.log('[MenuDelDia] Respuesta del endpoint de impresión (Excel):', menusFiltrados);
       
       if (!menusFiltrados || menusFiltrados.length === 0) {
         Swal.fire({
@@ -1068,6 +1056,7 @@ const MenuDelDia = () => {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleExportarPDFOriginal = () => {
     try {
       const doc = new jsPDF();
@@ -1194,6 +1183,7 @@ const MenuDelDia = () => {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleExportarExcelOriginal = () => {
     try {
       const worksheetData = [
@@ -1317,6 +1307,7 @@ const MenuDelDia = () => {
       centroCostoId: '',
       plantaId: '',
       cantidad: '1',
+      comandadas: 0,
       fecha: obtenerFechaLocal(),
       activo: true,
     };
@@ -1354,9 +1345,6 @@ const MenuDelDia = () => {
         planNutricionalId = menuCompleto.planNutricional.ID;
       }
       
-      console.log('[MenuDelDia] Plan Nutricional ID extraído del API:', planNutricionalId);
-      console.log('[MenuDelDia] Planes nutricionales disponibles:', planesNutricionales.map(p => ({ id: p.id || p.Id || p.ID, nombre: p.nombre || p.Nombre })));
-      
       // Convertir a string y validar que exista en planesNutricionales
       if (planNutricionalId !== '' && planNutricionalId !== null && planNutricionalId !== undefined) {
         // Convertir a número primero para normalizar
@@ -1372,17 +1360,17 @@ const MenuDelDia = () => {
           
           if (planEncontrado) {
             planNutricionalId = String(planEncontrado.id || planEncontrado.Id || planEncontrado.ID);
-            console.log('[MenuDelDia] Plan nutricional encontrado y normalizado:', planNutricionalId);
+
           } else {
-            console.warn('[MenuDelDia] Plan nutricional ID', planIdNum, 'no encontrado en la lista de planes disponibles');
+
             planNutricionalId = '';
           }
         } else {
-          console.warn('[MenuDelDia] Plan nutricional ID no es un número válido:', planNutricionalId);
+
           planNutricionalId = '';
         }
       } else {
-        console.warn('[MenuDelDia] No se encontró PlanNutricionalId en la respuesta del API');
+
         planNutricionalId = '';
       }
       
@@ -1404,6 +1392,11 @@ const MenuDelDia = () => {
         setBusquedaPlato(platoNombre);
       }
       
+      // Comandadas/asignados: del API o de la fila de la tabla por si el getPorId no lo trae
+      const comandadas = Number(
+        menuCompleto.Comandas ?? menuCompleto.comandas ?? menuCompleto.comandadas ??
+        menu?.Comandas ?? menu?.comandas ?? menu?.comandadas ?? 0
+      ) || 0;
       setFormData({
         id: menuCompleto.id || menuCompleto.Id || menuCompleto.ID,
         platoId: platoId ? String(platoId) : '',
@@ -1414,6 +1407,7 @@ const MenuDelDia = () => {
         centroCostoId: menuCompleto.centroCostoId || menuCompleto.CentroCostoId || menuCompleto.centro_costo_id || '',
         plantaId: menuCompleto.plantaId || menuCompleto.PlantaId || menuCompleto.planta_id || '',
         cantidad: menuCompleto.cantidad || menuCompleto.Cantidad || menuCompleto.Cant || '',
+        comandadas,
         fecha: menuCompleto.fecha 
           ? (menuCompleto.fecha.split('T')[0] || menuCompleto.fecha.split(' ')[0])
           : obtenerFechaLocal(),
@@ -1534,7 +1528,39 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!datosActualizados.cantidad || parseFloat(datosActualizados.cantidad) <= 0) {
+      const cantidadNum = parseFloat(datosActualizados.cantidad);
+      const comandadasNum = Number(datosActualizados.comandadas ?? 0) || 0;
+      if (datosActualizados.cantidad === '' || datosActualizados.cantidad === null || datosActualizados.cantidad === undefined || isNaN(cantidadNum) || cantidadNum < 0) {
+        Swal.fire({
+          title: 'Error',
+          text: 'La cantidad no es válida',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+      if (comandadasNum > 0 && cantidadNum < comandadasNum) {
+        Swal.fire({
+          title: 'Error',
+          text: `No puede tener cantidad ${cantidadNum} si ya hay ${comandadasNum} plato(s) asignado(s). La cantidad debe ser al menos ${comandadasNum}.`,
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+      if (comandadasNum > 0 && cantidadNum === 0) {
+        Swal.fire({
+          title: 'Error',
+          text: `No puede tener cantidad 0 si ya hay ${comandadasNum} plato(s) asignado(s). La cantidad debe ser al menos ${comandadasNum}.`,
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+      if (comandadasNum === 0 && cantidadNum <= 0) {
         Swal.fire({
           title: 'Error',
           text: 'La cantidad debe ser mayor a 0',
@@ -1712,81 +1738,80 @@ const MenuDelDia = () => {
             <AgregarButton onClick={handleCrearMenu} />
           </div>
 
-          {/* Buscador + export */}
+          {/* Buscador, Fecha, Estado e Impresión en la misma línea horizontal debajo de Agregar */}
           <div
             style={{
               display: 'flex',
-              alignItems: 'flex-end',
-              gap: '0.25rem',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
               marginBottom: '1rem',
-              flexWrap: 'nowrap',
             }}
           >
-            <div style={{ flex: '1 1 0%', minWidth: '100px', maxWidth: '65%', marginTop: '2rem' }}>
+            <div style={{ flex: '1 1 0%', minWidth: '200px', maxWidth: '65%' }}>
               <Buscador
                 filtro={filtro}
                 setFiltro={handleFiltroChange}
-              placeholder="Filtrar por plato, turno..."
-            />
-            </div>
-
-            {/* Calendario para seleccionar fecha */}
-            <div style={{ flexShrink: 0, maxWidth: '170px', marginLeft: '-0.5rem', marginBottom: '1rem' }}>
-              <input
-                type="date"
-                className="form-control"
-                value={fechaSeleccionada}
-                onChange={handleFechaChange}
-              style={{
-                  height: 'calc(1.5em + 1rem + 2px)',
-                  fontSize: '0.9rem',
-                  padding: '0.5rem 0.75rem',
-                border: '1px solid #ced4da',
-                borderRadius: '0.25rem',
-                  width: '100%',
-                }}
-                title="Seleccionar fecha"
+                placeholder="Filtrar por plato, turno..."
               />
             </div>
-
-            {/* Filtro de menús activos/inactivos */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0, marginLeft: '1rem', marginBottom: '1rem' }}>
-              <label style={{ 
-                margin: 0, 
-                fontSize: '0.875rem', 
-                color: '#495057', 
-                whiteSpace: 'nowrap',
-                fontWeight: 'normal'
-              }}>
-                Estado:
-              </label>
-              <select
-                className="form-control"
-                value={filtroActivo}
-                onChange={(e) => {
-                  setFiltroActivo(e.target.value);
-                  setCurrentPage(1);
-                }}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  fontSize: '0.9rem',
-                  border: '1px solid #ced4da',
-                  borderRadius: '0.25rem',
-                  backgroundColor: 'white',
-                  color: '#495057',
-                  cursor: 'pointer',
-                  width: 'auto',
-                  minWidth: 'fit-content',
-                  height: 'calc(1.5em + 1rem + 2px)',
-                  flexShrink: 0,
-                }}
-              >
-                <option value="activo">Activos</option>
-                <option value="inactivo">Inactivos</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, marginLeft: '4rem', marginBottom: '1rem' }}>
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+              {/* Calendario */}
+              <div style={{ width: '170px', height: '38px' }}>
+                <input
+                  type="date"
+                  className="form-control menudeldia-fecha-input"
+                  value={fechaSeleccionada}
+                  onChange={handleFechaChange}
+                  style={{
+                    height: '38px',
+                    minHeight: '38px',
+                    maxHeight: '38px',
+                    boxSizing: 'border-box',
+                    fontSize: '0.9rem',
+                    lineHeight: '1.25',
+                    padding: '0.25rem 0.5rem 0.25rem 0.75rem',
+                    border: '1px solid #ced4da',
+                    borderRadius: '0.25rem',
+                    width: '100%',
+                  }}
+                  title="Seleccionar fecha"
+                />
+              </div>
+              {/* Estado */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <label style={{ margin: 0, fontSize: '0.875rem', color: '#495057', whiteSpace: 'nowrap', fontWeight: 'normal' }}>
+                  Estado:
+                </label>
+                <select
+                  className="form-control menudeldia-estado-select"
+                  value={filtroActivo}
+                  onChange={(e) => {
+                    setFiltroActivo(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  style={{
+                    height: '38px',
+                    minHeight: '38px',
+                    maxHeight: '38px',
+                    boxSizing: 'border-box',
+                    padding: '0.25rem 0.5rem 0.25rem 0.75rem',
+                    fontSize: '0.9rem',
+                    lineHeight: '1.25',
+                    border: '1px solid #ced4da',
+                    borderRadius: '0.25rem',
+                    backgroundColor: 'white',
+                    color: '#495057',
+                    cursor: 'pointer',
+                    width: 'auto',
+                    minWidth: 'fit-content',
+                  }}
+                >
+                  <option value="activo">Activos</option>
+                  <option value="inactivo">Inactivos</option>
+                </select>
+              </div>
+              {/* Botón impresión */}
               <button
                 type="button"
                 className="btn"
@@ -1797,13 +1822,15 @@ const MenuDelDia = () => {
                   backgroundColor: '#007bff',
                   borderColor: '#007bff',
                   color: 'white',
-                  padding: '0.375rem 0.5rem',
-                  width: '36px',
-                  height: 'calc(1.5em + 1rem + 2px)',
+                  padding: 0,
+                  width: '38px',
+                  height: '38px',
+                  minHeight: '38px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '1rem',
+                  boxSizing: 'border-box',
                 }}
               >
                 <i className="fa fa-print" aria-hidden="true"></i>
@@ -2930,16 +2957,19 @@ const MenuDelDia = () => {
                       onChange={handleInputChange}
                       onBlur={(e) => {
                         const valor = e.target.value;
-                        if (!valor || valor === '0' || parseFloat(valor) <= 0) {
+                        const num = parseFloat(valor);
+                        const comandadas = Number(formData.comandadas ?? 0) || 0;
+                        const minCantidad = comandadas > 0 ? comandadas : 0;
+                        if (valor === '' || isNaN(num) || num < minCantidad) {
                           setFormData((prev) => ({
                             ...prev,
-                            cantidad: '1',
+                            cantidad: String(minCantidad > 0 ? minCantidad : 1),
                           }));
                         }
                       }}
                       required
-                      min="1"
-                      placeholder="1"
+                      min={formData.comandadas > 0 ? formData.comandadas : 0}
+                      placeholder={formData.comandadas > 0 ? String(formData.comandadas) : '1'}
                       style={{
                         padding: '0.4rem 0.5rem',
                         fontSize: '0.875rem',

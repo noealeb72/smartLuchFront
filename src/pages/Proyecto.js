@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService } from '../services/apiService';
+import { proyectosService } from '../services/proyectosService';
+import { catalogosService } from '../services/catalogosService';
+import { centrosDeCostoService } from '../services/centrosDeCostoService';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
@@ -44,7 +46,7 @@ const Proyecto = () => {
       const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
       const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
       
-      const data = await apiService.getProyectosLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
+      const data = await proyectosService.getProyectosLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
       
       // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
       let proyectosData = [];
@@ -104,7 +106,7 @@ const Proyecto = () => {
   // Cargar plantas disponibles
   const cargarPlantas = useCallback(async () => {
     try {
-      const data = await apiService.getPlantas();
+      const data = await catalogosService.getPlantas();
       setPlantas(Array.isArray(data) ? data : []);
     } catch (error) {
       setPlantas([]);
@@ -115,7 +117,7 @@ const Proyecto = () => {
   const cargarCentrosDeCosto = useCallback(async () => {
     try {
       // Traer todos los centros de costo (usar un pageSize grande para obtener todos)
-      const data = await apiService.getCentrosDeCostoLista(1, 1000, '');
+      const data = await centrosDeCostoService.getCentrosDeCostoLista(1, 1000, '');
       
       // Manejar diferentes formatos de respuesta
       let centrosArray = [];
@@ -348,7 +350,7 @@ const Proyecto = () => {
       };
 
       if (proyectoEditando) {
-        await apiService.actualizarProyecto(proyectoData);
+        await proyectosService.actualizarProyecto(proyectoData);
         Swal.fire({
           title: 'Éxito',
           text: 'Proyecto actualizado correctamente',
@@ -359,7 +361,7 @@ const Proyecto = () => {
           allowOutsideClick: true,
         });
       } else {
-        await apiService.crearProyecto(proyectoData);
+        await proyectosService.crearProyecto(proyectoData);
         Swal.fire({
           title: 'Éxito',
           text: 'Proyecto creado correctamente',
@@ -931,7 +933,7 @@ const Proyecto = () => {
               if (result.isConfirmed) {
                 try {
                   const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
-                  await apiService.eliminarProyecto(proyectoId);
+                  await proyectosService.eliminarProyecto(proyectoId);
                   Swal.fire({
                     title: 'Éxito',
                     text: 'Proyecto dado de baja correctamente',
@@ -1009,7 +1011,7 @@ const Proyecto = () => {
                       if (result.isConfirmed) {
                         try {
                           const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
-                          await apiService.activarProyecto(proyectoId);
+                          await proyectosService.activarProyecto(proyectoId);
                           Swal.fire({
                             title: 'Activado',
                             text: 'Proyecto activado correctamente',

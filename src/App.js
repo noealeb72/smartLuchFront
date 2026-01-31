@@ -24,8 +24,9 @@ const Plato = lazy(() => import('./pages/Plato'));
 const MenuDelDia = lazy(() => import('./pages/MenuDelDia'));
 const ReporteGComensales = lazy(() => import('./pages/ReporteGComensales'));
 const ReporteGGestion = lazy(() => import('./pages/ReporteGGestion'));
-const DatosPersonales = lazy(() => import('./pages/DatosPersonales'));
-const Calificacion = lazy(() => import('./pages/Calificacion'));
+// Pantallas vacías - comentadas hasta que se implementen
+// const DatosPersonales = lazy(() => import('./pages/DatosPersonales'));
+// const Calificacion = lazy(() => import('./pages/Calificacion'));
 const Configuracion = lazy(() => import('./pages/Configuracion'));
 
 function App() {
@@ -168,7 +169,8 @@ function App() {
                     </PrivateRoute>
                   }
                 />
-                <Route
+                {/* Pantallas vacías - comentadas hasta que se implementen */}
+                {/* <Route
                   path="/datospersonales"
                   element={
                     <PrivateRoute>
@@ -187,7 +189,7 @@ function App() {
                       </Layout>
                     </PrivateRoute>
                   }
-                />
+                /> */}
                 <Route
                   path="/configuracion"
                   element={

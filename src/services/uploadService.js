@@ -28,7 +28,6 @@ export const uploadService = {
       const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '');
       const codigo = codigoPlato.trim() || 'PLATO';
       nombreArchivo = `${codigo}_${timestamp}.${extension}`;
-      console.log('📝 [uploadService] Nombre de archivo generado:', nombreArchivo);
     }
 
     // Crear FormData para enviar el archivo
@@ -47,13 +46,6 @@ export const uploadService = {
     }
     // NO establecer Content-Type - el navegador lo hace automáticamente para FormData
 
-    console.log('🚀 [uploadService.uploadPlatoFoto] Subiendo imagen:', {
-      nombre: file.name,
-      tamaño: file.size,
-      tipo: file.type,
-      carpeta: folder
-    });
-
     try {
       // Usar axios directamente para evitar interferencia del apiClient
       const response = await axios.post(`${baseUrl}/api/upload/plato`, formData, {
@@ -63,8 +55,6 @@ export const uploadService = {
       });
 
       const rutaArchivo = response.data?.ruta || response.data?.path || response.data?.url || response.data;
-      
-      console.log('✅ [uploadService.uploadPlatoFoto] Imagen subida exitosamente:', rutaArchivo);
       
       // Asegurar que la ruta comience con /uploads/platos/
       if (typeof rutaArchivo === 'string') {
@@ -78,12 +68,7 @@ export const uploadService = {
 
       throw new Error('El servidor no devolvió una ruta válida');
     } catch (error) {
-      console.error('❌ [uploadService.uploadPlatoFoto] Error al subir imagen:', error);
-      
       if (error.response) {
-        console.error('❌ [uploadService.uploadPlatoFoto] Status:', error.response.status);
-        console.error('❌ [uploadService.uploadPlatoFoto] Datos de error:', error.response.data);
-        
         // Crear un error más descriptivo
         const errorMessage = error.response.data?.message || 
                             error.response.data?.Message || 
@@ -124,8 +109,6 @@ export const uploadService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    console.log('🗑️ [uploadService.deletePlatoFoto] Eliminando imagen:', ruta);
-
     try {
       // Usar axios directamente para mantener consistencia
       await axios.delete(`${baseUrl}/api/upload/plato`, {
@@ -133,10 +116,7 @@ export const uploadService = {
         data: { ruta },
         timeout: 30000,
       });
-
-      console.log('✅ [uploadService.deletePlatoFoto] Imagen eliminada exitosamente');
     } catch (error) {
-      console.error('❌ [uploadService.deletePlatoFoto] Error al eliminar imagen:', error);
       throw error;
     }
   },

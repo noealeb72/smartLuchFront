@@ -11,13 +11,6 @@ import { loadConfig } from './configService';
  */
 export const inicioService = {
   getInicioWeb: async (usuarioId) => {
-    // Optimizado: reducir logs para mejorar rendimiento
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    
-    if (isDevelopment) {
-      console.log('🚀 [InicioService] getInicioWeb - UsuarioId:', usuarioId);
-    }
-
     try {
       // Obtener configuración para la URL base de la API
       const appConfig = await loadConfig(true);
@@ -123,24 +116,8 @@ export const inicioService = {
         platosPedidos: platosPedidosNormalizado
       };
       
-      console.log('✅ [InicioService] Datos normalizados');
-      console.log('   - usuario:', data.usuario ? '✅ Presente' : '❌ Ausente');
-      console.log('   - turnos:', Array.isArray(data.turnos) ? `✅ Array con ${data.turnos.length} elementos` : '❌ No es array');
-      console.log('   - menuDelDia:', Array.isArray(data.menuDelDia) ? `✅ Array con ${data.menuDelDia.length} elementos` : '❌ No es array');
-      console.log('   - platosPedidos:', Array.isArray(data.platosPedidos) ? `✅ Array con ${data.platosPedidos.length} elementos` : '❌ No es array');
-      console.log('');
-      
-      console.log('═══════════════════════════════════════════════════════════');
-      console.log('✅ [InicioService] getInicioWeb COMPLETADO EXITOSAMENTE');
-      console.log('═══════════════════════════════════════════════════════════');
-      console.log('');
-      
       return data;
     } catch (error) {
-      // Solo loggear errores en desarrollo para mejorar rendimiento
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ [InicioService] Error:', error.message, 'Status:', error.response?.status || 'N/A');
-      }
       throw error;
     }
   },
@@ -163,52 +140,38 @@ export const inicioService = {
       // Obtener token de autenticación
       const token = localStorage.getItem('token');
       
-      // Convertir usuarioId a número entero si es posible
-      const usuarioIdNumero = parseInt(usuarioId, 10);
-      const usuarioIdParam = !isNaN(usuarioIdNumero) ? usuarioIdNumero : usuarioId;
+      // Valores escalares para evitar que axios serialice arrays y genere id=28&id=28 en la URL
+      const idScalar = Array.isArray(usuarioId) ? usuarioId[0] : usuarioId;
+      const usuarioIdNumero = parseInt(idScalar, 10);
+      const usuarioIdParam = !isNaN(usuarioIdNumero) ? usuarioIdNumero : idScalar;
+      const fechaScalar = Array.isArray(fecha) ? fecha[0] : fecha;
+      const turnoScalar = Array.isArray(turnoId) ? turnoId[0] : turnoId;
+      const turnoIdNum = turnoScalar !== null && turnoScalar !== undefined ? parseInt(turnoScalar, 10) : undefined;
+
+      // Params en el orden que espera la API: id, turno, fecha
+      const params = {
+        id: usuarioIdParam,
+        turno: turnoIdNum !== undefined && !isNaN(turnoIdNum) ? turnoIdNum : undefined,
+        fecha: fechaScalar || undefined
+      };
       
-      // Construir URL con parámetros
-      let url = `${baseUrl}/api/inicio/web-actualizado?id=${usuarioIdParam}`;
-      
-      // Agregar fecha del día (siempre requerida)
-      if (fecha) {
-        url += `&fecha=${encodeURIComponent(fecha)}`;
-      }
-      
-      // Agregar turnoId si está presente
-      if (turnoId !== null && turnoId !== undefined) {
-        const turnoIdNumero = parseInt(turnoId, 10);
-        if (!isNaN(turnoIdNumero)) {
-          url += `&turnoId=${turnoIdNumero}`;
-        }
-      }
-      
-      // Agregar timestamp para evitar caché
-      const timestamp = Date.now();
-      
-      // Preparar headers
       const headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
-        'Expires': '0'
+        'Expires': '0',
+        'X-Request-Time': String(Date.now())  // cache-busting en cabecera, no en query
       };
       
-      // Agregar token si existe
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      // Hacer la llamada HTTP
+      const url = `${baseUrl}/api/inicio/web-actualizado`;
       const response = await api.get(url, {
-        params: {
-          id: usuarioIdParam,
-          fecha: fecha,
-          turnoId: turnoId !== null && turnoId !== undefined ? parseInt(turnoId, 10) : undefined,
-          _t: timestamp
-        },
-        headers: headers
+        params,
+        headers
       });
       
       // Procesar respuesta exitosa

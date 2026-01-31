@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService } from '../services/apiService';
+import { usuariosService } from '../services/usuariosService';
+import { catalogosService } from '../services/catalogosService';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
@@ -76,7 +77,7 @@ const Usuarios = () => {
       // true = solo activos, false = inactivos
       const soloActivosParam = soloActivos === true;
       
-      const data = await apiService.getUsuarios(pageToUse, pageSizeToUse, searchTerm, soloActivosParam);
+      const data = await usuariosService.getUsuarios(pageToUse, pageSizeToUse, searchTerm, soloActivosParam);
       
       // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
       let usuariosArray = [];
@@ -135,11 +136,11 @@ const Usuarios = () => {
         proyectosData,
         planesData,
       ] = await Promise.all([
-        apiService.getJerarquias(),
-        apiService.getPlantas(),
-        apiService.getCentrosDeCosto(),
-        apiService.getProyectos(),
-        apiService.getPlanesNutricionales(),
+        catalogosService.getJerarquias(),
+        catalogosService.getPlantas(),
+        catalogosService.getCentrosDeCosto(),
+        catalogosService.getProyectos(),
+        catalogosService.getPlanesNutricionales(),
       ]);
   
       const jerarquiasArray = jerarquiasData || [];
@@ -323,19 +324,9 @@ const Usuarios = () => {
       }
 
       // Llamar al endpoint para obtener los datos completos del usuario
-      const usuarioCompleto = await apiService.getUsuarioPorId(usuarioId);
+      const usuarioCompleto = await usuariosService.getUsuarioPorId(usuarioId);
       const usuarioParaEditar = usuarioCompleto || usuario;
-      
-      console.log('[Usuarios] 📥 Datos del usuario recibidos del API:', JSON.stringify(usuarioParaEditar, null, 2));
-      console.log('[Usuarios] 🔍 Buscando plan nutricional ID en:', {
-        'PlanNutricionalId': usuarioParaEditar.PlanNutricionalId,
-        'planNutricionalId': usuarioParaEditar.planNutricionalId,
-        'plannutricional_id': usuarioParaEditar.plannutricional_id,
-        'PlanNutricional': usuarioParaEditar.PlanNutricional,
-        'planNutricional': usuarioParaEditar.planNutricional,
-        'plan_nutricional_id': usuarioParaEditar.plan_nutricional_id
-      });
-      
+
       setUsuarioEditando(usuarioParaEditar);
     
       // Función auxiliar para obtener el ID correctamente, buscando en múltiples variantes
@@ -377,7 +368,7 @@ const Usuarios = () => {
         for (const variante of variantes) {
           if (usuarioParaEditar[variante] !== undefined && usuarioParaEditar[variante] !== null && usuarioParaEditar[variante] !== '') {
             idValue = usuarioParaEditar[variante];
-            console.log(`[Usuarios] ✅ Encontrado ${campoNombre} ID en variante "${variante}":`, idValue);
+
             break;
           }
         }
@@ -388,7 +379,7 @@ const Usuarios = () => {
           if (planNutricionalObj && typeof planNutricionalObj === 'object') {
             idValue = planNutricionalObj.id || planNutricionalObj.Id || planNutricionalObj.ID || null;
             if (idValue) {
-              console.log(`[Usuarios] ✅ Encontrado plan nutricional ID en objeto anidado:`, idValue);
+
             }
           }
         }
@@ -406,10 +397,10 @@ const Usuarios = () => {
           });
           
           if (opcionEncontrada) {
-            console.log(`[Usuarios] ✅ ID ${idValueStr} validado, corresponde a:`, opcionEncontrada.nombre || opcionEncontrada.Nombre || 'Sin nombre');
+
             return idValueStr;
           } else {
-            console.log(`[Usuarios] ⚠️ ID ${idValueStr} encontrado pero NO existe en las opciones disponibles, se ignorará`);
+
             idValue = null; // Invalidar el ID si no existe en las opciones
           }
         }
@@ -417,11 +408,11 @@ const Usuarios = () => {
         // NO asignar automáticamente si hay múltiples opciones - solo si realmente no se encontró y hay una sola opción
         // Esto evita asignar "Diabético" cuando hay otros planes disponibles
         if ((!idValue || idValue === '' || idValue === 0) && arrayOpciones.length === 1) {
-          console.log(`[Usuarios] ⚠️ No se encontró ${campoNombre} ID válido, usando única opción disponible:`, arrayOpciones[0].id);
+
           idValue = arrayOpciones[0].id || arrayOpciones[0].Id || arrayOpciones[0].ID;
           return String(idValue);
         } else if (!idValue && arrayOpciones.length > 1) {
-          console.log(`[Usuarios] ⚠️ No se encontró ${campoNombre} ID válido y hay múltiples opciones disponibles, dejando vacío`);
+
         }
         
         return '';
@@ -430,8 +421,7 @@ const Usuarios = () => {
       // Obtener IDs como strings
       const jerarquiaId = obtenerId(jerarquias, 'jerarquia');
       const planId = obtenerId(planesNutricionales, 'plannutricional');
-      console.log('[Usuarios] 🎯 Plan Nutricional ID final obtenido:', planId);
-      console.log('[Usuarios] 📋 Planes nutricionales disponibles:', planesNutricionales.map(p => ({ id: p.id || p.Id || p.ID, nombre: p.nombre || p.Nombre || p.NOMBRE })));
+
       const plantaId = obtenerId(plantas, 'planta');
       const centroId = obtenerId(centrosDeCosto, 'centrodecosto');
       const proyectoId = obtenerId(proyectos, 'proyecto');
@@ -465,7 +455,7 @@ const Usuarios = () => {
             fechaIngresoFormateada = fechaIngresoRaw.split('T')[0].split(' ')[0];
           }
         } catch (e) {
-          console.error('[Usuarios] Error al formatear fecha de ingreso:', e);
+
         }
       }
       
@@ -985,10 +975,9 @@ const Usuarios = () => {
 
   // Guardar usuario (crear o actualizar)
   const handleGuardar = async () => {
-    console.log('🔵 [Usuarios] Iniciando guardado de usuario');
-    console.log('🔵 [Usuarios] formData actual:', formData);
-    console.log('🔵 [Usuarios] usuarioEditando:', usuarioEditando);
-    
+
+
+
     // Preparar datos actualizados con valores automáticos si hay un solo valor disponible
     // IMPORTANTE: Hacer una copia profunda para asegurar que todos los valores se copien correctamente
     const datosActualizados = {
@@ -998,9 +987,7 @@ const Usuarios = () => {
       bonificaciones: formData.bonificaciones || '0', // Asegurar que bonificaciones se copie explícitamente
       bonificaciones_invitado: formData.bonificaciones_invitado || '0', // Asegurar que bonificaciones_invitado se copie explícitamente
     };
-    
-    console.log('🔵 [Usuarios] datosActualizados iniciales:', datosActualizados);
-    
+
     // Jerarquía: asignar automáticamente si hay una sola opción (solo si no es root)
     if (jerarquias.length === 1 && formData.username !== 'root') {
       // SIEMPRE asignar si hay una sola opción, incluso si ya hay un valor
@@ -1016,19 +1003,17 @@ const Usuarios = () => {
     if (planesNutricionales.length === 1) {
       // SIEMPRE asignar si hay una sola opción
       datosActualizados.plannutricional_id = String(planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID);
-      console.log('🔵 [Usuarios] Plan nutricional auto-asignado (única opción):', datosActualizados.plannutricional_id);
     } else {
       // Si hay múltiples opciones, usar el valor del formulario
       const planNutricionalFormValue = String(formData.plannutricional_id || '').trim();
-      console.log('🔵 [Usuarios] Plan nutricional del formulario:', planNutricionalFormValue, 'formData.plannutricional_id:', formData.plannutricional_id);
-      
+
       if (planNutricionalFormValue && planNutricionalFormValue !== '' && planNutricionalFormValue !== '0' && planNutricionalFormValue !== 'null' && planNutricionalFormValue !== 'undefined') {
         datosActualizados.plannutricional_id = planNutricionalFormValue;
-        console.log('✅ [Usuarios] Plan nutricional asignado desde formulario:', datosActualizados.plannutricional_id);
+
       } else {
         // Si no hay valor válido, dejar vacío para que la validación lo detecte
         datosActualizados.plannutricional_id = '';
-        console.log('⚠️ [Usuarios] Plan nutricional vacío o inválido');
+
       }
     }
     // Planta: asignar automáticamente SOLO si hay una sola opción
@@ -1076,16 +1061,13 @@ const Usuarios = () => {
     
     // Validar con los datos actualizados (pasar datosActualizados como parámetro)
     // IMPORTANTE: No actualizar formData antes de validar para evitar re-renders innecesarios
-    console.log('🔵 [Usuarios] Validando formulario...');
+
     const validacion = validarFormulario(datosActualizados);
-    console.log('🔵 [Usuarios] Resultado de validación:', validacion);
-    
+
     if (!validacion) {
-      console.log('❌ [Usuarios] Validación falló, no se puede guardar');
+
       return;
     }
-    
-    console.log('✅ [Usuarios] Validación exitosa, continuando con el guardado');
 
     try {
       setIsLoading(true);
@@ -1093,28 +1075,15 @@ const Usuarios = () => {
       // Validar que todos los IDs requeridos estén presentes
       const jerarquiaId = datosActualizados.jerarquia_id ? parseInt(datosActualizados.jerarquia_id) : (jerarquias.length === 1 ? parseInt(jerarquias[0].id) : null);
       const planNutricionalId = datosActualizados.plannutricional_id && datosActualizados.plannutricional_id !== '' ? parseInt(datosActualizados.plannutricional_id) : (planesNutricionales.length === 1 ? parseInt(planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID) : null);
-      console.log('🔵 [Usuarios] planNutricionalId calculado:', planNutricionalId, 'desde datosActualizados.plannutricional_id:', datosActualizados.plannutricional_id);
+
       const plantaId = datosActualizados.planta_id ? parseInt(datosActualizados.planta_id) : (plantas.length === 1 ? parseInt(plantas[0].id) : null);
       const centroCostoId = datosActualizados.centrodecosto_id ? parseInt(datosActualizados.centrodecosto_id) : (centrosDeCosto.length === 1 ? parseInt(centrosDeCosto[0].id) : null);
       const proyectoId = datosActualizados.proyecto_id ? parseInt(datosActualizados.proyecto_id) : (proyectos.length === 1 ? parseInt(proyectos[0].id) : null);
-      
-      console.log('🔵 [Usuarios] IDs calculados:', {
-        jerarquiaId,
-        planNutricionalId,
-        plantaId,
-        centroCostoId,
-        proyectoId,
-        jerarquiasDisponibles: jerarquias.length,
-        planesDisponibles: planesNutricionales.length,
-        plantasDisponibles: plantas.length,
-        centrosDisponibles: centrosDeCosto.length,
-        proyectosDisponibles: proyectos.length,
-      });
-      
+
       // Validar que los IDs requeridos no sean null y sean números válidos mayores a 0
       // Solo validar si hay múltiples opciones disponibles (si hay una sola opción, ya se asignó automáticamente)
       if (jerarquias.length > 1 && (!jerarquiaId || isNaN(jerarquiaId) || jerarquiaId <= 0)) {
-        console.error('❌ [Usuarios] Error: La jerarquía es requerida');
+
         Swal.fire(configurarSwal({
           title: 'Error de validación',
           text: 'La jerarquía es requerida. Por favor, seleccione una jerarquía.',
@@ -1126,7 +1095,7 @@ const Usuarios = () => {
         return;
       }
       if (planesNutricionales.length > 1 && (!planNutricionalId || isNaN(planNutricionalId) || planNutricionalId <= 0)) {
-        console.error('❌ [Usuarios] Error: El plan nutricional es requerido');
+
         Swal.fire(configurarSwal({
           title: 'Error de validación',
           text: 'El plan nutricional es requerido. Por favor, seleccione un plan nutricional.',
@@ -1264,10 +1233,10 @@ const Usuarios = () => {
             : (datosActualizados.bonificaciones !== undefined && datosActualizados.bonificaciones !== null && datosActualizados.bonificaciones !== ''
               ? String(datosActualizados.bonificaciones).trim()
               : '0');
-          console.log('🔵 [Usuarios] Bonificaciones - valor del campo:', valor, 'formData.bonificaciones:', formData.bonificaciones);
+
           const parsed = parseInt(valor, 10);
           const resultado = isNaN(parsed) ? 0 : parsed;
-          console.log('🔵 [Usuarios] Bonificaciones - valor parseado:', resultado);
+
           return resultado;
         })(),
         BonificacionesInvitado: (() => {
@@ -1277,10 +1246,10 @@ const Usuarios = () => {
             : (datosActualizados.bonificaciones_invitado !== undefined && datosActualizados.bonificaciones_invitado !== null && datosActualizados.bonificaciones_invitado !== ''
               ? String(datosActualizados.bonificaciones_invitado).trim()
               : '0');
-          console.log('🔵 [Usuarios] Bonificaciones Invitado - valor del campo:', valor, 'formData.bonificaciones_invitado:', formData.bonificaciones_invitado);
+
           const parsed = parseInt(valor, 10);
           const resultado = isNaN(parsed) ? 0 : parsed;
-          console.log('🔵 [Usuarios] Bonificaciones Invitado - valor parseado:', resultado);
+
           return resultado;
         })(),
         Email: datosActualizados.email ? datosActualizados.email.trim() : null,
@@ -1355,8 +1324,7 @@ const Usuarios = () => {
       }
       
       if (usuarioEditando) {
-        console.log('📤 [Usuarios] Datos enviados para ACTUALIZAR usuario:', JSON.stringify(usuarioData, null, 2));
-        await apiService.actualizarUsuario(usuarioData);
+        await usuariosService.actualizarUsuario(usuarioData);
         Swal.fire(configurarSwal({
           title: 'Éxito',
           text: 'Usuario actualizado correctamente',
@@ -1367,8 +1335,7 @@ const Usuarios = () => {
           allowOutsideClick: true,
         }));
       } else {
-        console.log('📤 [Usuarios] Datos enviados para CREAR usuario:', JSON.stringify(usuarioData, null, 2));
-        await apiService.crearUsuario(usuarioData);
+        await usuariosService.crearUsuario(usuarioData);
         Swal.fire(configurarSwal({
           title: 'Éxito',
           text: 'Usuario creado correctamente',
@@ -1394,10 +1361,9 @@ const Usuarios = () => {
       }
       
       // Solo mostrar logs y popup si no hay redirección
-      console.error('❌ [Usuarios] Error al guardar usuario:', error);
-      console.error('❌ [Usuarios] error.response:', error.response);
-      console.error('❌ [Usuarios] error.response?.data:', error.response?.data);
-      
+
+
+
       if (!error.redirectToLogin) {
         let errorTitle = 'Error';
         let errorMessage = error.message || 'Error al guardar el usuario';
@@ -2662,7 +2628,7 @@ const Usuarios = () => {
             })).then(async (result) => {
               if (result.isConfirmed) {
                 try {
-                  await apiService.eliminarUsuario(usuario.id);
+                  await usuariosService.eliminarUsuario(usuario.id);
                   Swal.fire(configurarSwal({
                     title: 'Dado de baja',
                     text: 'Usuario dado de baja correctamente',
@@ -2761,7 +2727,7 @@ const Usuarios = () => {
                     })).then(async (result) => {
                       if (result.isConfirmed) {
                         try {
-                          await apiService.activarUsuario(usuario.id);
+                          await usuariosService.activarUsuario(usuario.id);
                           Swal.fire(configurarSwal({
                             title: 'Activado',
                             text: 'Usuario activado correctamente',

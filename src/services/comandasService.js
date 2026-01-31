@@ -1,6 +1,25 @@
 import api, { clearApiCache } from './apiClient';
 import { getApiBaseUrl } from './configService';
 
+/** Promesa de lista preloaded para Despacho (cocinero recién logueado) */
+let preloadListaPromise = null;
+
+/**
+ * Guarda una promesa de getLista para que Despacho la use al montar (evita doble request).
+ */
+export function setPreloadListaPromise(promise) {
+  preloadListaPromise = promise;
+}
+
+/**
+ * Toma y limpia la promesa preloaded; si no hay, retorna null.
+ */
+export function takePreloadListaPromise() {
+  const p = preloadListaPromise;
+  preloadListaPromise = null;
+  return p;
+}
+
 /**
  * Servicio de comandas/pedidos
  */
@@ -32,19 +51,18 @@ export const comandasService = {
 
   /**
    * Obtiene lista de pedidos para despacho
-   * GET /api/comanda/lista
+   * GET /api/comanda/lista?page=1&pageSize=5&fechaDesde=...&fechaHasta=...&estado=...
+   * Respuesta: { items, totalItems, totalPages, page }
    */
-  getLista: async (page = 1, pageSize = 10, fechaDesde = null, fechaHasta = null) => {
+  getLista: async (page = 1, pageSize = 5, fechaDesde = null, fechaHasta = null, estado = 'Todos') => {
     const baseUrl = getApiBaseUrl();
     const params = {
       page,
       pageSize,
-      activo: true,
+      fechaDesde: fechaDesde || undefined,
+      fechaHasta: fechaHasta || undefined,
+      estado: estado || 'Todos',
     };
-    
-    if (fechaDesde) params.fechaDesde = fechaDesde;
-    if (fechaHasta) params.fechaHasta = fechaHasta;
-    
     const response = await api.get(`${baseUrl}/api/comanda/lista`, {
       params,
     });
@@ -78,19 +96,10 @@ export const comandasService = {
       usuarioId: parseInt(userId),
     };
     
-    console.log('[comandasService.crearPedido] 📤 Enviando a POST /api/comanda/crear:');
-    console.log('[comandasService.crearPedido] Query Param usuarioId:', params.usuarioId);
-    console.log('[comandasService.crearPedido] DTO (sin UsuarioId):', JSON.stringify(dtoSinUsuarioId, null, 2));
-    console.log('[comandasService.crearPedido] URL:', `${baseUrl}/api/comanda/crear?usuarioId=${params.usuarioId}`);
-    
     const response = await api.post(`${baseUrl}/api/comanda/crear`, dtoSinUsuarioId, {
       params,
       headers,
     });
-    
-    console.log('[comandasService.crearPedido] 📥 Respuesta de la API:');
-    console.log('[comandasService.crearPedido] Status:', response.status);
-    console.log('[comandasService.crearPedido] Data:', JSON.stringify(response.data, null, 2));
     
     clearApiCache();
     return response.data;
@@ -151,17 +160,9 @@ export const comandasService = {
       Npedido: parseInt(npedido),
     };
     
-    console.log('[comandasService.cancelarPedido] 📤 Enviando a PUT /api/comanda/cancelar:');
-    console.log('[comandasService.cancelarPedido] DTO:', JSON.stringify(dto, null, 2));
-    console.log('[comandasService.cancelarPedido] URL:', `${baseUrl}/api/comanda/cancelar`);
-    
     const response = await api.put(`${baseUrl}/api/comanda/cancelar`, dto, {
       headers,
     });
-    
-    console.log('[comandasService.cancelarPedido] 📥 Respuesta de la API:');
-    console.log('[comandasService.cancelarPedido] Status:', response.status);
-    console.log('[comandasService.cancelarPedido] Data:', JSON.stringify(response.data, null, 2));
     
     clearApiCache();
     return response.data;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService } from '../services/apiService';
+import { plantasService } from '../services/plantasService';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
@@ -20,8 +20,8 @@ const Planta = () => {
   // Estado de paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const [, setTotalPages] = useState(1);
+  const [, setTotalItems] = useState(0);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -37,7 +37,7 @@ const Planta = () => {
       
       // Siempre usar pageSize=100 para obtener todos los resultados
       // page=1 siempre para búsquedas
-      const data = await apiService.getPlantasLista(
+      const data = await plantasService.getPlantasLista(
         1,              // page siempre 1 para búsquedas
         100,            // pageSize máximo
         searchTerm,     // término de búsqueda
@@ -163,7 +163,7 @@ const Planta = () => {
       };
 
       if (plantaEditando) {
-        await apiService.actualizarPlanta(plantaData);
+        await plantasService.actualizarPlanta(plantaData);
         Swal.fire({
           title: 'Éxito',
           text: 'Planta actualizada correctamente',
@@ -174,7 +174,7 @@ const Planta = () => {
           allowOutsideClick: true,
         });
       } else {
-        await apiService.crearPlanta(plantaData);
+        await plantasService.crearPlanta(plantaData);
         Swal.fire({
           title: 'Éxito',
           text: 'Planta creada correctamente',
@@ -221,11 +221,6 @@ const Planta = () => {
     }
   };
 
-  // Manejar cambio de página
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-  };
-
   // Crear nueva planta
   const handleCrearPlanta = () => {
     setPlantaEditando(null);
@@ -256,7 +251,7 @@ const Planta = () => {
       }
       
       // Cargar los datos completos desde el endpoint
-      const plantaData = await apiService.getPlantaPorId(plantaId);
+      const plantaData = await plantasService.getPlantaPorId(plantaId);
       
       // El backend devuelve datos en PascalCase, extraer solo id, nombre y descripcion
       setPlantaEditando(plantaData);
@@ -689,7 +684,7 @@ const Planta = () => {
                     return;
                   }
                   
-                  await apiService.eliminarPlanta(plantaId);
+                  await plantasService.eliminarPlanta(plantaId);
                   Swal.fire({
                     title: 'Éxito',
                     text: 'Planta dada de baja correctamente',
@@ -780,7 +775,7 @@ const Planta = () => {
                           if (result.isConfirmed) {
                             try {
                               const plantaId = planta.id || planta.Id || planta.ID || planta.planta_id || planta.PlantaId;
-                              await apiService.activarPlanta(plantaId);
+                              await plantasService.activarPlanta(plantaId);
                               Swal.fire({
                                 title: 'Activado',
                                 text: 'Planta activada correctamente',

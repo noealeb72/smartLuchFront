@@ -553,3 +553,12 @@ body.modal-open {
   left: -9999px !important;
 }
 
+/* MenuDelDia: calendario y select Estado con la misma altura */
+.menudeldia-fecha-input,
+.menudeldia-estado-select {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  box-sizing: border-box !important;
+}
+

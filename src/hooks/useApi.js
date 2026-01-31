@@ -70,6 +70,7 @@ export const useApi = (apiFunction, dependencies = [], options = {}) => {
         abortControllerRef.current.abort();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [immediate, execute, ...dependencies]);
 
   const reset = useCallback(() => {

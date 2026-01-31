@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDashboard } from '../contexts/DashboardContext';
-import { apiService } from '../services/apiService';
-import { comandasService } from '../services/comandasService';
+import { comandasService, takePreloadListaPromise } from '../services/comandasService';
 import { getApiBaseUrl } from '../services/configService';
 import Swal from 'sweetalert2';
 import Buscador from '../components/Buscador';
@@ -12,14 +11,15 @@ import * as XLSX from 'xlsx';
 import './Despacho.css';
 import './Usuarios.css';
 
-// Constante para la imagen por defecto (fuera del componente para evitar recreaciones)
-const DEFAULT_IMAGE = `${process.env.PUBLIC_URL || ''}/img/logo-preview.png`;
+const PAGE_SIZE = 5;
 
 const Despacho = () => {
-  const { turnos } = useDashboard();
+  useDashboard();
   const [pedidos, setPedidos] = useState([]);
   const [pedidosFiltrados, setPedidosFiltrados] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [filtro, setFiltro] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('P'); // Filtro por estado (por defecto: Pendiente)
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -38,27 +38,21 @@ const Despacho = () => {
     comentario: false,
   });
 
-  // Cargar pedidos pendientes
+  const skipInitialLoadRef = useRef(false);
+
+  // Cargar pedidos (page, pageSize=5, fechas, estado) — respuesta: items, totalItems, totalPages, page
   const cargarPedidos = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Obtener fecha de hoy en formato YYYY-MM-DD
       const hoy = new Date();
-      const fechaHoy = hoy.toISOString().split('T')[0];
-      
-      // Llamar al endpoint /api/comanda/lista con fechaDesde y fechaHasta igual a hoy
-      const data = await apiService.getListaComandas(1, 1000, fechaHoy, fechaHoy);
-      
-      // Mostrar en log lo que devuelve la API de despacho
-      console.log('[Despacho] 📥 Respuesta completa de /api/comanda/lista:', JSON.stringify(data, null, 2));
-      
-      // Normalizar la respuesta (puede venir como array directo o dentro de un objeto con items/data)
-      const pedidosArray = Array.isArray(data) 
-        ? data 
-        : (data.items || data.data || data.pedidos || []);
-      
+      const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+      const estadoParam = filtroEstado === '' ? 'Todos' : filtroEstado;
+      const data = await comandasService.getLista(currentPage, PAGE_SIZE, fechaHoy, fechaHoy, estadoParam);
+      const pedidosArray = data.items ?? data.data ?? data.pedidos ?? (Array.isArray(data) ? data : []);
+      const totalItems = data.totalItems ?? data.totalCount ?? data.total ?? pedidosArray.length;
       setPedidos(pedidosArray);
       setPedidosFiltrados(pedidosArray);
+      setTotalCount(typeof totalItems === 'number' ? totalItems : pedidosArray.length);
     } catch (error) {
       if (!error.redirectToLogin) {
         Swal.fire({
@@ -71,52 +65,74 @@ const Despacho = () => {
       }
       setPedidos([]);
       setPedidosFiltrados([]);
+      setTotalCount(0);
     } finally {
       setIsLoading(false);
     }
+  }, [currentPage, filtroEstado]);
+
+  // Si el cocinero viene del login con preload, usar esos datos para mostrar Despacho al instante
+  useEffect(() => {
+    const pending = takePreloadListaPromise();
+    if (pending) {
+      skipInitialLoadRef.current = true;
+      pending
+        .then((data) => {
+          const pedidosArray = data.items ?? data.data ?? data.pedidos ?? (Array.isArray(data) ? data : []);
+          const totalItems = data.totalItems ?? data.totalCount ?? data.total ?? pedidosArray.length;
+          setPedidos(pedidosArray);
+          setPedidosFiltrados(pedidosArray);
+          setTotalCount(typeof totalItems === 'number' ? totalItems : pedidosArray.length);
+        })
+        .catch(() => {
+          cargarPedidos();
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
   }, []);
 
-  // Cargar pedidos al montar y cuando cambian los filtros
   useEffect(() => {
+    if (skipInitialLoadRef.current) {
+      skipInitialLoadRef.current = false;
+      return;
+    }
     cargarPedidos();
   }, [cargarPedidos]);
 
-  // Filtrar pedidos por texto y estado
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  // Al entrar a Despacho, llevar el foco al campo "Buscar pedido"
   useEffect(() => {
-    let filtrados = pedidos;
+    const timer = setTimeout(() => {
+      const inputBuscar = document.getElementById('buscar');
+      if (inputBuscar) inputBuscar.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
-    // Filtrar por texto
-    if (filtro.trim()) {
-      const textoFiltro = filtro.toLowerCase();
-      filtrados = filtrados.filter((pedido) => {
-        const nombre = (pedido.user_name || pedido.userName || pedido.nombre || '').toLowerCase();
-        const apellido = (pedido.user_lastName || pedido.userLastName || pedido.apellido || '').toLowerCase();
-        const legajo = (pedido.user_fileNumber || pedido.userFileNumber || pedido.legajo || '').toString().toLowerCase();
-        const plato = (pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || pedido.plato || pedido.Plato || '').toLowerCase();
-        const npedido = (pedido.Npedido || pedido.npedido || '').toString().toLowerCase();
-        
-        return nombre.includes(textoFiltro) ||
-               apellido.includes(textoFiltro) ||
-               legajo.includes(textoFiltro) ||
-               plato.includes(textoFiltro) ||
-               npedido.includes(textoFiltro);
-      });
+  // Filtrar pedidos solo por texto (buscador); el estado se envía al API
+  useEffect(() => {
+    if (!filtro.trim()) {
+      setPedidosFiltrados(pedidos);
+      return;
     }
-
-    // Filtrar por estado
-    if (filtroEstado) {
-      filtrados = filtrados.filter((pedido) => {
-        const estado = pedido.Estado || pedido.estado || '';
-        // Si el filtro es "P" (Pendiente), incluir tanto "P" como "PT"
-        if (filtroEstado === 'P') {
-          return estado === 'P' || estado === 'PT';
-        }
-        return estado === filtroEstado;
-      });
-    }
-    
+    const textoFiltro = filtro.toLowerCase();
+    const filtrados = pedidos.filter((pedido) => {
+      const nombre = (pedido.user_name || pedido.userName || pedido.nombre || '').toLowerCase();
+      const apellido = (pedido.user_lastName || pedido.userLastName || pedido.apellido || '').toLowerCase();
+      const legajo = (pedido.user_fileNumber || pedido.userFileNumber || pedido.legajo || '').toString().toLowerCase();
+      const plato = (pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || pedido.plato || pedido.Plato || '').toLowerCase();
+      const npedido = (pedido.Npedido || pedido.npedido || '').toString().toLowerCase();
+      return nombre.includes(textoFiltro) ||
+             apellido.includes(textoFiltro) ||
+             legajo.includes(textoFiltro) ||
+             plato.includes(textoFiltro) ||
+             npedido.includes(textoFiltro);
+    });
     setPedidosFiltrados(filtrados);
-  }, [filtro, filtroEstado, pedidos]);
+  }, [filtro, pedidos]);
 
   // Abrir modal de información del pedido
   const handleVerDetalle = (pedido) => {
@@ -527,7 +543,7 @@ const Despacho = () => {
         {/* Barra negra con título */}
         <div className="page-title-bar">
           <h3>
-            <i className="fa fa-truck mr-2" aria-hidden="true"></i>
+            <i className="fa fa-truck" style={{ marginRight: '0.25rem' }} aria-hidden="true"></i>
             <span>Despacho de platos</span>
           </h3>
         </div>
@@ -563,7 +579,7 @@ const Despacho = () => {
               <select
                 className="form-control"
                 value={filtroEstado}
-                onChange={(e) => setFiltroEstado(e.target.value)}
+                onChange={(e) => { setFiltroEstado(e.target.value); setCurrentPage(1); }}
                 style={{
                   minWidth: '150px',
                   padding: '0.375rem 0.75rem',
@@ -585,21 +601,24 @@ const Despacho = () => {
                   className="btn btn-sm"
                   onClick={() => setMostrarModalImpresion(true)}
                   title="Opciones de impresión"
+                  aria-label="Imprimir"
                   style={{
                     backgroundColor: '#007bff',
                     borderColor: '#007bff',
                     color: 'white',
-                    padding: '0.375rem 0.75rem',
-                    fontSize: '0.875rem',
+                    padding: 0,
+                    width: '38px',
+                    height: '38px',
+                    minHeight: '38px',
                     borderRadius: '0.25rem',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
+                    justifyContent: 'center',
                     flexShrink: 0,
+                    boxSizing: 'border-box',
                   }}
                 >
                   <i className="fa fa-print" aria-hidden="true"></i>
-                  Imprimir
                 </button>
               )}
             </div>
@@ -785,32 +804,19 @@ const Despacho = () => {
                   ? 'No se encontraron pedidos con la búsqueda ingresada'
                   : 'No hay pedidos pendientes'
               }
+              pageSize={PAGE_SIZE}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalCount}
+              onPageChange={setCurrentPage}
             />
           </div>
         </div>
 
-        {/* Modal de información del pedido */}
+        {/* Modal de información del pedido - centrado en pantalla */}
         {mostrarModal && pedidoSeleccionado && (
           <div 
-            className="modal fade show" 
-            style={{ 
-              display: 'flex',
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: 1050,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              overflow: 'auto',
-              padding: '20px',
-              boxSizing: 'border-box',
-              margin: 0,
-            }} 
+            className="despacho-modal-overlay"
             tabIndex="-1" 
             role="dialog"
             onClick={() => {
@@ -819,21 +825,8 @@ const Despacho = () => {
             }}
           >
             <div 
-              className="modal-dialog" 
+              className="despacho-modal-dialog"
               role="document"
-              style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: '600px',
-                margin: 'auto !important',
-                transform: 'none !important',
-                top: 'auto !important',
-                left: 'auto !important',
-                right: 'auto !important',
-                bottom: 'auto !important',
-                alignSelf: 'center',
-                flexShrink: 0,
-              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="modal-content">

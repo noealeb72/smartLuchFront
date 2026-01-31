@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useConfig } from '../contexts/ConfigContext';
 import { reloadConfig as reloadConfigService } from '../services/configService';
 import Swal from 'sweetalert2';

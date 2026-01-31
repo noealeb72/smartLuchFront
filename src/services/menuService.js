@@ -57,9 +57,6 @@ export const menuService = {
       headers,
     });
     
-    console.log('[menuService.getPorId] Respuesta completa de GET /api/menudd/' + id + ':', response.data);
-    console.log('[menuService.getPorId] Estructura del objeto:', JSON.stringify(response.data, null, 2));
-    
     return response.data;
   },
 
@@ -75,14 +72,10 @@ export const menuService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    console.log('🚀 [menuService.crearMenu] Creando menú:', menuData);
-    console.log('🔑 [menuService.crearMenu] Token disponible:', token ? '✅ Sí' : '❌ No');
-    
     const response = await api.post(`${baseUrl}/api/menudd/crear`, menuData, {
       headers,
     });
     clearApiCache();
-    console.log('✅ [menuService.crearMenu] Menú creado exitosamente');
     return response.data;
   },
 
@@ -109,14 +102,10 @@ export const menuService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    console.log('🚀 [menuService.actualizarMenu] Actualizando menú ID:', id);
-    console.log('🔑 [menuService.actualizarMenu] Token disponible:', token ? '✅ Sí' : '❌ No');
-    
     const response = await api.put(`${baseUrl}/api/menudd/actualizar`, dtoToSend, {
       headers,
     });
     clearApiCache();
-    console.log('✅ [menuService.actualizarMenu] Menú actualizado exitosamente');
     return response.data;
   },
 
@@ -138,15 +127,11 @@ export const menuService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    console.log('🚀 [menuService.eliminarMenu] Eliminando menú ID:', menuId);
-    console.log('🔑 [menuService.eliminarMenu] Token disponible:', token ? '✅ Sí' : '❌ No');
-    
     const response = await api.post(`${baseUrl}/api/menudd/baja`, null, {
       params: { id: menuId },
       headers,
     });
     clearApiCache();
-    console.log('✅ [menuService.eliminarMenu] Menú eliminado exitosamente');
     return response.data;
   },
 
@@ -168,15 +153,11 @@ export const menuService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    console.log('🚀 [menuService.activarMenu] Activando menú ID:', menuId);
-    console.log('🔑 [menuService.activarMenu] Token disponible:', token ? '✅ Sí' : '❌ No');
-    
     const response = await api.post(`${baseUrl}/api/menudd/activar`, null, {
       params: { id: menuId },
       headers,
     });
     clearApiCache();
-    console.log('✅ [menuService.activarMenu] Menú activado exitosamente');
     return response.data;
   },
 
@@ -185,9 +166,6 @@ export const menuService = {
    * Parámetros según la API: fecha, plantaId, turnoId, centroCostoId, proyectoId, jerarquiaId, nutricionalId, soloConStock
    */
   getMenuByTurno: async (planta, centro, jerarquia, proyecto, turno, fecha) => {
-    console.log('🚀 [menuService.getMenuByTurno] Iniciando llamada a /api/menudd/por-turno');
-    console.log('📋 [menuService.getMenuByTurno] Parámetros recibidos:', { planta, centro, jerarquia, proyecto, turno, fecha });
-    
     const baseUrl = getApiBaseUrl();
     const token = localStorage.getItem('token');
     
@@ -234,15 +212,10 @@ export const menuService = {
       throw new Error('turnoId es requerido y debe ser un número válido mayor a 0');
     }
     
-    console.log('📤 [menuService.getMenuByTurno] Parámetros que se enviarán:', params);
-    
     const headers = {};
     if (token && token !== 'null' && token !== 'undefined') {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
-    console.log('📤 [menuService.getMenuByTurno] URL:', `${baseUrl}/api/menudd/por-turno`);
-    console.log('📤 [menuService.getMenuByTurno] Headers:', headers);
     
     try {
       const response = await api.get(`${baseUrl}/api/menudd/por-turno`, {
@@ -250,19 +223,8 @@ export const menuService = {
         headers,
       });
       
-      console.log('✅ [menuService.getMenuByTurno] Petición exitosa');
-      console.log('📥 [menuService.getMenuByTurno] Datos recibidos:', response.data);
-      if (Array.isArray(response.data)) {
-        console.log('📥 [menuService.getMenuByTurno] Cantidad de items:', response.data.length);
-      }
-      
       return response.data;
     } catch (error) {
-      console.error('❌ [menuService.getMenuByTurno] Error:', error);
-      if (error.response) {
-        console.error('❌ [menuService.getMenuByTurno] Status:', error.response.status);
-        console.error('❌ [menuService.getMenuByTurno] Datos de error:', error.response.data);
-      }
       throw error;
     }
   },
@@ -288,28 +250,14 @@ export const menuService = {
       throw new Error('Token de autenticación requerido');
     }
     
-    console.log('🚀 [menuService.getMenuByTurnoId] Obteniendo menú para turnoId:', turnoId);
-    console.log('🔑 [menuService.getMenuByTurnoId] Token disponible:', token ? '✅ Sí' : '❌ No');
-    console.log('📤 [menuService.getMenuByTurnoId] URL:', `${baseUrl}/api/menudd/turno`);
-    console.log('📤 [menuService.getMenuByTurnoId] Params:', { turnoId, soloConStock });
-    
     try {
       const response = await api.get(`${baseUrl}/api/menudd/turno`, {
         params: { turnoId, soloConStock },
         headers,
       });
       
-      console.log('✅ [menuService.getMenuByTurnoId] Menú recibido:', response.data);
-      if (Array.isArray(response.data)) {
-        console.log('✅ [menuService.getMenuByTurnoId] Cantidad de items:', response.data.length);
-      }
       return response.data;
     } catch (error) {
-      console.error('❌ [menuService.getMenuByTurnoId] Error:', error);
-      if (error.response) {
-        console.error('❌ [menuService.getMenuByTurnoId] Status:', error.response.status);
-        console.error('❌ [menuService.getMenuByTurnoId] Datos de error:', error.response.data);
-      }
       throw error;
     }
   },

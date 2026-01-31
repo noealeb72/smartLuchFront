@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService } from '../services/apiService';
+import { jerarquiasService } from '../services/jerarquiasService';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
@@ -20,8 +20,8 @@ const Jerarquia = () => {
   // Estado de paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const [, setTotalPages] = useState(1);
+  const [, setTotalItems] = useState(0);
 
   // Jerarquías protegidas que no se pueden eliminar ni modificar el nombre
   const jerarquiasProtegidas = ['Admin', 'Cocina', 'Comensal', 'Gerencia'];
@@ -50,7 +50,7 @@ const Jerarquia = () => {
       const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
       const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
       
-      const data = await apiService.getJerarquiasLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
+      const data = await jerarquiasService.getJerarquiasLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
       
       // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
       let jerarquiasData = [];
@@ -190,7 +190,7 @@ const Jerarquia = () => {
       };
 
       if (jerarquiaEditando) {
-        await apiService.actualizarJerarquia(jerarquiaData);
+        await jerarquiasService.actualizarJerarquia(jerarquiaData);
         Swal.fire({
           title: 'Éxito',
           text: 'Jerarquía actualizada correctamente',
@@ -201,7 +201,7 @@ const Jerarquia = () => {
           allowOutsideClick: true,
         });
       } else {
-        await apiService.crearJerarquia(jerarquiaData);
+        await jerarquiasService.crearJerarquia(jerarquiaData);
         Swal.fire({
           title: 'Éxito',
           text: 'Jerarquía creada correctamente',
@@ -230,11 +230,6 @@ const Jerarquia = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Manejar cambio de página
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
   };
 
   // Crear nueva jerarquía
@@ -729,7 +724,7 @@ const Jerarquia = () => {
             }).then(async (result) => {
               if (result.isConfirmed) {
                 try {
-                  await apiService.eliminarJerarquia(jerarquia.id);
+                  await jerarquiasService.eliminarJerarquia(jerarquia.id);
                   Swal.fire({
                     title: 'Éxito',
                     text: 'Jerarquía dada de baja correctamente',
@@ -812,7 +807,7 @@ const Jerarquia = () => {
                       if (result.isConfirmed) {
                         try {
                           const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID;
-                          await apiService.activarJerarquia(jerarquiaId);
+                          await jerarquiasService.activarJerarquia(jerarquiaId);
                           Swal.fire({
                             title: 'Activado',
                             text: 'Jerarquía activada correctamente',

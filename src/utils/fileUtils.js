@@ -47,7 +47,6 @@ export const guardarArchivoEnIndexedDB = async (file, ruta) => {
         
         const putRequest = store.put(fileData);
         putRequest.onsuccess = () => {
-          console.log('✅ [fileUtils] Archivo guardado en IndexedDB:', ruta);
           resolve(ruta);
         };
         putRequest.onerror = () => {
@@ -132,7 +131,6 @@ export const eliminarArchivoDeIndexedDB = async (ruta) => {
       const deleteRequest = store.delete(ruta);
       
       deleteRequest.onsuccess = () => {
-        console.log('✅ [fileUtils] Archivo eliminado de IndexedDB:', ruta);
         resolve();
       };
       

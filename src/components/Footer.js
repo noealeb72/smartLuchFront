@@ -34,15 +34,15 @@ const Footer = memo(({ variant = 'full' }) => {
               <h4 className="text-white" style={{ marginTop: '0', marginBottom: '0.5rem', paddingTop: '0' }}>SmartLunch</h4>
               <p style={{ marginTop: '0.5rem' }}>Sistema de Gestión de concesiones y servicios de comedores indoor de compañías.</p>
               <nav className="nav nav-mastfoot justify-content-start">
-                <a className="nav-link text-white" href="#" aria-label="Facebook" style={{ color: 'white !important' }}>
+                <button type="button" className="nav-link text-white border-0 bg-transparent p-0" aria-label="Facebook" style={{ color: 'white !important' }}>
                   <i className="fab fa-facebook-f" style={{ color: 'white', fontSize: '1.2rem', display: 'inline-block' }}></i>
-                </a>
-                <a className="nav-link text-white" href="#" aria-label="Twitter" style={{ color: 'white !important' }}>
+                </button>
+                <button type="button" className="nav-link text-white border-0 bg-transparent p-0" aria-label="Twitter" style={{ color: 'white !important' }}>
                   <i className="fab fa-twitter" style={{ color: 'white', fontSize: '1.2rem', display: 'inline-block' }}></i>
-                </a>
-                <a className="nav-link text-white" href="#" aria-label="Instagram" style={{ color: 'white !important' }}>
+                </button>
+                <button type="button" className="nav-link text-white border-0 bg-transparent p-0" aria-label="Instagram" style={{ color: 'white !important' }}>
                   <i className="fab fa-instagram" style={{ color: 'white', fontSize: '1.2rem', display: 'inline-block' }}></i>
-                </a>
+                </button>
               </nav>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService } from '../services/apiService';
+import { usuariosService } from '../services/usuariosService';
+import { reportesService } from '../services/reportesService';
 import Swal from 'sweetalert2';
 import { mapUsuarios } from '../utils/dataMapper';
 import jsPDF from 'jspdf';
@@ -21,7 +22,7 @@ const ReporteGComensales = () => {
   const [mostrarReporte, setMostrarReporte] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [isCargandoHistorial, setIsCargandoHistorial] = useState(false);
+  const [isCargandoHistorial] = useState(false);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(true);
   
   // Estado del formulario
@@ -36,7 +37,7 @@ const ReporteGComensales = () => {
     try {
       setIsLoading(true);
       // Obtener todos los usuarios activos (pageSize=100 para obtener todos)
-      const data = await apiService.getUsuarios(1, 100, '', true);
+      const data = await usuariosService.getUsuarios(1, 100, '', true);
       
       let usuariosArray = [];
       if (data.items && Array.isArray(data.items)) {
@@ -279,20 +280,16 @@ const ReporteGComensales = () => {
                  usuarioSeleccionado?.PlantaId || 
                  null;
       
-      const data = await apiService.getReportePorComensal(
+      const data = await reportesService.getReportePorComensal(
         legajo.toString(), // Asegurar que sea string
         formData.fechaDesde,
         formData.fechaHasta,
         plantaId ? parseInt(plantaId) : null // Convertir a número si existe
       );
       
-      // Mostrar estructura completa del DTO recibido
-      console.log('✅ [ReporteGComensales] DTO completo recibido:', JSON.stringify(data, null, 2));
-      console.log('✅ [ReporteGComensales] Keys del objeto data:', Object.keys(data));
-      console.log('✅ [ReporteGComensales] data.usuario:', data.usuario);
-      console.log('✅ [ReporteGComensales] data.consumidos:', data.consumidos);
-      console.log('✅ [ReporteGComensales] data.resumen:', data.resumen);
-      
+
+
+
       // Extraer datos del DTO según la estructura: { usuario, consumidos, resumen }
       // Si los datos del usuario están en el nivel superior (Id, Nombre, Apellido, Dni, Foto), usarlos directamente
       // Si están anidados en usuario/Usuario, usar esos
@@ -320,11 +317,7 @@ const ReporteGComensales = () => {
       const consumidos = Array.isArray(data.consumidos) ? data.consumidos : 
                         Array.isArray(data.Consumidos) ? data.Consumidos : [];
       const resumen = data.resumen || data.Resumen || {};
-      
-      console.log('✅ [ReporteGComensales] usuarioData extraído:', usuarioData);
-      console.log('✅ [ReporteGComensales] consumidos extraído (cantidad):', consumidos.length);
-      console.log('✅ [ReporteGComensales] resumen extraído:', resumen);
-      
+
       // Mapear los consumidos a formato interno
       const historialCompleto = consumidos.map(comanda => ({
         id: comanda.id ?? comanda.Id ?? comanda.ID,
@@ -433,11 +426,8 @@ const ReporteGComensales = () => {
         totalPages: historialPaginado.totalPages,
         currentPage: 1
       };
-      
-      console.log('✅ [ReporteGComensales] reporteData final creado:', JSON.stringify(reporteData, null, 2));
-      console.log('✅ [ReporteGComensales] reporteData.resumen:', reporteData.resumen);
-      console.log('✅ [ReporteGComensales] reporteData.comandas.length:', reporteData.comandas.length);
-      
+
+
       setReporte(reporteData);
       setMostrarReporte(true);
       
@@ -559,7 +549,8 @@ const ReporteGComensales = () => {
     }).format(valor);
   };
 
-  // Traducir estado
+  // Traducir estado (reservado para uso futuro)
+  // eslint-disable-next-line no-unused-vars
   const traducirEstado = (estado) => {
     if (!estado) return 'N/A';
     const estadoLower = (estado || '').toLowerCase();
@@ -805,7 +796,7 @@ const ReporteGComensales = () => {
         allowOutsideClick: true,
       });
     } catch (error) {
-      console.error('Error al exportar PDF:', error);
+
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el reporte a PDF',
@@ -1205,21 +1196,13 @@ const ReporteGComensales = () => {
                         const foto = reporte.usuario.foto || reporte.usuario.Foto;
                         let fotoUrl = null;
                         
-                        console.log('🔍 [ReporteGComensales] Procesando foto del usuario:', {
-                          tieneFoto: !!foto,
-                          tipo: typeof foto,
-                          longitud: foto ? foto.length : 0,
-                          primerosCaracteres: foto ? foto.substring(0, 50) : null,
-                          empiezaConData: foto ? foto.trim().startsWith('data:') : false
-                        });
-                        
                         if (foto && foto.trim() !== '') {
                           const fotoTrimmed = foto.trim();
                           
                           // Si ya tiene el prefijo data:, usarlo directamente (caso más común desde la BD)
                           if (fotoTrimmed.startsWith('data:')) {
                             fotoUrl = fotoTrimmed;
-                            console.log('✅ [ReporteGComensales] Foto con prefijo data: detectada, usando directamente');
+
                           }
                           // Si es una URL completa (http/https), usarla tal cual
                           else if (fotoTrimmed.startsWith('http://') || fotoTrimmed.startsWith('https://')) {

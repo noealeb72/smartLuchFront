@@ -1,7 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// Importar CSS críticos primero para evitar FOUC (Flash of Unstyled Content)
-// El orden es importante: primero variables, luego estilos globales, luego específicos
 import './index.css';
 import './styles/globalStyles.css';
 import './styles/smartstyle.css';
@@ -30,13 +28,3 @@ if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
   serviceWorkerRegistration.register();
 }
 
-// Performance monitoring en desarrollo
-if (process.env.NODE_ENV === 'development') {
-  import('web-vitals').then(({ onCLS, onFID, onFCP, onLCP, onTTFB }) => {
-    onCLS(console.log);
-    onFID(console.log);
-    onFCP(console.log);
-    onLCP(console.log);
-    onTTFB(console.log);
-  });
-}

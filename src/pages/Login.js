@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfig } from '../contexts/ConfigContext';
 import './Login.css';
@@ -27,15 +26,17 @@ const Login = () => {
   }, []);
 
   // Redirigir si ya está autenticado (solo si tiene id, no solo token)
+  // Este useEffect solo se ejecuta cuando el usuario ya está autenticado al cargar la página
   useEffect(() => {
     if (user && user.token && user.id) {
-      // Solo redirigir si hay un token válido Y un id de usuario
-      if (user.role === 'Cocina') {
-        navigate('/despacho', { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
+      // Obtener el rol usando la función centralizada
+      const userRole = user.role || user.jerarquia_nombre;
+      // Decidir ruta según rol
+      const rutaDestino = userRole === 'Cocina' ? '/despacho' : '/';
+      navigate(rutaDestino, { replace: true });
     }
+    // Solo necesitamos estas propiedades específicas, no el objeto completo para evitar re-renders innecesarios
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.token, user?.role, navigate]);
 
   useEffect(() => {
@@ -43,6 +44,8 @@ const Login = () => {
     if (showError) {
       setShowError(false);
     }
+    // showError no debe estar en dependencias para evitar loops: queremos ocultar el error cuando cambian username/password
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username, password]);
 
   const isFormValid = () => {
@@ -63,17 +66,26 @@ const Login = () => {
 
     try {
       const userData = await login(username.trim(), password.trim());
-      // Iniciar la carga de datos ANTES de navegar para que estén listos cuando llegue a Index
+      
+      const userRole = userData?.role || userData?.jerarquia_nombre || userData?.jerarquia;
+      const rutaDestino = userRole === 'Cocina' ? '/despacho' : '/';
+
+      // Prefetch según destino: cocinero → lista Despacho (para mostrar rápido); resto → inicio Index
       if (userData && userData.id) {
-        // Prefetch: iniciar la carga de datos en segundo plano
-        import('../services/inicioService').then(({ inicioService }) => {
-          inicioService.getInicioWeb(userData.id).catch(() => {
-            // Ignorar errores en el prefetch, se cargará normalmente en Index
+        if (userRole === 'Cocina') {
+          const hoy = new Date();
+          const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+          const { comandasService, setPreloadListaPromise } = await import('../services/comandasService');
+          const promise = comandasService.getLista(1, 5, fechaHoy, fechaHoy, 'P');
+          setPreloadListaPromise(promise);
+        } else {
+          import('../services/inicioService').then(({ inicioService }) => {
+            inicioService.getInicioWeb(userData.id).catch(() => {});
           });
-        });
+        }
       }
-      // Redirigir a index después del login
-      navigate('/', { replace: true });
+      
+      navigate(rutaDestino, { replace: true });
     } catch (error) {
       setIsLoading(false);
       const message = error.message || 'Error de comunicación con el servidor';

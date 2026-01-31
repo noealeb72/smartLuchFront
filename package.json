@@ -26,6 +26,8 @@
     "build": "react-scripts build",
     "build:analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
     "test": "react-scripts test",
+    "lint": "eslint src --ext .js,.jsx",
+    "lint:fix": "eslint src --ext .js,.jsx --fix",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

@@ -17,11 +17,6 @@ export function register(config) {
 
       if (isLocalhost) {
         checkValidServiceWorker(swUrl, config);
-        navigator.serviceWorker.ready.then(() => {
-          console.log(
-            'Esta aplicación web está siendo servida desde caché por un service worker.'
-          );
-        });
       } else {
         registerValidSW(swUrl, config);
       }
@@ -41,14 +36,10 @@ function registerValidSW(swUrl, config) {
         installingWorker.onstatechange = () => {
           if (installingWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
-              console.log(
-                'Nuevo contenido disponible; la página se actualizará cuando se cierre todas las pestañas abiertas.'
-              );
               if (config && config.onUpdate) {
                 config.onUpdate(registration);
               }
             } else {
-              console.log('El contenido se ha almacenado en caché para uso offline.');
               if (config && config.onSuccess) {
                 config.onSuccess(registration);
               }
@@ -57,8 +48,8 @@ function registerValidSW(swUrl, config) {
         };
       };
     })
-    .catch((error) => {
-      console.error('Error durante el registro del service worker:', error);
+    .catch(() => {
+      // Error silencioso en el registro del service worker
     });
 }
 
@@ -82,7 +73,7 @@ function checkValidServiceWorker(swUrl, config) {
       }
     })
     .catch(() => {
-      console.log('No se encontró conexión a internet. La aplicación se ejecuta en modo offline.');
+      // Sin conexión a internet, la aplicación se ejecuta en modo offline
     });
 }
 
@@ -92,8 +83,8 @@ export function unregister() {
       .then((registration) => {
         registration.unregister();
       })
-      .catch((error) => {
-        console.error(error.message);
+      .catch(() => {
+        // Error silencioso al desregistrar service worker
       });
   }
 }

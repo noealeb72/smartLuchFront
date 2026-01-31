@@ -5,26 +5,19 @@ import { useDashboard } from '../contexts/DashboardContext';
 import './Navbar.css';
 
 const Navbar = memo(() => {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const { usuarioData } = useDashboard();
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [openDropdowns, setOpenDropdowns] = useState({});
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
-  // Obtener jerarquía desde user o usuarioData (priorizar user, pero usar usuarioData como fallback)
-  const jerarquiaNombre = user?.jerarquia_nombre || user?.role || usuarioData?.jerarquiaNombre || '';
-  const role = user?.role || user?.jerarquia_nombre || usuarioData?.jerarquiaNombre || '';
+  // Obtener jerarquía usando la función centralizada getCurrentRole
+  const { getCurrentRole } = useAuth();
+  const role = getCurrentRole(usuarioData) || '';
+  const jerarquiaNombre = role;
 
   // Log para depuración
-  useEffect(() => {
-    console.log('🔍 [Navbar] ==========================================');
-    console.log('🔍 [Navbar] Usuario de AuthContext:', user);
-    console.log('🔍 [Navbar] UsuarioData de DashboardContext:', usuarioData);
-    console.log('🔍 [Navbar] Role final:', role);
-    console.log('🔍 [Navbar] Jerarquía nombre final:', jerarquiaNombre);
-    console.log('🔍 [Navbar] ==========================================');
-  }, [user, usuarioData, role, jerarquiaNombre]);
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -187,21 +180,18 @@ const Navbar = memo(() => {
                 </Link>
               </li>
               <li className="nav-item dropdown" role="none">
-                <a
-                  className="nav-link dropdown-toggle active"
-                  href="#"
+                <button
+                  type="button"
+                  className="nav-link dropdown-toggle active border-0 bg-transparent"
                   id="ddCocina"
                   role="menuitem"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleDropdown('ddCocina');
-                  }}
+                  onClick={() => toggleDropdown('ddCocina')}
                   aria-haspopup="true"
                   aria-expanded={openDropdowns.ddCocina || false}
                   aria-label="Menú de cocina"
                 >
                   <i className="fa fa-boxes mr-2" aria-hidden="true"></i> Cocina
-                </a>
+                </button>
                 <div 
                   className={`dropdown-menu ${openDropdowns.ddCocina ? 'show' : ''}`} 
                   aria-labelledby="ddCocina" 
@@ -230,21 +220,18 @@ const Navbar = memo(() => {
 
           {role === 'Gerencia' && (
             <li className="nav-item dropdown" role="none">
-              <a
-                className="nav-link dropdown-toggle active"
-                href="#"
+              <button
+                type="button"
+                className="nav-link dropdown-toggle active border-0 bg-transparent"
                 id="ddReportes"
                 role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown('ddReportes');
-                }}
+                onClick={() => toggleDropdown('ddReportes')}
                 aria-haspopup="true"
                 aria-expanded={openDropdowns.ddReportes || false}
                 aria-label="Menú de reportes"
               >
                 <i className="fa fa-chart-bar mr-2" aria-hidden="true"></i> Reportes de Gestión
-              </a>
+              </button>
               <div 
                 className={`dropdown-menu ${openDropdowns.ddReportes ? 'show' : ''}`} 
                 aria-labelledby="ddReportes" 
@@ -272,21 +259,18 @@ const Navbar = memo(() => {
 
           {(role === 'Admin' || role === 'Gerencia') && (
             <li className="nav-item dropdown" role="none">
-              <a
-                className="nav-link dropdown-toggle active"
-                href="#"
+              <button
+                type="button"
+                className="nav-link dropdown-toggle active border-0 bg-transparent"
                 id="ddConfig"
                 role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown('ddConfig');
-                }}
+                onClick={() => toggleDropdown('ddConfig')}
                 aria-haspopup="true"
                 aria-expanded={openDropdowns.ddConfig || false}
                 aria-label="Menú de configuración"
               >
                 <i className="fa fa-cog mr-2" aria-hidden="true"></i> Configuración
-              </a>
+              </button>
               <div 
                 className={`dropdown-menu ${openDropdowns.ddConfig ? 'show' : ''}`} 
                 aria-labelledby="ddConfig" 
@@ -422,21 +406,18 @@ const Navbar = memo(() => {
                 </Link>
               </li>
               <li className="nav-item dropdown" role="none">
-                <a
-                  className="nav-link dropdown-toggle active"
-                  href="#"
+                <button
+                  type="button"
+                  className="nav-link dropdown-toggle active border-0 bg-transparent"
                   id="ddCocinaMobile"
                   role="menuitem"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleDropdown('ddCocinaMobile');
-                  }}
+                  onClick={() => toggleDropdown('ddCocinaMobile')}
                   aria-haspopup="true"
                   aria-expanded={openDropdowns.ddCocinaMobile || false}
                   aria-label="Menú de cocina"
                 >
                   <i className="fa fa-boxes mr-2" aria-hidden="true"></i> Cocina
-                </a>
+                </button>
                 <div 
                   className={`dropdown-menu ${openDropdowns.ddCocinaMobile ? 'show' : ''}`} 
                   aria-labelledby="ddCocinaMobile" 
@@ -471,21 +452,18 @@ const Navbar = memo(() => {
 
           {role === 'Gerencia' && (
             <li className="nav-item dropdown" role="none">
-              <a
-                className="nav-link dropdown-toggle active"
-                href="#"
+              <button
+                type="button"
+                className="nav-link dropdown-toggle active border-0 bg-transparent"
                 id="ddReportesMobile"
                 role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown('ddReportesMobile');
-                }}
+                onClick={() => toggleDropdown('ddReportesMobile')}
                 aria-haspopup="true"
                 aria-expanded={openDropdowns.ddReportesMobile || false}
                 aria-label="Menú de reportes"
               >
                 <i className="fa fa-chart-bar mr-2" aria-hidden="true"></i> Reportes de Gestión
-              </a>
+              </button>
               <div 
                 className={`dropdown-menu ${openDropdowns.ddReportesMobile ? 'show' : ''}`} 
                 aria-labelledby="ddReportesMobile" 
@@ -519,21 +497,18 @@ const Navbar = memo(() => {
 
           {(role === 'Admin' || role === 'Gerencia') && (
             <li className="nav-item dropdown" role="none">
-              <a
-                className="nav-link dropdown-toggle active"
-                href="#"
+              <button
+                type="button"
+                className="nav-link dropdown-toggle active border-0 bg-transparent"
                 id="ddConfigMobile"
                 role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown('ddConfigMobile');
-                }}
+                onClick={() => toggleDropdown('ddConfigMobile')}
                 aria-haspopup="true"
                 aria-expanded={openDropdowns.ddConfigMobile || false}
                 aria-label="Menú de configuración"
               >
                 <i className="fa fa-cog mr-2" aria-hidden="true"></i> Configuración
-              </a>
+              </button>
               <div 
                 className={`dropdown-menu ${openDropdowns.ddConfigMobile ? 'show' : ''}`} 
                 aria-labelledby="ddConfigMobile" 

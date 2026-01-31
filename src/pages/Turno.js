@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService } from '../services/apiService';
+import { turnosService } from '../services/turnosService';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
@@ -42,7 +42,7 @@ const Turno = () => {
       const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
       const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
       
-      const data = await apiService.getTurnosLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
+      const data = await turnosService.getTurnosLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
       
       // Función auxiliar para convertir hora a minutos para comparación numérica
       const horaAMinutos = (horaString) => {
@@ -377,7 +377,7 @@ const Turno = () => {
           HoraDesde: horaDesdeFormateada,
           HoraHasta: horaHastaFormateada,
         };
-        await apiService.actualizarTurno(turnoData);
+        await turnosService.actualizarTurno(turnoData);
         Swal.fire({
           title: 'Éxito',
           text: 'Turno actualizado correctamente',
@@ -395,7 +395,7 @@ const Turno = () => {
           HoraHasta: horaHastaFormateada,
         };
         
-        await apiService.crearTurno(turnoData);
+        await turnosService.crearTurno(turnoData);
         Swal.fire({
           title: 'Éxito',
           text: 'Turno creado correctamente',
@@ -980,7 +980,7 @@ const Turno = () => {
                     return;
                   }
                   
-                  await apiService.eliminarTurno(turnoId);
+                  await turnosService.eliminarTurno(turnoId);
                   Swal.fire({
                     title: 'Éxito',
                     text: 'Turno dado de baja correctamente',
@@ -1077,7 +1077,7 @@ const Turno = () => {
                       if (result.isConfirmed) {
                         try {
                           const turnoId = turno.id || turno.Id || turno.ID;
-                          await apiService.activarTurno(turnoId);
+                          await turnosService.activarTurno(turnoId);
                           Swal.fire({
                             title: 'Activado',
                             text: 'Turno activado correctamente',

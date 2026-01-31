@@ -135,14 +135,11 @@ export const platosService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    console.log('🚀 [platosService.crearPlato] Creando plato:', platoData);
-
     const response = await api.post(`${baseUrl}/api/plato/crear`, platoData, {
       headers,
     });
 
     clearApiCache();
-    console.log('✅ [platosService.crearPlato] Plato creado correctamente');
 
     return response.data;
   },
@@ -178,34 +175,15 @@ export const platosService = {
 
     if (token && token !== 'null' && token !== 'undefined') {
       headers['Authorization'] = `Bearer ${token}`;
-      console.log('✅ [platosService.actualizarPlato] Header Authorization agregado');
-    } else {
-      console.log(
-        '⚠️ [platosService.actualizarPlato] No hay token válido para agregar'
-      );
     }
-
-    console.log(
-      '📤 [platosService.actualizarPlato] DTO que se envía:',
-      dtoToSend
-    );
-    console.log(
-      '📤 [platosService.actualizarPlato] Headers finales:',
-      headers
-    );
 
     try {
       const response = await api.put(url, dtoToSend, { headers });
 
       clearApiCache();
-      console.log(
-        '✅ [platosService.actualizarPlato] Plato actualizado correctamente'
-      );
 
       return response.data;
     } catch (error) {
-      console.error('❌ [platosService.actualizarPlato] Error:', error);
-
       // Intentar extraer mensaje del backend en castellano
       if (error.response) {
         let errorMessage = error.message || 'Error desconocido';
@@ -226,24 +204,12 @@ export const platosService = {
           }
         }
 
-        console.error(
-          '❌ [platosService.actualizarPlato] Mensaje de error del backend:',
-          errorMessage
-        );
-
         // Adjuntar el mensaje al error para que el componente lo pueda mostrar
         error.backendMessage = errorMessage;
       } else if (error.request) {
-        console.error(
-          '❌ [platosService.actualizarPlato] No se recibió respuesta del servidor'
-        );
         error.backendMessage =
           'No se recibió respuesta del servidor al actualizar el plato.';
       } else {
-        console.error(
-          '❌ [platosService.actualizarPlato] Error al configurar la petición:',
-          error.message
-        );
         error.backendMessage =
           'Error al preparar la petición de actualización del plato.';
       }
@@ -274,7 +240,6 @@ export const platosService = {
     const response = await api.post(url, null, { headers });
 
     clearApiCache();
-    console.log('🗑️ [platosService.eliminarPlato] Plato dado de baja:', platoId);
 
     return response.data;
   },
@@ -297,7 +262,6 @@ export const platosService = {
     });
 
     clearApiCache();
-    console.log('✅ [platosService.activarPlato] Plato activado:', platoId);
 
     return response.data;
   },
@@ -327,12 +291,6 @@ export const platosService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    console.log('🚀 [platosService.subirFotoPlato] Subiendo imagen:', {
-      nombre: file.name,
-      tamaño: file.size,
-      tipo: file.type
-    });
-    console.log('🔑 [platosService.subirFotoPlato] Token disponible:', token ? '✅ Sí' : '❌ No');
 
     try {
       // Usar axios directamente para FormData (no usar apiClient que podría interferir con Content-Type)
@@ -341,10 +299,6 @@ export const platosService = {
         // NO establecer Content-Type - el navegador lo hace automáticamente para FormData con boundary
         timeout: 60000, // 60 segundos para archivos grandes
       });
-
-      console.log('📋 [platosService.subirFotoPlato] Respuesta completa del backend:', response.data);
-      console.log('📋 [platosService.subirFotoPlato] Tipo de respuesta:', typeof response.data);
-      console.log('📋 [platosService.subirFotoPlato] Claves de response.data:', response.data ? Object.keys(response.data) : 'No hay data');
       
       // El backend puede retornar diferentes formatos:
       // { path: "/uploads/platos/...", url: "..." }
@@ -356,7 +310,6 @@ export const platosService = {
       if (typeof response.data === 'string') {
         // Si la respuesta es directamente un string (la ruta)
         rutaArchivo = response.data;
-        console.log('✅ [platosService.subirFotoPlato] Respuesta es string directo:', rutaArchivo);
       } else if (response.data && typeof response.data === 'object') {
         // Buscar la ruta en diferentes campos posibles
         rutaArchivo = response.data.path || 
@@ -368,46 +321,32 @@ export const platosService = {
                      response.data.rutaArchivo ||
                      response.data.RutaArchivo ||
                      null;
-        
-        console.log('✅ [platosService.subirFotoPlato] Ruta encontrada en objeto:', rutaArchivo);
       }
       
       if (!rutaArchivo || (typeof rutaArchivo === 'string' && rutaArchivo.trim() === '')) {
-        console.error('❌ [platosService.subirFotoPlato] No se encontró ruta válida en la respuesta');
-        console.error('❌ [platosService.subirFotoPlato] Respuesta completa:', JSON.stringify(response.data, null, 2));
         throw new Error('El servidor no devolvió una ruta válida. Respuesta recibida: ' + JSON.stringify(response.data));
       }
-
-      console.log('✅ [platosService.subirFotoPlato] Imagen subida exitosamente, ruta original:', rutaArchivo);
       
       // Asegurar que la ruta comience con /uploads/platos/
       if (typeof rutaArchivo === 'string') {
         // Si la ruta ya es completa, devolverla tal cual
         if (rutaArchivo.startsWith('/uploads/platos/') || rutaArchivo.startsWith('uploads/platos/')) {
           const rutaFinal = rutaArchivo.startsWith('/') ? rutaArchivo : `/${rutaArchivo}`;
-          console.log('✅ [platosService.subirFotoPlato] Ruta final (uploads/platos):', rutaFinal);
           return rutaFinal;
         }
         // Si es solo el nombre del archivo, construir la ruta completa
         if (!rutaArchivo.includes('/')) {
           const rutaFinal = `/uploads/platos/${rutaArchivo}`;
-          console.log('✅ [platosService.subirFotoPlato] Ruta final (solo nombre archivo):', rutaFinal);
           return rutaFinal;
         }
         // Si es otra ruta, normalizarla
         const rutaFinal = rutaArchivo.startsWith('/') ? rutaArchivo : `/${rutaArchivo}`;
-        console.log('✅ [platosService.subirFotoPlato] Ruta final (normalizada):', rutaFinal);
         return rutaFinal;
       }
 
-      console.error('❌ [platosService.subirFotoPlato] La ruta no es un string válido:', rutaArchivo);
       throw new Error('La ruta devuelta por el servidor no es válida: ' + JSON.stringify(rutaArchivo));
     } catch (error) {
-      console.error('❌ [platosService.subirFotoPlato] Error al subir imagen:', error);
-      
       if (error.response) {
-        console.error('❌ [platosService.subirFotoPlato] Status:', error.response.status);
-        console.error('❌ [platosService.subirFotoPlato] Datos de error:', error.response.data);
         
         const errorMessage = error.response.data?.message || 
                             error.response.data?.Message || 
@@ -440,7 +379,6 @@ export const platosService = {
     const token = localStorage.getItem('token');
 
     if (!rutaFoto || typeof rutaFoto !== 'string' || rutaFoto.trim() === '') {
-      console.warn('⚠️ [platosService.eliminarFotoPlato] Ruta de foto no válida:', rutaFoto);
       return;
     }
 
@@ -453,7 +391,6 @@ export const platosService = {
       if (baseUrlMatch !== -1) {
         rutaNormalizada = rutaNormalizada.substring(baseUrlMatch + baseUrl.length);
       } else {
-        console.warn('⚠️ [platosService.eliminarFotoPlato] URL no corresponde al backend:', rutaNormalizada);
         return;
       }
     }
@@ -478,27 +415,18 @@ export const platosService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    console.log('🗑️ [platosService.eliminarFotoPlato] Eliminando foto:', rutaNormalizada);
-
     try {
       const response = await api.delete(`${baseUrl}/api/plato/eliminar-foto`, {
         headers,
         data: { ruta: rutaNormalizada },
       });
 
-      console.log('✅ [platosService.eliminarFotoPlato] Foto eliminada exitosamente:', rutaNormalizada);
       return response.data;
     } catch (error) {
-      console.error('❌ [platosService.eliminarFotoPlato] Error al eliminar foto:', error);
-      
       // No lanzar error si el archivo no existe (404) o ya fue eliminado
       if (error.response && error.response.status === 404) {
-        console.warn('⚠️ [platosService.eliminarFotoPlato] El archivo no existe o ya fue eliminado');
         return;
       }
-      
-      // Para otros errores, solo loguear pero no bloquear el flujo
-      console.warn('⚠️ [platosService.eliminarFotoPlato] No se pudo eliminar el archivo, pero se continúa con el proceso');
     }
   },
 
