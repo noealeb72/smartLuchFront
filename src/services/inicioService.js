@@ -124,35 +124,33 @@ export const inicioService = {
 
   /**
    * Obtiene datos actualizados del inicio para web
-   * Llama a api/inicio/web-actualizado con el turnoId seleccionado y la fecha del día
-   * 
+   * Llama a api/inicio/web-actualizado con id, turno, fecha
+   *
    * @param {string|number} usuarioId - ID del usuario
-   * @param {string} fecha - Fecha del día en formato 'YYYY-MM-DD' (ej: '2025-01-15')
    * @param {number|null} turnoId - ID del turno seleccionado (opcional)
+   * @param {string} fechaHoy - Fecha del día en formato 'YYYY-MM-DD' (ej: '2025-01-15')
    * @returns {Promise<Object>} Datos del inicio actualizados con estructura normalizada
    */
-  getInicioWebActualizado: async (usuarioId, fecha, turnoId = null) => {
+  getInicioWebActualizado: async (usuarioId, turnoId, fechaHoy) => {
     try {
-      // Obtener configuración para la URL base de la API
       const appConfig = await loadConfig(true);
       const baseUrl = appConfig?.apiBaseUrl || getApiBaseUrl() || 'http://localhost:8000';
-      
-      // Obtener token de autenticación
       const token = localStorage.getItem('token');
-      
-      // Valores escalares para evitar que axios serialice arrays y genere id=28&id=28 en la URL
+
       const idScalar = Array.isArray(usuarioId) ? usuarioId[0] : usuarioId;
       const usuarioIdNumero = parseInt(idScalar, 10);
       const usuarioIdParam = !isNaN(usuarioIdNumero) ? usuarioIdNumero : idScalar;
-      const fechaScalar = Array.isArray(fecha) ? fecha[0] : fecha;
       const turnoScalar = Array.isArray(turnoId) ? turnoId[0] : turnoId;
-      const turnoIdNum = turnoScalar !== null && turnoScalar !== undefined ? parseInt(turnoScalar, 10) : undefined;
+      const turnoIdNum = turnoScalar !== null && turnoScalar !== undefined ? parseInt(turnoScalar, 10) : null;
+      const turnoParam = (turnoIdNum !== null && !isNaN(turnoIdNum) && turnoIdNum > 0) ? turnoIdNum : 0;
+      const fechaScalar = Array.isArray(fechaHoy) ? fechaHoy[0] : fechaHoy;
+      const hoy = new Date();
+      const fechaDefault = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
 
-      // Params en el orden que espera la API: id, turno, fecha
       const params = {
         id: usuarioIdParam,
-        turno: turnoIdNum !== undefined && !isNaN(turnoIdNum) ? turnoIdNum : undefined,
-        fecha: fechaScalar || undefined
+        turno: turnoParam,
+        fecha: fechaScalar && String(fechaScalar).trim() ? fechaScalar : fechaDefault
       };
       
       const headers = {

@@ -2258,7 +2258,7 @@ const MenuDelDia = () => {
                   borderRadius: '6px',
                   border: '1px solid #e0e0e0'
                 }}>
-                  <div>
+                  <div key="filtro-fecha">
                     <label style={{ 
                       fontSize: '0.875rem', 
                       marginBottom: '0.5rem', 
@@ -2280,7 +2280,7 @@ const MenuDelDia = () => {
                       }}
                     />
                   </div>
-                  <div>
+                  <div key="filtro-turno">
                     <label style={{ 
                       fontSize: '0.875rem', 
                       marginBottom: '0.5rem', 
@@ -2312,7 +2312,7 @@ const MenuDelDia = () => {
                       })}
                     </select>
                   </div>
-                  <div>
+                  <div key="filtro-plan">
                     <label style={{ 
                       fontSize: '0.875rem', 
                       marginBottom: '0.5rem', 
@@ -2376,7 +2376,7 @@ const MenuDelDia = () => {
                       })}
                     </select>
                   </div>
-                  <div>
+                  <div key="filtro-proyecto">
                     <label style={{ 
                       fontSize: '0.875rem', 
                       marginBottom: '0.5rem', 
@@ -2408,7 +2408,7 @@ const MenuDelDia = () => {
                       })}
                     </select>
                   </div>
-                  <div>
+                  <div key="filtro-centro">
                     <label style={{ 
                       fontSize: '0.875rem', 
                       marginBottom: '0.5rem', 
@@ -2440,7 +2440,7 @@ const MenuDelDia = () => {
                       })}
                     </select>
                   </div>
-                  <div>
+                  <div key="filtro-planta">
                     <label style={{ 
                       fontSize: '0.875rem', 
                       marginBottom: '0.5rem', 
@@ -2472,7 +2472,7 @@ const MenuDelDia = () => {
                       })}
                     </select>
                   </div>
-                  <div>
+                  <div key="filtro-estado">
                     <label style={{ 
                       fontSize: '0.875rem', 
                       marginBottom: '0.5rem', 
@@ -2667,7 +2667,7 @@ const MenuDelDia = () => {
             </div>
             <div className="form-section-content" style={{ padding: '0' }}>
               <div className="row">
-                <div className="col-md-3">
+                <div key="col-plan" className="col-md-3">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="plannutricional_id" style={{ marginBottom: '0.25rem' }}>
                       Plan Nutricional {planesNutricionales.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
@@ -2943,7 +2943,7 @@ const MenuDelDia = () => {
                     )}
                   </div>
                 </div>
-                <div className="col-md-2" style={{ maxWidth: '120px' }}>
+                <div key="col-cantidad" className="col-md-2" style={{ maxWidth: '120px' }}>
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="cantidad" style={{ marginBottom: '0.25rem' }}>
                       Cantidad <span style={{ color: '#F34949' }}>*</span>
@@ -2977,7 +2977,7 @@ const MenuDelDia = () => {
                     />
                   </div>
                 </div>
-                <div className="col-md-2" style={{ maxWidth: '170px' }}>
+                <div key="col-fecha" className="col-md-2" style={{ maxWidth: '170px' }}>
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="fecha" style={{ marginBottom: '0.25rem' }}>
                       Fecha <span style={{ color: '#F34949' }}>*</span>
@@ -3066,7 +3066,7 @@ const MenuDelDia = () => {
                     )}
                   </div>
                 </div>
-                <div className="col-md-2">
+                <div key="col-turno" className="col-md-2">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="turnoId" style={{ marginBottom: '0.25rem' }}>
                       Turno {turnos.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
@@ -3198,7 +3198,7 @@ const MenuDelDia = () => {
                     )}
                   </div>
                 </div>
-                <div className="col-md-3">
+                <div key="col-centro" className="col-md-3">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="centroCostoId" style={{ marginBottom: '0.25rem' }}>
                       Centro de costo {centrosDeCosto.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
@@ -3264,7 +3264,7 @@ const MenuDelDia = () => {
                     )}
                   </div>
                 </div>
-                <div className="col-md-3">
+                <div key="col-planta" className="col-md-3">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="plantaId" style={{ marginBottom: '0.25rem' }}>
                       Planta {plantas.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
@@ -3336,7 +3336,7 @@ const MenuDelDia = () => {
 
           {/* Botones */}
           <div className="row mt-3">
-            <div className="col-md-12 d-flex justify-content-end">
+            <div key="col-buttons" className="col-md-12 d-flex justify-content-end">
               <button
                 type="button"
                 className="btn mr-2"

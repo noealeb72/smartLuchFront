@@ -39,6 +39,8 @@ const Index = () => {
   const requestInProgressRef = useRef(false);
   // Ref para rastrear si el componente está montado
   const isMountedRef = useRef(true);
+  // Ref con el turnoId actual para que el polling siempre use el último (evita race al cambiar turno)
+  const latestTurnoIdRef = useRef(null);
 
   // Cargar datos desde /api/inicio/web siempre que se monte el componente o se recargue la página
   useEffect(() => {
@@ -270,11 +272,11 @@ const Index = () => {
         const hoy = new Date();
         const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
         
-        // Obtener turnoId si hay un turno seleccionado
-        const turnoId = selectedTurno?.id || selectedTurno?.Id || selectedTurno?.ID || null;
+        // Usar la ref del turno actual para que el polling siempre envíe el turno seleccionado (evita closure con selectedTurno null)
+        const turnoId = latestTurnoIdRef.current;
         
-        // Llamar al endpoint de actualización con la fecha del día
-        const data = await inicioService.getInicioWebActualizado(usuarioId, fechaHoy, turnoId);
+        // Llamar al endpoint de actualización con la fecha del día (id, turno, fecha)
+        const data = await inicioService.getInicioWebActualizado(usuarioId, turnoId, fechaHoy);
         
         // Si hay datos, actualizar el contexto
         if (data && isMountedRef.current) {
@@ -309,13 +311,12 @@ const Index = () => {
           }
         }
       } catch (error) {
-        // Silenciar errores de actualización periódica (excepto 401)
         if (error.response?.status === 401) {
-          // En caso de 401, limpiar y redirigir
           localStorage.clear();
           window.location.href = '/login';
         }
-        // Para otros errores, simplemente ignorar y continuar
+      } finally {
+        requestInProgressRef.current = false;
       }
     };
 
@@ -335,8 +336,13 @@ const Index = () => {
       clearInterval(intervalId);
       clearTimeout(initialDelay);
     };
-  }, [user?.id, usuarioData?.id, selectedTurno, actualizarDatos]);
+  }, [user?.id, usuarioData?.id, actualizarDatos]);
 
+  // Mantener ref del turno actual para que el polling siempre use el último valor
+  useEffect(() => {
+    const id = selectedTurno?.id ?? selectedTurno?.Id ?? selectedTurno?.ID ?? null;
+    latestTurnoIdRef.current = id != null ? Number(id) : null;
+  }, [selectedTurno]);
 
   // Seleccionar primer turno si hay turnos disponibles y no hay uno seleccionado
   useEffect(() => {
@@ -1405,63 +1411,31 @@ const Index = () => {
   }, [pedidoSeleccionado, pedidoCalificacion, actualizarDatos, user?.id]);
 
   const onTurnoChanged = useCallback(async (e) => {
-    const turnoId = parseInt(e.target.value);
-    const turnoSeleccionado = turnos.find(t => (t.id || t.Id || t.ID) === turnoId);
+    const rawValue = e.target.value;
+    const turnoId = rawValue === '' ? null : parseInt(rawValue, 10);
+    const turnoSeleccionado = turnos.find(t => Number(t.id || t.Id || t.ID) === Number(turnoId));
+    console.log('[Turno select] Cambio de turno:', { rawValue, turnoId, turnoSeleccionado: turnoSeleccionado ? { id: turnoSeleccionado.id || turnoSeleccionado.Id, nombre: turnoSeleccionado.nombre || turnoSeleccionado.Nombre } : null });
     if (turnoSeleccionado) {
+      latestTurnoIdRef.current = turnoId;
       setSelectedTurno(turnoSeleccionado);
-      setMenuItems([]); // Limpiar menú anterior mientras carga el nuevo
-      // No mostrar loading para que la actualización sea más suave
-      
-      // Actualizar inmediatamente con el nuevo turnoId
-      const usuarioId = user?.id || usuarioData?.id;
-      if (usuarioId) {
-        try {
-          // Obtener fecha del día en formato 'YYYY-MM-DD'
-          const hoy = new Date();
-          const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-          
-          const data = await inicioService.getInicioWebActualizado(usuarioId, fechaHoy, turnoId);
-          if (data) {
-            actualizarDatos(data);
-            const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
-            const nuevosPedidos = Array.isArray(pedidosData) ? pedidosData : [];
-            
-            // Solo actualizar si los datos realmente cambiaron (comparación profunda)
-            setPedidosVigentes(prevPedidos => {
-              if (!prevPedidos || prevPedidos.length !== nuevosPedidos.length) {
-                return nuevosPedidos;
-              }
-              // Comparar por ID/Npedido para evitar actualizaciones innecesarias
-              const prevIds = new Set(prevPedidos.map(p => p?.Id || p?.id || p?.Npedido || p?.npedido).filter(Boolean));
-              const nuevosIds = new Set(nuevosPedidos.map(p => p?.Id || p?.id || p?.Npedido || p?.npedido).filter(Boolean));
-              if (prevIds.size !== nuevosIds.size) {
-                return nuevosPedidos;
-              }
-              for (const id of prevIds) {
-                if (!nuevosIds.has(id)) {
-                  return nuevosPedidos;
-                }
-              }
-              // Si los IDs son iguales, mantener la referencia anterior para evitar re-render
-              return prevPedidos;
-            });
-          }
-        } catch (error) {
-          // Silenciar error, continuar con la carga del menú
-        }
-      }
-      
+      setMenuItems([]);
+
+      // Misma lógica que cargarMenuDesdeAPI: primero getMenuByTurnoId (solo turnoId, backend usa token), luego fallback a getMenuByTurno
       try {
-        // Siempre llamar a getMenuByTurno (por-turno) - sin mostrar loading para evitar parpadeo
+        let menuData;
+        try {
+          console.log('[Turno select] Llamando getMenuByTurnoId con turnoId:', turnoId);
+          menuData = await menuService.getMenuByTurnoId(turnoId);
+        } catch (err) {
           const hoy = new Date().toISOString().split('T')[0];
           const planta = usuarioData?.plantaId || user?.plantaId || '';
           const centro = usuarioData?.centroCostoId || user?.centroCostoId || '';
           const jerarquia = usuarioData?.jerarquiaId || user?.jerarquiaId || '';
           const proyecto = usuarioData?.proyectoId || user?.proyectoId || '';
-        const turnoIdParam = turnoId; // Usar el turnoId que ya tenemos
-          
-        const menuData = await menuService.getMenuByTurno(planta, centro, jerarquia, proyecto, turnoIdParam, hoy);
-        
+          console.log('[Turno select] Fallback getMenuByTurno con:', { planta, centro, jerarquia, proyecto, turnoId, fecha: hoy });
+          menuData = await menuService.getMenuByTurno(planta, centro, jerarquia, proyecto, turnoId, hoy);
+        }
+        console.log('[Turno select] Menú recibido:', Array.isArray(menuData) ? `${menuData.length} ítems` : typeof menuData);
         // Procesar los datos recibidos
         if (Array.isArray(menuData) && menuData.length > 0) {
           const platosMap = new Map();
@@ -1578,11 +1552,11 @@ const Index = () => {
           setMenuItems([]);
         }
       } catch (error) {
+        console.log('[Turno select] Error en getMenuByTurno:', error?.message || error);
         setMenuItems([]);
-        // Silenciar error para que la actualización sea más suave, solo mostrar si es crítico
       }
     }
-  }, [turnos, usuarioData, user, defaultImage, actualizarDatos]);
+  }, [turnos, usuarioData, user, defaultImage]);
 
   // Memoizar handlers para evitar recrearlos
   const handleCancelarPedido = useCallback((pedido) => {
