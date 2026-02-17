@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { usuariosService } from '../services/usuariosService';
 import { catalogosService } from '../services/catalogosService';
+import { esJerarquiaAdmin } from '../constants/jerarquias';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
@@ -8,8 +9,13 @@ import DataTable from '../components/DataTable';
 import { mapUsuarios } from '../utils/dataMapper';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import ExcelJS from 'exceljs';
+import { addExcelReportHeader } from '../utils/excelReportHeader';
 import './Usuarios.css';
+import '../components/CambiarContraseñaModal.css';
+
+const MIN_PASSWORD_LENGTH = 8;
 
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -37,6 +43,12 @@ const Usuarios = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
+  const usernameInputRef = useRef(null);
+  const legajoInputRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const jerarquiaInputRef = useRef(null);
+  const contraseñaInputRef = useRef(null);
+
   // Estado del formulario
   const [formData, setFormData] = useState({
     id: null,
@@ -62,6 +74,23 @@ const Usuarios = () => {
     bonificaciones: '0',
     bonificaciones_invitado: '0',
   });
+
+  // Requisitos de contraseña (igual que CambiarContraseñaModal) - después de formData
+  const passwordNueva = formData.contraseña || '';
+  const reqMinLength = useMemo(() => (passwordNueva || '').length >= MIN_PASSWORD_LENGTH, [passwordNueva]);
+  const reqMayuscula = useMemo(() => /[A-Z]/.test(passwordNueva || ''), [passwordNueva]);
+  const reqNumeroEspecial = useMemo(() => /[0-9]|[^A-Za-z0-9]/.test(passwordNueva || ''), [passwordNueva]);
+  const allPasswordReqs = reqMinLength && reqMayuscula && reqNumeroEspecial;
+  const passwordStrength = useMemo(() => {
+    const p = passwordNueva || '';
+    if (p.length < MIN_PASSWORD_LENGTH) return 0;
+    let s = 0;
+    if (p.length >= MIN_PASSWORD_LENGTH) s++;
+    if (/[A-Z]/.test(p)) s++;
+    if (/[0-9]|[^A-Za-z0-9]/.test(p)) s++;
+    return s;
+  }, [passwordNueva]);
+  const passwordStrengthLabel = passwordStrength === 0 ? 'Débil' : passwordStrength === 1 ? 'Débil' : passwordStrength === 2 ? 'Medio' : 'Fuerte';
 
   // Cargar usuarios usando /api/usuario/lista con paginación
   const cargarUsuarios = useCallback(async (page = 1, searchTerm = '', soloActivos = true) => {
@@ -97,7 +126,12 @@ const Usuarios = () => {
       if (usuariosArray.length > 0) {
         // Mapear usuarios del formato del backend al formato esperado
         const usuariosMapeados = mapUsuarios(usuariosArray);
-        setUsuarios(usuariosMapeados);
+        // No mostrar el usuario smartTime en la lista (solo se gestiona desde Habilitar SmartTime)
+        const sinSmartTime = usuariosMapeados.filter((u) => {
+          const login = (u.username ?? u.Usuario ?? u.userName ?? '').toString().trim().toLowerCase();
+          return login !== 'smarttime';
+        });
+        setUsuarios(sinSmartTime);
       } else {
         setUsuarios(usuariosArray);
       }
@@ -237,10 +271,51 @@ const Usuarios = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Solo al montar
 
+  // Enfocar campo nombre usuario al agregar nuevo usuario
+  useEffect(() => {
+    if (vista === 'crear' && usernameInputRef.current) {
+      const timer = setTimeout(() => {
+        usernameInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [vista]);
+
+  // Enfocar campo Legajo al ir al tab Identificación
+  useEffect(() => {
+    if (tabActivo === 'identificacion' && legajoInputRef.current) {
+      const timer = setTimeout(() => {
+        legajoInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [tabActivo]);
+
+  // Enfocar campo Email al ir al tab Contacto
+  useEffect(() => {
+    if (tabActivo === 'contacto' && emailInputRef.current) {
+      const timer = setTimeout(() => {
+        emailInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [tabActivo]);
+
+  // Enfocar campo Contraseña al ir al tab Seguridad
+  useEffect(() => {
+    if (tabActivo === 'seguridad' && contraseñaInputRef.current) {
+      const timer = setTimeout(() => {
+        contraseñaInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [tabActivo]);
+
   // Función para volver a la lista
   const handleVolverALista = () => {
     setVista('lista');
     setUsuarioEditando(null);
+    setTabActivo('personal'); // Resetear tab para próxima vez
     setShowPassword(false);
     setShowConfirmPassword(false);
     setFormData({
@@ -274,6 +349,7 @@ const Usuarios = () => {
     setUsuarioEditando(null);
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setTabActivo('personal'); // Siempre mostrar Información personal por defecto
     
     // Preparar formData inicial con valores automáticos SOLO si hay una sola opción disponible
     // Si hay múltiples opciones, dejar vacío para que aparezca "Seleccionar..."
@@ -304,8 +380,49 @@ const Usuarios = () => {
     setVista('crear');
   };
 
+  // Determina si un usuario es el administrador (no se puede editar ni eliminar, solo ver en el listado)
+  // Jerarquías del backend: Admin, Cocina, Comensal, Gerencia (id 1-4)
+  const esUsuarioAdministrador = (usuario) => {
+    if (!usuario) return false;
+    const username = (usuario.username || usuario.Username || '').toString().trim().toLowerCase();
+    if (username === 'root' || username === 'admin') return true;
+    // Jerarquía como string (API envía nombre: "Admin", "Cocina", "Comensal", "Gerencia")
+    const jerarquiaStr = (usuario.jerarquia_nombre || usuario.jerarquiaNombre || usuario.jerarquia || usuario.Jerarquia || '');
+    if (typeof jerarquiaStr === 'string' && esJerarquiaAdmin(jerarquiaStr)) return true;
+    // Jerarquía como objeto anidado (ej. Jerarquia: { id, nombre: "Admin" })
+    const jerarquiaObj = usuario.Jerarquia || usuario.jerarquia;
+    if (jerarquiaObj && typeof jerarquiaObj === 'object') {
+      const nombre = jerarquiaObj.nombre || jerarquiaObj.Nombre || jerarquiaObj.descripcion || jerarquiaObj.Descripcion || '';
+      if (nombre && esJerarquiaAdmin(String(nombre))) return true;
+    }
+    return false;
+  };
+
+  // Obtiene el nombre de la jerarquía para mostrar (API puede enviar string u objeto anidado)
+  const obtenerNombreJerarquia = (row) => {
+    if (!row) return '-';
+    const str = row.jerarquia_nombre || row.jerarquiaNombre || row.jerarquia || row.Jerarquia;
+    if (str && typeof str === 'string' && str.trim()) return str.trim();
+    const obj = row.Jerarquia || row.jerarquia;
+    if (obj && typeof obj === 'object') {
+      const nombre = obj.nombre || obj.Nombre || obj.descripcion || obj.Descripcion;
+      if (nombre && typeof nombre === 'string' && nombre.trim()) return nombre.trim();
+    }
+    return '-';
+  };
+
   // Abrir página para editar usuario
   const handleEditarUsuario = async (usuario) => {
+    if (esUsuarioAdministrador(usuario)) {
+      Swal.fire(configurarSwal({
+        title: 'No permitido',
+        text: 'El administrador no puede ser modificado. Solo puede verse en el listado.',
+        icon: 'warning',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      }));
+      return;
+    }
     try {
       setIsLoading(true);
       
@@ -485,6 +602,7 @@ const Usuarios = () => {
       });
       setShowPassword(false);
       setShowConfirmPassword(false);
+      setTabActivo('personal'); // Siempre mostrar Información personal por defecto
       setVista('editar');
     } catch (error) {
       Swal.fire(configurarSwal({
@@ -514,47 +632,38 @@ const Usuarios = () => {
     }));
   };
 
-  // Exportar a PDF
-  const handleExportarPDF = () => {
+  // Exportar a PDF (todos los usuarios activos, sin paginación)
+  const handleExportarPDF = async () => {
     try {
-      const doc = new jsPDF();
-      
-      // Título
-      doc.setFontSize(16);
-      doc.text('Listado de Usuarios', 14, 15);
-      
-      // Fecha de exportación
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      const data = await usuariosService.getUsuarios(1, 99999, '', true);
+      const usuariosArray = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []));
+      const usuariosMapeados = mapUsuarios(usuariosArray);
+      const usuariosParaExportar = usuariosMapeados.filter((u) => {
+        const login = (u.username ?? u.Usuario ?? u.userName ?? '').toString().trim().toLowerCase();
+        return login !== 'smarttime';
       });
-      doc.setFontSize(10);
-      doc.text(`Exportado el: ${fecha}`, 14, 22);
+
+      const doc = new jsPDF();
+      const startY = await addPdfReportHeader(doc, 'Listado de Usuarios');
       
-      // Preparar datos para la tabla
-      const tableData = usuarios.map(usuario => [
+      const tableData = usuariosParaExportar.map(usuario => [
         usuario.username || '-',
         usuario.nombre || '-',
         usuario.apellido || '-',
         usuario.legajo || '-',
         usuario.dni || '-',
-        usuario.cuil || '-',
-        usuario.jerarquia_nombre || usuario.jerarquia || '-',
+        obtenerNombreJerarquia(usuario),
         usuario.plannutricional_nombre || usuario.plannutricional || '-'
       ]);
       
       // Crear tabla
       doc.autoTable({
-        startY: 28,
-        head: [['Username', 'Nombre', 'Apellido', 'Legajo', 'DNI', 'CUIL', 'Jerarquía', 'Plan Nutricional']],
+        startY,
+        head: [['Username', 'Nombre', 'Apellido', 'Legajo', 'DNI', 'Jerarquía', 'Plan Nutricional']],
         body: tableData,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        margin: { top: 28 }
       });
       
       // Guardar archivo
@@ -582,42 +691,52 @@ const Usuarios = () => {
     }
   };
 
-  // Exportar a Excel
-  const handleExportarExcel = () => {
+  // Exportar a Excel (todos los usuarios activos, sin paginación)
+  const handleExportarExcel = async () => {
     try {
-      // Preparar datos para Excel
-      const datosExcel = usuarios.map(usuario => ({
-        'Username': usuario.username || '',
-        'Nombre': usuario.nombre || '',
-        'Apellido': usuario.apellido || '',
-        'Legajo': usuario.legajo || '',
-        'DNI': usuario.dni || '',
-        'CUIL': usuario.cuil || '',
-        'Jerarquía': usuario.jerarquia_nombre || usuario.jerarquia || '',
-        'Plan Nutricional': usuario.plannutricional_nombre || usuario.plannutricional || ''
-      }));
-      
-      // Crear workbook y worksheet
-      const ws = XLSX.utils.json_to_sheet(datosExcel);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Usuarios');
-      
-      // Ajustar ancho de columnas
-      const colWidths = [
-        { wch: 15 }, // Username
-        { wch: 15 }, // Nombre
-        { wch: 15 }, // Apellido
-        { wch: 10 }, // Legajo
-        { wch: 12 }, // DNI
-        { wch: 15 }, // CUIL
-        { wch: 15 }, // Jerarquía
-        { wch: 20 }  // Plan Nutricional
+      const data = await usuariosService.getUsuarios(1, 99999, '', true);
+      const usuariosArray = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []));
+      const usuariosMapeados = mapUsuarios(usuariosArray);
+      const usuariosParaExportar = usuariosMapeados.filter((u) => {
+        const login = (u.username ?? u.Usuario ?? u.userName ?? '').toString().trim().toLowerCase();
+        return login !== 'smarttime';
+      });
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Usuarios');
+      const startRow = await addExcelReportHeader(workbook, worksheet, 'Listado de Usuarios');
+
+      const headers = ['Username', 'Nombre', 'Apellido', 'Legajo', 'DNI', 'Jerarquía', 'Plan Nutricional'];
+      const headerRow = worksheet.getRow(startRow);
+      headerRow.values = headers;
+      headerRow.font = { bold: true };
+
+      usuariosParaExportar.forEach(usuario => {
+        worksheet.addRow([
+          usuario.username || '',
+          usuario.nombre || '',
+          usuario.apellido || '',
+          usuario.legajo || '',
+          usuario.dni || '',
+          obtenerNombreJerarquia(usuario),
+          usuario.plannutricional_nombre || usuario.plannutricional || ''
+        ]);
+      });
+
+      worksheet.columns = [
+        { width: 15 }, { width: 15 }, { width: 15 }, { width: 10 },
+        { width: 12 }, { width: 15 }, { width: 20 }
       ];
-      ws['!cols'] = colWidths;
-      
-      // Guardar archivo
+
       const fileName = `usuarios_${new Date().toISOString().split('T')[0]}.xlsx`;
-      XLSX.writeFile(wb, fileName);
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
       
       Swal.fire(configurarSwal({
         title: 'Éxito',
@@ -781,12 +900,6 @@ const Usuarios = () => {
       if (!primerCampoConError) primerCampoConError = 'dni';
     }
 
-    // Validar CUIL
-    if (!datos.cuil || datos.cuil.trim() === '') {
-      errores.push('El CUIL es requerido');
-      if (!primerCampoConError) primerCampoConError = 'cuil';
-    }
-
     // Validar jerarquía (solo si hay más de una opción disponible y no es root)
     if (!datos.jerarquia_id || datos.jerarquia_id === '') {
       // Si solo hay una opción, no validar (se seleccionará automáticamente)
@@ -840,10 +953,13 @@ const Usuarios = () => {
 
       // Validar contraseña solo si es nuevo usuario o si se está cambiando
     if (!usuarioEditando) {
-      // Al crear, la contraseña es obligatoria
+      // Al crear, la contraseña es obligatoria y debe cumplir requisitos
       const passwordValue = datos.contraseña?.trim() || '';
-      if (!passwordValue || passwordValue.length < 6) {
-        errores.push('La contraseña es requerida y debe tener al menos 6 caracteres');
+      if (!passwordValue) {
+        errores.push('La contraseña es requerida');
+        if (!primerCampoConError) primerCampoConError = 'contraseña';
+      } else if (passwordValue.length < MIN_PASSWORD_LENGTH || !/[A-Z]/.test(passwordValue) || !/[0-9]|[^A-Za-z0-9]/.test(passwordValue)) {
+        errores.push('La contraseña debe tener mínimo 8 caracteres, una letra mayúscula y un número o carácter especial');
         if (!primerCampoConError) primerCampoConError = 'contraseña';
       }
     }
@@ -870,7 +986,8 @@ const Usuarios = () => {
         'La planta es requerida': 'Planta',
         'El centro de costo es requerido': 'Centro de Costo',
         'El proyecto es requerido': 'Proyecto',
-        'La contraseña es requerida y debe tener al menos 6 caracteres': 'Contraseña',
+        'La contraseña es requerida': 'Contraseña',
+        'La contraseña debe tener mínimo 8 caracteres, una letra mayúscula y un número o carácter especial': 'Contraseña',
         'Las contraseñas no coinciden': 'Confirmar Contraseña',
         'El nombre es requerido': 'Nombre',
         'El apellido es requerido': 'Apellido',
@@ -1269,11 +1386,31 @@ const Usuarios = () => {
 
       // Solo incluir contraseña si se está creando o si se está cambiando
       if (!usuarioEditando) {
-        // Al crear, la contraseña es obligatoria
-        if (!passwordValue || passwordValue.length < 6) {
+        // Al crear, la contraseña es obligatoria y debe cumplir requisitos
+        const hasMinLen = passwordValue.length >= MIN_PASSWORD_LENGTH;
+        const hasMayuscula = /[A-Z]/.test(passwordValue);
+        const hasNumeroEspecial = /[0-9]|[^A-Za-z0-9]/.test(passwordValue);
+        if (!passwordValue) {
           Swal.fire(configurarSwal({
             title: 'Error de validación',
-            text: 'La contraseña es requerida y debe tener al menos 6 caracteres',
+            text: 'La contraseña es requerida',
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#F34949',
+          })).then(() => {
+            const campo = document.getElementById('contraseña');
+            if (campo) {
+              campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              campo.focus();
+            }
+          });
+          setIsLoading(false);
+          return;
+        }
+        if (!hasMinLen || !hasMayuscula || !hasNumeroEspecial) {
+          Swal.fire(configurarSwal({
+            title: 'Error de validación',
+            text: 'La contraseña debe tener mínimo 8 caracteres, una letra mayúscula y un número o carácter especial',
             icon: 'error',
             confirmButtonText: 'Aceptar',
             confirmButtonColor: '#F34949',
@@ -1290,10 +1427,10 @@ const Usuarios = () => {
         usuarioData.Password = passwordValue;
       } else if (passwordValue && passwordValue.length > 0) {
         // Al editar, solo incluir si se está cambiando (no vacía)
-        if (passwordValue.length < 6) {
+        if (passwordValue.length < MIN_PASSWORD_LENGTH || !/[A-Z]/.test(passwordValue) || !/[0-9]|[^A-Za-z0-9]/.test(passwordValue)) {
           Swal.fire(configurarSwal({
             title: 'Error de validación',
-            text: 'La contraseña debe tener al menos 6 caracteres',
+            text: 'La contraseña debe tener mínimo 8 caracteres, una letra mayúscula y un número o carácter especial',
             icon: 'error',
             confirmButtonText: 'Aceptar',
             confirmButtonColor: '#F34949',
@@ -1695,6 +1832,7 @@ const Usuarios = () => {
                       Nombre usuario <span style={{ color: '#F34949' }}>*</span>
                     </label>
                     <input
+                      ref={usernameInputRef}
                       type="text"
                       className="form-control"
                       id="username"
@@ -1857,6 +1995,7 @@ const Usuarios = () => {
                       Legajo <span style={{ color: '#F34949' }}>*</span>
                     </label>
                     <input
+                      ref={legajoInputRef}
                       type="text"
                       className="form-control"
                       id="legajo"
@@ -1902,7 +2041,7 @@ const Usuarios = () => {
                 <div className="col-md-4">
                   <div className="form-group">
                     <label htmlFor="cuil">
-                      CUIL <span style={{ color: '#F34949' }}>*</span>
+                      CUIL
                     </label>
                     <input
                       type="text"
@@ -1918,7 +2057,6 @@ const Usuarios = () => {
                           cuil: soloNumeros,
                         }));
                       }}
-                      required
                       placeholder="Ingrese solo números sin guiones"
                     />
                     <small className="form-text text-muted" style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
@@ -1941,6 +2079,7 @@ const Usuarios = () => {
                   <div className="form-group">
                     <label htmlFor="email">Email</label>
                     <input
+                      ref={emailInputRef}
                       type="email"
                       className="form-control"
                       id="email"
@@ -1980,6 +2119,7 @@ const Usuarios = () => {
                       Jerarquía <span style={{ color: '#F34949' }}>*</span>
                     </label>
                     <select
+                      ref={jerarquiaInputRef}
                       className="form-control"
                       id="jerarquia_id"
                       name="jerarquia_id"
@@ -2277,126 +2417,87 @@ const Usuarios = () => {
               </div>
             )}
 
-            {/* Tab: Seguridad */}
+            {/* Tab: Seguridad - igual que CambiarContraseñaModal */}
             {tabActivo === 'seguridad' && (
               <div className="form-section">
                 <div className="form-section-content">
-                
                 <div className="row">
                   <div className="col-md-6">
-                    <div className="form-group">
+                    <div className="form-group cambiar-contrasena-field">
                       <label htmlFor="contraseña">
                         {usuarioEditando
                           ? 'Nueva Contraseña (dejar vacío para no cambiar)'
-                          : <>Contraseña <span style={{ color: '#F34949' }}>*</span></>}
+                          : <><span className="cambiar-contrasena-asterisco">*</span> Nueva contraseña</>}
                       </label>
-                      <div className="input-group password-input-group">
+                      <div className="cambiar-contrasena-input-wrap">
                         <input
-                          type={showPassword ? "text" : "password"}
-                          className="form-control password-input"
+                          ref={contraseñaInputRef}
+                          type={showPassword ? 'text' : 'password'}
+                          className="form-control"
                           id="contraseña"
                           name="contraseña"
                           autoComplete="new-password"
                           value={formData.contraseña || ''}
                           onChange={handleInputChange}
                           required={!usuarioEditando}
-                          minLength={usuarioEditando && !formData.contraseña ? 0 : 6}
-                          placeholder={usuarioEditando ? 'Escriba la nueva contraseña' : ''}
-                          style={{ 
-                            borderRight: 'none', 
-                            fontSize: '0.85rem', 
-                            borderTopRightRadius: '0', 
-                            borderBottomRightRadius: '0',
-                            height: 'calc(1.5em + 0.8rem + 2px)',
-                            minHeight: 'calc(1.5em + 0.8rem + 2px)',
-                            lineHeight: '1.5',
-                            boxSizing: 'border-box',
-                            borderColor: formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña ? '#dc3545' : undefined
-                          }}
+                          minLength={usuarioEditando && !formData.contraseña ? 0 : MIN_PASSWORD_LENGTH}
+                          placeholder="Mínimo 8 caracteres"
                         />
-                        <div className="input-group-append" style={{ marginLeft: '-4px' }}>
-                          <button
-                            className="btn btn-outline-secondary password-toggle-btn"
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            style={{
-                              borderLeft: 'none',
-                              borderColor: formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña ? '#dc3545' : '#ced4da',
-                              backgroundColor: '#fff',
-                              cursor: 'pointer',
-                              padding: '0.4rem 0.6rem 0.4rem 0.5rem',
-                              fontSize: '0.85rem',
-                              minWidth: '45px',
-                              marginLeft: '-2px',
-                              height: 'calc(1.5em + 0.8rem + 2px)',
-                              minHeight: 'calc(1.5em + 0.8rem + 2px)',
-                              boxSizing: 'border-box'
-                            }}
-                          >
-                            <i className={showPassword ? "fa fa-eye-slash" : "fa fa-eye"}></i>
-                          </button>
+                        <button type="button" className="cambiar-contrasena-eye" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ocultar' : 'Mostrar'}>
+                          <i className={`fa ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                        </button>
+                      </div>
+                      <div className="cambiar-contrasena-strength">
+                        <span>Fortaleza: </span>
+                        <span className={`cambiar-contrasena-strength-label strength-${passwordStrength}`}>{passwordStrengthLabel}</span>
+                        <div className="cambiar-contrasena-strength-bar">
+                          <div className={`cambiar-contrasena-strength-fill strength-${passwordStrength}`} style={{ width: passwordStrength === 0 ? '25%' : passwordStrength === 1 ? '25%' : passwordStrength === 2 ? '50%' : '100%' }} />
                         </div>
                       </div>
+                      <ul className="cambiar-contrasena-reqs">
+                        <li className={reqMinLength ? 'ok' : ''}>
+                          <i className={`fa ${reqMinLength ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+                          Mínimo 8 caracteres
+                        </li>
+                        <li className={reqMayuscula ? 'ok' : ''}>
+                          <i className={`fa ${reqMayuscula ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+                          Una letra mayúscula
+                        </li>
+                        <li className={reqNumeroEspecial ? 'ok' : ''}>
+                          <i className={`fa ${reqNumeroEspecial ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+                          Un número o carácter especial
+                        </li>
+                      </ul>
                     </div>
                   </div>
                   <div className="col-md-6">
-                    <div className="form-group">
+                    <div className="form-group cambiar-contrasena-field">
                       <label htmlFor="confirmarContraseña">
-                        {usuarioEditando ? 'Confirmar Nueva Contraseña' : 'Confirmar Contraseña'}
+                        {usuarioEditando ? 'Confirmar Nueva Contraseña' : <><span className="cambiar-contrasena-asterisco">*</span> Confirmar nueva contraseña</>}
                       </label>
-                      <div className="input-group password-input-group">
+                      <div className="cambiar-contrasena-input-wrap">
                         <input
-                          type={showConfirmPassword ? "text" : "password"}
-                          className="form-control password-input"
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          className="form-control"
                           id="confirmarContraseña"
                           name="confirmarContraseña"
                           autoComplete="new-password"
                           value={formData.confirmarContraseña || ''}
                           onChange={handleInputChange}
                           required={!usuarioEditando || formData.contraseña}
-                          placeholder={usuarioEditando ? 'Confirme la nueva contraseña' : ''}
-                          style={{ 
-                            borderRight: 'none', 
-                            fontSize: '0.85rem', 
-                            borderTopRightRadius: '0', 
-                            borderBottomRightRadius: '0',
-                            height: 'calc(1.5em + 0.8rem + 2px)',
-                            minHeight: 'calc(1.5em + 0.8rem + 2px)',
-                            lineHeight: '1.5',
-                            boxSizing: 'border-box',
-                            borderColor: formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña ? '#dc3545' : undefined
-                          }}
+                          placeholder="Repita la nueva contraseña"
+                          minLength={usuarioEditando && !formData.contraseña ? 0 : MIN_PASSWORD_LENGTH}
                         />
-                        <div className="input-group-append" style={{ marginLeft: '-4px' }}>
-                          <button
-                            className="btn btn-outline-secondary password-toggle-btn"
-                            type="button"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            style={{
-                              borderLeft: 'none',
-                              borderColor: formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña ? '#dc3545' : '#ced4da',
-                              backgroundColor: '#fff',
-                              cursor: 'pointer',
-                              padding: '0.4rem 0.6rem 0.4rem 0.5rem',
-                              fontSize: '0.85rem',
-                              minWidth: '45px',
-                              marginLeft: '-2px',
-                              height: 'calc(1.5em + 0.8rem + 2px)',
-                              minHeight: 'calc(1.5em + 0.8rem + 2px)',
-                              boxSizing: 'border-box'
-                            }}
-                          >
-                            <i className={showConfirmPassword ? "fa fa-eye-slash" : "fa fa-eye"}></i>
-                          </button>
-                        </div>
+                        <button type="button" className="cambiar-contrasena-eye" onClick={() => setShowConfirmPassword(!showConfirmPassword)} aria-label={showConfirmPassword ? 'Ocultar' : 'Mostrar'}>
+                          <i className={`fa ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                        </button>
                       </div>
                       {formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña && (
-                        <small style={{ color: '#dc3545', display: 'flex', alignItems: 'center', marginTop: '0.25rem', textAlign: 'left' }}>
-                          <i className="fa fa-exclamation-circle" style={{ marginRight: '0.5rem' }}></i>
-                          Las contraseñas no coinciden
-                        </small>
+                        <p className="cambiar-contrasena-error">
+                          <i className="fa fa-exclamation-circle"></i> Las contraseñas no coinciden
+                        </p>
                       )}
-                      {formData.contraseña && formData.confirmarContraseña && formData.contraseña === formData.confirmarContraseña && formData.contraseña.length >= 6 && (
+                      {formData.contraseña && formData.confirmarContraseña && formData.contraseña === formData.confirmarContraseña && allPasswordReqs && (
                         <small style={{ color: '#28a745', display: 'flex', alignItems: 'center', marginTop: '0.25rem', textAlign: 'left' }}>
                           <i className="fa fa-check-circle" style={{ marginRight: '0.5rem' }}></i>
                           Las contraseñas coinciden
@@ -2565,12 +2666,11 @@ const Usuarios = () => {
             { key: 'apellido', field: 'apellido', label: 'Apellido' },
             { key: 'legajo', field: 'legajo', label: 'Legajo' },
             { key: 'dni', field: 'dni', label: 'DNI' },
-            { key: 'cuil', field: 'cuil', label: 'CUIL' },
             { 
               key: 'jerarquia', 
               field: 'jerarquia_nombre', 
               label: 'Jerarquía',
-              render: (value, row) => row.jerarquia_nombre || row.jerarquia || '-'
+              render: (value, row) => obtenerNombreJerarquia(row)
             },
             { 
               key: 'plannutricional', 
@@ -2592,6 +2692,10 @@ const Usuarios = () => {
           }
           onEdit={handleEditarUsuario}
           canEdit={(usuario) => {
+            // El administrador solo puede verse en el listado, no editarse ni eliminarse
+            if (esUsuarioAdministrador(usuario)) {
+              return false;
+            }
             // Si estamos en el filtro de "Inactivos", no mostrar el botón de editar
             if (filtroActivo === 'inactivo') {
               return false;
@@ -2605,11 +2709,11 @@ const Usuarios = () => {
             return isActivo; // Solo se puede editar si está activo
           }}
           onDelete={(usuario) => {
-            // No permitir eliminar al usuario root
-            if (usuario.username === 'root') {
+            // El administrador no puede ser eliminado; solo puede verse en el listado
+            if (esUsuarioAdministrador(usuario)) {
               Swal.fire(configurarSwal({
                 title: 'No permitido',
-                text: 'No se puede eliminar al usuario root porque es un usuario del sistema.',
+                text: 'El administrador no puede ser modificado ni eliminado. Solo puede verse en el listado.',
                 icon: 'warning',
                 confirmButtonText: 'Aceptar',
                 confirmButtonColor: '#F34949',
@@ -2655,8 +2759,8 @@ const Usuarios = () => {
             });
           }}
           canDelete={(row) => {
-            // No permitir eliminar al usuario root
-            if (row.username === 'root') {
+            // El administrador no puede ser eliminado; solo puede verse en el listado
+            if (esUsuarioAdministrador(row)) {
               return false;
             }
             

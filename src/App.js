@@ -1,13 +1,45 @@
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import Swal from 'sweetalert2';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ConfigProvider } from './contexts/ConfigContext';
 import { DashboardProvider } from './contexts/DashboardContext';
+import { SmartTimeProvider } from './contexts/SmartTimeContext';
 import PrivateRoute from './components/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/LoadingSpinner';
 import Layout from './components/Layout';
+import TokenDebugBanner from './components/TokenDebugBanner';
 import './App.css';
+
+// Lazy loading de CambiarContraseña para usarlo en el Gate
+const CambiarContraseña = lazy(() => import('./pages/CambiarContraseña'));
+
+/** Si el usuario debe cambiar la clave (RequiereCambioClave), redirige a /cambiar-contrasena y muestra solo esa página (sin Layout). */
+function RequiereCambioClaveGate({ children }) {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (user && user.requiereCambioClave === true) {
+      Swal.close();
+    }
+  }, [user?.requiereCambioClave]);
+
+  if (user && user.requiereCambioClave === true) {
+    if (location.pathname !== '/cambiar-contrasena') {
+      return <Navigate to="/cambiar-contrasena" replace />;
+    }
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+        <Suspense fallback={<LoadingSpinner />}>
+          <CambiarContraseña obligatorio />
+        </Suspense>
+      </div>
+    );
+  }
+  return children;
+}
 
 // Lazy loading de todas las páginas para code splitting
 const Login = lazy(() => import('./pages/Login'));
@@ -36,6 +68,9 @@ function App() {
         <AuthProvider>
           <DashboardProvider>
             <Router>
+            <SmartTimeProvider>
+            <TokenDebugBanner />
+            <RequiereCambioClaveGate>
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>
                 <Route path="/login" element={<Login />} />
@@ -200,9 +235,21 @@ function App() {
                     </PrivateRoute>
                   }
                 />
+                <Route
+                  path="/cambiar-contrasena"
+                  element={
+                    <PrivateRoute>
+                      <Layout>
+                        <CambiarContraseña />
+                      </Layout>
+                    </PrivateRoute>
+                  }
+                />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
+            </RequiereCambioClaveGate>
+            </SmartTimeProvider>
           </Router>
           </DashboardProvider>
         </AuthProvider>

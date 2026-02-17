@@ -1,6 +1,5 @@
 import api, { clearApiCache } from './apiClient';
 import { getApiBaseUrl } from './configService';
-import axios from 'axios';
 
 /**
  * Servicio de platos
@@ -275,7 +274,6 @@ export const platosService = {
    */
   subirFotoPlato: async (file) => {
     const baseUrl = getApiBaseUrl();
-    const token = localStorage.getItem('token');
 
     if (!file || !(file instanceof File)) {
       throw new Error('El archivo no es válido');
@@ -285,20 +283,15 @@ export const platosService = {
     const formData = new FormData();
     formData.append('file', file);
 
-    // Preparar headers (NO incluir Content-Type para FormData, el navegador lo hace automáticamente)
-    const headers = {};
-    if (token && token !== 'null' && token !== 'undefined') {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
+    // Usar apiClient (no axios) para que el interceptor maneje token y refresh en 401
+    // Para FormData no debemos setear Content-Type; axios lo omite si no está definido
+    const config = {
+      headers: { 'Content-Type': undefined },
+      timeout: 60000,
+    };
 
     try {
-      // Usar axios directamente para FormData (no usar apiClient que podría interferir con Content-Type)
-      const response = await axios.post(`${baseUrl}/api/plato/subir-foto`, formData, {
-        headers,
-        // NO establecer Content-Type - el navegador lo hace automáticamente para FormData con boundary
-        timeout: 60000, // 60 segundos para archivos grandes
-      });
+      const response = await api.post(`${baseUrl}/api/plato/subir-foto`, formData, config);
       
       // El backend puede retornar diferentes formatos:
       // { path: "/uploads/platos/...", url: "..." }

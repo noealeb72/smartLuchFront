@@ -51,12 +51,23 @@ export const mapUsuario = (usuario) => {
       const variations = fieldMappings[targetField];
       for (const variation of variations) {
         if (usuario[variation] !== undefined && usuario[variation] !== null) {
-          mapped[targetField] = usuario[variation];
+          const val = usuario[variation];
+          mapped[targetField] = typeof val === 'object' && val !== null && !Array.isArray(val)
+            ? (val.nombre || val.Nombre || val.descripcion || val.Descripcion || val)
+            : val;
           break;
         }
       }
     }
   });
+
+  // Jerarquía: si viene como objeto anidado (Jerarquia: { nombre, descripcion }), extraer el nombre
+  if (!mapped.jerarquia_nombre && (usuario.Jerarquia || usuario.jerarquia)) {
+    const jer = usuario.Jerarquia || usuario.jerarquia;
+    if (typeof jer === 'object' && jer !== null) {
+      mapped.jerarquia_nombre = jer.nombre || jer.Nombre || jer.descripcion || jer.Descripcion || '';
+    }
+  }
 
   // También crear versiones en minúsculas de todos los campos para compatibilidad
   Object.keys(usuario).forEach(key => {

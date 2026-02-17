@@ -7,7 +7,10 @@ import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import ExcelJS from 'exceljs';
+import { addExcelReportHeader } from '../utils/excelReportHeader';
+import { formatearImporte } from '../utils/formatearImporte';
 import './Despacho.css';
 import './Usuarios.css';
 
@@ -39,6 +42,7 @@ const Despacho = () => {
   });
 
   const skipInitialLoadRef = useRef(false);
+  const qrInputRef = useRef(null); // Input oculto para pistola QR (número de pedido)
 
   // Cargar pedidos (page, pageSize=5, fechas, estado) — respuesta: items, totalItems, totalPages, page
   const cargarPedidos = useCallback(async () => {
@@ -139,6 +143,48 @@ const Despacho = () => {
     setPedidoSeleccionado(pedido);
     setMostrarModal(true);
   };
+
+  // Despachar por número de pedido (pistola QR): mismo endpoint que "Despachar" en el popup. Solo si el backend acepta (estado pendiente).
+  const handleDespacharPorNpedidoDesdeQR = useCallback(async (valor) => {
+    const valorTrim = (valor || '').toString().trim();
+    if (!valorTrim) return;
+    const npedidoInt = parseInt(valorTrim, 10);
+    if (isNaN(npedidoInt) || npedidoInt <= 0) {
+      Swal.fire({
+        title: 'Código no válido',
+        text: 'El valor escaneado no es un número de pedido válido.',
+        icon: 'warning',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+      return;
+    }
+    try {
+      setIsLoading(true);
+      await comandasService.despacharPedidoPorNpedido(npedidoInt);
+      Swal.fire({
+        title: '¡Despachado!',
+        text: `Pedido ${npedidoInt} marcado como despachado`,
+        icon: 'success',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+      await cargarPedidos();
+    } catch (error) {
+      if (!error.redirectToLogin) {
+        Swal.fire({
+          title: 'Error',
+          text: error.message || 'No se pudo despachar el pedido. Compruebe que el pedido existe y está en estado Pendiente.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [cargarPedidos]);
 
   // Despachar un pedido
   const handleDespachar = async () => {
@@ -284,11 +330,6 @@ const Despacho = () => {
     }
   };
 
-  // Formatear importe con separadores de miles
-  const formatearImporte = (monto) => {
-    if (!monto && monto !== 0) return '-';
-    return `$${parseFloat(monto).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
 
   // Obtener estado del pedido con badge de color
   const obtenerEstadoBadge = (estado) => {
@@ -322,9 +363,23 @@ const Despacho = () => {
   };
 
   // Funciones de impresión
-  const handleExportarPDF = useCallback(() => {
+  const handleExportarPDF = useCallback(async () => {
     try {
-      if (pedidosFiltrados.length === 0) {
+      const hoy = new Date();
+      const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+      const estadoParam = filtroEstado === '' ? 'Todos' : filtroEstado;
+      const data = await comandasService.getLista(1, 99999, fechaHoy, fechaHoy, estadoParam);
+      const pedidosParaExportar = data.items ?? data.data ?? data.pedidos ?? (Array.isArray(data) ? data : []);
+      const pedidosConFiltro = !filtro.trim() ? pedidosParaExportar : pedidosParaExportar.filter((pedido) => {
+        const textoFiltro = filtro.toLowerCase();
+        const nombre = (pedido.user_name || pedido.userName || pedido.nombre || '').toLowerCase();
+        const apellido = (pedido.user_lastName || pedido.userLastName || pedido.apellido || '').toLowerCase();
+        const legajo = (pedido.user_fileNumber || pedido.userFileNumber || pedido.legajo || '').toString().toLowerCase();
+        const plato = (pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || pedido.plato || pedido.Plato || '').toLowerCase();
+        const npedido = (pedido.Npedido || pedido.npedido || '').toString().toLowerCase();
+        return nombre.includes(textoFiltro) || apellido.includes(textoFiltro) || legajo.includes(textoFiltro) || plato.includes(textoFiltro) || npedido.includes(textoFiltro);
+      });
+      if (pedidosConFiltro.length === 0) {
         Swal.fire({
           title: 'Sin datos',
           text: 'No hay pedidos para imprimir',
@@ -336,28 +391,7 @@ const Despacho = () => {
       }
 
       const doc = new jsPDF();
-
-      // Título centrado
-      const pageWidth = doc.internal.pageSize.getWidth();
-      doc.setFontSize(14);
-      const titulo = 'Listado de Despacho de Platos';
-      const tituloWidth = doc.getTextWidth(titulo);
-      const tituloX = (pageWidth - tituloWidth) / 2;
-      doc.text(titulo, tituloX, 15);
-
-      // Fecha centrada con letra más chica
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      doc.setFontSize(9);
-      const fechaTexto = `Generado el: ${fecha}`;
-      const fechaWidth = doc.getTextWidth(fechaTexto);
-      const fechaX = (pageWidth - fechaWidth) / 2;
-      doc.text(fechaTexto, fechaX, 22);
+      const startY = await addPdfReportHeader(doc, 'Listado de Despacho de Platos');
 
       // Construir headers y datos
       const headers = [];
@@ -373,7 +407,7 @@ const Despacho = () => {
       if (columnasSeleccionadas.turno) headers.push('Turno');
       if (columnasSeleccionadas.comentario) headers.push('Comentario');
 
-      pedidosFiltrados.forEach((pedido) => {
+      pedidosConFiltro.forEach((pedido) => {
         const fila = [];
         if (columnasSeleccionadas.npedido) {
           fila.push(pedido.Npedido || pedido.npedido || '-');
@@ -388,7 +422,7 @@ const Despacho = () => {
         }
         if (columnasSeleccionadas.importe) {
           const importe = pedido.Importe || pedido.importe || pedido.Monto || pedido.monto || 0;
-          fila.push(`$${parseFloat(importe).toFixed(2)}`);
+          fila.push(formatearImporte(importe));
         }
         if (columnasSeleccionadas.fecha) {
           fila.push(formatearFecha(pedido.Fecha || pedido.fecha));
@@ -408,7 +442,7 @@ const Despacho = () => {
       });
 
       doc.autoTable({
-        startY: 28,
+        startY,
         head: [headers],
         body: tableData,
         styles: { fontSize: 9 },
@@ -426,11 +460,25 @@ const Despacho = () => {
         confirmButtonColor: '#F34949',
       });
     }
-  }, [pedidosFiltrados, columnasSeleccionadas]);
+  }, [filtro, filtroEstado, columnasSeleccionadas]);
 
-  const handleExportarExcel = useCallback(() => {
+  const handleExportarExcel = useCallback(async () => {
     try {
-      if (pedidosFiltrados.length === 0) {
+      const hoy = new Date();
+      const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+      const estadoParam = filtroEstado === '' ? 'Todos' : filtroEstado;
+      const data = await comandasService.getLista(1, 99999, fechaHoy, fechaHoy, estadoParam);
+      const pedidosParaExportar = data.items ?? data.data ?? data.pedidos ?? (Array.isArray(data) ? data : []);
+      const pedidosConFiltro = !filtro.trim() ? pedidosParaExportar : pedidosParaExportar.filter((pedido) => {
+        const textoFiltro = filtro.toLowerCase();
+        const nombre = (pedido.user_name || pedido.userName || pedido.nombre || '').toLowerCase();
+        const apellido = (pedido.user_lastName || pedido.userLastName || pedido.apellido || '').toLowerCase();
+        const legajo = (pedido.user_fileNumber || pedido.userFileNumber || pedido.legajo || '').toString().toLowerCase();
+        const plato = (pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || pedido.plato || pedido.Plato || '').toLowerCase();
+        const npedido = (pedido.Npedido || pedido.npedido || '').toString().toLowerCase();
+        return nombre.includes(textoFiltro) || apellido.includes(textoFiltro) || legajo.includes(textoFiltro) || plato.includes(textoFiltro) || npedido.includes(textoFiltro);
+      });
+      if (pedidosConFiltro.length === 0) {
         Swal.fire({
           title: 'Sin datos',
           text: 'No hay pedidos para exportar',
@@ -441,7 +489,6 @@ const Despacho = () => {
         return;
       }
 
-      // Construir headers
       const headers = [];
       if (columnasSeleccionadas.npedido) headers.push('Nº Pedido');
       if (columnasSeleccionadas.usuario) headers.push('Usuario');
@@ -452,78 +499,42 @@ const Despacho = () => {
       if (columnasSeleccionadas.turno) headers.push('Turno');
       if (columnasSeleccionadas.comentario) headers.push('Comentario');
 
-      // Construir datos
-      const worksheetData = pedidosFiltrados.map((pedido) => {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Despacho');
+      const startRow = await addExcelReportHeader(workbook, worksheet, 'Listado de Despacho de Platos');
+
+      worksheet.getRow(startRow).values = headers;
+      worksheet.getRow(startRow).font = { bold: true };
+
+      pedidosConFiltro.forEach((pedido) => {
         const fila = [];
-        if (columnasSeleccionadas.npedido) {
-          fila.push(pedido.Npedido || pedido.npedido || '-');
-        }
+        if (columnasSeleccionadas.npedido) fila.push(pedido.Npedido || pedido.npedido || '-');
         if (columnasSeleccionadas.usuario) {
           const nombre = pedido.user_name || pedido.userName || pedido.nombre || '';
           const apellido = pedido.user_lastName || pedido.userLastName || pedido.apellido || '';
           fila.push(`${nombre} ${apellido}`.trim() || '-');
         }
-        if (columnasSeleccionadas.plato) {
-          fila.push(pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || '-');
-        }
-        if (columnasSeleccionadas.importe) {
-          const importe = pedido.Importe || pedido.importe || pedido.Monto || pedido.monto || 0;
-          fila.push(parseFloat(importe).toFixed(2));
-        }
-        if (columnasSeleccionadas.fecha) {
-          fila.push(formatearFecha(pedido.Fecha || pedido.fecha));
-        }
+        if (columnasSeleccionadas.plato) fila.push(pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || '-');
+        if (columnasSeleccionadas.importe) fila.push(formatearImporte(pedido.Importe || pedido.importe || pedido.Monto || pedido.monto || 0));
+        if (columnasSeleccionadas.fecha) fila.push(formatearFecha(pedido.Fecha || pedido.fecha));
         if (columnasSeleccionadas.estado) {
           const estado = pedido.Estado || pedido.estado;
-          const estadoTexto = estado === 'P' ? 'Pendiente' : estado === 'PT' ? 'Pendiente Totem' : estado === 'D' ? 'Devuelto' : estado === 'C' ? 'Cancelado' : estado === 'R' ? 'Recibido' : estado === 'E' ? 'En Aceptación' : estado || '-';
-          fila.push(estadoTexto);
+          fila.push(estado === 'P' ? 'Pendiente' : estado === 'PT' ? 'Pendiente Totem' : estado === 'D' ? 'Devuelto' : estado === 'C' ? 'Cancelado' : estado === 'R' ? 'Recibido' : estado === 'E' ? 'En Aceptación' : estado || '-');
         }
-        if (columnasSeleccionadas.turno) {
-          fila.push(pedido.TurnoNombre || pedido.turnoNombre || pedido.turno || '-');
-        }
-        if (columnasSeleccionadas.comentario) {
-          fila.push(pedido.Comentario || pedido.comentario || '-');
-        }
-        return fila;
+        if (columnasSeleccionadas.turno) fila.push(pedido.TurnoNombre || pedido.turnoNombre || pedido.turno || '-');
+        if (columnasSeleccionadas.comentario) fila.push(pedido.Comentario || pedido.comentario || '-');
+        worksheet.addRow(fila);
       });
 
-      // Obtener fecha formateada
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      worksheet.columns = headers.map(() => ({ width: 18 }));
 
-      const numColumnas = headers.length;
-
-      // Crear datos con título y fecha
-      const datosConTitulo = [
-        [],
-        ['Listado de Despacho de Platos'],
-        [`Generado el: ${fecha}`],
-        [],
-        headers,
-        ...worksheetData,
-      ];
-
-      const worksheet = XLSX.utils.aoa_to_sheet(datosConTitulo);
-
-      // Fusionar celdas para centrar título y fecha
-      worksheet['!merges'] = [
-        { s: { r: 1, c: 0 }, e: { r: 1, c: numColumnas - 1 } },
-        { s: { r: 2, c: 0 }, e: { r: 2, c: numColumnas - 1 } },
-        { s: { r: 3, c: 0 }, e: { r: 3, c: numColumnas - 1 } },
-      ];
-
-      // Ajustar el ancho de las columnas
-      const colWidths = headers.map(() => ({ wch: 18 }));
-      worksheet['!cols'] = colWidths;
-
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Despacho');
-      XLSX.writeFile(workbook, 'despacho-platos.xlsx');
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'despacho-platos.xlsx';
+      a.click();
+      URL.revokeObjectURL(a.href);
 
       setMostrarModalImpresion(false);
     } catch (error) {
@@ -535,7 +546,7 @@ const Despacho = () => {
         confirmButtonColor: '#F34949',
       });
     }
-  }, [pedidosFiltrados, columnasSeleccionadas]);
+  }, [filtro, filtroEstado, columnasSeleccionadas]);
 
 
   return (
@@ -569,10 +580,33 @@ const Despacho = () => {
             }}
           >
             <div style={{ flex: '1', minWidth: '200px', maxWidth: '100%' }}>
+              {/* Input oculto para pistola QR: escanea número de pedido y despacha si está pendiente (mismo endpoint que botón Despachar) */}
+              <input
+                ref={qrInputRef}
+                type="text"
+                aria-label="Escaneo de código QR con número de pedido"
+                tabIndex={0}
+                autoComplete="off"
+                style={{
+                  position: 'absolute',
+                  left: '-9999px',
+                  width: '1px',
+                  height: '1px',
+                  opacity: 0,
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const valor = e.target.value || '';
+                    e.target.value = '';
+                    if (valor.trim()) handleDespacharPorNpedidoDesdeQR(valor.trim());
+                  }
+                }}
+              />
               <Buscador
                 filtro={filtro}
                 setFiltro={setFiltro}
                 placeholder="Buscar pedidos..."
+                onBlur={() => { setTimeout(() => qrInputRef.current?.focus(), 0); }}
               />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>

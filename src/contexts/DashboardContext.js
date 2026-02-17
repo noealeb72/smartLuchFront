@@ -34,6 +34,8 @@ export const DashboardProvider = ({ children }) => {
       // Actualizar datos del usuario si vienen en la respuesta
       if (data.Usuario) {
         const usuario = data.Usuario;
+        // Log: datos del usuario que trae api/inicio/web
+        console.log('[Dashboard] Datos del usuario (api/inicio/web):', usuario);
         
         // Obtener JerarquiaNombre (el backend envía "JerarquiaNombre" con mayúscula J y N)
         // Priorizar exactamente como viene del backend: JerarquiaNombre
@@ -45,10 +47,16 @@ export const DashboardProvider = ({ children }) => {
           setUser((prevUser) => {
             // Si hay usuario previo, actualizarlo; si no, crear uno nuevo con el token
             const token = prevUser?.token || localStorage.getItem('token');
+            const idUsuario = usuario.Id ?? usuario.id ?? prevUser?.id;
+            if (idUsuario != null) {
+              try {
+                localStorage.setItem('userId', String(idUsuario));
+              } catch (_) {}
+            }
             const nuevoUsuario = {
               ...(prevUser || {}),
               token: token, // Mantener el token
-              id: usuario.Id || usuario.id || prevUser?.id,
+              id: idUsuario,
               jerarquia: jerarquiaNombre,
               jerarquia_nombre: jerarquiaNombre, // Jerarquía para mostrar en navbar
               role: jerarquiaNombre, // Jerarquía para permisos (IMPORTANTE: debe coincidir con las condiciones del Navbar)
@@ -63,10 +71,13 @@ export const DashboardProvider = ({ children }) => {
         }
       
         // Guardar datos del usuario en el estado (manejar diferentes casos de mayúsculas/minúsculas)
+        const nombreUsuario = usuario.Nombre || usuario.nombre || '';
+        const apellidoUsuario = usuario.Apellido || usuario.apellido || '';
         setUsuarioData({
           id: usuario.Id || usuario.id,
-          nombre: usuario.Nombre || usuario.nombre,
-          apellido: usuario.Apellido || usuario.apellido,
+          nombre: nombreUsuario,
+          apellido: apellidoUsuario,
+          nombreCompleto: usuario.NombreCompleto || usuario.nombreCompleto || (nombreUsuario || apellidoUsuario ? `${nombreUsuario} ${apellidoUsuario}`.trim() : ''),
           planNutricionalId: usuario.Plannutricional_id || usuario.PlanNutricionalId || usuario.plannutricional_id || usuario.planNutricionalId,
           planNutricionalNombre: usuario.PlanNutricionalNombre || usuario.planNutricionalNombre,
           plantaId: usuario.PlantaId || usuario.plantaId,
@@ -79,6 +90,7 @@ export const DashboardProvider = ({ children }) => {
           jerarquiaNombre: jerarquiaNombre,
           bonificaciones: usuario.Bonificaciones || usuario.bonificaciones || 0,
           bonificacionesInvitado: usuario.BonificacionesInvitado || usuario.bonificacionesInvitado || 0,
+          descuento: usuario.Descuento !== undefined ? usuario.Descuento : (usuario.descuento !== undefined ? usuario.descuento : 0),
           activo: usuario.Activo !== undefined ? usuario.Activo : (usuario.activo !== undefined ? usuario.activo : true),
         });
       }

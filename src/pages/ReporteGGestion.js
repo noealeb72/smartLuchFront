@@ -5,6 +5,8 @@ import { platosService } from '../services/platosService';
 import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import { formatearImporte } from '../utils/formatearImporte';
 import './Usuarios.css';
 import '../styles/smartstyle.css';
 
@@ -239,7 +241,7 @@ const ReporteGGestion = () => {
   const [reporteData, setReporteData] = useState(null);
 
   // Exportar reporte a PDF
-  const handleExportarPDF = useCallback(() => {
+  const handleExportarPDF = useCallback(async () => {
     if (!reporteData) {
       Swal.fire({
         title: 'Error',
@@ -271,26 +273,14 @@ const ReporteGGestion = () => {
       const JSPDF = jsPDF.default || jsPDF;
       const doc = new JSPDF();
       
-      // Título del reporte
-      doc.setFontSize(16);
-      doc.text('Reporte de Gestión', 14, 15);
-      
-      // Fecha de generación
-      const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      doc.setFontSize(10);
-      doc.text(`Generado el: ${fechaGeneracion}`, 14, 22);
+      let yPos = await addPdfReportHeader(doc, 'Reporte de Gestión');
       
       // Período del reporte
       const periodo = `${formData.fechaDesde || '-'} - ${formData.fechaHasta || '-'}`;
-      doc.text(`Período: ${periodo}`, 14, 28);
-      
-      let yPos = 38;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Período: ${periodo}`, 14, yPos);
+      yPos += 8;
       
       // Función auxiliar para obtener el texto del estado
       const obtenerTextoEstado = (estado) => {
@@ -302,7 +292,7 @@ const ReporteGGestion = () => {
           'R': 'Recibido',
           'E': 'En Aceptación',
         };
-        return estados[estadoStr] || estado || 'N/A';
+        return estados[estadoStr] || estado || '-';
       };
 
       // Formatear fecha
@@ -978,18 +968,6 @@ const ReporteGGestion = () => {
                     } catch (e) {
                       return fecha;
                     }
-                  };
-
-                  // Formatear importe
-                  const formatearImporte = (importe) => {
-                    const num = parseFloat(importe || 0);
-                    if (isNaN(num)) return '$0.00';
-                    return new Intl.NumberFormat('es-AR', {
-                      style: 'currency',
-                      currency: 'ARS',
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
-                    }).format(num);
                   };
 
                   // Obtener estado con badge

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Buscador = ({ filtro, setFiltro, placeholder = 'Filtrar por nombre, apellido, legajo...' }) => {
+const Buscador = ({ filtro, setFiltro, placeholder = 'Filtrar por nombre, apellido, legajo...', onBlur }) => {
   return (
     <div className="mb-3">
       <label htmlFor="buscar" className="mr-2" style={{ fontWeight: 'normal' }}>Buscar</label>
@@ -12,6 +12,7 @@ const Buscador = ({ filtro, setFiltro, placeholder = 'Filtrar por nombre, apelli
           placeholder={placeholder}
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
+          onBlur={onBlur}
           style={{
             border: '1px solid #ced4da',
             borderRight: filtro ? 'none' : '1px solid #ced4da',

@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { formatearImporte } from '../utils/formatearImporte';
 
 const MenuItem = memo(({ item, index, defaultImage, bonificacionDisponible, cantidadBonificacionesHoy, porcentajeBonificacion, turnoDisponible, onHacerPedido, onAplicarBonificacion }) => {
   return (
@@ -43,18 +44,18 @@ const MenuItem = memo(({ item, index, defaultImage, bonificacionDisponible, cant
             <p style={{ fontSize: '0.875rem' }}>
               <span>Importe:</span>
               {item.costo === 0 ? (
-                <span> $0.00</span>
+                <span> {formatearImporte(0)}</span>
               ) : item.aplicarBonificacion ? (
                 <>
                   <span style={{ textDecoration: 'line-through', color: '#6c757d' }}>
-                    ${item.costo.toFixed(2)}
+                    {formatearImporte(item.costo)}
                   </span>
                   <span className="text-success ml-2" style={{ fontWeight: 'normal' }}>
-                    ${item.precioFinal.toFixed(2)}
+                    {formatearImporte(item.precioFinal)}
                   </span>
                 </>
               ) : (
-                <span> ${item.costo.toFixed(2)}</span>
+                <span> {formatearImporte(item.costo)}</span>
               )}
             </p>
 

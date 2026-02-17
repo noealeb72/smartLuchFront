@@ -121,6 +121,25 @@ export const centrosDeCostoService = {
   },
 
   /**
+   * Establece un centro de costo como por defecto
+   */
+  establecerPorDefecto: async (centroId) => {
+    const baseUrl = getApiBaseUrl();
+    const id = Number(centroId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de centro de costo no válido: ' + JSON.stringify(centroId));
+    }
+    const url = `${baseUrl}/api/centrodecosto/establecer-por-defecto?id=${id}`;
+    const response = await api.post(url, null, {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    });
+    clearApiCache();
+    return response.data;
+  },
+
+  /**
    * Activa un centro de costo (dar de alta)
    */
   activarCentroDeCosto: async (centroId) => {

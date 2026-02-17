@@ -5,6 +5,8 @@ import Swal from 'sweetalert2';
 import { mapUsuarios } from '../utils/dataMapper';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import { formatearImporte } from '../utils/formatearImporte';
 import { getApiBaseUrl } from '../services/configService';
 import './Usuarios.css';
 
@@ -50,7 +52,11 @@ const ReporteGComensales = () => {
       
       if (usuariosArray.length > 0) {
         const usuariosMapeados = mapUsuarios(usuariosArray);
-        setUsuarios(usuariosMapeados);
+        const sinSmartTime = usuariosMapeados.filter((u) => {
+          const login = (u.username ?? u.Usuario ?? u.userName ?? '').toString().trim().toLowerCase();
+          return login !== 'smarttime';
+        });
+        setUsuarios(sinSmartTime);
       } else {
         setUsuarios([]);
       }
@@ -327,25 +333,25 @@ const ReporteGComensales = () => {
         bonificado: comanda.bonificado ?? comanda.Bonificado ?? false,
         invitado: comanda.invitado ?? comanda.Invitado ?? false,
         calificacion: comanda.calificacion ?? comanda.Calificacion ?? null,
-        estado: comanda.estado ?? comanda.Estado ?? 'N/A',
+        estado: comanda.estado ?? comanda.Estado ?? '-',
         comentario: comanda.comentario ?? comanda.Comentario ?? null,
         platoId: comanda.platoId ?? comanda.PlatoId,
-        platoDescripcion: comanda.descripcionPlato ?? comanda.DescripcionPlato ?? comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A',
+        platoDescripcion: comanda.descripcionPlato ?? comanda.DescripcionPlato ?? comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? '-',
         turnoId: comanda.turnoId ?? comanda.TurnoId,
-        turnoNombre: comanda.turnoNombre ?? comanda.TurnoNombre ?? 'N/A',
-        planNutricional: comanda.planNutricional ?? comanda.PlanNutricional ?? 'N/A',
+        turnoNombre: comanda.turnoNombre ?? comanda.TurnoNombre ?? '-',
+        planNutricional: comanda.planNutricional ?? comanda.PlanNutricional ?? '-',
         plantaId: comanda.plantaId ?? comanda.PlantaId,
-        plantaNombre: comanda.plantaNombre ?? comanda.PlantaNombre ?? 'N/A',
+        plantaNombre: comanda.plantaNombre ?? comanda.PlantaNombre ?? '-',
         centroCostoId: comanda.centroCostoId ?? comanda.CentroCostoId,
-        centroCostoNombre: comanda.centroCostoNombre ?? comanda.CentroCostoNombre ?? 'N/A',
+        centroCostoNombre: comanda.centroCostoNombre ?? comanda.CentroCostoNombre ?? '-',
         proyectoId: comanda.proyectoId ?? comanda.ProyectoId,
-        proyectoNombre: comanda.proyectoNombre ?? comanda.ProyectoNombre ?? 'N/A',
+        proyectoNombre: comanda.proyectoNombre ?? comanda.ProyectoNombre ?? '-',
         jerarquiaId: comanda.jerarquiaId ?? comanda.JerarquiaId,
-        jerarquiaNombre: comanda.jerarquiaNombre ?? comanda.JerarquiaNombre ?? 'N/A',
+        jerarquiaNombre: comanda.jerarquiaNombre ?? comanda.JerarquiaNombre ?? '-',
         platoImporte: parseFloat(comanda.platoImporte ?? comanda.PlatoImporte ?? 0),
         foto: comanda.foto ?? comanda.Foto ?? null,
-        descripcionPlato: comanda.descripcionPlato ?? comanda.DescripcionPlato ?? comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A',
-        plato: comanda.descripcionPlato ?? comanda.DescripcionPlato ?? comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? 'N/A'
+        descripcionPlato: comanda.descripcionPlato ?? comanda.DescripcionPlato ?? comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? '-',
+        plato: comanda.descripcionPlato ?? comanda.DescripcionPlato ?? comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? '-'
       }));
       
       // Paginar el historial
@@ -384,11 +390,11 @@ const ReporteGComensales = () => {
         
         // Sección 2: Información organizacional (desde data.usuario)
         organizacion: {
-          planta: usuarioData.plantaNombre ?? usuarioData.PlantaNombre ?? usuarioData.planta ?? usuarioData.Planta ?? usuarioSeleccionado?.planta_nombre ?? usuarioSeleccionado?.plantaNombre ?? 'N/A',
-          centroCosto: usuarioData.centroCostoNombre ?? usuarioData.CentroCostoNombre ?? usuarioData.centroCosto ?? usuarioData.CentroCosto ?? usuarioSeleccionado?.centrodecosto_nombre ?? usuarioSeleccionado?.centroDeCostoNombre ?? 'N/A',
-          proyecto: usuarioData.proyectoNombre ?? usuarioData.ProyectoNombre ?? usuarioData.proyecto ?? usuarioData.Proyecto ?? usuarioSeleccionado?.proyecto_nombre ?? usuarioSeleccionado?.proyectoNombre ?? 'N/A',
-          jerarquia: usuarioData.jerarquiaNombre ?? usuarioData.JerarquiaNombre ?? usuarioData.jerarquia ?? usuarioData.Jerarquia ?? usuarioSeleccionado?.jerarquia_nombre ?? usuarioSeleccionado?.jerarquiaNombre ?? 'N/A',
-          planNutricional: usuarioData.planNutricionalNombre ?? usuarioData.PlanNutricionalNombre ?? usuarioData.planNutricional ?? usuarioData.PlanNutricional ?? 'N/A'
+          planta: usuarioData.plantaNombre ?? usuarioData.PlantaNombre ?? usuarioData.planta ?? usuarioData.Planta ?? usuarioSeleccionado?.planta_nombre ?? usuarioSeleccionado?.plantaNombre ?? '-',
+          centroCosto: usuarioData.centroCostoNombre ?? usuarioData.CentroCostoNombre ?? usuarioData.centroCosto ?? usuarioData.CentroCosto ?? usuarioSeleccionado?.centrodecosto_nombre ?? usuarioSeleccionado?.centroDeCostoNombre ?? '-',
+          proyecto: usuarioData.proyectoNombre ?? usuarioData.ProyectoNombre ?? usuarioData.proyecto ?? usuarioData.Proyecto ?? usuarioSeleccionado?.proyecto_nombre ?? usuarioSeleccionado?.proyectoNombre ?? '-',
+          jerarquia: usuarioData.jerarquiaNombre ?? usuarioData.JerarquiaNombre ?? usuarioData.jerarquia ?? usuarioData.Jerarquia ?? usuarioSeleccionado?.jerarquia_nombre ?? usuarioSeleccionado?.jerarquiaNombre ?? '-',
+          planNutricional: usuarioData.planNutricionalNombre ?? usuarioData.PlanNutricionalNombre ?? usuarioData.planNutricional ?? usuarioData.PlanNutricional ?? '-'
         },
         
         // Sección 3: Resumen (desde data.resumen)
@@ -402,20 +408,20 @@ const ReporteGComensales = () => {
         // Sección 4: Tabla de comandas (desde data.consumidos)
         comandas: historialCompleto.map(comanda => ({
           fecha: comanda.fecha,
-          plato: comanda.descripcionPlato || comanda.platoDescripcion || comanda.plato || 'N/A',
+          plato: comanda.descripcionPlato || comanda.platoDescripcion || comanda.plato || '-',
           monto: comanda.monto || 0,
-          estado: comanda.estado || 'N/A',
+          estado: comanda.estado || '-',
           bonificado: comanda.bonificado ? 'Sí' : 'No',
           invitado: comanda.invitado ? 'Sí' : 'No',
           calificacion: comanda.calificacion || null,
           comentario: comanda.comentario || null,
           npedido: comanda.npedido,
-          turnoNombre: comanda.turnoNombre || 'N/A',
-          plantaNombre: comanda.plantaNombre || 'N/A',
-          centroCostoNombre: comanda.centroCostoNombre || 'N/A',
-          proyectoNombre: comanda.proyectoNombre || 'N/A',
-          jerarquiaNombre: comanda.jerarquiaNombre || 'N/A',
-          planNutricional: comanda.planNutricional || 'N/A',
+          turnoNombre: comanda.turnoNombre || '-',
+          plantaNombre: comanda.plantaNombre || '-',
+          centroCostoNombre: comanda.centroCostoNombre || '-',
+          proyectoNombre: comanda.proyectoNombre || '-',
+          jerarquiaNombre: comanda.jerarquiaNombre || '-',
+          planNutricional: comanda.planNutricional || '-',
           platoImporte: comanda.platoImporte || 0
         })),
         
@@ -539,20 +545,12 @@ const ReporteGComensales = () => {
     return `${day}/${month}/${year}-${hours}:${minutes}:${seconds}`;
   };
 
-  // Formatear moneda
-  const formatearMoneda = (valor) => {
-    if (!valor && valor !== 0) return '$0,00';
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 2
-    }).format(valor);
-  };
+  const formatearMoneda = (valor) => formatearImporte(valor);
 
   // Traducir estado (reservado para uso futuro)
   // eslint-disable-next-line no-unused-vars
   const traducirEstado = (estado) => {
-    if (!estado) return 'N/A';
+    if (!estado) return '-';
     const estadoLower = (estado || '').toLowerCase();
     if (estadoLower.includes('aceptación') || estadoLower.includes('aceptacion')) {
       return 'Aceptado';
@@ -567,7 +565,7 @@ const ReporteGComensales = () => {
   // Obtener color del estado
   // Limpiar la palabra "jerarquia" del inicio del texto
   const limpiarJerarquia = (texto) => {
-    if (!texto || texto === 'N/A') return texto;
+    if (!texto || texto === '-') return texto;
     const textoLimpio = texto.trim();
     // Verificar si comienza con "jerarquia" (case insensitive)
     const regex = /^jerarquia\s+/i;
@@ -618,11 +616,11 @@ const ReporteGComensales = () => {
       'R': 'Recibido',
       'E': 'En Aceptación',
     };
-    return estados[estadoStr] || estado || 'N/A';
+    return estados[estadoStr] || estado || '-';
   };
 
   // Exportar reporte a PDF
-  const handleExportarPDF = () => {
+  const handleExportarPDF = async () => {
     if (!reporte || !reporte.usuario || !reporte.comandas || reporte.comandas.length === 0) {
       Swal.fire({
         title: 'Error',
@@ -639,26 +637,14 @@ const ReporteGComensales = () => {
       const JSPDF = jsPDF.default || jsPDF;
       const doc = new JSPDF();
       
-      // Título del reporte
-      doc.setFontSize(16);
-      doc.text('Reporte por Comensal', 14, 15);
-      
-      // Fecha de generación
-      const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      doc.setFontSize(10);
-      doc.text(`Generado el: ${fechaGeneracion}`, 14, 22);
+      let yPos = await addPdfReportHeader(doc, 'Reporte por Comensal');
       
       // Período del reporte
       const periodo = `${formatearFecha(formData.fechaDesde)} - ${formatearFecha(formData.fechaHasta)}`;
-      doc.text(`Período: ${periodo}`, 14, 28);
-      
-      let yPos = 38;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Período: ${periodo}`, 14, yPos);
+      yPos += 8;
       
       // Información del Comensal
       doc.setFontSize(12);
@@ -677,11 +663,11 @@ const ReporteGComensales = () => {
       
       doc.setFontSize(10);
       doc.setFont(undefined, 'normal');
-      doc.text(`Nombre completo: ${reporte.usuario.nombreCompleto || 'N/A'}`, 14, yPos);
+      doc.text(`Nombre completo: ${reporte.usuario.nombreCompleto || '-'}`, 14, yPos);
       yPos += 6;
-      doc.text(`Legajo: ${reporte.usuario.legajo || 'N/A'}`, 14, yPos);
+      doc.text(`Legajo: ${reporte.usuario.legajo || '-'}`, 14, yPos);
       yPos += 6;
-      doc.text(`DNI: ${reporte.usuario.dni || 'N/A'}`, 14, yPos);
+      doc.text(`DNI: ${reporte.usuario.dni || '-'}`, 14, yPos);
       yPos += 6;
       if (reporte.usuario.cuil) {
         doc.text(`CUIL: ${reporte.usuario.cuil}`, 14, yPos);
@@ -741,8 +727,8 @@ const ReporteGComensales = () => {
           return [
             formatearFechaHora(comanda.fecha),
             comanda.npedido || '-',
-            comanda.descripcionPlato || comanda.plato || comanda.platoDescripcion || 'N/A',
-            comanda.turnoNombre || 'N/A',
+            comanda.descripcionPlato || comanda.plato || comanda.platoDescripcion || '-',
+            comanda.turnoNombre || '-',
             obtenerTextoEstado(comanda.estado),
             comanda.bonificado === 'Sí' || comanda.bonificado === true ? 'Sí' : 'No',
             formatearMoneda(comanda.monto || comanda.platoImporte || 0)
@@ -770,7 +756,7 @@ const ReporteGComensales = () => {
           doc.setFontSize(10);
           doc.setFont(undefined, 'normal');
           reporte.platosDistintos.forEach((plato) => {
-            doc.text(`• ${plato || 'N/A'}`, 14, yPos);
+            doc.text(`• ${plato || '-'}`, 14, yPos);
             yPos += 6;
           });
         }
@@ -1115,22 +1101,22 @@ const ReporteGComensales = () => {
                       <div className="row mb-3">
                         <div className="col-md-3">
                           <div>
-                            <strong>Nombre:</strong> {reporte.usuario.nombreCompleto || 'N/A'}
+                            <strong>Nombre:</strong> {reporte.usuario.nombreCompleto || '-'}
                           </div>
                         </div>
                         <div className="col-md-3">
                           <div>
-                            <strong>DNI:</strong> {reporte.usuario.dni || 'N/A'}
+                            <strong>DNI:</strong> {reporte.usuario.dni || '-'}
                           </div>
                         </div>
                         <div className="col-md-3">
                           <div>
-                            <strong>Legajo:</strong> {reporte.usuario.legajo || 'N/A'}
+                            <strong>Legajo:</strong> {reporte.usuario.legajo || '-'}
                           </div>
                         </div>
                         <div className="col-md-3">
                           <div>
-                            <strong>CUIL:</strong> {reporte.usuario.cuil || 'N/A'}
+                            <strong>CUIL:</strong> {reporte.usuario.cuil || '-'}
                           </div>
                         </div>
                       </div>
@@ -1139,22 +1125,22 @@ const ReporteGComensales = () => {
                       <div className="row mb-3">
                         <div className="col-md-3">
                           <div>
-                            <strong>Planta:</strong> {reporte.organizacion.planta || 'N/A'}
+                            <strong>Planta:</strong> {reporte.organizacion.planta || '-'}
                           </div>
                         </div>
                         <div className="col-md-3">
                           <div>
-                            <strong>Proyecto:</strong> {reporte.organizacion.proyecto || 'N/A'}
+                            <strong>Proyecto:</strong> {reporte.organizacion.proyecto || '-'}
                           </div>
                         </div>
                         <div className="col-md-3">
                           <div>
-                            <strong>Perfil nutricional:</strong> {reporte.organizacion.planNutricional || 'N/A'}
+                            <strong>Perfil nutricional:</strong> {reporte.organizacion.planNutricional || '-'}
                           </div>
                         </div>
                         <div className="col-md-3">
                           <div>
-                            <strong>Jerarquía:</strong> {limpiarJerarquia(reporte.organizacion.jerarquia) || 'N/A'}
+                            <strong>Jerarquía:</strong> {limpiarJerarquia(reporte.organizacion.jerarquia) || '-'}
                           </div>
                         </div>
                       </div>
@@ -1384,8 +1370,8 @@ const ReporteGComensales = () => {
                               <tr key={index}>
                                 <td>{formatearFechaHora(pedido.fecha || pedido.Fecha || pedido.fechaPedido)}</td>
                                 <td>{pedido.npedido || pedido.Npedido || '-'}</td>
-                                <td>{pedido.descripcionPlato || pedido.plato || pedido.platoDescripcion || 'N/A'}</td>
-                                <td>{pedido.turnoNombre || 'N/A'}</td>
+                                <td>{pedido.descripcionPlato || pedido.plato || pedido.platoDescripcion || '-'}</td>
+                                <td>{pedido.turnoNombre || '-'}</td>
                                 <td>
                                   {obtenerEstadoBadge(pedido.estado)}
                                 </td>
@@ -1534,7 +1520,7 @@ const ReporteGComensales = () => {
                       {reporte.platosDistintos.map((plato, index) => (
                         <li key={index} className="mb-2">
                           <i className="fa fa-check-circle mr-2 text-success" aria-hidden="true"></i>
-                          {plato || 'N/A'}
+                          {plato || '-'}
                         </li>
                       ))}
                     </ul>

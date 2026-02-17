@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { jerarquiasService } from '../services/jerarquiasService';
+import { catalogosService } from '../services/catalogosService';
+import { useSmartTime } from '../contexts/SmartTimeContext';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
@@ -7,6 +9,8 @@ import DataTable from '../components/DataTable';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import { createExcelSheetWithHeaderXLSX } from '../utils/excelReportHeader';
 import './Usuarios.css';
 
 const Jerarquia = () => {
@@ -40,6 +44,9 @@ const Jerarquia = () => {
     bonificacion: '0',
   });
 
+  // SmartTime: si está habilitado, se muestra campo por defecto y opción de establecerlo (validado al entrar)
+  const { smarTimeHabilitado } = useSmartTime();
+
   // Cargar jerarquías usando /api/jerarquia/lista con paginación
   const cargarJerarquias = useCallback(async (page = 1, searchTerm = '', mostrarActivos = true) => {
     try {
@@ -70,6 +77,7 @@ const Jerarquia = () => {
         descripcion: jerarquia.Descripcion || jerarquia.descripcion || '',
         bonificacion: jerarquia.Bonificacion !== undefined ? jerarquia.Bonificacion : (jerarquia.bonificacion !== undefined ? jerarquia.bonificacion : null),
         activo: jerarquia.Activo !== undefined ? jerarquia.Activo : (jerarquia.activo !== undefined ? jerarquia.activo : (jerarquia.Deletemark !== undefined ? !jerarquia.Deletemark : true)),
+        is_default: jerarquia.Is_default === 1 || jerarquia.Is_default === true || jerarquia.is_default === 1 || jerarquia.is_default === true || jerarquia.IsDefault === 1 || jerarquia.IsDefault === true,
         // Mantener también los valores originales para compatibilidad
         Nombre: jerarquia.Nombre || jerarquia.nombre || '',
         Descripcion: jerarquia.Descripcion || jerarquia.descripcion || '',
@@ -279,32 +287,40 @@ const Jerarquia = () => {
     setVista('lista');
   };
 
-  // Exportar a PDF
-  const handleExportarPDF = () => {
+  const formatearBonificacionReporte = (val) => {
+    if (val === null || val === undefined) return '-';
+    const valor = parseFloat(val);
+    if (isNaN(valor)) return '-';
+    if (valor === 0) return '0%';
+    return Number.isInteger(valor) ? `${valor}%` : `${valor.toFixed(2)}%`;
+  };
+
+  // Exportar a PDF (todos los datos, sin paginación)
+  const handleExportarPDF = async () => {
     try {
+      const soloActivos = filtroActivo === 'activo';
+      const data = await jerarquiasService.getJerarquiasLista(1, 99999, filtro, soloActivos);
+      const jerarquiasData = data?.items && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []));
+      const jerarquiasParaExportar = jerarquiasData.map(jerarquia => ({
+        ...jerarquia,
+        nombre: jerarquia.Nombre || jerarquia.nombre || '',
+        descripcion: jerarquia.Descripcion || jerarquia.descripcion || '',
+        bonificacion: jerarquia.Bonificacion !== undefined ? jerarquia.Bonificacion : (jerarquia.bonificacion !== undefined ? jerarquia.bonificacion : null),
+        is_default: jerarquia.Is_default === 1 || jerarquia.Is_default === true || jerarquia.is_default === 1 || jerarquia.is_default === true || jerarquia.IsDefault === 1 || jerarquia.IsDefault === true,
+      }));
+
       const doc = new jsPDF();
-      
-      doc.setFontSize(16);
-      doc.text('Listado de Jerarquías', 14, 15);
-      
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      doc.setFontSize(10);
-      doc.text(`Exportado el: ${fecha}`, 14, 22);
-      
-      const tableData = jerarquias.map(jerarquia => [
-        jerarquia.nombre || '-',
-        jerarquia.descripcion || '-'
+      const startY = await addPdfReportHeader(doc, 'Listado de Jerarquías');
+
+      const tableData = jerarquiasParaExportar.map(jerarquia => [
+        (smarTimeHabilitado && jerarquia.is_default ? (jerarquia.nombre || '-') + ' (campo por defecto)' : (jerarquia.nombre || '-')),
+        jerarquia.descripcion || '-',
+        formatearBonificacionReporte(jerarquia.bonificacion)
       ]);
       
       doc.autoTable({
-        startY: 28,
-        head: [['Nombre', 'Descripción']],
+        startY,
+        head: [['Nombre', 'Descripción', 'Bonificación (%)']],
         body: tableData,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
@@ -319,8 +335,10 @@ const Jerarquia = () => {
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato PDF',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       Swal.fire({
@@ -333,21 +351,33 @@ const Jerarquia = () => {
     }
   };
 
-  // Exportar a Excel
-  const handleExportarExcel = () => {
+  // Exportar a Excel (todos los datos, sin paginación)
+  const handleExportarExcel = async () => {
     try {
-      const datosExcel = jerarquias.map(jerarquia => ({
-        'Nombre': jerarquia.nombre || '',
-        'Descripción': jerarquia.descripcion || ''
+      const soloActivos = filtroActivo === 'activo';
+      const data = await jerarquiasService.getJerarquiasLista(1, 99999, filtro, soloActivos);
+      const jerarquiasData = data?.items && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []));
+      const jerarquiasParaExportar = jerarquiasData.map(jerarquia => ({
+        ...jerarquia,
+        nombre: jerarquia.Nombre || jerarquia.nombre || '',
+        descripcion: jerarquia.Descripcion || jerarquia.descripcion || '',
+        bonificacion: jerarquia.Bonificacion !== undefined ? jerarquia.Bonificacion : (jerarquia.bonificacion !== undefined ? jerarquia.bonificacion : null),
+        is_default: jerarquia.Is_default === 1 || jerarquia.Is_default === true || jerarquia.is_default === 1 || jerarquia.is_default === true || jerarquia.IsDefault === 1 || jerarquia.IsDefault === true,
       }));
-      
-      const ws = XLSX.utils.json_to_sheet(datosExcel);
+      const datosExcel = jerarquiasParaExportar.map(jerarquia => ({
+        'Nombre': (smarTimeHabilitado && jerarquia.is_default ? (jerarquia.nombre || '') + ' (campo por defecto)' : (jerarquia.nombre || '')),
+        'Descripción': jerarquia.descripcion || '',
+        'Bonificación (%)': formatearBonificacionReporte(jerarquia.bonificacion)
+      }));
+
+      const ws = createExcelSheetWithHeaderXLSX(datosExcel, 'Listado de Jerarquías');
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Jerarquías');
       
       const colWidths = [
         { wch: 20 },
-        { wch: 40 }
+        { wch: 40 },
+        { wch: 16 }
       ];
       ws['!cols'] = colWidths;
       
@@ -358,8 +388,10 @@ const Jerarquia = () => {
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato Excel',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       Swal.fire({
@@ -637,7 +669,25 @@ const Jerarquia = () => {
         {/* Tabla de jerarquías */}
         <DataTable
           columns={[
-            { key: 'nombre', field: 'nombre', label: 'Nombre' },
+            {
+              key: 'nombre',
+              field: 'nombre',
+              label: 'Nombre',
+              render: (val, jerarquia) => {
+                const esDefault = jerarquia.is_default === 1 || jerarquia.is_default === true || jerarquia.Is_default === 1 || jerarquia.Is_default === true || jerarquia.isDefault === 1 || jerarquia.isDefault === true;
+                const nombre = val || jerarquia.nombre || '-';
+                return (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {smarTimeHabilitado && esDefault && (
+                      <span className="badge" style={{ backgroundColor: '#e6a23c', color: 'white', fontSize: '0.7rem', fontWeight: 'normal', padding: '0.2rem 0.4rem' }} title="Campo por defecto">
+                        <i className="fa fa-star" aria-hidden="true"></i>
+                      </span>
+                    )}
+                    {nombre}
+                  </span>
+                );
+              },
+            },
             { key: 'descripcion', field: 'descripcion', label: 'Descripción' },
             { 
               key: 'bonificacion', 
@@ -700,6 +750,18 @@ const Jerarquia = () => {
             return !isInactivo;
           }}
           onDelete={(jerarquia) => {
+            // No permitir eliminar si es campo por defecto
+            const esDefault = smarTimeHabilitado && (jerarquia.is_default === 1 || jerarquia.is_default === true || jerarquia.Is_default === 1 || jerarquia.Is_default === true);
+            if (esDefault) {
+              Swal.fire({
+                title: 'No permitido',
+                text: 'Este campo está por defecto, no puede darse de baja.',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#F34949',
+              });
+              return;
+            }
             // Verificar si es una jerarquía protegida
             if (esJerarquiaProtegida(jerarquia)) {
               Swal.fire({
@@ -837,6 +899,59 @@ const Jerarquia = () => {
                   style={{ marginRight: '0.5rem' }}
                 >
                   <i className="fa fa-check"></i>
+                </button>
+              );
+            }
+            // Si está activo y no es por defecto, mostrar botón estrella para establecer como por defecto
+            const esDefault = jerarquia.is_default === 1 || jerarquia.is_default === true || jerarquia.Is_default === 1 || jerarquia.Is_default === true;
+            if (smarTimeHabilitado && !esDefault) {
+              return (
+                <button
+                  className="btn btn-sm"
+                  onClick={() => {
+                    Swal.fire({
+                      title: 'Campo por defecto',
+                      text: `¿Desea establecer "${jerarquia.nombre}" como jerarquía por defecto?`,
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonColor: '#F34949',
+                      cancelButtonColor: '#6c757d',
+                      confirmButtonText: 'Sí, establecer',
+                      cancelButtonText: 'Cancelar',
+                    }).then(async (result) => {
+                      if (result.isConfirmed) {
+                        try {
+                          const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID;
+                          await catalogosService.setDefault('jerarquia', jerarquiaId);
+                          Swal.fire({
+                            title: 'Establecido',
+                            text: 'Jerarquía establecida como por defecto',
+                            icon: 'success',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            allowOutsideClick: true,
+                          });
+                          const soloActivos = filtroActivo === 'activo';
+                          cargarJerarquias(currentPage, filtro, soloActivos);
+                        } catch (error) {
+                          if (!error.redirectToLogin) {
+                            Swal.fire({
+                              title: 'Error',
+                              text: error.message || 'Error al establecer la jerarquía por defecto',
+                              icon: 'error',
+                              confirmButtonText: 'Aceptar',
+                              confirmButtonColor: '#F34949',
+                            });
+                          }
+                        }
+                      }
+                    });
+                  }}
+                  title="Establecer como por defecto"
+                  style={{ width: '31px', height: '31px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e6a23c', color: 'white', borderColor: '#e6a23c', flexShrink: 0 }}
+                >
+                  <i className="fa fa-star" aria-hidden="true"></i>
                 </button>
               );
             }

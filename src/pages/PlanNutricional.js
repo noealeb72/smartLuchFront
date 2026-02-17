@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { planesNutricionalesService } from '../services/planesNutricionalesService';
+import { catalogosService } from '../services/catalogosService';
+import { useSmartTime } from '../contexts/SmartTimeContext';
 import { clearApiCache } from '../services/apiClient';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
@@ -8,6 +10,8 @@ import DataTable from '../components/DataTable';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import { createExcelSheetWithHeaderXLSX } from '../utils/excelReportHeader';
 import './Usuarios.css';
 
 const PlanNutricional = () => {
@@ -28,6 +32,9 @@ const PlanNutricional = () => {
     nombre: '',
     descripcion: '',
   });
+
+  // SmartTime: si está habilitado, se muestra campo por defecto y opción de establecerlo (validado al entrar)
+  const { smarTimeHabilitado } = useSmartTime();
 
   // Cargar planes nutricionales usando /api/plannutricional/lista con paginación
   const cargarPlanes = useCallback(async (page = 1, searchTerm = '', mostrarActivos = true) => {
@@ -72,6 +79,7 @@ const PlanNutricional = () => {
                (plan.activo !== undefined ? plan.activo : 
                (plan.Deletemark !== undefined ? !plan.Deletemark : 
                (plan.deletemark !== undefined ? !plan.deletemark : true))),
+        is_default: plan.Is_default === 1 || plan.Is_default === true || plan.is_default === 1 || plan.is_default === true || plan.IsDefault === 1 || plan.IsDefault === true,
       }));
       
       setPlanes(planesNormalizados);
@@ -258,37 +266,34 @@ const PlanNutricional = () => {
     setVista('lista');
   };
 
-  // Exportar a PDF
-  const handleExportarPDF = () => {
+  // Exportar a PDF (todos los datos, sin paginación)
+  const handleExportarPDF = async () => {
     try {
+      const soloActivos = filtroActivo === 'activo';
+      const data = await planesNutricionalesService.getPlanesNutricionalesLista(1, 99999, filtro, soloActivos);
+      const planesData = data?.items && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []));
+      const planesParaExportar = planesData.map(plan => ({
+        ...plan,
+        nombre: plan.Nombre || plan.nombre || plan.nombre_plan || plan.NombrePlan || '',
+        descripcion: plan.Descripcion || plan.descripcion || plan.descripcion_plan || plan.DescripcionPlan || '',
+        is_default: plan.Is_default === 1 || plan.Is_default === true || plan.is_default === 1 || plan.is_default === true || plan.IsDefault === 1 || plan.IsDefault === true,
+      }));
+
       const doc = new jsPDF();
-      
-      doc.setFontSize(16);
-      doc.text('Listado de Planes Nutricionales', 14, 15);
-      
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      doc.setFontSize(10);
-      doc.text(`Exportado el: ${fecha}`, 14, 22);
-      
-      const tableData = planes.map(plan => [
-        plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || '-',
+      const startY = await addPdfReportHeader(doc, 'Listado de Planes Nutricionales');
+
+      const tableData = planesParaExportar.map(plan => [
+        (smarTimeHabilitado && plan.is_default ? (plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || '-') + ' (campo por defecto)' : (plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || '-')),
         plan.descripcion || plan.Descripcion || plan.descripcion_plan || plan.DescripcionPlan || '-'
       ]);
       
       doc.autoTable({
-        startY: 28,
+        startY,
         head: [['Nombre', 'Descripción']],
         body: tableData,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        margin: { top: 28 }
       });
       
       const fileName = `planesnutricionales_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -298,8 +303,10 @@ const PlanNutricional = () => {
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato PDF',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       Swal.fire({
@@ -312,15 +319,24 @@ const PlanNutricional = () => {
     }
   };
 
-  // Exportar a Excel
-  const handleExportarExcel = () => {
+  // Exportar a Excel (todos los datos, sin paginación)
+  const handleExportarExcel = async () => {
     try {
-      const datosExcel = planes.map(plan => ({
-        'Nombre': plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || '',
+      const soloActivos = filtroActivo === 'activo';
+      const data = await planesNutricionalesService.getPlanesNutricionalesLista(1, 99999, filtro, soloActivos);
+      const planesData = data?.items && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []));
+      const planesParaExportar = planesData.map(plan => ({
+        ...plan,
+        nombre: plan.Nombre || plan.nombre || plan.nombre_plan || plan.NombrePlan || '',
+        descripcion: plan.Descripcion || plan.descripcion || plan.descripcion_plan || plan.DescripcionPlan || '',
+        is_default: plan.Is_default === 1 || plan.Is_default === true || plan.is_default === 1 || plan.is_default === true || plan.IsDefault === 1 || plan.IsDefault === true,
+      }));
+      const datosExcel = planesParaExportar.map(plan => ({
+        'Nombre': (smarTimeHabilitado && plan.is_default ? (plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || '') + ' (campo por defecto)' : (plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || '')),
         'Descripción': plan.descripcion || plan.Descripcion || plan.descripcion_plan || plan.DescripcionPlan || ''
       }));
-      
-      const ws = XLSX.utils.json_to_sheet(datosExcel);
+
+      const ws = createExcelSheetWithHeaderXLSX(datosExcel, 'Listado de Planes Nutricionales');
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Planes Nutricionales');
       
@@ -337,8 +353,10 @@ const PlanNutricional = () => {
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato Excel',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       Swal.fire({
@@ -577,10 +595,26 @@ const PlanNutricional = () => {
         {/* Tabla de planes nutricionales */}
         <DataTable
           columns={[
-            { key: 'nombre', field: 'nombre', label: 'Nombre', render: (value, plan) => {
-              if (!plan) return '-';
-              return plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || '-';
-            }},
+            {
+              key: 'nombre',
+              field: 'nombre',
+              label: 'Nombre',
+              render: (val, plan) => {
+                if (!plan) return '-';
+                const esDefault = plan.is_default === 1 || plan.is_default === true || plan.Is_default === 1 || plan.Is_default === true || plan.isDefault === 1 || plan.isDefault === true;
+                const nombre = plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || '-';
+                return (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {smarTimeHabilitado && esDefault && (
+                      <span className="badge" style={{ backgroundColor: '#e6a23c', color: 'white', fontSize: '0.7rem', fontWeight: 'normal', padding: '0.2rem 0.4rem' }} title="Campo por defecto">
+                        <i className="fa fa-star" aria-hidden="true"></i>
+                      </span>
+                    )}
+                    {nombre}
+                  </span>
+                );
+              },
+            },
             { key: 'descripcion', field: 'descripcion', label: 'Descripción', render: (value, plan) => {
               if (!plan) return '-';
               return plan.descripcion || plan.Descripcion || plan.descripcion_plan || plan.DescripcionPlan || '-';
@@ -628,6 +662,18 @@ const PlanNutricional = () => {
             return !isInactivo; // Solo se puede editar si NO está inactivo
           }}
           onDelete={(plan) => {
+            // No permitir eliminar si es campo por defecto (solo cuando SmartTime está habilitado)
+            const esDefault = smarTimeHabilitado && (plan.is_default === 1 || plan.is_default === true || plan.Is_default === 1 || plan.Is_default === true);
+            if (esDefault) {
+              Swal.fire({
+                title: 'No permitido',
+                text: 'Este campo está por defecto, no puede darse de baja.',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#F34949',
+              });
+              return;
+            }
             Swal.fire({
               title: '¿Está seguro?',
               text: `¿Desea dar de baja el plan nutricional ${plan.nombre || plan.Nombre || plan.nombre_plan || plan.NombrePlan || 'este plan'}?`,
@@ -763,8 +809,59 @@ const PlanNutricional = () => {
               );
             }
             
-            // Si estamos en el filtro de "Activos", no mostrar botón verde
-            // (los botones de editar y eliminar se muestran automáticamente)
+            // Si está activo y no es por defecto, mostrar botón estrella para establecer como por defecto
+            const esDefault = plan.is_default === 1 || plan.is_default === true || plan.Is_default === 1 || plan.Is_default === true;
+            if (smarTimeHabilitado && !esDefault) {
+              return (
+                <button
+                  className="btn btn-sm"
+                  onClick={() => {
+                    Swal.fire({
+                      title: 'Campo por defecto',
+                      text: `¿Desea establecer "${plan.nombre || plan.Nombre || 'este plan'}" como plan nutricional por defecto?`,
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonColor: '#F34949',
+                      cancelButtonColor: '#6c757d',
+                      confirmButtonText: 'Sí, establecer',
+                      cancelButtonText: 'Cancelar',
+                    }).then(async (result) => {
+                      if (result.isConfirmed) {
+                        try {
+                          const planId = plan.id || plan.Id || plan.ID;
+                          await catalogosService.setDefault('plannutricional', planId);
+                          Swal.fire({
+                            title: 'Establecido',
+                            text: 'Plan nutricional establecido como por defecto',
+                            icon: 'success',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            allowOutsideClick: true,
+                          });
+                          const soloActivos = filtroActivo === 'activo';
+                          cargarPlanes(currentPage, filtro, soloActivos);
+                        } catch (error) {
+                          if (!error.redirectToLogin) {
+                            Swal.fire({
+                              title: 'Error',
+                              text: error.message || 'Error al establecer el plan nutricional por defecto',
+                              icon: 'error',
+                              confirmButtonText: 'Aceptar',
+                              confirmButtonColor: '#F34949',
+                            });
+                          }
+                        }
+                      }
+                    });
+                  }}
+                  title="Establecer como por defecto"
+                  style={{ width: '31px', height: '31px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e6a23c', color: 'white', borderColor: '#e6a23c', flexShrink: 0 }}
+                >
+                  <i className="fa fa-star" aria-hidden="true"></i>
+                </button>
+              );
+            }
             return null;
           }}
           pageSize={pageSize}

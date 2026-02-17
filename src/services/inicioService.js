@@ -55,6 +55,8 @@ export const inicioService = {
       
       // Procesar respuesta exitosa
       const dataRaw = response.data;
+      // Log: datos que trae api/inicio/web (incluye Usuario)
+      console.log('[inicioService] Respuesta api/inicio/web (datos del usuario y más):', dataRaw);
       
       // Normalizar datos: la API puede devolver Usuario, Turnos, MenuDelDia (mayúsculas)
       
@@ -118,6 +120,20 @@ export const inicioService = {
       
       return data;
     } catch (error) {
+      // "No hay turnos disponibles" no es un error: es un estado válido (aún no cargaron turnos)
+      const msg = error.response?.data?.error || error.response?.data?.message || error.message || '';
+      if (error.response?.status === 500 && (String(msg).includes('No hay turnos') || String(msg).includes('turnos disponibles'))) {
+        return {
+          Usuario: null,
+          usuario: null,
+          Turnos: [],
+          turnos: [],
+          MenuDelDia: [],
+          menuDelDia: [],
+          PlatosPedidos: [],
+          platosPedidos: [],
+        };
+      }
       throw error;
     }
   },
@@ -158,8 +174,7 @@ export const inicioService = {
         'Accept': 'application/json',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
-        'Expires': '0',
-        'X-Request-Time': String(Date.now())  // cache-busting en cabecera, no en query
+        'Expires': '0'
       };
       
       if (token) {

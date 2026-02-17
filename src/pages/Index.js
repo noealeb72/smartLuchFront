@@ -7,6 +7,7 @@ import { inicioService } from '../services/inicioService';
 import { menuService } from '../services/menuService';
 import { comandasService } from '../services/comandasService';
 import { getApiBaseUrl } from '../services/configService';
+import { formatearImporte } from '../utils/formatearImporte';
 import Swal from 'sweetalert2';
 import './Index.css';
 import '../styles/smartstyle.css';
@@ -122,6 +123,12 @@ const Index = () => {
           // En caso de 401, sí redirigir al login
           localStorage.clear();
           window.location.href = '/login';
+          return;
+        }
+        
+        // "No hay turnos disponibles" no es un error: es válido que aún no se hayan cargado turnos
+        const msg = error.response?.data?.error || error.response?.data?.message || error.message || '';
+        if (String(msg).includes('No hay turnos') || String(msg).includes('turnos disponibles')) {
           return;
         }
         
@@ -1585,29 +1592,35 @@ const Index = () => {
                 <div className="container-fluid mt-4 row ocultar-en-movil" style={{ marginLeft: 0, marginRight: 0, paddingLeft: '1rem', paddingRight: '1rem', marginTop: '2rem' }}>
                   <div className="col-sm-6 col-12 bienvenida">
                     <h3>
-                      Bienvenido {usuarioNombre || usuarioData?.nombre || user?.nombre || ''} {usuarioApellido || usuarioData?.apellido || user?.apellido || ''}
+                      Bienvenido {(() => {
+                        const n = usuarioNombre || usuarioData?.nombre || user?.nombre || '';
+                        const a = usuarioApellido || usuarioData?.apellido || user?.apellido || '';
+                        if (n || a) return `${n} ${a}`.trim();
+                        return user?.nombreCompleto || usuarioData?.nombreCompleto || '';
+                      })()}
                     </h3>
                     {(usuarioData?.planNutricionalNombre || usuarioData?.PlanNutricionalNombre || user?.planNutricionalNombre || user?.plannutricional) && (
                       <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
                         Plan Nutricional: {usuarioData?.planNutricionalNombre || usuarioData?.PlanNutricionalNombre || user?.planNutricionalNombre || user?.plannutricional || '-'}
                       </h5>
                     )}
-                    {usuarioData?.bonificaciones !== undefined && usuarioData?.bonificaciones !== null && parseInt(usuarioData.bonificaciones) > 0 && (
-                      <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
-                        Bonificaciones por día: {usuarioData.bonificaciones}
-                      </h5>
-                    )}
-                    {usuarioData?.bonificacionesInvitado !== undefined && usuarioData?.bonificacionesInvitado !== null && parseInt(usuarioData.bonificacionesInvitado) > 0 && (
-                      <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
-                        Bonificaciones Invitados: {usuarioData.bonificacionesInvitado}
-                      </h5>
-                    )}
-                    {bonificacionDisponible && turnoDisponible && menuItems.length > 0 && (
-                      <h5 style={{ color: '#6c757d' }}>
-                        {pedidosRestantes === 0 && 'Te quedan 0 platos bonificados el día de hoy'}
-                        {pedidosRestantes === 1 && 'Te queda 1 plato bonificado el día de hoy'}
-                      </h5>
-                    )}
+                    {(() => {
+                      const bonif = usuarioData?.bonificaciones ?? user?.bonificaciones;
+                      const tieneValorBonif = bonif !== undefined && bonif !== null && bonif !== '' && parseInt(bonif) > 0;
+                      const descuentoVal = usuarioData?.descuento ?? user?.descuento ?? porcentajeBonificacion;
+                      const tieneValorDescuento = descuentoVal !== undefined && descuentoVal !== null && descuentoVal !== '' && Number(descuentoVal) > 0;
+                      if (!tieneValorBonif || !tieneValorDescuento) return null;
+                      return (
+                        <>
+                          <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
+                            <i className="lnr lnr-user" style={{ color: '#28a745' }}></i> Bonificaciones del usuario: {parseInt(bonif)} ({Number(descuentoVal)}% descuento)
+                          </h5>
+                          <h5 style={{ color: '#6c757d' }}>
+                            <i className="lnr lnr-gift"></i> Te {pedidosRestantes === 1 ? 'queda' : 'quedan'} {pedidosRestantes} {pedidosRestantes === 1 ? 'bonificación para consumir hoy' : 'bonificaciones para consumir hoy'}
+                          </h5>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   <div className="col-sm-6" style={{ paddingLeft: '0.75rem', paddingRight: '0.75rem', display: 'flex', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
@@ -1652,7 +1665,12 @@ const Index = () => {
                 <div className="container-fluid mt-4 row d-block d-md-none" style={{ marginLeft: 0, marginRight: 0, paddingLeft: '1rem', paddingRight: '1rem' }}>
                   <div className="col-sm-12 bienvenida">
                     <h3>
-                      <i className="lnr lnr-user"></i> Bienvenido {usuarioData?.nombre || user?.nombre || ''} {usuarioData?.apellido || user?.apellido || ''}
+                      <i className="lnr lnr-user"></i> Bienvenido {(() => {
+                        const n = usuarioNombre || usuarioData?.nombre || user?.nombre || '';
+                        const a = usuarioApellido || usuarioData?.apellido || user?.apellido || '';
+                        if (n || a) return `${n} ${a}`.trim();
+                        return user?.nombreCompleto || usuarioData?.nombreCompleto || '';
+                      })()}
                     </h3>
                     {(usuarioData?.planNutricionalNombre || usuarioData?.PlanNutricionalNombre || user?.planNutricionalNombre || user?.plannutricional) && (
                       <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
@@ -1660,24 +1678,25 @@ const Index = () => {
                         Plan Nutricional: {usuarioData?.planNutricionalNombre || usuarioData?.PlanNutricionalNombre || user?.planNutricionalNombre || user?.plannutricional || '-'}
                       </h5>
                     )}
-                    {usuarioData?.bonificaciones !== undefined && usuarioData?.bonificaciones !== null && usuarioData?.bonificaciones !== '' && parseInt(usuarioData.bonificaciones) > 0 && (
-                      <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
-                        <i className="lnr lnr-gift"></i>&nbsp;&nbsp;
-                        Bonificaciones por día: {usuarioData.bonificaciones}
-                      </h5>
-                    )}
-                    {usuarioData?.bonificacionesInvitado !== undefined && usuarioData?.bonificacionesInvitado !== null && usuarioData?.bonificacionesInvitado !== '' && parseInt(usuarioData.bonificacionesInvitado) > 0 && (
-                      <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
-                        <i className="lnr lnr-gift"></i>&nbsp;&nbsp;
-                        Bonificaciones Invitados: {usuarioData.bonificacionesInvitado}
-                      </h5>
-                    )}
-                    {bonificacionDisponible && turnoDisponible && menuItems.length > 0 && (
-                      <h5 style={{ color: '#6c757d' }}>
-                        <i className="lnr lnr-dinner"></i>&nbsp;&nbsp;
-                        Te quedan {pedidosRestantes} {pedidosRestantes === 1 ? 'plato bonificado' : 'platos bonificados'}
-                      </h5>
-                    )}
+                    {(() => {
+                      const bonif = usuarioData?.bonificaciones ?? user?.bonificaciones;
+                      const tieneValorBonif = bonif !== undefined && bonif !== null && bonif !== '' && parseInt(bonif) > 0;
+                      const descuentoVal = usuarioData?.descuento ?? user?.descuento ?? porcentajeBonificacion;
+                      const tieneValorDescuento = descuentoVal !== undefined && descuentoVal !== null && descuentoVal !== '' && Number(descuentoVal) > 0;
+                      if (!tieneValorBonif || !tieneValorDescuento) return null;
+                      return (
+                        <>
+                          <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
+                            <i className="lnr lnr-user" style={{ color: '#28a745' }}></i>&nbsp;&nbsp;
+                            Bonificaciones del usuario: {parseInt(bonif)} ({Number(descuentoVal)}% descuento)
+                          </h5>
+                          <h5 style={{ color: '#6c757d' }}>
+                            <i className="lnr lnr-gift"></i>&nbsp;&nbsp;
+                            Te {pedidosRestantes === 1 ? 'queda' : 'quedan'} {pedidosRestantes} {pedidosRestantes === 1 ? 'bonificación para consumir hoy' : 'bonificaciones para consumir hoy'}
+                          </h5>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   <div className="col-sm-12 d-flex flex-column align-items-start" style={{ paddingLeft: '0.75rem', paddingRight: '0.75rem', width: '100%' }}>
@@ -1768,7 +1787,7 @@ const Index = () => {
 
                   {turnoDisponible && (
                     <>
-                      <h4 className="mt-4" style={{ color: '#343a40' }}>Menú del día</h4>
+                      <h4 className="mt-5" style={{ color: '#343a40' }}>Menú del día</h4>
                       {!isLoading && menuItems.length === 0 && (
                         <div 
                           className="alert mt-3" 
@@ -1803,7 +1822,7 @@ const Index = () => {
                   )}
 
                   {!turnoDisponible && (
-                    <div>
+                    <div className="mt-5">
                       <h4 style={{ color: '#6c757d' }}>Menú del día</h4>
                       <p className="text-muted">Sin turnos no hay menú.</p>
                     </div>
@@ -1859,14 +1878,14 @@ const Index = () => {
                       {pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1 ? (
                         <>
                           <span style={{ textDecoration: 'line-through', color: '#6c757d' }}>
-                            ${pedidoSeleccionado.costo.toFixed(2)}
+                            {formatearImporte(pedidoSeleccionado.costo)}
                           </span>
                           <span className="text-success font-weight-bold ml-2">
-                            ${pedidoSeleccionado.precioFinal.toFixed(2)}
+                            {formatearImporte(pedidoSeleccionado.precioFinal)}
                           </span>
                         </>
                       ) : (
-                        <span>${pedidoSeleccionado.precioFinal.toFixed(2)}</span>
+                        <span>{formatearImporte(pedidoSeleccionado.precioFinal)}</span>
                       )}
                     </div>
                     <div className="container row">
@@ -1983,46 +2002,16 @@ const Index = () => {
           </div>
         )}
 
-        {/* Modal Cancelar */}
+        {/* Modal Cancelar - centrado en pantalla */}
         {showCancelModal && pedidoSeleccionado && (
           <div 
-            className="modal fade show" 
-            style={{ 
-              display: 'flex',
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: 1050,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              overflow: 'auto',
-              padding: '20px',
-              boxSizing: 'border-box',
-            }} 
+            className="index-modal-overlay"
             tabIndex="-1" 
             role="dialog"
           >
             <div 
-              className="modal-dialog" 
+              className="index-modal-dialog" 
               role="document"
-              style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: '600px',
-                margin: 'auto',
-                transform: 'none',
-                top: 'auto',
-                left: 'auto',
-                right: 'auto',
-                bottom: 'auto',
-                alignSelf: 'center',
-                flexShrink: 0,
-              }}
             >
               <div className="modal-content">
                 <div className="modal-header" style={{ backgroundColor: '#343a40', color: 'white', padding: '10px 15px' }}>

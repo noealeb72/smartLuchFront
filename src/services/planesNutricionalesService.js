@@ -115,6 +115,25 @@ export const planesNutricionalesService = {
   },
 
   /**
+   * Establece un plan nutricional como por defecto
+   */
+  establecerPorDefecto: async (planId) => {
+    const baseUrl = getApiBaseUrl();
+    const id = Number(planId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de plan nutricional no válido: ' + JSON.stringify(planId));
+    }
+    const url = `${baseUrl}/api/plannutricional/establecer-por-defecto?id=${id}`;
+    const response = await api.post(url, null, {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    });
+    clearApiCache();
+    return response.data;
+  },
+
+  /**
    * Activa un plan nutricional (dar de alta)
    */
   activarPlanNutricional: async (planId) => {

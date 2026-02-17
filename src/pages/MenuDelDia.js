@@ -11,7 +11,9 @@ import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import ExcelJS from 'exceljs';
+import { addExcelReportHeader } from '../utils/excelReportHeader';
 import './Usuarios.css';
 
 const MenuDelDia = () => {
@@ -773,31 +775,7 @@ const MenuDelDia = () => {
       }
 
       const doc = new jsPDF();
-
-      // Logo removido - no se muestra icono ni palabra SmartLunch
-      let startY = 15; // Posición inicial del contenido
-
-      // Título centrado debajo del logo
-      const pageWidth = doc.internal.pageSize.getWidth();
-      doc.setFontSize(14);
-      const titulo = 'Listado de Menú del Día';
-      const tituloWidth = doc.getTextWidth(titulo);
-      const tituloX = (pageWidth - tituloWidth) / 2; // Centrado
-      doc.text(titulo, tituloX, startY);
-
-      // Fecha centrada con letra más chica
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      doc.setFontSize(9);
-      const fechaTexto = `Generado el: ${fecha}`;
-      const fechaWidth = doc.getTextWidth(fechaTexto);
-      const fechaX = (pageWidth - fechaWidth) / 2; // Centrado
-      doc.text(fechaTexto, fechaX, startY + 7);
+      const startY = await addPdfReportHeader(doc, 'Listado de Menú del Día');
 
       // Obtener headers y datos desde la respuesta del API
       const headers = [];
@@ -861,11 +839,8 @@ const MenuDelDia = () => {
         tableData.push(fila);
       });
 
-      // Calcular la posición inicial de la tabla (debajo del título y fecha)
-      const tableStartY = startY + 15;
-      
       doc.autoTable({
-        startY: tableStartY,
+        startY,
         head: [headers],
         body: tableData,
         styles: { fontSize: 8 },
@@ -1002,43 +977,22 @@ const MenuDelDia = () => {
         return fila;
       });
 
-      // Obtener fecha formateada
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Menús del Día');
+      const startRow = await addExcelReportHeader(workbook, worksheet, 'Listado de Menú del Día');
 
-      const numColumnas = headers.length;
-      
-      // Crear datos con título y fecha
-      const datosConTitulo = [
-        [], // Fila vacía
-        ['Listado de Menú del Día'], // Título
-        [`Generado el: ${fecha}`], // Fecha
-        [], // Fila vacía
-        headers, // Headers
-        ...worksheetData, // Datos
-      ];
+      worksheet.getRow(startRow).values = headers;
+      worksheet.getRow(startRow).font = { bold: true };
+      worksheetData.forEach(fila => worksheet.addRow(fila));
+      worksheet.columns = headers.map(() => ({ width: 18 }));
 
-      const worksheet = XLSX.utils.aoa_to_sheet(datosConTitulo);
-      
-      // Fusionar celdas para centrar título y fecha
-      worksheet['!merges'] = [
-        { s: { r: 1, c: 0 }, e: { r: 1, c: numColumnas - 1 } }, // Título centrado
-        { s: { r: 2, c: 0 }, e: { r: 2, c: numColumnas - 1 } }, // Fecha centrada
-        { s: { r: 3, c: 0 }, e: { r: 3, c: numColumnas - 1 } }, // Fila vacía
-      ];
-      
-      // Ajustar el ancho de las columnas
-      const colWidths = headers.map(() => ({ wch: 18 }));
-      worksheet['!cols'] = colWidths;
-      
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Menús del Día');
-      XLSX.writeFile(workbook, 'menus-del-dia.xlsx');
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'menus-del-dia.xlsx';
+      a.click();
+      URL.revokeObjectURL(a.href);
       
       if (columnas || filtros) {
         setMostrarModalImpresion(false);
@@ -1184,7 +1138,7 @@ const MenuDelDia = () => {
   };
 
   // eslint-disable-next-line no-unused-vars
-  const handleExportarExcelOriginal = () => {
+  const handleExportarExcelOriginal = async () => {
     try {
       const worksheetData = [
         ['Plato', 'Turno', 'Jerarquía', 'Plan Nutricional', 'Proyecto', 'Centro de Costo', 'Planta', 'Cantidad', 'Fecha', 'Estado'],
@@ -1278,10 +1232,20 @@ const MenuDelDia = () => {
         }),
       ];
 
-      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Menús del Día');
-      XLSX.writeFile(workbook, 'menus-del-dia.xlsx');
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Menús del Día');
+      const startRow = await addExcelReportHeader(workbook, worksheet, 'Listado de Menús del Día');
+      worksheet.getRow(startRow).values = worksheetData[0];
+      worksheet.getRow(startRow).font = { bold: true };
+      worksheetData.slice(1).forEach((fila) => worksheet.addRow(fila));
+      worksheet.columns = worksheetData[0].map(() => ({ width: 18 }));
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'menus-del-dia.xlsx';
+      a.click();
+      URL.revokeObjectURL(a.href);
     } catch {
       Swal.fire({
         title: 'Error',

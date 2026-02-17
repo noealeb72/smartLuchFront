@@ -191,9 +191,7 @@
   padding: 20px !important;
   box-sizing: border-box !important;
   margin: 0 !important;
-}
-
-.despacho-modal-dialog {
+}.despacho-modal-dialog {
   margin: auto !important;
   width: 100% !important;
   max-width: 600px !important;
@@ -203,4 +201,3 @@
   top: auto !important;
   left: auto !important;
 }
-

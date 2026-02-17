@@ -9,7 +9,10 @@ import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import ExcelJS from 'exceljs';
+import { addExcelReportHeader } from '../utils/excelReportHeader';
+import { formatearImporte } from '../utils/formatearImporte';
 import './Usuarios.css';
 
 const Plato = () => {
@@ -343,17 +346,11 @@ const Plato = () => {
     if (!formData.descripcion.trim())
       addError('La descripción es requerida', 'descripcion');
 
-    if (
-      formData.costo === '' ||
-      formData.costo === null ||
-      formData.costo === undefined
-    ) {
-      addError('El costo es requerido', 'costo');
-    } else {
+    // Costo es opcional: si no se ingresa, se toma como 0 (no se cobra)
+    if (formData.costo !== '' && formData.costo !== null && formData.costo !== undefined) {
       const costoNum = parseFloat(formData.costo);
       if (isNaN(costoNum)) addError('El costo debe ser un número válido', 'costo');
-      else if (costoNum < 0)
-        addError('El costo no puede ser negativo', 'costo');
+      else if (costoNum < 0) addError('El costo no puede ser negativo', 'costo');
     }
 
     // Validar plan nutricional
@@ -1010,28 +1007,7 @@ const Plato = () => {
       }
 
       const doc = new jsPDF();
-
-      // Título centrado
-      const pageWidth = doc.internal.pageSize.getWidth();
-      doc.setFontSize(14);
-      const titulo = 'Listado de Platos';
-      const tituloWidth = doc.getTextWidth(titulo);
-      const tituloX = (pageWidth - tituloWidth) / 2;
-      doc.text(titulo, tituloX, 15);
-
-      // Fecha centrada con letra más chica
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      doc.setFontSize(9);
-      const fechaTexto = `Generado el: ${fecha}`;
-      const fechaWidth = doc.getTextWidth(fechaTexto);
-      const fechaX = (pageWidth - fechaWidth) / 2;
-      doc.text(fechaTexto, fechaX, 22);
+      const startY = await addPdfReportHeader(doc, 'Listado de Platos');
 
       // Obtener headers y datos desde la respuesta del API
       const headers = [];
@@ -1078,18 +1054,22 @@ const Plato = () => {
         return null;
       }).filter(key => key !== null);
 
+      const esImporte = (k) => ['Importe', 'importe', 'Costo', 'costo'].includes(k);
       platosFiltrados.forEach((plato) => {
         const fila = [];
         columnasOrdenadas.forEach(key => {
-          // Buscar la propiedad en el objeto (puede ser PascalCase o camelCase)
-          const valor = plato[key] || plato[key.charAt(0).toUpperCase() + key.slice(1)] || null;
-          fila.push(valor !== null ? String(valor) : '-');
+          const valor = (plato[key] || plato[key.charAt(0).toUpperCase() + key.slice(1)]) || null;
+          if (esImporte(key) && valor != null) {
+            fila.push(formatearImporte(valor));
+          } else {
+            fila.push(valor !== null ? String(valor) : '-');
+          }
         });
         tableData.push(fila);
       });
 
       doc.autoTable({
-        startY: 28,
+        startY,
         head: [headers],
         body: tableData,
         styles: { fontSize: 9 },
@@ -1201,54 +1181,36 @@ const Plato = () => {
         return null;
       }).filter(key => key !== null);
 
-      // Construir datos con todos los campos
+      const esImporteExcel = (k) => ['Importe', 'importe', 'Costo', 'costo'].includes(k);
       const worksheetData = platosFiltrados.map((plato) => {
         const fila = [];
         columnasOrdenadas.forEach(key => {
-          // Buscar la propiedad en el objeto (puede ser PascalCase o camelCase)
-          const valor = plato[key] || plato[key.charAt(0).toUpperCase() + key.slice(1)] || null;
-          fila.push(valor !== null ? String(valor) : '-');
+          const valor = (plato[key] || plato[key.charAt(0).toUpperCase() + key.slice(1)]) || null;
+          if (esImporteExcel(key) && valor != null) {
+            fila.push(formatearImporte(valor));
+          } else {
+            fila.push(valor !== null ? String(valor) : '-');
+          }
         });
         return fila;
       });
 
-      // Obtener fecha formateada
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Platos');
+      const startRow = await addExcelReportHeader(workbook, worksheet, 'Listado de Platos');
 
-      const numColumnas = headers.length;
-      
-      // Crear datos con título y fecha
-      const datosConTitulo = [
-        [], // Fila vacía
-        ['Listado de Platos'], // Título
-        [`Generado el: ${fecha}`], // Fecha
-        [], // Fila vacía
-        headers, // Headers
-        ...worksheetData, // Datos
-      ];
+      worksheet.getRow(startRow).values = headers;
+      worksheet.getRow(startRow).font = { bold: true };
+      worksheetData.forEach(fila => worksheet.addRow(fila));
+      worksheet.columns = headers.map(() => ({ width: 18 }));
 
-      const worksheet = XLSX.utils.aoa_to_sheet(datosConTitulo);
-      
-      // Fusionar celdas para centrar título y fecha
-      worksheet['!merges'] = [
-        { s: { r: 1, c: 0 }, e: { r: 1, c: numColumnas - 1 } }, // Título centrado
-        { s: { r: 2, c: 0 }, e: { r: 2, c: numColumnas - 1 } }, // Fecha centrada
-        { s: { r: 3, c: 0 }, e: { r: 3, c: numColumnas - 1 } }, // Fila vacía
-      ];
-      
-      // Ajustar el ancho de las columnas
-      const colWidths = headers.map(() => ({ wch: 18 }));
-      worksheet['!cols'] = colWidths;
-      
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Platos');
-      XLSX.writeFile(workbook, 'platos.xlsx');
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'platos.xlsx';
+      a.click();
+      URL.revokeObjectURL(a.href);
       
       if (columnas || filtros) {
         setMostrarModalImpresion(false);
@@ -1700,7 +1662,7 @@ const esPlatoInactivo = (plato) => {
                     row.precio ||
                     row.Precio ||
                     0;
-                  return `$${parseFloat(costo).toFixed(2)}`;
+                  return formatearImporte(costo);
                 },
               },
             ]}
@@ -2292,7 +2254,7 @@ const esPlatoInactivo = (plato) => {
                 <div className="col-md-2">
                   <div className="form-group" style={{ marginBottom: '0', display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <label htmlFor="costo" style={{ marginBottom: '0.35rem', fontSize: '0.875rem', fontWeight: '500', height: '20px', display: 'flex', alignItems: 'center' }}>
-                      Importe ($) <span style={{ color: '#F34949' }}>*</span>
+                      Importe ($)
                     </label>
                     <input
                       type="number"
@@ -2303,8 +2265,7 @@ const esPlatoInactivo = (plato) => {
                       name="costo"
                       value={formData.costo || ''}
                       onChange={handleInputChange}
-                      required
-                      placeholder="0.00"
+                      placeholder="0.00 (opcional)"
                       style={{ fontSize: '0.875rem', padding: '0.4rem 0.75rem', height: '38px', boxSizing: 'border-box' }}
                     />
                     <div style={{ height: '18px', marginTop: '0.25rem' }}></div>

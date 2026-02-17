@@ -1,7 +1,12 @@
 import React, { useState, useEffect, memo } from 'react';
 import { Link } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboard } from '../contexts/DashboardContext';
+import { useSmartTime } from '../contexts/SmartTimeContext';
+import { configApiService } from '../services/configApiService';
+import Logo from './Logo';
+import HabilitarSmartTimeModal from './HabilitarSmartTimeModal';
 import './Navbar.css';
 
 const Navbar = memo(() => {
@@ -10,14 +15,52 @@ const Navbar = memo(() => {
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [openDropdowns, setOpenDropdowns] = useState({});
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showHabilitarSmartTimeModal, setShowHabilitarSmartTimeModal] = useState(false);
+  const [soloModificarContraseñaSmartTime, setSoloModificarContraseñaSmartTime] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  const { smarTimeHabilitado: smartTimeHabilitado, validarSmartTime } = useSmartTime();
+
+  const handleAbrirHabilitarSmartTime = async () => {
+    setOpenDropdowns({});
+    setIsMobileMenuOpen(false);
+    try {
+      // Validar con el endpoint antes de continuar (por si el menú apareció por error)
+      const habilitado = await configApiService.getSmartTimeConfig();
+      if (!habilitado) {
+        validarSmartTime();
+        return;
+      }
+      const existe = await configApiService.getSmartTimeUsuarioExiste();
+      if (existe) {
+        await Swal.fire({
+          title: 'Usuario SmartTime existente',
+          text: 'Solo puede modificar la contraseña.',
+          icon: 'info',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        setSoloModificarContraseñaSmartTime(true);
+        setShowHabilitarSmartTimeModal(true);
+      } else {
+        setSoloModificarContraseñaSmartTime(false);
+        setShowHabilitarSmartTimeModal(true);
+      }
+    } catch (err) {
+      validarSmartTime();
+      Swal.fire({
+        title: 'Error',
+        text: err.message || 'No se pudo verificar la configuración de SmartTime.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    }
+  };
 
   // Obtener jerarquía usando la función centralizada getCurrentRole
   const { getCurrentRole } = useAuth();
   const role = getCurrentRole(usuarioData) || '';
   const jerarquiaNombre = role;
-
-  // Log para depuración
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -97,17 +140,15 @@ const Navbar = memo(() => {
     <>
     <nav className="navbar navbar-expand-lg navbar-dark smart-bg" role="navigation" aria-label="Navegación principal" style={{ margin: 0, padding: 0, position: 'relative' }}>
       <div className="container-fluid" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', width: '100%', position: 'relative', flexWrap: 'nowrap' }}>
-        {/* Logo - Desktop */}
+        {/* Logo - Desktop (usa componente Logo; para imagen: useImage) */}
         <h3 className="navbar-brand mb-0 d-none d-md-inline-flex" style={{ marginLeft: '1.5rem', display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap', gap: '0', flexShrink: 0, marginRight: 'auto' }}>
-          <i className="fa fa-utensils" style={{ margin: '0', padding: '0', marginRight: '0.5rem' }} aria-hidden="true"></i>
-          <span className="smart-title" style={{ marginLeft: '0', paddingLeft: '0', letterSpacing: '0' }}>SmartLunch</span>
+          <Logo variant="navbar" />
         </h3>
 
         {/* Logo y botón hamburguesa en móvil */}
         <div className="d-md-none d-flex align-items-center justify-content-between w-100">
           <h4 className="navbar-brand smart-title mb-0" style={{ marginLeft: '1.5rem', display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap', gap: '0' }}>
-            <i className="fa fa-utensils" style={{ margin: '0', padding: '0', marginRight: '0.5rem' }} aria-hidden="true"></i>
-            <span style={{ marginLeft: '0', paddingLeft: '0', letterSpacing: '0' }}>SmartLunch</span>
+            <Logo variant="navbar" />
           </h4>
           <button
             className="navbar-toggler"
@@ -335,6 +376,17 @@ const Navbar = memo(() => {
                 {role === 'Admin' && (
                   <>
                     <div className="dropdown-divider"></div>
+                    {smartTimeHabilitado && (
+                      <button
+                        type="button"
+                        className="dropdown-item border-0 bg-transparent text-left w-100"
+                        role="menuitem"
+                        onClick={handleAbrirHabilitarSmartTime}
+                      >
+                        <i className="fa fa-clock mr-2" aria-hidden="true"></i>
+                        Habilitar SmartTime
+                      </button>
+                    )}
                     <Link 
                       className="dropdown-item" 
                       to="/configuracion" 
@@ -350,6 +402,18 @@ const Navbar = memo(() => {
             </li>
           )}
 
+          <li className="nav-item active" role="none">
+            <Link
+              className="nav-link border-0 bg-transparent text-left w-100"
+              to="/cambiar-contrasena"
+              onClick={() => setOpenDropdowns({})}
+              role="menuitem"
+              style={{ cursor: 'pointer' }}
+            >
+              <i className="fa fa-key mr-2" aria-hidden="true"></i>
+              Cambiar contraseña
+            </Link>
+          </li>
           <li className="nav-item active" role="none" style={{ marginRight: '1rem' }}>
             <Link className="nav-link" to="/login" onClick={handleLogout} aria-label="Cerrar sesión" title="Cerrar sesión" role="menuitem">
               <i className="fa fa-sign-out-alt mr-2" aria-hidden="true"></i>
@@ -594,6 +658,21 @@ const Navbar = memo(() => {
                 {role === 'Admin' && (
                   <>
                     <div className="dropdown-divider"></div>
+                    {smartTimeHabilitado && (
+                      <button
+                        type="button"
+                        className="dropdown-item border-0 bg-transparent text-left w-100"
+                        role="menuitem"
+                        onClick={() => {
+                          setOpenDropdowns({});
+                          setIsMobileMenuOpen(false);
+                          handleAbrirHabilitarSmartTime();
+                        }}
+                      >
+                        <i className="fa fa-clock mr-2" aria-hidden="true"></i>
+                        Habilitar SmartTime
+                      </button>
+                    )}
                     <Link 
                       className="dropdown-item" 
                       to="/configuracion" 
@@ -613,6 +692,17 @@ const Navbar = memo(() => {
           )}
 
           <li className="nav-item active" role="none">
+            <Link
+              className="nav-link border-0 bg-transparent text-left w-100"
+              to="/cambiar-contrasena"
+              onClick={() => setIsMobileMenuOpen(false)}
+              role="menuitem"
+              style={{ cursor: 'pointer' }}
+            >
+              <i className="fa fa-key mr-2" aria-hidden="true"></i> Cambiar contraseña
+            </Link>
+          </li>
+          <li className="nav-item active" role="none">
             <Link 
               className="nav-link" 
               to="/login" 
@@ -630,6 +720,12 @@ const Navbar = memo(() => {
         </ul>
       </div>
     )}
+
+    <HabilitarSmartTimeModal
+      show={showHabilitarSmartTimeModal}
+      soloModificarContraseña={soloModificarContraseñaSmartTime}
+      onClose={() => { setShowHabilitarSmartTimeModal(false); setSoloModificarContraseñaSmartTime(false); }}
+    />
   </>
   );
 });

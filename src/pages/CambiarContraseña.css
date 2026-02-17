@@ -1,0 +1,38 @@
+/* Página Cambiar contraseña - mismo diseño que el modal pero como página */
+.cambiar-contrasena-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 1.5rem 1rem;
+  box-sizing: border-box;
+}
+
+.cambiar-contrasena-page .cambiar-contrasena-page-dialog {
+  max-height: none;
+  width: 100%;
+}
+
+.cambiar-contrasena-modal-btn.cerrar.disabled {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* Cartel de aviso cuando el cambio de contraseña es obligatorio */
+.cambiar-contrasena-cartel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 0.95em;
+  font-weight: 500;
+}
+.cambiar-contrasena-cartel i {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}

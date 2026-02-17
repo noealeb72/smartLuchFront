@@ -140,6 +140,25 @@ export const plantasService = {
   },
 
   /**
+   * Establece una planta como por defecto
+   */
+  establecerPorDefecto: async (plantaId) => {
+    const baseUrl = getApiBaseUrl();
+    const id = Number(plantaId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de planta no válido: ' + JSON.stringify(plantaId));
+    }
+    const url = `${baseUrl}/api/planta/establecer-por-defecto?id=${id}`;
+    const response = await api.post(url, null, {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    });
+    clearApiCache();
+    return response.data;
+  },
+
+  /**
    * Activa una planta (habilitar planta inactiva)
    */
   activarPlanta: async (plantaId) => {

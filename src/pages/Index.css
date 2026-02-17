@@ -181,9 +181,7 @@ select.form-control {
   padding: 20px !important;
   box-sizing: border-box !important;
   margin: 0 !important;
-}
-
-.index-modal-dialog {
+}.index-modal-dialog {
   margin: auto !important;
   width: 100% !important;
   max-width: 600px !important;
@@ -197,4 +195,3 @@ select.form-control {
 .index-modal-dialog.index-modal-dialog-lg {
   max-width: 800px !important;
 }
-

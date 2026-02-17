@@ -154,6 +154,25 @@ export const proyectosService = {
   },
 
   /**
+   * Establece un proyecto como por defecto
+   */
+  establecerPorDefecto: async (proyectoId) => {
+    const baseUrl = getApiBaseUrl();
+    const id = Number(proyectoId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de proyecto no válido: ' + JSON.stringify(proyectoId));
+    }
+    const url = `${baseUrl}/api/proyecto/establecer-por-defecto?id=${id}`;
+    const response = await api.post(url, null, {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    });
+    clearApiCache();
+    return response.data;
+  },
+
+  /**
    * Activa un proyecto (dar de alta)
    */
   activarProyecto: async (proyectoId) => {

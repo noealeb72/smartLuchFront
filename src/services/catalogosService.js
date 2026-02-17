@@ -1,10 +1,25 @@
-import api from './apiClient';
+import api, { clearApiCache } from './apiClient';
 import { getApiBaseUrl } from './configService';
 
 /**
  * Servicio de catálogos (listas simples para dropdowns, etc.)
  */
 export const catalogosService = {
+  /**
+   * Establece un registro como por defecto.
+   * PUT /api/catalogos/set-default
+   * @param {string} tipo - Tipo de catálogo: 'planta', 'centrodecosto', 'proyecto', 'plannutricional', 'jerarquia'
+   * @param {number} id - ID del registro a establecer como por defecto
+   */
+  setDefault: async (tipo, id) => {
+    const baseUrl = getApiBaseUrl();
+    const response = await api.put(`${baseUrl}/api/catalogos/set-default`, { tipo, id }, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    clearApiCache();
+    return response.data;
+  },
+
   /**
    * Obtiene todas las jerarquías
    */

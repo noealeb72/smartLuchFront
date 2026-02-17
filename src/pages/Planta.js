@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { plantasService } from '../services/plantasService';
+import { catalogosService } from '../services/catalogosService';
+import { useSmartTime } from '../contexts/SmartTimeContext';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import ExcelJS from 'exceljs';
+import { addExcelReportHeader } from '../utils/excelReportHeader';
 import './Usuarios.css';
 
 const Planta = () => {
@@ -30,6 +34,9 @@ const Planta = () => {
     descripcion: '',
   });
 
+  // SmartTime: si está habilitado, se muestra campo por defecto y opción de establecerlo (validado al entrar)
+  const { smarTimeHabilitado } = useSmartTime();
+
   // Cargar plantas usando /api/planta/lista con paginación
   const cargarPlantas = useCallback(async (page = 1, searchTerm = '', mostrarActivos = true) => {
     try {
@@ -43,7 +50,12 @@ const Planta = () => {
         searchTerm,     // término de búsqueda
         mostrarActivos  // activo = true o false según el combo
       );
-      
+
+      console.log('=== PLANTAS: datos que devuelve el backend ===', data);
+      if (data?.items) {
+        console.log('=== PLANTAS: items (plantas) ===', data.items);
+      }
+
       // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
       let plantasData = [];
       if (data.items && Array.isArray(data.items)) {
@@ -61,6 +73,7 @@ const Planta = () => {
         descripcion: planta.Descripcion || planta.descripcion || '',
         activo: planta.Deletemark !== undefined ? !planta.Deletemark : (planta.activo !== undefined ? planta.activo : true),
         Deletemark: planta.Deletemark,
+        is_default: planta.Is_default === 1 || planta.Is_default === true || planta.is_default === 1 || planta.is_default === true || planta.IsDefault === 1 || planta.IsDefault === true,
       }));
       
       // Usar los valores de paginación del backend
@@ -287,37 +300,34 @@ const Planta = () => {
     setVista('lista');
   };
 
-  // Exportar a PDF
-  const handleExportarPDF = () => {
+  // Exportar a PDF (todos los datos, sin paginación)
+  const handleExportarPDF = async () => {
     try {
+      const soloActivos = filtroActivo === 'activo';
+      const data = await plantasService.getPlantasLista(1, 99999, filtro, soloActivos);
+      const plantasData = data?.items && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []));
+      const plantasParaExportar = plantasData.map(planta => ({
+        ...planta,
+        nombre: planta.Nombre || planta.nombre || '',
+        descripcion: planta.Descripcion || planta.descripcion || '',
+        is_default: planta.Is_default === 1 || planta.Is_default === true || planta.is_default === 1 || planta.is_default === true || planta.IsDefault === 1 || planta.IsDefault === true,
+      }));
+
       const doc = new jsPDF();
+      const startY = await addPdfReportHeader(doc, 'Listado de Plantas');
       
-      doc.setFontSize(16);
-      doc.text('Listado de Plantas', 14, 15);
-      
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      doc.setFontSize(10);
-      doc.text(`Exportado el: ${fecha}`, 14, 22);
-      
-      const tableData = plantas.map(planta => [
-        planta.nombre || '-',
-        planta.descripcion || '-'
+      const tableData = plantasParaExportar.map(planta => [
+        (smarTimeHabilitado && planta.is_default ? (planta.nombre || '-') + ' (campo por defecto)' : (planta.nombre || '-')),
+        planta.descripcion || '-',
       ]);
       
       doc.autoTable({
-        startY: 28,
+        startY,
         head: [['Nombre', 'Descripción']],
         body: tableData,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        margin: { top: 28 }
       });
       
       const fileName = `plantas_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -327,8 +337,10 @@ const Planta = () => {
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato PDF',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       // Error al exportar PDF
@@ -342,33 +354,51 @@ const Planta = () => {
     }
   };
 
-  // Exportar a Excel
-  const handleExportarExcel = () => {
+  // Exportar a Excel (todos los datos, sin paginación)
+  const handleExportarExcel = async () => {
     try {
-      const datosExcel = plantas.map(planta => ({
-        'Nombre': planta.nombre || '',
-        'Descripción': planta.descripcion || ''
+      const soloActivos = filtroActivo === 'activo';
+      const data = await plantasService.getPlantasLista(1, 99999, filtro, soloActivos);
+      const plantasData = data?.items && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []));
+      const plantasParaExportar = plantasData.map(planta => ({
+        ...planta,
+        nombre: planta.Nombre || planta.nombre || '',
+        descripcion: planta.Descripcion || planta.descripcion || '',
+        is_default: planta.Is_default === 1 || planta.Is_default === true || planta.is_default === 1 || planta.is_default === true || planta.IsDefault === 1 || planta.IsDefault === true,
       }));
-      
-      const ws = XLSX.utils.json_to_sheet(datosExcel);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Plantas');
-      
-      const colWidths = [
-        { wch: 20 },
-        { wch: 40 }
-      ];
-      ws['!cols'] = colWidths;
-      
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Plantas');
+      const startRow = await addExcelReportHeader(workbook, worksheet, 'Listado de Plantas');
+
+      worksheet.getRow(startRow).values = ['Nombre', 'Descripción'];
+      worksheet.getRow(startRow).font = { bold: true };
+      plantasParaExportar.forEach(planta => {
+        worksheet.addRow([
+          (smarTimeHabilitado && planta.is_default ? (planta.nombre || '') + ' (campo por defecto)' : (planta.nombre || '')),
+          planta.descripcion || '',
+        ]);
+      });
+      worksheet.columns = [{ width: 20 }, { width: 40 }];
+
       const fileName = `plantas_${new Date().toISOString().split('T')[0]}.xlsx`;
-      XLSX.writeFile(wb, fileName);
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
       
       Swal.fire({
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato Excel',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       // Error al exportar Excel
@@ -617,7 +647,25 @@ const Planta = () => {
         {/* Tabla de plantas */}
         <DataTable
           columns={[
-            { key: 'nombre', field: 'nombre', label: 'Nombre' },
+            {
+              key: 'nombre',
+              field: 'nombre',
+              label: 'Nombre',
+              render: (val, row) => {
+                const esDefault = row.is_default === 1 || row.is_default === true || row.Is_default === 1 || row.Is_default === true || row.isDefault === 1 || row.isDefault === true;
+                const nombre = val || row.nombre || '-';
+                return (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {smarTimeHabilitado && esDefault && (
+                      <span className="badge" style={{ backgroundColor: '#e6a23c', color: 'white', fontSize: '0.7rem', fontWeight: 'normal', padding: '0.2rem 0.4rem' }} title="Campo por defecto">
+                        <i className="fa fa-star" aria-hidden="true"></i>
+                      </span>
+                    )}
+                    {nombre}
+                  </span>
+                );
+              },
+            },
             { key: 'descripcion', field: 'descripcion', label: 'Descripción' },
           ]}
           data={plantas}
@@ -646,6 +694,18 @@ const Planta = () => {
             return isActivo; // Solo se puede editar si está activo
           }}
           onDelete={(planta) => {
+            // No permitir eliminar si es campo por defecto (solo cuando SmartTime está habilitado)
+            const esDefault = smarTimeHabilitado && (planta.is_default === 1 || planta.is_default === true || planta.Is_default === 1 || planta.Is_default === true);
+            if (esDefault) {
+              Swal.fire({
+                title: 'No permitido',
+                text: 'Este campo está por defecto, no puede darse de baja.',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#F34949',
+              });
+              return;
+            }
             // No permitir eliminar si solo hay una planta
             if (plantas.length === 1) {
               Swal.fire({
@@ -805,6 +865,59 @@ const Planta = () => {
                       style={{ marginRight: '0.5rem' }}
                     >
                       <i className="fa fa-check"></i>
+                    </button>
+                  );
+                }
+                // Si está activo, SmartTime habilitado y no es por defecto, mostrar botón estrella
+                const esDefault = planta.is_default === 1 || planta.is_default === true || planta.Is_default === 1 || planta.Is_default === true;
+                if (smarTimeHabilitado && !esDefault) {
+                  return (
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => {
+                        Swal.fire({
+                          title: 'Campo por defecto',
+                          text: `¿Desea establecer "${planta.nombre}" como planta por defecto?`,
+                          icon: 'question',
+                          showCancelButton: true,
+                          confirmButtonColor: '#F34949',
+                          cancelButtonColor: '#6c757d',
+                          confirmButtonText: 'Sí, establecer',
+                          cancelButtonText: 'Cancelar',
+                        }).then(async (result) => {
+                          if (result.isConfirmed) {
+                            try {
+                              const plantaId = planta.id || planta.Id || planta.ID || planta.planta_id || planta.PlantaId;
+                              await catalogosService.setDefault('planta', plantaId);
+                              Swal.fire({
+                                title: 'Establecido',
+                                text: 'Planta establecida como por defecto',
+                                icon: 'success',
+                                timer: 3000,
+                                timerProgressBar: true,
+                                showConfirmButton: false,
+                                allowOutsideClick: true,
+                              });
+                              const soloActivos = filtroActivo === 'activo';
+                              cargarPlantas(currentPage, filtro, soloActivos);
+                            } catch (error) {
+                              if (!error.redirectToLogin) {
+                                Swal.fire({
+                                  title: 'Error',
+                                  text: error.message || 'Error al establecer la planta por defecto',
+                                  icon: 'error',
+                                  confirmButtonText: 'Aceptar',
+                                  confirmButtonColor: '#F34949',
+                                });
+                              }
+                            }
+                          }
+                        });
+                      }}
+                      title="Establecer como por defecto"
+                      style={{ width: '31px', height: '31px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e6a23c', color: 'white', borderColor: '#e6a23c', flexShrink: 0 }}
+                    >
+                      <i className="fa fa-star" aria-hidden="true"></i>
                     </button>
                   );
                 }

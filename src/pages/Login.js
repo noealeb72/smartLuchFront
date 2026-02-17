@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfig } from '../contexts/ConfigContext';
+import Logo from '../components/Logo';
 import './Login.css';
 
 const Login = () => {
@@ -15,6 +16,14 @@ const Login = () => {
   const { login, user } = useAuth();
   const { loading: configLoading } = useConfig();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [sessionExpiredMsg, setSessionExpiredMsg] = useState('');
+
+  // Mostrar mensaje cuando la sesión expiró (redirección desde apiClient con ?session=expired)
+  useEffect(() => {
+    const sessionExpired = searchParams.get('session') === 'expired';
+    setSessionExpiredMsg(sessionExpired ? 'Tu sesión ha expirado. Por favor, ingresa de nuevo.' : '');
+  }, [searchParams]);
 
   // Detectar cambios en el tamaño de pantalla
   useEffect(() => {
@@ -40,8 +49,8 @@ const Login = () => {
   }, [user?.id, user?.token, user?.role, navigate]);
 
   useEffect(() => {
-    // Ocultar error al escribir
-    if (showError) {
+    // Ocultar error solo cuando el usuario escribe de nuevo (no cuando se borran los campos por error de login)
+    if (showError && (username || password)) {
       setShowError(false);
     }
     // showError no debe estar en dependencias para evitar loops: queremos ocultar el error cuando cambian username/password
@@ -69,9 +78,11 @@ const Login = () => {
       
       const userRole = userData?.role || userData?.jerarquia_nombre || userData?.jerarquia;
       const rutaDestino = userRole === 'Cocina' ? '/despacho' : '/';
+      // Si debe cambiar clave, ir directo a la página de cambio de contraseña (no popup)
+      const rutaFinal = userData?.requiereCambioClave ? '/cambiar-contrasena' : rutaDestino;
 
-      // Prefetch según destino: cocinero → lista Despacho (para mostrar rápido); resto → inicio Index
-      if (userData && userData.id) {
+      // Prefetch según destino: cocinero → lista Despacho (para mostrar rápido); resto → inicio Index (solo si no va a cambiar clave)
+      if (userData && userData.id && !userData.requiereCambioClave) {
         if (userRole === 'Cocina') {
           const hoy = new Date();
           const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
@@ -84,14 +95,18 @@ const Login = () => {
           });
         }
       }
-      
-      navigate(rutaDestino, { replace: true });
+
+      navigate(rutaFinal, { replace: true });
     } catch (error) {
       setIsLoading(false);
       const message = error.message || 'Error de comunicación con el servidor';
       setErrorMsg(message);
       setShowError(true);
-      // No mostrar ningún popup, solo mostrar el error en la página
+      // Si el usuario no puede iniciar sesión o está bloqueado, borrar usuario y contraseña
+      if (message.includes('no puede iniciar sesión desde esta aplicación') || message.includes('está bloqueado')) {
+        setUsername('');
+        setPassword('');
+      }
     }
   };
 
@@ -111,8 +126,7 @@ const Login = () => {
           <div className="user_card">
             <div className="d-flex justify-content-center">
               <div className="brand_logo_container">
-                <i className="login-logo fas fa-utensils"></i>
-                <h5 className="text-white mt-2" style={{ color: 'white !important' }}>Smart Lunch</h5>
+                <Logo variant="login" text="Smart Lunch" />
               </div>
             </div>
 
@@ -121,6 +135,11 @@ const Login = () => {
                 <div className="welcome-title">
                   <h4>Bienvenido</h4>
                   <p>Ingresa tus credenciales para continuar</p>
+                  {sessionExpiredMsg && (
+                    <p style={{ color: '#0097A7', fontWeight: 600, marginTop: '0.5rem', fontSize: '0.95rem', marginBottom: 0 }}>
+                      {sessionExpiredMsg}
+                    </p>
+                  )}
                   {showError && (
                     <p style={{ 
                       color: '#F34949', 

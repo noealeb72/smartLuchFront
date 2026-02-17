@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { proyectosService } from '../services/proyectosService';
 import { catalogosService } from '../services/catalogosService';
 import { centrosDeCostoService } from '../services/centrosDeCostoService';
+import { useSmartTime } from '../contexts/SmartTimeContext';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
@@ -9,6 +10,8 @@ import DataTable from '../components/DataTable';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import { createExcelSheetWithHeaderXLSX } from '../utils/excelReportHeader';
 import './Usuarios.css';
 
 const Proyecto = () => {
@@ -35,6 +38,9 @@ const Proyecto = () => {
     planta_id: '',
     centrodecosto_id: '',
   });
+
+  // SmartTime: si está habilitado, se muestra campo por defecto y opción de establecerlo (validado al entrar)
+  const { smarTimeHabilitado } = useSmartTime();
 
   // Cargar proyectos usando /api/proyecto/lista con paginación
   const cargarProyectos = useCallback(async (page = 1, searchTerm = '', mostrarActivos = true) => {
@@ -75,6 +81,7 @@ const Proyecto = () => {
         CentroCostoNombre: proyecto.CentroCostoNombre || proyecto.centroCostoNombre || proyecto.centrodecosto_nombre || proyecto.centrodecosto?.nombre || proyecto.centroDeCosto?.nombre || '',
         CentroCostoId: proyecto.CentroCostoId || proyecto.centroCostoId || proyecto.centrodecosto_id || proyecto.centrodecosto?.id || proyecto.centroDeCosto?.id || null,
         activo: proyecto.Activo !== undefined ? proyecto.Activo : (proyecto.activo !== undefined ? proyecto.activo : (proyecto.Deletemark !== undefined ? !proyecto.Deletemark : true)),
+        is_default: proyecto.Is_default === 1 || proyecto.Is_default === true || proyecto.is_default === 1 || proyecto.is_default === true || proyecto.IsDefault === 1 || proyecto.IsDefault === true,
       }));
       
       // Usar los valores de paginación del backend
@@ -477,39 +484,38 @@ const Proyecto = () => {
     setVista('lista');
   };
 
-  // Exportar a PDF
-  const handleExportarPDF = () => {
+  // Exportar a PDF (todos los datos, sin paginación)
+  const handleExportarPDF = async () => {
     try {
       const doc = new jsPDF();
-      
-      doc.setFontSize(16);
-      doc.text('Listado de Proyectos', 14, 15);
-      
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      doc.setFontSize(10);
-      doc.text(`Exportado el: ${fecha}`, 14, 22);
-      
-      const tableData = proyectos.map(proyecto => [
-        proyecto.nombre || '-',
+      const soloActivos = filtroActivo === 'activo';
+      const dataProyectos = await proyectosService.getProyectosLista(1, 99999, filtro, soloActivos);
+      const proyectosData = dataProyectos?.items && Array.isArray(dataProyectos.items) ? dataProyectos.items : (Array.isArray(dataProyectos) ? dataProyectos : (dataProyectos?.data && Array.isArray(dataProyectos.data) ? dataProyectos.data : []));
+      const proyectosParaExportar = proyectosData.map(proyecto => ({
+        ...proyecto,
+        nombre: proyecto.Nombre || proyecto.nombre || '',
+        planta_nombre: proyecto.PlantaNombre || proyecto.plantaNombre || proyecto.planta_nombre || proyecto.planta?.nombre || proyecto.planta?.Nombre || '',
+        centrodecosto_nombre: proyecto.CentroCostoNombre || proyecto.centroCostoNombre || proyecto.centrodecosto_nombre || proyecto.centrodecosto?.nombre || proyecto.centroDeCosto?.nombre || '',
+        descripcion: proyecto.Descripcion || proyecto.descripcion || '',
+        is_default: proyecto.Is_default === 1 || proyecto.Is_default === true || proyecto.is_default === 1 || proyecto.is_default === true || proyecto.IsDefault === 1 || proyecto.IsDefault === true,
+      }));
+
+      const startY = await addPdfReportHeader(doc, 'Listado de Proyectos');
+
+      const tableData = proyectosParaExportar.map(proyecto => [
+        (smarTimeHabilitado && proyecto.is_default ? (proyecto.nombre || '-') + ' (campo por defecto)' : (proyecto.nombre || '-')),
         proyecto.planta_nombre || proyecto.plantaNombre || proyecto.planta?.nombre || proyecto.planta?.Nombre || '-',
         proyecto.centrodecosto_nombre || proyecto.centroDeCostoNombre || proyecto.centrodecosto?.nombre || proyecto.centroDeCosto?.nombre || '-',
-        proyecto.descripcion || '-'
+        proyecto.descripcion || '-',
       ]);
       
       doc.autoTable({
-        startY: 28,
+        startY,
         head: [['Nombre', 'Planta', 'Centro de Costo', 'Descripción']],
         body: tableData,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        margin: { top: 28 }
       });
       
       const fileName = `proyectos_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -519,8 +525,10 @@ const Proyecto = () => {
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato PDF',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       Swal.fire({
@@ -533,17 +541,28 @@ const Proyecto = () => {
     }
   };
 
-  // Exportar a Excel
-  const handleExportarExcel = () => {
+  // Exportar a Excel (todos los datos, sin paginación)
+  const handleExportarExcel = async () => {
     try {
-      const datosExcel = proyectos.map(proyecto => ({
-        'Nombre': proyecto.nombre || '',
+      const soloActivos = filtroActivo === 'activo';
+      const dataProyectos = await proyectosService.getProyectosLista(1, 99999, filtro, soloActivos);
+      const proyectosData = dataProyectos?.items && Array.isArray(dataProyectos.items) ? dataProyectos.items : (Array.isArray(dataProyectos) ? dataProyectos : (dataProyectos?.data && Array.isArray(dataProyectos.data) ? dataProyectos.data : []));
+      const proyectosParaExportar = proyectosData.map(proyecto => ({
+        ...proyecto,
+        nombre: proyecto.Nombre || proyecto.nombre || '',
+        planta_nombre: proyecto.PlantaNombre || proyecto.plantaNombre || proyecto.planta_nombre || proyecto.planta?.nombre || proyecto.planta?.Nombre || '',
+        centrodecosto_nombre: proyecto.CentroCostoNombre || proyecto.centroCostoNombre || proyecto.centrodecosto_nombre || proyecto.centrodecosto?.nombre || proyecto.centroDeCosto?.nombre || '',
+        descripcion: proyecto.Descripcion || proyecto.descripcion || '',
+        is_default: proyecto.Is_default === 1 || proyecto.Is_default === true || proyecto.is_default === 1 || proyecto.is_default === true || proyecto.IsDefault === 1 || proyecto.IsDefault === true,
+      }));
+      const datosExcel = proyectosParaExportar.map(proyecto => ({
+        'Nombre': (smarTimeHabilitado && proyecto.is_default ? (proyecto.nombre || '') + ' (campo por defecto)' : (proyecto.nombre || '')),
         'Planta': proyecto.planta_nombre || proyecto.plantaNombre || proyecto.planta?.nombre || proyecto.planta?.Nombre || '',
         'Centro de Costo': proyecto.centrodecosto_nombre || proyecto.centroDeCostoNombre || proyecto.centrodecosto?.nombre || proyecto.centroDeCosto?.nombre || '',
         'Descripción': proyecto.descripcion || ''
       }));
-      
-      const ws = XLSX.utils.json_to_sheet(datosExcel);
+
+      const ws = createExcelSheetWithHeaderXLSX(datosExcel, 'Listado de Proyectos');
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Proyectos');
       
@@ -551,7 +570,7 @@ const Proyecto = () => {
         { wch: 20 },
         { wch: 20 },
         { wch: 20 },
-        { wch: 40 }
+        { wch: 40 },
       ];
       ws['!cols'] = colWidths;
       
@@ -562,8 +581,10 @@ const Proyecto = () => {
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato Excel',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       Swal.fire({
@@ -876,7 +897,25 @@ const Proyecto = () => {
         {/* Tabla de proyectos */}
         <DataTable
           columns={[
-            { key: 'nombre', field: 'nombre', label: 'Nombre' },
+            {
+              key: 'nombre',
+              field: 'nombre',
+              label: 'Nombre',
+              render: (val, proyecto) => {
+                const esDefault = proyecto.is_default === 1 || proyecto.is_default === true || proyecto.Is_default === 1 || proyecto.Is_default === true || proyecto.isDefault === 1 || proyecto.isDefault === true;
+                const nombre = val || proyecto.nombre || '-';
+                return (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {smarTimeHabilitado && esDefault && (
+                      <span className="badge" style={{ backgroundColor: '#e6a23c', color: 'white', fontSize: '0.7rem', fontWeight: 'normal', padding: '0.2rem 0.4rem' }} title="Campo por defecto">
+                        <i className="fa fa-star" aria-hidden="true"></i>
+                      </span>
+                    )}
+                    {nombre}
+                  </span>
+                );
+              },
+            },
             { key: 'planta', field: 'planta', label: 'Planta', render: (value, proyecto) => {
               if (!proyecto) return '-';
               return proyecto.PlantaNombre || proyecto.plantaNombre || proyecto.planta_nombre || proyecto.planta?.nombre || proyecto.planta?.Nombre || '-';
@@ -907,6 +946,18 @@ const Proyecto = () => {
           }
           onEdit={handleEditarProyecto}
           onDelete={(proyecto) => {
+            // No permitir eliminar si es campo por defecto
+            const esDefault = smarTimeHabilitado && (proyecto.is_default === 1 || proyecto.is_default === true || proyecto.Is_default === 1 || proyecto.Is_default === true);
+            if (esDefault) {
+              Swal.fire({
+                title: 'No permitido',
+                text: 'Este campo está por defecto, no puede darse de baja.',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#F34949',
+              });
+              return;
+            }
             // No permitir eliminar si solo hay un proyecto
             if (proyectos.length === 1) {
               Swal.fire({
@@ -1044,7 +1095,59 @@ const Proyecto = () => {
                 </button>
               );
             }
-            // Si está activo, no mostrar nada adicional (los botones de editar y eliminar se muestran automáticamente)
+            // Si está activo y no es por defecto, mostrar botón estrella para establecer como por defecto
+            const esDefault = proyecto.is_default === 1 || proyecto.is_default === true || proyecto.Is_default === 1 || proyecto.Is_default === true;
+            if (smarTimeHabilitado && !esDefault) {
+              return (
+                <button
+                  className="btn btn-sm"
+                  onClick={() => {
+                    Swal.fire({
+                      title: 'Campo por defecto',
+                      text: `¿Desea establecer "${proyecto.nombre || proyecto.Nombre || 'este proyecto'}" como proyecto por defecto?`,
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonColor: '#F34949',
+                      cancelButtonColor: '#6c757d',
+                      confirmButtonText: 'Sí, establecer',
+                      cancelButtonText: 'Cancelar',
+                    }).then(async (result) => {
+                      if (result.isConfirmed) {
+                        try {
+                          const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
+                          await catalogosService.setDefault('proyecto', proyectoId);
+                          Swal.fire({
+                            title: 'Establecido',
+                            text: 'Proyecto establecido como por defecto',
+                            icon: 'success',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            allowOutsideClick: true,
+                          });
+                          const soloActivos = filtroActivo === 'activo';
+                          cargarProyectos(currentPage, filtro, soloActivos);
+                        } catch (error) {
+                          if (!error.redirectToLogin) {
+                            Swal.fire({
+                              title: 'Error',
+                              text: error.message || 'Error al establecer el proyecto por defecto',
+                              icon: 'error',
+                              confirmButtonText: 'Aceptar',
+                              confirmButtonColor: '#F34949',
+                            });
+                          }
+                        }
+                      }
+                    });
+                  }}
+                  title="Establecer como por defecto"
+                  style={{ width: '31px', height: '31px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e6a23c', color: 'white', borderColor: '#e6a23c', flexShrink: 0 }}
+                >
+                  <i className="fa fa-star" aria-hidden="true"></i>
+                </button>
+              );
+            }
             return null;
           }}
           enablePagination={false}

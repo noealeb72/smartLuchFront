@@ -1,5 +1,98 @@
+/**
+ * Cliente HTTP para la API.
+ * - Backend: solo valida el token en cada petición; si está vencido o inválido responde 401 Unauthorized.
+ * - Front: ante 401 intenta renovar el token con POST /api/login/Refresh (refresh token). Si obtiene
+ *   un nuevo JWT, lo guarda y reintenta la petición; si no hay refresh token o falla, redirige a /login.
+ */
 import axios from 'axios';
 import { getApiBaseUrl } from './configService';
+
+/** Misma clave que authService.REFRESH_TOKEN_KEY para consistencia */
+const REFRESH_TOKEN_KEY = 'refreshToken';
+
+function clearSessionAndRedirect() {
+  try {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+    sessionStorage.removeItem('smartlunch_session_started');
+  } catch (_) {}
+  if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+    window.location.replace('/login?session=expired');
+  }
+}
+
+/** Obtiene el refresh token (sessionStorage primero, localStorage como respaldo) */
+function getStoredRefreshToken() {
+  if (typeof sessionStorage === 'undefined') return null;
+  return sessionStorage.getItem(REFRESH_TOKEN_KEY) || localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+/** Guarda el refresh token en ambos storages para mayor persistencia */
+function setStoredRefreshToken(value) {
+  try {
+    if (value) {
+      sessionStorage.setItem(REFRESH_TOKEN_KEY, value);
+      localStorage.setItem(REFRESH_TOKEN_KEY, value);
+    } else {
+      sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+    }
+  } catch (_) {}
+}
+
+/** Promesa única de refresh en curso para no lanzar varias a la vez */
+let refreshPromise = null;
+
+async function tryRefreshToken() {
+  const stored = getStoredRefreshToken();
+  if (!stored) {
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[apiClient] No hay refresh token. El login debe devolver RefreshToken.');
+    }
+    throw new Error('No hay refresh token');
+  }
+  const baseUrl = getApiBaseUrl();
+  const refreshUrl = `${baseUrl}/api/login/Refresh`;
+  if (typeof console !== 'undefined' && console.info) {
+    console.info('[apiClient] Intentando renovar token en', refreshUrl);
+  }
+  try {
+    const response = await axios.post(
+      refreshUrl,
+      { refreshToken: stored },
+      { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+    );
+    const data = response.data || response;
+    const token = data.Token ?? data.token;
+    const newRefresh = data.RefreshToken ?? data.refreshToken;
+    if (!token) {
+      throw new Error('No se recibió token');
+    }
+    localStorage.setItem('token', token);
+    if (newRefresh) {
+      setStoredRefreshToken(newRefresh);
+    }
+    if (typeof console !== 'undefined' && console.info) {
+      console.info('[apiClient] Token renovado correctamente');
+    }
+    return token;
+  } catch (err) {
+    if (typeof console !== 'undefined' && console.error) {
+      const msg = err.response?.data?.error || err.response?.data?.Message || err.message;
+      const status = err.response?.status;
+      const isNetwork = !err.response && (err.code === 'ERR_NETWORK' || err.message?.includes('Network'));
+      console.error('[apiClient] Refresh falló:', {
+        mensaje: msg,
+        status,
+        esErrorRed: isNetwork,
+        url: refreshUrl,
+      });
+    }
+    throw err;
+  }
+}
 
 // Crear instancia de axios con configuración optimizada
 const api = axios.create({
@@ -115,8 +208,17 @@ api.interceptors.response.use(
       } else if (status === 409) {
         // Conflict - Ya existe un registro con ese nombre
         error.message = error.response.data?.message || error.response.data?.Message || 'Ya existe un registro con ese nombre.';
+      } else if (status === 403) {
+        // Forbidden - Usuario autenticado pero sin permiso (rol insuficiente). NO cerrar sesión.
+        const responseData = error.response.data;
+        let backendMessage = null;
+        if (responseData) {
+          backendMessage = responseData.message || responseData.Message || responseData.error || responseData.Error;
+          if (typeof responseData === 'string') backendMessage = responseData;
+        }
+        error.message = backendMessage || 'No tiene permiso para realizar esta acción.';
+        error.redirectToLogin = false; // Sesión sigue abierta, solo mostrar mensaje
       } else if (status === 401) {
-        // Intentar obtener el mensaje del backend
         const responseData = error.response.data;
         let backendMessage = null;
         if (responseData) {
@@ -125,16 +227,32 @@ api.interceptors.response.use(
             backendMessage = responseData;
           }
         }
-        error.message = backendMessage || 'No autorizado. Verifica tus credenciales.';
-        error.redirectToLogin = true; // Marcar para redirigir al login si no está autorizado
-        
-        // NO redirigir automáticamente desde el interceptor
-        // Dejar que cada componente maneje el error según su lógica
-        // Solo redirigir si estamos en la página de login (para mostrar el error)
-        if (typeof window !== 'undefined' && window.location.pathname.includes('/login')) {
-          // Si ya estamos en login, no hacer nada más
+        error.message = backendMessage || 'Sesión expirada o no autorizado. Inicie sesión de nuevo.';
+        error.redirectToLogin = true;
+
+        const isLoginPage = typeof window !== 'undefined' && window.location.pathname.includes('/login');
+        const isRefreshRequest = error.config?.url?.includes('/login/Refresh');
+        const hasRefreshToken = !!getStoredRefreshToken();
+
+        if (isLoginPage || isRefreshRequest || !hasRefreshToken) {
+          clearSessionAndRedirect();
+          return Promise.reject(error);
         }
-        // Los componentes individuales decidirán si redirigir o no
+
+        // Una sola promesa de refresh para todas las peticiones que fallen con 401 a la vez
+        if (!refreshPromise) {
+          refreshPromise = tryRefreshToken()
+            .finally(() => {
+              refreshPromise = null;
+            });
+        }
+
+        return refreshPromise
+          .then(() => api.request(error.config))
+          .catch(() => {
+            clearSessionAndRedirect();
+            return Promise.reject(error);
+          });
       } else if (status === 405) {
         error.message = 'Método HTTP no permitido. El endpoint no acepta este tipo de solicitud.';
       } else if (status === 500) {

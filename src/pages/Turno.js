@@ -8,6 +8,8 @@ import TimePicker from '../components/TimePicker';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import { createExcelSheetWithHeaderXLSX } from '../utils/excelReportHeader';
 import './Usuarios.css';
 
 const Turno = () => {
@@ -528,6 +530,37 @@ const Turno = () => {
     setVista('lista');
   };
 
+  // Ordenar turnos por horario (igual que en pantalla)
+  const ordenarTurnosPorHorario = (turnosArray) => {
+    const horaAMinutos = (horaValue) => {
+      if (!horaValue) return Infinity;
+      if (typeof horaValue === 'object' && horaValue !== null) {
+        const horas = horaValue.hours ?? horaValue.Hours ?? horaValue.h ?? 0;
+        const minutos = horaValue.minutes ?? horaValue.Minutes ?? horaValue.m ?? 0;
+        return horas * 60 + minutos;
+      }
+      if (typeof horaValue === 'string') {
+        const parts = horaValue.split(':');
+        if (parts.length >= 2) {
+          const horas = parseInt(parts[0]) || 0;
+          const minutos = parseInt(parts[1]) || 0;
+          return horas * 60 + minutos;
+        }
+      }
+      return Infinity;
+    };
+    return [...turnosArray].sort((a, b) => {
+      const horaDesdeA = a.hora_desde || a.horaDesde || a.horadesde || a.HoraDesde || '';
+      const horaDesdeB = b.hora_desde || b.horaDesde || b.horadesde || b.HoraDesde || '';
+      const minutosDesdeA = horaAMinutos(horaDesdeA);
+      const minutosDesdeB = horaAMinutos(horaDesdeB);
+      if (minutosDesdeA !== minutosDesdeB) return minutosDesdeA - minutosDesdeB;
+      const horaHastaA = a.hora_hasta || a.horaHasta || a.horahasta || a.HoraHasta || '';
+      const horaHastaB = b.hora_hasta || b.horaHasta || b.horahasta || b.HoraHasta || '';
+      return horaAMinutos(horaHastaA) - horaAMinutos(horaHastaB);
+    });
+  };
+
   // Formatear hora para mostrar (solo horas y minutos)
   const formatearHora = (horaString) => {
     if (!horaString) return '-';
@@ -548,25 +581,18 @@ const Turno = () => {
     return '-';
   };
 
-  // Exportar a PDF
-  const handleExportarPDF = () => {
+  // Exportar a PDF (todos los datos, sin paginación)
+  const handleExportarPDF = async () => {
     try {
       const doc = new jsPDF();
-      
-      doc.setFontSize(16);
-      doc.text('Listado de Turnos', 14, 15);
-      
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      doc.setFontSize(10);
-      doc.text(`Exportado el: ${fecha}`, 14, 22);
-      
-      const tableData = turnos.map(turno => {
+      const soloActivos = filtroActivo === 'activo';
+      const data = await turnosService.getTurnosLista(1, 99999, filtro, soloActivos);
+      const turnosData = data?.items && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []));
+      const turnosOrdenados = ordenarTurnosPorHorario(turnosData);
+
+      const startY = await addPdfReportHeader(doc, 'Listado de Turnos');
+
+      const tableData = turnosOrdenados.map(turno => {
         // Buscar horaDesde en diferentes formatos posibles (igual que en la tabla)
         const horaDesde = turno.hora_desde || turno.horaDesde || turno.horadesde || turno.HoraDesde || turno.Hora_Desde || turno.horaDesde || '';
         // Buscar horaHasta en diferentes formatos posibles (igual que en la tabla)
@@ -580,13 +606,12 @@ const Turno = () => {
       });
       
       doc.autoTable({
-        startY: 28,
+        startY,
         head: [['Nombre', 'Hora Desde', 'Hora Hasta']],
         body: tableData,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        margin: { top: 28 }
       });
       
       const fileName = `turnos_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -596,8 +621,10 @@ const Turno = () => {
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato PDF',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       Swal.fire({
@@ -610,10 +637,14 @@ const Turno = () => {
     }
   };
 
-  // Exportar a Excel
-  const handleExportarExcel = () => {
+  // Exportar a Excel (todos los datos, sin paginación)
+  const handleExportarExcel = async () => {
     try {
-      const datosExcel = turnos.map(turno => {
+      const soloActivos = filtroActivo === 'activo';
+      const data = await turnosService.getTurnosLista(1, 99999, filtro, soloActivos);
+      const turnosData = data?.items && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []));
+      const turnosOrdenados = ordenarTurnosPorHorario(turnosData);
+      const datosExcel = turnosOrdenados.map(turno => {
         // Buscar horaDesde en diferentes formatos posibles (igual que en la tabla)
         const horaDesde = turno.hora_desde || turno.horaDesde || turno.horadesde || turno.HoraDesde || turno.Hora_Desde || turno.horaDesde || '';
         // Buscar horaHasta en diferentes formatos posibles (igual que en la tabla)
@@ -625,8 +656,8 @@ const Turno = () => {
           'Hora Hasta': formatearHora(horaHasta)
         };
       });
-      
-      const ws = XLSX.utils.json_to_sheet(datosExcel);
+
+      const ws = createExcelSheetWithHeaderXLSX(datosExcel, 'Listado de Turnos');
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Turnos');
       
@@ -644,8 +675,10 @@ const Turno = () => {
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato Excel',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       Swal.fire({

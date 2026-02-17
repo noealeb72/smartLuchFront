@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { centrosDeCostoService } from '../services/centrosDeCostoService';
 import { catalogosService } from '../services/catalogosService';
+import { useSmartTime } from '../contexts/SmartTimeContext';
 import { clearApiCache } from '../services/apiClient';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
@@ -8,7 +9,9 @@ import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import ExcelJS from 'exceljs';
+import { addExcelReportHeader } from '../utils/excelReportHeader';
 import './Usuarios.css';
 
 const CentroDeCosto = () => {
@@ -33,6 +36,9 @@ const CentroDeCosto = () => {
     descripcion: '',
     planta_id: '',
   });
+
+  // SmartTime: si está habilitado, se muestra campo por defecto y opción de establecerlo (validado al entrar)
+  const { smarTimeHabilitado } = useSmartTime();
 
   // Cargar centros de costo usando /api/centrodecosto/lista con paginación
   const cargarCentros = useCallback(async (page = 1, searchTerm = '', mostrarActivos = true) => {
@@ -74,6 +80,7 @@ const CentroDeCosto = () => {
         PlantaNombre: centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '',
         PlantaId: centro.PlantaId || centro.plantaId || centro.planta_id || centro.planta?.id || centro.planta || null,
         activo: centro.Deletemark !== undefined ? !centro.Deletemark : (centro.activo !== undefined ? centro.activo : true),
+        is_default: centro.Is_default === 1 || centro.Is_default === true || centro.is_default === 1 || centro.is_default === true || centro.IsDefault === 1 || centro.IsDefault === true,
       }));
       
       // Usar los valores de paginación del backend
@@ -344,37 +351,35 @@ const CentroDeCosto = () => {
   };
 
   // Exportar a PDF
-  const handleExportarPDF = () => {
+  const handleExportarPDF = async () => {
     try {
+      const soloActivos = filtroActivo === 'activo';
+      const data = await centrosDeCostoService.getCentrosDeCostoLista(1, 99999, filtro, soloActivos);
+      const centrosData = data?.items && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []));
+      const centrosParaExportar = centrosData.map(centro => ({
+        ...centro,
+        nombre: centro.Nombre || centro.nombre || '',
+        PlantaNombre: centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '',
+        descripcion: centro.Descripcion || centro.descripcion || '',
+        is_default: centro.Is_default === 1 || centro.Is_default === true || centro.is_default === 1 || centro.is_default === true || centro.IsDefault === 1 || centro.IsDefault === true,
+      }));
+
       const doc = new jsPDF();
+      const startY = await addPdfReportHeader(doc, 'Listado de Centros de Costo');
       
-      doc.setFontSize(16);
-      doc.text('Listado de Centros de Costo', 14, 15);
-      
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      doc.setFontSize(10);
-      doc.text(`Exportado el: ${fecha}`, 14, 22);
-      
-          const tableData = centros.map(centro => [
-            centro.nombre || '-',
+      const tableData = centrosParaExportar.map(centro => [
+            (smarTimeHabilitado && centro.is_default ? (centro.nombre || '-') + ' (campo por defecto)' : (centro.nombre || '-')),
             centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '-',
-            centro.descripcion || '-'
+            centro.descripcion || '-',
           ]);
       
       doc.autoTable({
-        startY: 28,
+        startY,
         head: [['Nombre', 'Planta', 'Descripción']],
         body: tableData,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        margin: { top: 28 }
       });
       
       const fileName = `centrosdecosto_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -384,8 +389,10 @@ const CentroDeCosto = () => {
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato PDF',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       Swal.fire({
@@ -398,35 +405,53 @@ const CentroDeCosto = () => {
     }
   };
 
-  // Exportar a Excel
-  const handleExportarExcel = () => {
+  // Exportar a Excel (todos los datos, sin paginación)
+  const handleExportarExcel = async () => {
     try {
-          const datosExcel = centros.map(centro => ({
-            'Nombre': centro.nombre || '',
-            'Planta': centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '',
-            'Descripción': centro.descripcion || ''
-          }));
-      
-      const ws = XLSX.utils.json_to_sheet(datosExcel);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Centros de Costo');
-      
-      const colWidths = [
-        { wch: 20 },
-        { wch: 20 },
-        { wch: 40 }
-      ];
-      ws['!cols'] = colWidths;
-      
+      const soloActivos = filtroActivo === 'activo';
+      const data = await centrosDeCostoService.getCentrosDeCostoLista(1, 99999, filtro, soloActivos);
+      const centrosData = data?.items && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []));
+      const centrosParaExportar = centrosData.map(centro => ({
+        ...centro,
+        nombre: centro.Nombre || centro.nombre || '',
+        PlantaNombre: centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '',
+        descripcion: centro.Descripcion || centro.descripcion || '',
+        is_default: centro.Is_default === 1 || centro.Is_default === true || centro.is_default === 1 || centro.is_default === true || centro.IsDefault === 1 || centro.IsDefault === true,
+      }));
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Centros de Costo');
+      const startRow = await addExcelReportHeader(workbook, worksheet, 'Listado de Centros de Costo');
+
+      worksheet.getRow(startRow).values = ['Nombre', 'Planta', 'Descripción'];
+      worksheet.getRow(startRow).font = { bold: true };
+      centrosParaExportar.forEach(centro => {
+        worksheet.addRow([
+          (smarTimeHabilitado && centro.is_default ? (centro.nombre || '') + ' (campo por defecto)' : (centro.nombre || '')),
+          centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '',
+          centro.descripcion || '',
+        ]);
+      });
+      worksheet.columns = [{ width: 20 }, { width: 20 }, { width: 40 }];
+
       const fileName = `centrosdecosto_${new Date().toISOString().split('T')[0]}.xlsx`;
-      XLSX.writeFile(wb, fileName);
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
       
       Swal.fire({
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato Excel',
         icon: 'success',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        allowOutsideClick: true,
       });
     } catch (error) {
       Swal.fire({
@@ -709,7 +734,25 @@ const CentroDeCosto = () => {
         {/* Tabla de centros de costo */}
         <DataTable
           columns={[
-            { key: 'nombre', field: 'nombre', label: 'Nombre' },
+            {
+              key: 'nombre',
+              field: 'nombre',
+              label: 'Nombre',
+              render: (val, centro) => {
+                const esDefault = centro.is_default === 1 || centro.is_default === true || centro.Is_default === 1 || centro.Is_default === true || centro.isDefault === 1 || centro.isDefault === true;
+                const nombre = val || centro.nombre || '-';
+                return (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {smarTimeHabilitado && esDefault && (
+                      <span className="badge" style={{ backgroundColor: '#e6a23c', color: 'white', fontSize: '0.7rem', fontWeight: 'normal', padding: '0.2rem 0.4rem' }} title="Campo por defecto">
+                        <i className="fa fa-star" aria-hidden="true"></i>
+                      </span>
+                    )}
+                    {nombre}
+                  </span>
+                );
+              },
+            },
             { key: 'planta', field: 'planta', label: 'Planta', render: (value, centro) => {
               if (!centro) return '-';
               return centro.PlantaNombre || centro.plantaNombre || centro.planta_nombre || centro.planta?.nombre || centro.planta?.Nombre || '-';
@@ -740,6 +783,18 @@ const CentroDeCosto = () => {
             return isActivo; // Solo se puede editar si está activo
           }}
           onDelete={(centro) => {
+            // No permitir eliminar si es campo por defecto
+            const esDefault = centro.is_default === 1 || centro.is_default === true || centro.Is_default === 1 || centro.Is_default === true;
+            if (esDefault) {
+              Swal.fire({
+                title: 'No permitido',
+                text: 'Este campo está por defecto, no puede darse de baja.',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#F34949',
+              });
+              return;
+            }
             // No permitir eliminar si solo hay un centro de costo
             if (centros.length === 1) {
               Swal.fire({
@@ -862,7 +917,59 @@ const CentroDeCosto = () => {
                 </button>
               );
             }
-            // Si está activo, no mostrar nada adicional (los botones de editar y eliminar se muestran automáticamente)
+            // Si está activo, SmartTime habilitado y no es por defecto, mostrar botón estrella
+            const esDefault = centro.is_default === 1 || centro.is_default === true || centro.Is_default === 1 || centro.Is_default === true;
+            if (smarTimeHabilitado && !esDefault) {
+              return (
+                <button
+                  className="btn btn-sm"
+                  onClick={() => {
+                    Swal.fire({
+                      title: 'Campo por defecto',
+                      text: `¿Desea establecer "${centro.nombre || centro.Nombre || 'este centro'}" como centro de costo por defecto?`,
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonColor: '#F34949',
+                      cancelButtonColor: '#6c757d',
+                      confirmButtonText: 'Sí, establecer',
+                      cancelButtonText: 'Cancelar',
+                    }).then(async (result) => {
+                      if (result.isConfirmed) {
+                        try {
+                          const centroId = centro.id || centro.Id || centro.ID;
+                          await catalogosService.setDefault('centrodecosto', centroId);
+                          Swal.fire({
+                            title: 'Establecido',
+                            text: 'Centro de costo establecido como por defecto',
+                            icon: 'success',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            allowOutsideClick: true,
+                          });
+                          const soloActivos = filtroActivo === 'activo';
+                          cargarCentros(currentPage, filtro, soloActivos);
+                        } catch (error) {
+                          if (!error.redirectToLogin) {
+                            Swal.fire({
+                              title: 'Error',
+                              text: error.message || 'Error al establecer el centro de costo por defecto',
+                              icon: 'error',
+                              confirmButtonText: 'Aceptar',
+                              confirmButtonColor: '#F34949',
+                            });
+                          }
+                        }
+                      }
+                    });
+                  }}
+                  title="Establecer como por defecto"
+                  style={{ width: '31px', height: '31px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e6a23c', color: 'white', borderColor: '#e6a23c', flexShrink: 0 }}
+                >
+                  <i className="fa fa-star" aria-hidden="true"></i>
+                </button>
+              );
+            }
             return null;
           }}
           enablePagination={false}

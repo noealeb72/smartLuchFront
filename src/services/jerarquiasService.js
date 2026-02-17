@@ -137,6 +137,25 @@ export const jerarquiasService = {
   },
 
   /**
+   * Establece una jerarquía como por defecto
+   */
+  establecerPorDefecto: async (jerarquiaId) => {
+    const baseUrl = getApiBaseUrl();
+    const id = Number(jerarquiaId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('ID de jerarquía no válido: ' + JSON.stringify(jerarquiaId));
+    }
+    const url = `${baseUrl}/api/jerarquia/establecer-por-defecto?id=${id}`;
+    const response = await api.post(url, null, {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    });
+    clearApiCache();
+    return response.data;
+  },
+
+  /**
    * Activa una jerarquía (dar de alta)
    */
   activarJerarquia: async (jerarquiaId) => {

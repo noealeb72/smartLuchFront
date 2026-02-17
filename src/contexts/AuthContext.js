@@ -1,8 +1,30 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { apiService } from '../services/apiService';
+import { REFRESH_TOKEN_KEY } from '../services/authService';
 import { useConfig } from './ConfigContext';
 
 const AuthContext = createContext();
+
+/**
+ * Intenta obtener el ID de usuario desde un JWT (solo si tiene 3 partes).
+ * @param {string} token - Token JWT
+ * @returns {number|null} ID del usuario o null
+ */
+function getUserIdFromToken(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    const id = payload.usuario ?? payload.usuarioId ?? payload.userId ?? payload.id ?? payload.sub ?? payload.nameid ?? payload.uid ?? payload.user_id ?? null;
+    if (id !== null && id !== undefined && id !== '') {
+      const num = Number(id);
+      return Number.isInteger(num) && num > 0 ? num : id;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -24,13 +46,23 @@ export const AuthProvider = ({ children }) => {
       
       // Solo validar que exista el token
       if (token && token !== 'null' && token !== 'undefined') {
-        // Solo guardar el token si no existe un usuario ya cargado (evitar bucles)
+        let userId = getUserIdFromToken(token);
+        if (userId == null) {
+          try {
+            const saved = localStorage.getItem('userId');
+            if (saved) {
+              const n = Number(saved);
+              if (Number.isInteger(n) && n > 0) userId = n;
+            }
+          } catch (_) {}
+        }
         setUser((prevUser) => {
           if (prevUser && prevUser.token === token) {
             return prevUser;
           }
           const storedUser = {
-            token: token,
+            token,
+            ...(userId != null && { id: userId }),
           };
           return storedUser;
         });
@@ -44,16 +76,46 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Cargar usuario desde localStorage al iniciar
+  // Al recargar la página (F5): cerrar sesión y volver al login
+  const RELOAD_FLAG = 'smartlunch_session_started';
+
   useEffect(() => {
-    if (config) {
+    if (!config) return;
+
+    try {
+      if (sessionStorage.getItem(RELOAD_FLAG) === '1') {
+        // Es una recarga: limpiar sesión y volver al login
+        sessionStorage.removeItem(RELOAD_FLAG);
+        sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        setUser(null);
+        setLoading(false);
+        if (window.location.pathname !== '/login') {
+          window.location.replace('/login');
+        }
+        return;
+      }
+      // Primera carga en esta pestaña: restaurar sesión si hay token y marcar para detectar recarga
       loadUserFromStorage();
+      const token = localStorage.getItem('token');
+      if (token && token !== 'null' && token !== 'undefined') {
+        sessionStorage.setItem(RELOAD_FLAG, '1');
+      }
+    } catch (_) {
+      setLoading(false);
     }
   }, [config, loadUserFromStorage]);
 
   const login = useCallback(async (username, password) => {
     try {
       const response = await apiService.login(username, password);
+
+      // Log: datos que devuelve el endpoint después de loguearse
+      console.log('=== ENDPOINT LOGIN: datos que devuelve el backend ===');
+      console.log('Respuesta completa (response):', response);
+      console.log('Respuesta en JSON:', JSON.stringify(response, null, 2));
 
       if (!response) {
         throw new Error('Usuario o contraseña incorrectos');
@@ -93,19 +155,49 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // Guardar SOLO el token en localStorage
+      // Guardar token e id en localStorage
       localStorage.setItem('token', token);
+      if (usuarioId != null) {
+        try {
+          localStorage.setItem('userId', String(usuarioId));
+        } catch (_) {}
+      }
+      // Guardar refresh token si el backend lo envía (en ambos storages para persistencia)
+      const refreshToken = response.RefreshToken ?? response.refreshToken;
+      if (refreshToken) {
+        try {
+          sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+          localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+        } catch (_) {}
+      } else if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[Auth] El backend no devolvió RefreshToken. Las peticiones con token expirado redirigirán a login.');
+      }
+      try {
+        sessionStorage.setItem(RELOAD_FLAG, '1');
+      } catch (_) {}
 
       // Crear objeto userData con la información del usuario (sin guardar en localStorage)
+      const nombre = response.Nombre || response.nombre || '';
+      const apellido = response.Apellido || response.apellido || '';
+      const nombreCompleto = response.NombreCompleto || response.nombreCompleto || (nombre || apellido ? `${nombre} ${apellido}`.trim() : '');
+      const requiereCambioClave = response.RequiereCambioClave === true || response.requiereCambioClave === true;
       const userData = {
         id: usuarioId,
         username: response.Username || response.username || '',
         jerarquia: jerarquia,
         jerarquia_nombre: jerarquia, // Asegurar que jerarquia_nombre esté presente
-        nombreCompleto: response.NombreCompleto || response.nombreCompleto || '',
+        nombre,
+        apellido,
+        nombreCompleto,
         activo: response.Activo || response.activo || true,
         role: jerarquia, // Para compatibilidad con código existente
+        requiereCambioClave,
       };
+
+      // Al loguearse: mostrar en consola los datos del usuario cargados
+      console.log('=== LOGIN: datos del usuario cargados ===');
+      console.log('Respuesta del backend (login):', response);
+      console.log('Usuario en la app (userData):', userData);
 
       setUser(userData);
       return userData;
@@ -118,7 +210,7 @@ export const AuthProvider = ({ children }) => {
         // Intentar obtener el mensaje del backend
         let backendMessage = null;
         if (responseData) {
-          backendMessage = responseData.message || responseData.Message || responseData.error || responseData.Error;
+          backendMessage = responseData.mensaje || responseData.Mensaje || responseData.message || responseData.Message || responseData.error || responseData.Error;
           if (typeof responseData === 'string') {
             backendMessage = responseData;
           }
@@ -146,8 +238,11 @@ export const AuthProvider = ({ children }) => {
   }, [config]);
 
   const logout = useCallback(() => {
-    // Eliminar solo el token
     localStorage.removeItem('token');
+    try {
+      localStorage.removeItem('userId');
+      sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+    } catch (_) {}
     setUser(null);
     window.location.href = '/login';
   }, []);
