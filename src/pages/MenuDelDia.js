@@ -92,16 +92,37 @@ const MenuDelDia = () => {
     id: null,
     platoId: '',
     turnoId: '',
+    turnoIds: [], // Para crear: múltiples turnos a la vez
     jerarquiaId: '',
+    jerarquiaIds: [], // Para crear: múltiples jerarquías a la vez
     plannutricional_id: '',
     proyectoId: '',
+    proyectoIds: [],
     centroCostoId: '',
+    centroCostoIds: [],
     plantaId: '',
+    plantaIds: [],
     cantidad: '1',
     comandadas: 0, // platos ya asignados/comandados (solo al editar; al crear es 0)
     fecha: obtenerFechaLocal(), // Fecha actual en formato YYYY-MM-DD
     activo: true,
   });
+
+  // Modal Seleccionar Turnos (para agregar varios a la vez)
+  const [mostrarModalTurnos, setMostrarModalTurnos] = useState(false);
+  const [busquedaTurno, setBusquedaTurno] = useState('');
+  // Modal Seleccionar Jerarquías (para agregar varios a la vez)
+  const [mostrarModalJerarquias, setMostrarModalJerarquias] = useState(false);
+  const [busquedaJerarquia, setBusquedaJerarquia] = useState('');
+  // Modal Seleccionar Proyectos (cuando hay >= 2)
+  const [mostrarModalProyectos, setMostrarModalProyectos] = useState(false);
+  const [busquedaProyecto, setBusquedaProyecto] = useState('');
+  // Modal Seleccionar Centros de Costo (cuando hay >= 2)
+  const [mostrarModalCentrosCosto, setMostrarModalCentrosCosto] = useState(false);
+  const [busquedaCentroCosto, setBusquedaCentroCosto] = useState('');
+  // Modal Seleccionar Plantas (cuando hay >= 2)
+  const [mostrarModalPlantas, setMostrarModalPlantas] = useState(false);
+  const [busquedaPlanta, setBusquedaPlanta] = useState('');
 
   // ===================== carga datos =====================
 
@@ -239,7 +260,7 @@ const MenuDelDia = () => {
           nuevo.jerarquiaId = String(jerarquiaId);
         }
         
-        // Auto-seleccionar turno si hay uno solo
+        // Auto-seleccionar turno si hay uno solo (editar: un solo turno)
         if (turnos.length === 1 && !prev.turnoId) {
           const turnoId = turnos[0].id || turnos[0].Id || turnos[0].ID;
           nuevo.turnoId = String(turnoId);
@@ -270,6 +291,46 @@ const MenuDelDia = () => {
         }
         
         return nuevo;
+      });
+    }
+    // Crear: auto-seleccionar turno si hay uno solo
+    if (vista === 'crear' && turnos.length === 1) {
+      setFormData(prev => {
+        if (prev.turnoIds && prev.turnoIds.length > 0) return prev;
+        const turnoId = String(turnos[0].id || turnos[0].Id || turnos[0].ID);
+        return { ...prev, turnoIds: [turnoId] };
+      });
+    }
+    // Crear: auto-seleccionar jerarquía si hay una sola
+    if (vista === 'crear' && jerarquias.length === 1) {
+      setFormData(prev => {
+        if (prev.jerarquiaIds && prev.jerarquiaIds.length > 0) return prev;
+        const jerarquiaId = String(jerarquias[0].id || jerarquias[0].Id || jerarquias[0].ID);
+        return { ...prev, jerarquiaIds: [jerarquiaId] };
+      });
+    }
+    // Crear: auto-seleccionar proyecto si hay uno solo
+    if (vista === 'crear' && proyectos.length === 1) {
+      setFormData(prev => {
+        if (prev.proyectoIds && prev.proyectoIds.length > 0) return prev;
+        const proyectoId = String(proyectos[0].id || proyectos[0].Id || proyectos[0].ID);
+        return { ...prev, proyectoIds: [proyectoId] };
+      });
+    }
+    // Crear: auto-seleccionar centro de costo si hay uno solo
+    if (vista === 'crear' && centrosDeCosto.length === 1) {
+      setFormData(prev => {
+        if (prev.centroCostoIds && prev.centroCostoIds.length > 0) return prev;
+        const centroId = String(centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID);
+        return { ...prev, centroCostoIds: [centroId] };
+      });
+    }
+    // Crear: auto-seleccionar planta si hay una sola
+    if (vista === 'crear' && plantas.length === 1) {
+      setFormData(prev => {
+        if (prev.plantaIds && prev.plantaIds.length > 0) return prev;
+        const plantaId = String(plantas[0].id || plantas[0].Id || plantas[0].ID);
+        return { ...prev, plantaIds: [plantaId] };
       });
     }
   }, [jerarquias, turnos, proyectos, centrosDeCosto, plantas, planesNutricionales, vista]);
@@ -777,29 +838,37 @@ const MenuDelDia = () => {
       const doc = new jsPDF();
       const startY = await addPdfReportHeader(doc, 'Listado de Menú del Día');
 
-      // Obtener headers y datos desde la respuesta del API
-      const headers = [];
-      const tableData = [];
-      
-      // Mapeo de nombres de columnas del API (PascalCase) a labels
+      // Obtener fecha del reporte (filtro o primer menú) y formatear DD-MM-YYYY
+      const fechaReporte = filtrosAplicar.fecha
+        || (menusFiltrados[0]?.fecha || menusFiltrados[0]?.Fecha);
+      const fechaFormateada = fechaReporte
+        ? (() => {
+            const s = String(fechaReporte).split('T')[0] || String(fechaReporte).split(' ')[0] || '';
+            const [y, m, d] = s.split('-');
+            return (d && m && y) ? `${d}-${m}-${y}` : s;
+          })()
+        : '-';
+
+      doc.setFontSize(10);
+      doc.text(`Fecha: ${fechaFormateada}`, 14, startY);
+      const tableStartY = startY + 6;
+
+      // Mapeo de nombres de columnas del API (PascalCase) a labels - excluir Fecha
       const columnLabels = {
         Plato: 'Plato',
         Turno: 'Turno',
         Proyecto: 'Proyecto',
         Planta: 'Planta',
-        Fecha: 'Fecha',
         PlanNutricional: 'Plan Nutricional',
         Jerarquia: 'Jerarquía',
         CentroCosto: 'Centro de Costo',
         Cantidad: 'Cantidad',
         Comandadas: 'Asignados',
         Estado: 'Estado',
-        // También soportar camelCase por si acaso
         plato: 'Plato',
         turno: 'Turno',
         proyecto: 'Proyecto',
         planta: 'Planta',
-        fecha: 'Fecha',
         planNutricional: 'Plan Nutricional',
         jerarquia: 'Jerarquía',
         centroCosto: 'Centro de Costo',
@@ -808,31 +877,28 @@ const MenuDelDia = () => {
         estado: 'Estado',
       };
 
-      // Construir headers basado en las columnas que tienen datos
+      const headers = [];
       if (menusFiltrados.length > 0) {
         const primerMenu = menusFiltrados[0];
         Object.keys(primerMenu).forEach(key => {
-          if (primerMenu[key] !== null && columnLabels[key]) {
+          const keyLower = key.toLowerCase();
+          if (primerMenu[key] !== null && columnLabels[key] && keyLower !== 'fecha') {
             headers.push(columnLabels[key]);
           }
         });
       }
 
-      // Construir datos de la tabla manteniendo el orden de los headers
       const columnasOrdenadas = headers.map(header => {
-        // Encontrar la clave que corresponde a este header
         for (const [key, label] of Object.entries(columnLabels)) {
-          if (label === header) {
-            return key;
-          }
+          if (label === header) return key;
         }
         return null;
       }).filter(key => key !== null);
 
+      const tableData = [];
       menusFiltrados.forEach((menu) => {
         const fila = [];
         columnasOrdenadas.forEach(key => {
-          // Buscar la propiedad en el objeto (puede ser PascalCase o camelCase)
           const valor = menu[key] || menu[key.charAt(0).toUpperCase() + key.slice(1)] || null;
           fila.push(valor !== null ? String(valor) : '-');
         });
@@ -840,7 +906,7 @@ const MenuDelDia = () => {
       });
 
       doc.autoTable({
-        startY,
+        startY: tableStartY,
         head: [headers],
         body: tableData,
         styles: { fontSize: 8 },
@@ -918,25 +984,33 @@ const MenuDelDia = () => {
         return;
       }
 
-      // Mapeo de nombres de columnas del API (PascalCase) a labels
-      const columnLabels = {
+      // Obtener fecha del reporte (filtro o primer menú) y formatear DD-MM-YYYY
+      const fechaReporteExcel = filtrosAplicar.fecha
+        || (menusFiltrados[0]?.fecha || menusFiltrados[0]?.Fecha);
+      const fechaFormateadaExcel = fechaReporteExcel
+        ? (() => {
+            const s = String(fechaReporteExcel).split('T')[0] || String(fechaReporteExcel).split(' ')[0] || '';
+            const [y, m, d] = s.split('-');
+            return (d && m && y) ? `${d}-${m}-${y}` : s;
+          })()
+        : '-';
+
+      // Mapeo de nombres de columnas del API - excluir Fecha
+      const columnLabelsExcel = {
         Plato: 'Plato',
         Turno: 'Turno',
         Proyecto: 'Proyecto',
         Planta: 'Planta',
-        Fecha: 'Fecha',
         PlanNutricional: 'Plan Nutricional',
         Jerarquia: 'Jerarquía',
         CentroCosto: 'Centro de Costo',
         Cantidad: 'Cantidad',
         Comandadas: 'Asignados',
         Estado: 'Estado',
-        // También soportar camelCase por si acaso
         plato: 'Plato',
         turno: 'Turno',
         proyecto: 'Proyecto',
         planta: 'Planta',
-        fecha: 'Fecha',
         planNutricional: 'Plan Nutricional',
         jerarquia: 'Jerarquía',
         centroCosto: 'Centro de Costo',
@@ -945,32 +1019,27 @@ const MenuDelDia = () => {
         estado: 'Estado',
       };
 
-      // Construir headers basado en las columnas que tienen datos
-      const headers = [];
+      const headersExcel = [];
       if (menusFiltrados.length > 0) {
         const primerMenu = menusFiltrados[0];
         Object.keys(primerMenu).forEach(key => {
-          if (primerMenu[key] !== null && columnLabels[key]) {
-            headers.push(columnLabels[key]);
+          const keyLower = key.toLowerCase();
+          if (primerMenu[key] !== null && columnLabelsExcel[key] && keyLower !== 'fecha') {
+            headersExcel.push(columnLabelsExcel[key]);
           }
         });
       }
 
-      // Construir datos de la hoja manteniendo el orden de los headers
-      const columnasOrdenadas = headers.map(header => {
-        // Encontrar la clave que corresponde a este header
-        for (const [key, label] of Object.entries(columnLabels)) {
-          if (label === header) {
-            return key;
-          }
+      const columnasOrdenadasExcel = headersExcel.map(header => {
+        for (const [key, label] of Object.entries(columnLabelsExcel)) {
+          if (label === header) return key;
         }
         return null;
       }).filter(key => key !== null);
 
       const worksheetData = menusFiltrados.map((menu) => {
         const fila = [];
-        columnasOrdenadas.forEach(key => {
-          // Buscar la propiedad en el objeto (puede ser PascalCase o camelCase)
+        columnasOrdenadasExcel.forEach(key => {
           const valor = menu[key] || menu[key.charAt(0).toUpperCase() + key.slice(1)] || null;
           fila.push(valor !== null ? String(valor) : '-');
         });
@@ -981,10 +1050,15 @@ const MenuDelDia = () => {
       const worksheet = workbook.addWorksheet('Menús del Día');
       const startRow = await addExcelReportHeader(workbook, worksheet, 'Listado de Menú del Día');
 
-      worksheet.getRow(startRow).values = headers;
-      worksheet.getRow(startRow).font = { bold: true };
-      worksheetData.forEach(fila => worksheet.addRow(fila));
-      worksheet.columns = headers.map(() => ({ width: 18 }));
+      worksheet.getCell(startRow, 1).value = `Fecha: ${fechaFormateadaExcel}`;
+      worksheet.getCell(startRow, 1).font = { bold: true, size: 10 };
+      const headerRow = startRow + 1;
+      worksheet.getRow(headerRow).values = headersExcel;
+      worksheet.getRow(headerRow).font = { bold: true };
+      worksheetData.forEach((fila, idx) => {
+        worksheet.addRow(fila);
+      });
+      worksheet.columns = headersExcel.map(() => ({ width: 18 }));
 
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -1265,11 +1339,16 @@ const MenuDelDia = () => {
       id: null,
       platoId: '',
       turnoId: '',
+      turnoIds: [],
       jerarquiaId: '',
+      jerarquiaIds: [],
       plannutricional_id: '',
       proyectoId: '',
+      proyectoIds: [],
       centroCostoId: '',
+      centroCostoIds: [],
       plantaId: '',
+      plantaIds: [],
       cantidad: '1',
       comandadas: 0,
       fecha: obtenerFechaLocal(),
@@ -1481,10 +1560,13 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!datosActualizados.turnoId) {
+      const turnoValido = vista === 'crear'
+        ? (datosActualizados.turnoIds?.length ?? 0) > 0
+        : !!datosActualizados.turnoId;
+      if (!turnoValido) {
         Swal.fire({
           title: 'Error',
-          text: 'Debe seleccionar un turno',
+          text: 'Debe seleccionar al menos un turno',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -1546,10 +1628,13 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!datosActualizados.jerarquiaId) {
+      const jerarquiaValida = vista === 'crear'
+        ? (datosActualizados.jerarquiaIds?.length ?? 0) > 0
+        : !!datosActualizados.jerarquiaId;
+      if (!jerarquiaValida) {
         Swal.fire({
           title: 'Error',
-          text: 'Debe seleccionar una jerarquía',
+          text: 'Debe seleccionar al menos una jerarquía',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -1557,10 +1642,13 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!datosActualizados.proyectoId) {
+      const proyectoValido = vista === 'crear'
+        ? ((datosActualizados.proyectoIds?.length ?? 0) > 0 || (proyectos.length === 1 && !!datosActualizados.proyectoId))
+        : !!datosActualizados.proyectoId;
+      if (!proyectoValido) {
         Swal.fire({
           title: 'Error',
-          text: 'Debe seleccionar un proyecto',
+          text: 'Debe seleccionar al menos un proyecto',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -1568,10 +1656,13 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!datosActualizados.centroCostoId) {
+      const centroCostoValido = vista === 'crear'
+        ? ((datosActualizados.centroCostoIds?.length ?? 0) > 0 || (centrosDeCosto.length === 1 && !!datosActualizados.centroCostoId))
+        : !!datosActualizados.centroCostoId;
+      if (!centroCostoValido) {
         Swal.fire({
           title: 'Error',
-          text: 'Debe seleccionar un centro de costo',
+          text: 'Debe seleccionar al menos un centro de costo',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -1579,10 +1670,13 @@ const MenuDelDia = () => {
         return;
       }
 
-      if (!datosActualizados.plantaId) {
+      const plantaValida = vista === 'crear'
+        ? ((datosActualizados.plantaIds?.length ?? 0) > 0 || (plantas.length === 1 && !!datosActualizados.plantaId))
+        : !!datosActualizados.plantaId;
+      if (!plantaValida) {
         Swal.fire({
           title: 'Error',
-          text: 'Debe seleccionar una planta',
+          text: 'Debe seleccionar al menos una planta',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -1592,21 +1686,21 @@ const MenuDelDia = () => {
 
       setIsLoading(true);
 
-      const menuData = {
-        PlatoId: parseInt(datosActualizados.platoId),
-        TurnoId: parseInt(datosActualizados.turnoId),
-        JerarquiaId: datosActualizados.jerarquiaId ? parseInt(datosActualizados.jerarquiaId) : null,
-        Plannutricional_id: datosActualizados.plannutricional_id ? parseInt(datosActualizados.plannutricional_id) : null,
-        ProyectoId: datosActualizados.proyectoId ? parseInt(datosActualizados.proyectoId) : null,
-        CentroCostoId: datosActualizados.centroCostoId ? parseInt(datosActualizados.centroCostoId) : null,
-        PlantaId: datosActualizados.plantaId ? parseInt(datosActualizados.plantaId) : null,
-        Cantidad: parseInt(datosActualizados.cantidad),
-        Fecha: datosActualizados.fecha,
-      };
-
       if (vista === 'editar') {
-        menuData.Id = parseInt(formData.id);
-        await menuService.actualizarMenu(menuData);
+        const menuData = {
+          Id: parseInt(formData.id),
+          PlatoId: parseInt(datosActualizados.platoId),
+          TurnoId: parseInt(datosActualizados.turnoId),
+          JerarquiaId: datosActualizados.jerarquiaId ? parseInt(datosActualizados.jerarquiaId) : null,
+          Plannutricional_id: datosActualizados.plannutricional_id ? parseInt(datosActualizados.plannutricional_id) : null,
+          ProyectoId: datosActualizados.proyectoId ? parseInt(datosActualizados.proyectoId) : null,
+          CentroCostoId: datosActualizados.centroCostoId ? parseInt(datosActualizados.centroCostoId) : null,
+          PlantaId: datosActualizados.plantaId ? parseInt(datosActualizados.plantaId) : null,
+          Cantidad: parseInt(datosActualizados.cantidad),
+          Fecha: datosActualizados.fecha,
+        };
+        const resultadoActualizar = await menuService.actualizarMenu(menuData);
+        console.log('[MenuDelDia] Respuesta actualizar:', resultadoActualizar);
         Swal.fire({
           title: 'Éxito',
           text: 'Menú del día actualizado correctamente',
@@ -1616,13 +1710,71 @@ const MenuDelDia = () => {
           timerProgressBar: true,
         });
       } else {
-        await menuService.crearMenu(menuData);
+        const turnoIds = datosActualizados.turnoIds || [];
+        const jerarquiaIds = datosActualizados.jerarquiaIds || [];
+        let proyectoIds = datosActualizados.proyectoIds || [];
+        let centroCostoIds = datosActualizados.centroCostoIds || [];
+        let plantaIds = datosActualizados.plantaIds || [];
+        if (proyectoIds.length === 0 && datosActualizados.proyectoId && proyectos.length === 1) {
+          proyectoIds = [datosActualizados.proyectoId];
+        }
+        if (centroCostoIds.length === 0 && datosActualizados.centroCostoId && centrosDeCosto.length === 1) {
+          centroCostoIds = [datosActualizados.centroCostoId];
+        }
+        if (plantaIds.length === 0 && datosActualizados.plantaId && plantas.length === 1) {
+          plantaIds = [datosActualizados.plantaId];
+        }
+        const baseMenuData = {
+          PlatoId: parseInt(datosActualizados.platoId),
+          Plannutricional_id: datosActualizados.plannutricional_id ? parseInt(datosActualizados.plannutricional_id) : null,
+          Cantidad: parseInt(datosActualizados.cantidad),
+          Fecha: datosActualizados.fecha,
+        };
+        const menus = [];
+        for (const turnoId of turnoIds) {
+          for (const jerarquiaId of jerarquiaIds) {
+            for (const proyectoId of proyectoIds) {
+              for (const centroCostoId of centroCostoIds) {
+                for (const plantaId of plantaIds) {
+                  menus.push({
+                    ...baseMenuData,
+                    TurnoId: parseInt(turnoId),
+                    JerarquiaId: jerarquiaId ? parseInt(jerarquiaId) : null,
+                    ProyectoId: proyectoId ? parseInt(proyectoId) : null,
+                    CentroCostoId: centroCostoId ? parseInt(centroCostoId) : null,
+                    PlantaId: plantaId ? parseInt(plantaId) : null,
+                  });
+                }
+              }
+            }
+          }
+        }
+        const resultado = await menuService.crearMenusMultiples(menus);
+        console.log('[MenuDelDia] Respuesta crear-multiples:', resultado);
+        const creadosArr = resultado?.creados ?? resultado?.Creados ?? [];
+        const noCreadosArr = resultado?.noCreados ?? resultado?.NoCreados ?? [];
+        const cantidadCreados = Array.isArray(creadosArr) ? creadosArr.length : 0;
+        const cantidadNoCreados = Array.isArray(noCreadosArr) ? noCreadosArr.length : 0;
+
+        let texto = '';
+        if (cantidadCreados === 0 && cantidadNoCreados > 0) {
+          texto = cantidadNoCreados === 1
+            ? 'Ningún menú se creó: ya existía (duplicado).'
+            : `Ningún menú se creó: los ${cantidadNoCreados} ya existían (duplicados).`;
+        } else if (cantidadCreados > 0 && cantidadNoCreados === 0) {
+          texto = cantidadCreados === 1 ? '1 menú creado correctamente.' : `${cantidadCreados} menús creados correctamente.`;
+        } else if (cantidadCreados > 0 && cantidadNoCreados > 0) {
+          texto = `✓ ${cantidadCreados} creados.\n✗ ${cantidadNoCreados} no creados (duplicados).`;
+        } else {
+          texto = 'Operación completada.';
+        }
+
         Swal.fire({
-          title: 'Éxito',
-          text: 'Menú del día creado correctamente',
-          icon: 'success',
+          title: cantidadNoCreados > 0 && cantidadCreados > 0 ? 'Completado' : (cantidadCreados > 0 ? 'Éxito' : 'Aviso'),
+          text: texto,
+          icon: cantidadCreados > 0 ? (cantidadNoCreados > 0 ? 'warning' : 'success') : 'warning',
           showConfirmButton: false,
-          timer: 2000,
+          timer: cantidadNoCreados > 0 ? 4000 : 2000,
           timerProgressBar: true,
         });
       }
@@ -2969,64 +3121,93 @@ const MenuDelDia = () => {
                     <label htmlFor="jerarquiaId" style={{ marginBottom: '0.25rem' }}>
                       Jerarquía {jerarquias.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
                     </label>
-                    <select
-                      className="form-control"
-                      id="jerarquiaId"
-                      name="jerarquiaId"
-                      value={formData.jerarquiaId || (jerarquias.length === 1 ? String(jerarquias[0].id || jerarquias[0].Id || jerarquias[0].ID) : '')}
-                      onChange={handleInputChange}
-                      disabled={isLoading || jerarquias.length === 1}
-                      required
-                      style={{
-                        ...(jerarquias.length === 1
-                          ? {
-                              backgroundColor: '#e9ecef',
-                              cursor: 'not-allowed',
-                              opacity: 0.7,
-                            }
-                          : {})
-                      }}
-                    >
-                      {jerarquias.length === 0 ? (
-                        <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
-                      ) : jerarquias.length === 1 ? (
-                        <option value={String(jerarquias[0].id || jerarquias[0].Id || jerarquias[0].ID)}>
-                          {jerarquias[0].nombre || jerarquias[0].Nombre || jerarquias[0].descripcion || jerarquias[0].Descripcion}
-                        </option>
-                      ) : (
-                        <>
-                          {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                      {jerarquias.map((jerarquia) => {
-                        const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID;
-                        const jerarquiaNombre = jerarquia.nombre || jerarquia.Nombre || jerarquia.descripcion || jerarquia.Descripcion || '';
-                        return (
-                          <option key={jerarquiaId} value={String(jerarquiaId)}>
-                            {jerarquiaNombre}
-                          </option>
-                        );
-                      })}
-                        </>
-                      )}
-                    </select>
-                    {jerarquias.length === 1 && (
-                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <i 
-                          className="fa fa-info-circle" 
-                          title="Solo hay una opción disponible"
-                          style={{ 
-                            color: '#6c757d',
-                            fontSize: '0.875rem',
-                            cursor: 'help',
+                    {vista === 'crear' && jerarquias.length >= 2 ? (
+                      <>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setMostrarModalJerarquias(true)}
+                          onKeyDown={(e) => e.key === 'Enter' && setMostrarModalJerarquias(true)}
+                          className="form-control"
+                          style={{
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            minHeight: '38px',
                           }}
-                          aria-hidden="true"
-                        ></i>
-                        <span style={{ 
-                          color: '#6c757d',
-                          fontSize: '0.875rem',
-                        }}>
-                          Solo hay una opción disponible
-                        </span>
-                      </div>
+                        >
+                          <span style={{ color: (formData.jerarquiaIds?.length || 0) > 0 ? '#212529' : '#6c757d' }}>
+                            {(formData.jerarquiaIds?.length || 0) > 0
+                              ? `${formData.jerarquiaIds.length} jerarquía(s) seleccionada(s)`
+                              : 'Seleccionar jerarquías...'}
+                          </span>
+                          <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
+                        </div>
+                        {(formData.jerarquiaIds?.length || 0) > 0 && (
+                          <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
+                            {jerarquias
+                              .filter((j) => formData.jerarquiaIds?.includes(String(j.id || j.Id || j.ID)))
+                              .map((j) => j.nombre || j.Nombre || j.descripcion || j.Descripcion)
+                              .join(', ')}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <select
+                          className="form-control"
+                          id="jerarquiaId"
+                          name="jerarquiaId"
+                          value={formData.jerarquiaId || (jerarquias.length === 1 ? String(jerarquias[0].id || jerarquias[0].Id || jerarquias[0].ID) : '')}
+                          onChange={handleInputChange}
+                          disabled={isLoading || jerarquias.length === 1}
+                          required
+                          style={{
+                            ...(jerarquias.length === 1
+                              ? {
+                                  backgroundColor: '#e9ecef',
+                                  cursor: 'not-allowed',
+                                  opacity: 0.7,
+                                }
+                              : {})
+                          }}
+                        >
+                          {jerarquias.length === 0 ? (
+                            <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                          ) : jerarquias.length === 1 ? (
+                            <option value={String(jerarquias[0].id || jerarquias[0].Id || jerarquias[0].ID)}>
+                              {jerarquias[0].nombre || jerarquias[0].Nombre || jerarquias[0].descripcion || jerarquias[0].Descripcion}
+                            </option>
+                          ) : (
+                            <>
+                              <option value="">-- Seleccionar --</option>
+                              {jerarquias.map((jerarquia) => {
+                                const jerarquiaId = jerarquia.id || jerarquia.Id || jerarquia.ID;
+                                const jerarquiaNombre = jerarquia.nombre || jerarquia.Nombre || jerarquia.descripcion || jerarquia.Descripcion || '';
+                                return (
+                                  <option key={jerarquiaId} value={String(jerarquiaId)}>
+                                    {jerarquiaNombre}
+                                  </option>
+                                );
+                              })}
+                            </>
+                          )}
+                        </select>
+                        {jerarquias.length === 1 && (
+                          <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <i
+                              className="fa fa-info-circle"
+                              title="Solo hay una opción disponible"
+                              style={{ color: '#6c757d', fontSize: '0.875rem', cursor: 'help' }}
+                              aria-hidden="true"
+                            />
+                            <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>
+                              Solo hay una opción disponible
+                            </span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -3035,64 +3216,93 @@ const MenuDelDia = () => {
                     <label htmlFor="turnoId" style={{ marginBottom: '0.25rem' }}>
                       Turno {turnos.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
                     </label>
-                    <select
-                      className="form-control"
-                      id="turnoId"
-                      name="turnoId"
-                      value={formData.turnoId || (turnos.length === 1 ? String(turnos[0].id || turnos[0].Id || turnos[0].ID) : '')}
-                      onChange={handleInputChange}
-                      disabled={turnos.length === 1}
-                      required
-                      style={{
-                        ...(turnos.length === 1
-                          ? {
-                              backgroundColor: '#e9ecef',
-                              cursor: 'not-allowed',
-                              opacity: 0.7,
-                            }
-                          : {})
-                      }}
-                    >
-                      {turnos.length === 0 ? (
-                        <option value="">Cargando...</option>
-                      ) : turnos.length === 1 ? (
-                        <option value={String(turnos[0].id || turnos[0].Id || turnos[0].ID)}>
-                          {turnos[0].nombre || turnos[0].Nombre || turnos[0].descripcion || turnos[0].Descripcion}
-                        </option>
-                      ) : (
-                        <>
-                          {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                      {turnos.map((turno) => {
-                        const turnoId = turno.id || turno.Id || turno.ID;
-                        const turnoNombre = turno.nombre || turno.Nombre || turno.descripcion || turno.Descripcion || '';
-                        return (
-                          <option key={turnoId} value={String(turnoId)}>
-                            {turnoNombre}
-                          </option>
-                        );
-                      })}
-                        </>
-                      )}
-                    </select>
-                    {turnos.length === 1 && (
-                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <i 
-                          className="fa fa-info-circle" 
-                          title="Solo hay una opción disponible"
-                          style={{ 
-                            color: '#6c757d',
-                            fontSize: '0.875rem',
-                            cursor: 'help',
+                    {vista === 'crear' ? (
+                      <>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setMostrarModalTurnos(true)}
+                          onKeyDown={(e) => e.key === 'Enter' && setMostrarModalTurnos(true)}
+                          className="form-control"
+                          style={{
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            minHeight: '38px',
                           }}
-                          aria-hidden="true"
-                        ></i>
-                        <span style={{ 
-                          color: '#6c757d',
-                          fontSize: '0.875rem',
-                        }}>
-                          Solo hay una opción disponible
-                        </span>
-                      </div>
+                        >
+                          <span style={{ color: (vista === 'crear' ? (formData.turnoIds?.length || 0) : (formData.turnoId ? 1 : 0)) > 0 ? '#212529' : '#6c757d' }}>
+                            {vista === 'crear'
+                              ? ((formData.turnoIds?.length || 0) > 0 ? `${formData.turnoIds.length} turno(s) seleccionado(s)` : 'Seleccionar turnos...')
+                              : (formData.turnoId ? (turnos.find((t) => String(t.id || t.Id || t.ID) === String(formData.turnoId))?.nombre || turnos.find((t) => String(t.id || t.Id || t.ID) === String(formData.turnoId))?.Nombre || 'Seleccionar turno...') : 'Seleccionar turno...')}
+                          </span>
+                          <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
+                        </div>
+                        {(vista === 'crear' ? (formData.turnoIds?.length || 0) : (formData.turnoId ? 1 : 0)) > 0 && vista === 'crear' && (
+                          <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
+                            {turnos
+                              .filter((t) => formData.turnoIds?.includes(String(t.id || t.Id || t.ID)))
+                              .map((t) => t.nombre || t.Nombre || t.descripcion || t.Descripcion)
+                              .join(', ')}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <select
+                          className="form-control"
+                          id="turnoId"
+                          name="turnoId"
+                          value={formData.turnoId || (turnos.length === 1 ? String(turnos[0].id || turnos[0].Id || turnos[0].ID) : '')}
+                          onChange={handleInputChange}
+                          disabled={turnos.length === 1}
+                          required
+                          style={{
+                            ...(turnos.length === 1
+                              ? {
+                                  backgroundColor: '#e9ecef',
+                                  cursor: 'not-allowed',
+                                  opacity: 0.7,
+                                }
+                              : {})
+                          }}
+                        >
+                          {turnos.length === 0 ? (
+                            <option value="">Cargando...</option>
+                          ) : turnos.length === 1 ? (
+                            <option value={String(turnos[0].id || turnos[0].Id || turnos[0].ID)}>
+                              {turnos[0].nombre || turnos[0].Nombre || turnos[0].descripcion || turnos[0].Descripcion}
+                            </option>
+                          ) : (
+                            <>
+                              <option value="">-- Seleccionar --</option>
+                              {turnos.map((turno) => {
+                                const turnoId = turno.id || turno.Id || turno.ID;
+                                const turnoNombre = turno.nombre || turno.Nombre || turno.descripcion || turno.Descripcion || '';
+                                return (
+                                  <option key={turnoId} value={String(turnoId)}>
+                                    {turnoNombre}
+                                  </option>
+                                );
+                              })}
+                            </>
+                          )}
+                        </select>
+                        {turnos.length === 1 && (
+                          <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <i
+                              className="fa fa-info-circle"
+                              title="Solo hay una opción disponible"
+                              style={{ color: '#6c757d', fontSize: '0.875rem', cursor: 'help' }}
+                              aria-hidden="true"
+                            />
+                            <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>
+                              Solo hay una opción disponible
+                            </span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -3101,64 +3311,86 @@ const MenuDelDia = () => {
                     <label htmlFor="proyectoId" style={{ marginBottom: '0.25rem' }}>
                       Proyecto {proyectos.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
                     </label>
-                    <select
-                      className="form-control"
-                      id="proyectoId"
-                      name="proyectoId"
-                      value={formData.proyectoId || (proyectos.length === 1 ? String(proyectos[0].id || proyectos[0].Id || proyectos[0].ID) : '')}
-                      onChange={handleInputChange}
-                      disabled={isLoading || proyectos.length === 1}
-                      required
-                      style={{
-                        ...(proyectos.length === 1
-                          ? {
-                              backgroundColor: '#e9ecef',
-                              cursor: 'not-allowed',
-                              opacity: 0.7,
-                            }
-                          : {})
-                      }}
-                    >
-                      {proyectos.length === 0 ? (
-                        <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
-                      ) : proyectos.length === 1 ? (
-                        <option value={String(proyectos[0].id || proyectos[0].Id || proyectos[0].ID)}>
-                          {proyectos[0].nombre || proyectos[0].Nombre || proyectos[0].descripcion || proyectos[0].Descripcion}
-                        </option>
-                      ) : (
-                        <>
-                          {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                      {proyectos.map((proyecto) => {
-                        const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
-                        const proyectoNombre = proyecto.nombre || proyecto.Nombre || proyecto.descripcion || proyecto.Descripcion || '';
-                        return (
-                          <option key={proyectoId} value={String(proyectoId)}>
-                            {proyectoNombre}
-                          </option>
-                        );
-                      })}
-                        </>
-                      )}
-                    </select>
-                    {proyectos.length === 1 && (
-                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <i 
-                          className="fa fa-info-circle" 
-                          title="Solo hay una opción disponible"
-                          style={{ 
-                            color: '#6c757d',
-                            fontSize: '0.875rem',
-                            cursor: 'help',
+                    {vista === 'crear' && proyectos.length >= 2 ? (
+                      <>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setMostrarModalProyectos(true)}
+                          onKeyDown={(e) => e.key === 'Enter' && setMostrarModalProyectos(true)}
+                          className="form-control"
+                          style={{
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            minHeight: '38px',
                           }}
-                          aria-hidden="true"
-                        ></i>
-                        <span style={{ 
-                          color: '#6c757d',
-                          fontSize: '0.875rem',
-                        }}>
-                          Solo hay una opción disponible
-                        </span>
-                      </div>
+                        >
+                          <span style={{ color: (formData.proyectoIds?.length || 0) > 0 ? '#212529' : '#6c757d' }}>
+                            {(formData.proyectoIds?.length || 0) > 0
+                              ? `${formData.proyectoIds.length} proyecto(s) seleccionado(s)`
+                              : 'Seleccionar proyectos...'}
+                          </span>
+                          <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
+                        </div>
+                        {(vista === 'crear' ? (formData.proyectoIds?.length || 0) : (formData.proyectoId ? 1 : 0)) > 0 && vista === 'crear' && (
+                          <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
+                            {proyectos
+                              .filter((p) => formData.proyectoIds?.includes(String(p.id || p.Id || p.ID)))
+                              .map((p) => p.nombre || p.Nombre || p.descripcion || p.Descripcion)
+                              .join(', ')}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <select
+                          className="form-control"
+                          id="proyectoId"
+                          name="proyectoId"
+                          value={formData.proyectoId || (proyectos.length === 1 ? String(proyectos[0].id || proyectos[0].Id || proyectos[0].ID) : '')}
+                          onChange={handleInputChange}
+                          disabled={isLoading || proyectos.length === 1}
+                          required
+                          style={{
+                            ...(proyectos.length === 1
+                              ? {
+                                  backgroundColor: '#e9ecef',
+                                  cursor: 'not-allowed',
+                                  opacity: 0.7,
+                                }
+                              : {})
+                          }}
+                        >
+                          {proyectos.length === 0 ? (
+                            <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                          ) : proyectos.length === 1 ? (
+                            <option value={String(proyectos[0].id || proyectos[0].Id || proyectos[0].ID)}>
+                              {proyectos[0].nombre || proyectos[0].Nombre || proyectos[0].descripcion || proyectos[0].Descripcion}
+                            </option>
+                          ) : (
+                            <>
+                              {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                              {proyectos.map((proyecto) => {
+                                const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
+                                const proyectoNombre = proyecto.nombre || proyecto.Nombre || proyecto.descripcion || proyecto.Descripcion || '';
+                                return (
+                                  <option key={proyectoId} value={String(proyectoId)}>
+                                    {proyectoNombre}
+                                  </option>
+                                );
+                              })}
+                            </>
+                          )}
+                        </select>
+                        {proyectos.length === 1 && (
+                          <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <i className="fa fa-info-circle" title="Solo hay una opción disponible" style={{ color: '#6c757d', fontSize: '0.875rem', cursor: 'help' }} aria-hidden="true" />
+                            <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>Solo hay una opción disponible</span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -3167,64 +3399,86 @@ const MenuDelDia = () => {
                     <label htmlFor="centroCostoId" style={{ marginBottom: '0.25rem' }}>
                       Centro de costo {centrosDeCosto.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
                     </label>
-                    <select
-                      className="form-control"
-                      id="centroCostoId"
-                      name="centroCostoId"
-                      value={formData.centroCostoId || (centrosDeCosto.length === 1 ? String(centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID) : '')}
-                      onChange={handleInputChange}
-                      disabled={isLoading || centrosDeCosto.length === 1}
-                      required
-                      style={{
-                        ...(centrosDeCosto.length === 1
-                          ? {
-                              backgroundColor: '#e9ecef',
-                              cursor: 'not-allowed',
-                              opacity: 0.7,
-                            }
-                          : {})
-                      }}
-                    >
-                      {centrosDeCosto.length === 0 ? (
-                        <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
-                      ) : centrosDeCosto.length === 1 ? (
-                        <option value={String(centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID)}>
-                          {centrosDeCosto[0].nombre || centrosDeCosto[0].Nombre || centrosDeCosto[0].descripcion || centrosDeCosto[0].Descripcion}
-                        </option>
-                      ) : (
-                        <>
-                          {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                      {centrosDeCosto.map((centro) => {
-                        const centroId = centro.id || centro.Id || centro.ID;
-                        const centroNombre = centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion || '';
-                        return (
-                          <option key={centroId} value={String(centroId)}>
-                            {centroNombre}
-                          </option>
-                        );
-                      })}
-                        </>
-                      )}
-                    </select>
-                    {centrosDeCosto.length === 1 && (
-                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <i 
-                          className="fa fa-info-circle" 
-                          title="Solo hay una opción disponible"
-                          style={{ 
-                            color: '#6c757d',
-                            fontSize: '0.875rem',
-                            cursor: 'help',
+                    {vista === 'crear' && centrosDeCosto.length >= 2 ? (
+                      <>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setMostrarModalCentrosCosto(true)}
+                          onKeyDown={(e) => e.key === 'Enter' && setMostrarModalCentrosCosto(true)}
+                          className="form-control"
+                          style={{
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            minHeight: '38px',
                           }}
-                          aria-hidden="true"
-                        ></i>
-                        <span style={{ 
-                          color: '#6c757d',
-                          fontSize: '0.875rem',
-                        }}>
-                          Solo hay una opción disponible
-                        </span>
-                      </div>
+                        >
+                          <span style={{ color: (formData.centroCostoIds?.length || 0) > 0 ? '#212529' : '#6c757d' }}>
+                            {(formData.centroCostoIds?.length || 0) > 0
+                              ? `${formData.centroCostoIds.length} centro(s) seleccionado(s)`
+                              : 'Seleccionar centros de costo...'}
+                          </span>
+                          <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
+                        </div>
+                        {(formData.centroCostoIds?.length || 0) > 0 && (
+                          <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
+                            {centrosDeCosto
+                              .filter((c) => formData.centroCostoIds?.includes(String(c.id || c.Id || c.ID)))
+                              .map((c) => c.nombre || c.Nombre || c.descripcion || c.Descripcion)
+                              .join(', ')}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <select
+                          className="form-control"
+                          id="centroCostoId"
+                          name="centroCostoId"
+                          value={formData.centroCostoId || (centrosDeCosto.length === 1 ? String(centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID) : '')}
+                          onChange={handleInputChange}
+                          disabled={isLoading || centrosDeCosto.length === 1}
+                          required
+                          style={{
+                            ...(centrosDeCosto.length === 1
+                              ? {
+                                  backgroundColor: '#e9ecef',
+                                  cursor: 'not-allowed',
+                                  opacity: 0.7,
+                                }
+                              : {})
+                          }}
+                        >
+                          {centrosDeCosto.length === 0 ? (
+                            <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                          ) : centrosDeCosto.length === 1 ? (
+                            <option value={String(centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID)}>
+                              {centrosDeCosto[0].nombre || centrosDeCosto[0].Nombre || centrosDeCosto[0].descripcion || centrosDeCosto[0].Descripcion}
+                            </option>
+                          ) : (
+                            <>
+                              {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                              {centrosDeCosto.map((centro) => {
+                                const centroId = centro.id || centro.Id || centro.ID;
+                                const centroNombre = centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion || '';
+                                return (
+                                  <option key={centroId} value={String(centroId)}>
+                                    {centroNombre}
+                                  </option>
+                                );
+                              })}
+                            </>
+                          )}
+                        </select>
+                        {centrosDeCosto.length === 1 && (
+                          <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <i className="fa fa-info-circle" title="Solo hay una opción disponible" style={{ color: '#6c757d', fontSize: '0.875rem', cursor: 'help' }} aria-hidden="true" />
+                            <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>Solo hay una opción disponible</span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -3233,64 +3487,86 @@ const MenuDelDia = () => {
                     <label htmlFor="plantaId" style={{ marginBottom: '0.25rem' }}>
                       Planta {plantas.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
                     </label>
-                    <select
-                      className="form-control"
-                      id="plantaId"
-                      name="plantaId"
-                      value={formData.plantaId || (plantas.length === 1 ? String(plantas[0].id || plantas[0].Id || plantas[0].ID) : '')}
-                      onChange={handleInputChange}
-                      disabled={isLoading || plantas.length === 1}
-                      required
-                      style={{
-                        ...(plantas.length === 1
-                          ? {
-                              backgroundColor: '#e9ecef',
-                              cursor: 'not-allowed',
-                              opacity: 0.7,
-                            }
-                          : {})
-                      }}
-                    >
-                      {plantas.length === 0 ? (
-                        <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
-                      ) : plantas.length === 1 ? (
-                        <option value={String(plantas[0].id || plantas[0].Id || plantas[0].ID)}>
-                          {plantas[0].nombre || plantas[0].Nombre || plantas[0].descripcion || plantas[0].Descripcion}
-                        </option>
-                      ) : (
-                        <>
-                          {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                      {plantas.map((planta) => {
-                        const plantaId = planta.id || planta.Id || planta.ID;
-                        const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
-                        return (
-                          <option key={plantaId} value={String(plantaId)}>
-                            {plantaNombre}
-                          </option>
-                        );
-                      })}
-                        </>
-                      )}
-                    </select>
-                    {plantas.length === 1 && (
-                      <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <i 
-                          className="fa fa-info-circle" 
-                          title="Solo hay una opción disponible"
-                          style={{ 
-                            color: '#6c757d',
-                            fontSize: '0.875rem',
-                            cursor: 'help',
+                    {vista === 'crear' && plantas.length >= 2 ? (
+                      <>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setMostrarModalPlantas(true)}
+                          onKeyDown={(e) => e.key === 'Enter' && setMostrarModalPlantas(true)}
+                          className="form-control"
+                          style={{
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            minHeight: '38px',
                           }}
-                          aria-hidden="true"
-                        ></i>
-                        <span style={{ 
-                          color: '#6c757d',
-                          fontSize: '0.875rem',
-                        }}>
-                          Solo hay una opción disponible
-                        </span>
-                      </div>
+                        >
+                          <span style={{ color: (formData.plantaIds?.length || 0) > 0 ? '#212529' : '#6c757d' }}>
+                            {(formData.plantaIds?.length || 0) > 0
+                              ? `${formData.plantaIds.length} planta(s) seleccionada(s)`
+                              : 'Seleccionar plantas...'}
+                          </span>
+                          <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
+                        </div>
+                        {(formData.plantaIds?.length || 0) > 0 && (
+                          <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
+                            {plantas
+                              .filter((p) => formData.plantaIds?.includes(String(p.id || p.Id || p.ID)))
+                              .map((p) => p.nombre || p.Nombre || p.descripcion || p.Descripcion)
+                              .join(', ')}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <select
+                          className="form-control"
+                          id="plantaId"
+                          name="plantaId"
+                          value={formData.plantaId || (plantas.length === 1 ? String(plantas[0].id || plantas[0].Id || plantas[0].ID) : '')}
+                          onChange={handleInputChange}
+                          disabled={isLoading || plantas.length === 1}
+                          required
+                          style={{
+                            ...(plantas.length === 1
+                              ? {
+                                  backgroundColor: '#e9ecef',
+                                  cursor: 'not-allowed',
+                                  opacity: 0.7,
+                                }
+                              : {})
+                          }}
+                        >
+                          {plantas.length === 0 ? (
+                            <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                          ) : plantas.length === 1 ? (
+                            <option value={String(plantas[0].id || plantas[0].Id || plantas[0].ID)}>
+                              {plantas[0].nombre || plantas[0].Nombre || plantas[0].descripcion || plantas[0].Descripcion}
+                            </option>
+                          ) : (
+                            <>
+                              {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                              {plantas.map((planta) => {
+                                const plantaId = planta.id || planta.Id || planta.ID;
+                                const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
+                                return (
+                                  <option key={plantaId} value={String(plantaId)}>
+                                    {plantaNombre}
+                                  </option>
+                                );
+                              })}
+                            </>
+                          )}
+                        </select>
+                        {plantas.length === 1 && (
+                          <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <i className="fa fa-info-circle" title="Solo hay una opción disponible" style={{ color: '#6c757d', fontSize: '0.875rem', cursor: 'help' }} aria-hidden="true" />
+                            <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>Solo hay una opción disponible</span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -3329,6 +3605,643 @@ const MenuDelDia = () => {
             </div>
           </div>
         </form>
+
+        {/* Modal Seleccionar Turnos */}
+        {mostrarModalTurnos && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1050,
+            }}
+            onClick={() => setMostrarModalTurnos(false)}
+          >
+            <div
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                maxWidth: '420px',
+                width: '90%',
+                maxHeight: '80vh',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h5 style={{ marginBottom: '1rem', fontWeight: '600' }}>Seleccionar Turnos</h5>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Buscar..."
+                value={busquedaTurno}
+                onChange={(e) => setBusquedaTurno(e.target.value)}
+                style={{ marginBottom: '1rem' }}
+              />
+              <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem' }}>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 500 }}>
+                    <input
+                      type="checkbox"
+                      checked={
+                        turnos
+                          .filter((t) => {
+                            const nombre = (t.nombre || t.Nombre || t.descripcion || t.Descripcion || '').toLowerCase();
+                            return !busquedaTurno || nombre.includes(busquedaTurno.toLowerCase());
+                          })
+                          .every((t) => formData.turnoIds?.includes(String(t.id || t.Id || t.ID)))
+                      }
+                      onChange={(e) => {
+                        const filtrados = turnos.filter((t) => {
+                          const nombre = (t.nombre || t.Nombre || t.descripcion || t.Descripcion || '').toLowerCase();
+                          return !busquedaTurno || nombre.includes(busquedaTurno.toLowerCase());
+                        });
+                        if (e.target.checked) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            turnoIds: [...new Set([...(prev.turnoIds || []), ...filtrados.map((t) => String(t.id || t.Id || t.ID))])],
+                          }));
+                        } else {
+                          const idsFiltrados = new Set(filtrados.map((t) => String(t.id || t.Id || t.ID)));
+                          setFormData((prev) => ({
+                            ...prev,
+                            turnoIds: (prev.turnoIds || []).filter((id) => !idsFiltrados.has(id)),
+                          }));
+                        }
+                      }}
+                      style={{ marginRight: '0.5rem' }}
+                    />
+                    Seleccionar todos
+                  </label>
+                </div>
+                {turnos
+                  .filter((t) => {
+                    const nombre = (t.nombre || t.Nombre || t.descripcion || t.Descripcion || '').toLowerCase();
+                    return !busquedaTurno || nombre.includes(busquedaTurno.toLowerCase());
+                  })
+                  .map((turno) => {
+                    const turnoId = String(turno.id || turno.Id || turno.ID);
+                    const turnoNombre = turno.nombre || turno.Nombre || turno.descripcion || turno.Descripcion || '';
+                    const checked = formData.turnoIds?.includes(turnoId);
+                    return (
+                      <div key={turnoId} style={{ marginBottom: '0.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData((prev) => ({ ...prev, turnoIds: [...(prev.turnoIds || []), turnoId] }));
+                              } else {
+                                setFormData((prev) => ({ ...prev, turnoIds: (prev.turnoIds || []).filter((id) => id !== turnoId) }));
+                              }
+                            }}
+                            style={{ marginRight: '0.5rem' }}
+                          />
+                          {turnoNombre}
+                        </label>
+                      </div>
+                    );
+                  })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setMostrarModalTurnos(false);
+                    setBusquedaTurno('');
+                  }}
+                  style={{
+                    backgroundColor: '#F34949',
+                    borderColor: '#F34949',
+                    color: 'white',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setMostrarModalTurnos(false);
+                    setBusquedaTurno('');
+                  }}
+                  style={{
+                    backgroundColor: '#343A40',
+                    borderColor: '#343A40',
+                    color: 'white',
+                  }}
+                >
+                  Aplicar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Seleccionar Jerarquías */}
+        {mostrarModalJerarquias && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1050,
+            }}
+            onClick={() => setMostrarModalJerarquias(false)}
+          >
+            <div
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                maxWidth: '420px',
+                width: '90%',
+                maxHeight: '80vh',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h5 style={{ marginBottom: '1rem', fontWeight: '600' }}>Seleccionar Jerarquías</h5>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Buscar..."
+                value={busquedaJerarquia}
+                onChange={(e) => setBusquedaJerarquia(e.target.value)}
+                style={{ marginBottom: '1rem' }}
+              />
+              <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem' }}>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 500 }}>
+                    <input
+                      type="checkbox"
+                      checked={
+                        jerarquias
+                          .filter((j) => {
+                            const nombre = (j.nombre || j.Nombre || j.descripcion || j.Descripcion || '').toLowerCase();
+                            return !busquedaJerarquia || nombre.includes(busquedaJerarquia.toLowerCase());
+                          })
+                          .every((j) => formData.jerarquiaIds?.includes(String(j.id || j.Id || j.ID)))
+                      }
+                      onChange={(e) => {
+                        const filtrados = jerarquias.filter((j) => {
+                          const nombre = (j.nombre || j.Nombre || j.descripcion || j.Descripcion || '').toLowerCase();
+                          return !busquedaJerarquia || nombre.includes(busquedaJerarquia.toLowerCase());
+                        });
+                        if (e.target.checked) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            jerarquiaIds: [...new Set([...(prev.jerarquiaIds || []), ...filtrados.map((j) => String(j.id || j.Id || j.ID))])],
+                          }));
+                        } else {
+                          const idsFiltrados = new Set(filtrados.map((j) => String(j.id || j.Id || j.ID)));
+                          setFormData((prev) => ({
+                            ...prev,
+                            jerarquiaIds: (prev.jerarquiaIds || []).filter((id) => !idsFiltrados.has(id)),
+                          }));
+                        }
+                      }}
+                      style={{ marginRight: '0.5rem' }}
+                    />
+                    Seleccionar todos
+                  </label>
+                </div>
+                {jerarquias
+                  .filter((j) => {
+                    const nombre = (j.nombre || j.Nombre || j.descripcion || j.Descripcion || '').toLowerCase();
+                    return !busquedaJerarquia || nombre.includes(busquedaJerarquia.toLowerCase());
+                  })
+                  .map((jerarquia) => {
+                    const jerarquiaId = String(jerarquia.id || jerarquia.Id || jerarquia.ID);
+                    const jerarquiaNombre = jerarquia.nombre || jerarquia.Nombre || jerarquia.descripcion || jerarquia.Descripcion || '';
+                    const checked = formData.jerarquiaIds?.includes(jerarquiaId);
+                    return (
+                      <div key={jerarquiaId} style={{ marginBottom: '0.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData((prev) => ({ ...prev, jerarquiaIds: [...(prev.jerarquiaIds || []), jerarquiaId] }));
+                              } else {
+                                setFormData((prev) => ({ ...prev, jerarquiaIds: (prev.jerarquiaIds || []).filter((id) => id !== jerarquiaId) }));
+                              }
+                            }}
+                            style={{ marginRight: '0.5rem' }}
+                          />
+                          {jerarquiaNombre}
+                        </label>
+                      </div>
+                    );
+                  })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setMostrarModalJerarquias(false);
+                    setBusquedaJerarquia('');
+                  }}
+                  style={{
+                    backgroundColor: '#F34949',
+                    borderColor: '#F34949',
+                    color: 'white',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setMostrarModalJerarquias(false);
+                    setBusquedaJerarquia('');
+                  }}
+                  style={{
+                    backgroundColor: '#343A40',
+                    borderColor: '#343A40',
+                    color: 'white',
+                  }}
+                >
+                  Aplicar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Seleccionar Proyectos */}
+        {mostrarModalProyectos && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1050,
+            }}
+            onClick={() => setMostrarModalProyectos(false)}
+          >
+            <div
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                maxWidth: '420px',
+                width: '90%',
+                maxHeight: '80vh',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h5 style={{ marginBottom: '1rem', fontWeight: '600' }}>Seleccionar Proyectos</h5>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Buscar..."
+                value={busquedaProyecto}
+                onChange={(e) => setBusquedaProyecto(e.target.value)}
+                style={{ marginBottom: '1rem' }}
+              />
+              <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem' }}>
+                {vista === 'crear' && (
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 500 }}>
+                      <input
+                        type="checkbox"
+                        checked={
+                          proyectos
+                            .filter((p) => {
+                              const nombre = (p.nombre || p.Nombre || p.descripcion || p.Descripcion || '').toLowerCase();
+                              return !busquedaProyecto || nombre.includes(busquedaProyecto.toLowerCase());
+                            })
+                            .every((p) => formData.proyectoIds?.includes(String(p.id || p.Id || p.ID)))
+                        }
+                        onChange={(e) => {
+                          const filtrados = proyectos.filter((p) => {
+                            const nombre = (p.nombre || p.Nombre || p.descripcion || p.Descripcion || '').toLowerCase();
+                            return !busquedaProyecto || nombre.includes(busquedaProyecto.toLowerCase());
+                          });
+                          if (e.target.checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              proyectoIds: [...new Set([...(prev.proyectoIds || []), ...filtrados.map((p) => String(p.id || p.Id || p.ID))])],
+                            }));
+                          } else {
+                            const idsFiltrados = new Set(filtrados.map((p) => String(p.id || p.Id || p.ID)));
+                            setFormData((prev) => ({
+                              ...prev,
+                              proyectoIds: (prev.proyectoIds || []).filter((id) => !idsFiltrados.has(id)),
+                            }));
+                          }
+                        }}
+                        style={{ marginRight: '0.5rem' }}
+                      />
+                      Seleccionar todos
+                    </label>
+                  </div>
+                )}
+                {proyectos
+                  .filter((p) => {
+                    const nombre = (p.nombre || p.Nombre || p.descripcion || p.Descripcion || '').toLowerCase();
+                    return !busquedaProyecto || nombre.includes(busquedaProyecto.toLowerCase());
+                  })
+                  .map((proyecto) => {
+                    const proyectoId = String(proyecto.id || proyecto.Id || proyecto.ID);
+                    const proyectoNombre = proyecto.nombre || proyecto.Nombre || proyecto.descripcion || proyecto.Descripcion || '';
+                    const checked = vista === 'crear' ? formData.proyectoIds?.includes(proyectoId) : String(formData.proyectoId) === proyectoId;
+                    return (
+                      <div key={proyectoId} style={{ marginBottom: '0.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                          <input
+                            type={vista === 'crear' ? 'checkbox' : 'radio'}
+                            name={vista === 'editar' ? 'proyectoRadio' : undefined}
+                            checked={checked}
+                            onChange={(e) => {
+                              if (vista === 'editar') {
+                                setFormData((prev) => ({ ...prev, proyectoId }));
+                              } else if (e.target.checked) {
+                                setFormData((prev) => ({ ...prev, proyectoIds: [...(prev.proyectoIds || []), proyectoId] }));
+                              } else {
+                                setFormData((prev) => ({ ...prev, proyectoIds: (prev.proyectoIds || []).filter((id) => id !== proyectoId) }));
+                              }
+                            }}
+                            style={{ marginRight: '0.5rem' }}
+                          />
+                          {proyectoNombre}
+                        </label>
+                      </div>
+                    );
+                  })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <button type="button" className="btn" onClick={() => { setMostrarModalProyectos(false); setBusquedaProyecto(''); }} style={{ backgroundColor: '#F34949', borderColor: '#F34949', color: 'white' }}>Cancelar</button>
+                <button type="button" className="btn" onClick={() => { setMostrarModalProyectos(false); setBusquedaProyecto(''); }} style={{ backgroundColor: '#343A40', borderColor: '#343A40', color: 'white' }}>Aplicar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Seleccionar Centros de Costo */}
+        {mostrarModalCentrosCosto && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1050,
+            }}
+            onClick={() => setMostrarModalCentrosCosto(false)}
+          >
+            <div
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                maxWidth: '420px',
+                width: '90%',
+                maxHeight: '80vh',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h5 style={{ marginBottom: '1rem', fontWeight: '600' }}>Seleccionar Centros de Costo</h5>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Buscar..."
+                value={busquedaCentroCosto}
+                onChange={(e) => setBusquedaCentroCosto(e.target.value)}
+                style={{ marginBottom: '1rem' }}
+              />
+              <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem' }}>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 500 }}>
+                    <input
+                      type="checkbox"
+                      checked={
+                        centrosDeCosto
+                            .filter((c) => {
+                              const nombre = (c.nombre || c.Nombre || c.descripcion || c.Descripcion || '').toLowerCase();
+                              return !busquedaCentroCosto || nombre.includes(busquedaCentroCosto.toLowerCase());
+                            })
+                            .every((c) => formData.centroCostoIds?.includes(String(c.id || c.Id || c.ID)))
+                        }
+                        onChange={(e) => {
+                          const filtrados = centrosDeCosto.filter((c) => {
+                            const nombre = (c.nombre || c.Nombre || c.descripcion || c.Descripcion || '').toLowerCase();
+                            return !busquedaCentroCosto || nombre.includes(busquedaCentroCosto.toLowerCase());
+                          });
+                          if (e.target.checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              centroCostoIds: [...new Set([...(prev.centroCostoIds || []), ...filtrados.map((c) => String(c.id || c.Id || c.ID))])],
+                            }));
+                          } else {
+                            const idsFiltrados = new Set(filtrados.map((c) => String(c.id || c.Id || c.ID)));
+                            setFormData((prev) => ({
+                              ...prev,
+                              centroCostoIds: (prev.centroCostoIds || []).filter((id) => !idsFiltrados.has(id)),
+                            }));
+                          }
+                        }}
+                        style={{ marginRight: '0.5rem' }}
+                      />
+                      Seleccionar todos
+                    </label>
+                </div>
+                {centrosDeCosto
+                  .filter((c) => {
+                    const nombre = (c.nombre || c.Nombre || c.descripcion || c.Descripcion || '').toLowerCase();
+                    return !busquedaCentroCosto || nombre.includes(busquedaCentroCosto.toLowerCase());
+                  })
+                  .map((centro) => {
+                    const centroId = String(centro.id || centro.Id || centro.ID);
+                    const centroNombre = centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion || '';
+                    const checked = vista === 'crear' ? formData.centroCostoIds?.includes(centroId) : String(formData.centroCostoId) === centroId;
+                    return (
+                      <div key={centroId} style={{ marginBottom: '0.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                          <input
+                            type={vista === 'crear' ? 'checkbox' : 'radio'}
+                            name={vista === 'editar' ? 'centroCostoRadio' : undefined}
+                            checked={checked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData((prev) => ({ ...prev, centroCostoIds: [...(prev.centroCostoIds || []), centroId] }));
+                              } else {
+                                setFormData((prev) => ({ ...prev, centroCostoIds: (prev.centroCostoIds || []).filter((id) => id !== centroId) }));
+                              }
+                            }}
+                            style={{ marginRight: '0.5rem' }}
+                          />
+                          {centroNombre}
+                        </label>
+                      </div>
+                    );
+                  })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <button type="button" className="btn" onClick={() => { setMostrarModalCentrosCosto(false); setBusquedaCentroCosto(''); }} style={{ backgroundColor: '#F34949', borderColor: '#F34949', color: 'white' }}>Cancelar</button>
+                <button type="button" className="btn" onClick={() => { setMostrarModalCentrosCosto(false); setBusquedaCentroCosto(''); }} style={{ backgroundColor: '#343A40', borderColor: '#343A40', color: 'white' }}>Aplicar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Seleccionar Plantas */}
+        {mostrarModalPlantas && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1050,
+            }}
+            onClick={() => setMostrarModalPlantas(false)}
+          >
+            <div
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                maxWidth: '420px',
+                width: '90%',
+                maxHeight: '80vh',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h5 style={{ marginBottom: '1rem', fontWeight: '600' }}>Seleccionar Plantas</h5>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Buscar..."
+                value={busquedaPlanta}
+                onChange={(e) => setBusquedaPlanta(e.target.value)}
+                style={{ marginBottom: '1rem' }}
+              />
+              <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem' }}>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 500 }}>
+                    <input
+                      type="checkbox"
+                      checked={
+                        plantas
+                            .filter((p) => {
+                              const nombre = (p.nombre || p.Nombre || p.descripcion || p.Descripcion || '').toLowerCase();
+                              return !busquedaPlanta || nombre.includes(busquedaPlanta.toLowerCase());
+                            })
+                            .every((p) => formData.plantaIds?.includes(String(p.id || p.Id || p.ID)))
+                        }
+                        onChange={(e) => {
+                          const filtrados = plantas.filter((p) => {
+                            const nombre = (p.nombre || p.Nombre || p.descripcion || p.Descripcion || '').toLowerCase();
+                            return !busquedaPlanta || nombre.includes(busquedaPlanta.toLowerCase());
+                          });
+                          if (e.target.checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              plantaIds: [...new Set([...(prev.plantaIds || []), ...filtrados.map((p) => String(p.id || p.Id || p.ID))])],
+                            }));
+                          } else {
+                            const idsFiltrados = new Set(filtrados.map((p) => String(p.id || p.Id || p.ID)));
+                            setFormData((prev) => ({
+                              ...prev,
+                              plantaIds: (prev.plantaIds || []).filter((id) => !idsFiltrados.has(id)),
+                            }));
+                          }
+                        }}
+                        style={{ marginRight: '0.5rem' }}
+                      />
+                      Seleccionar todos
+                    </label>
+                </div>
+                {plantas
+                  .filter((p) => {
+                    const nombre = (p.nombre || p.Nombre || p.descripcion || p.Descripcion || '').toLowerCase();
+                    return !busquedaPlanta || nombre.includes(busquedaPlanta.toLowerCase());
+                  })
+                  .map((planta) => {
+                    const plantaId = String(planta.id || planta.Id || planta.ID);
+                    const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
+                    const checked = formData.plantaIds?.includes(plantaId);
+                    return (
+                      <div key={plantaId} style={{ marginBottom: '0.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData((prev) => ({ ...prev, plantaIds: [...(prev.plantaIds || []), plantaId] }));
+                              } else {
+                                setFormData((prev) => ({ ...prev, plantaIds: (prev.plantaIds || []).filter((id) => id !== plantaId) }));
+                              }
+                            }}
+                            style={{ marginRight: '0.5rem' }}
+                          />
+                          {plantaNombre}
+                        </label>
+                      </div>
+                    );
+                  })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <button type="button" className="btn" onClick={() => { setMostrarModalPlantas(false); setBusquedaPlanta(''); }} style={{ backgroundColor: '#F34949', borderColor: '#F34949', color: 'white' }}>Cancelar</button>
+                <button type="button" className="btn" onClick={() => { setMostrarModalPlantas(false); setBusquedaPlanta(''); }} style={{ backgroundColor: '#343A40', borderColor: '#343A40', color: 'white' }}>Aplicar</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

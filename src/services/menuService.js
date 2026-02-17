@@ -80,6 +80,27 @@ export const menuService = {
   },
 
   /**
+   * POST api/menudd/crear-multiples - Crea varios menús del día en una sola petición
+   * Body: { menus: [{ PlatoId, TurnoId, JerarquiaId, Plannutricional_id, ProyectoId, CentroCostoId, PlantaId, Cantidad, Fecha }, ...] }
+   * Respuesta: { creados: [...], noCreados: [{ indice, motivo }], mensaje?: string }
+   */
+  crearMenusMultiples: async (menus) => {
+    const baseUrl = getApiBaseUrl();
+    const token = localStorage.getItem('token');
+    
+    const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await api.post(`${baseUrl}/api/menudd/crear-multiples`, { menus }, {
+      headers,
+    });
+    clearApiCache();
+    return response.data;
+  },
+
+  /**
    * PUT api/menudd/actualizar - Actualiza un menú del día existente
    */
   actualizarMenu: async (menuData) => {

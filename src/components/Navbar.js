@@ -394,7 +394,7 @@ const Navbar = memo(() => {
                       onClick={() => setOpenDropdowns({})}
                     >
                       <i className="fa fa-server mr-2" aria-hidden="true"></i>
-                      Configuración del Servidor
+                      Parámetros del Sistema
                     </Link>
                   </>
                 )}
@@ -683,7 +683,7 @@ const Navbar = memo(() => {
                       }}
                     >
                       <i className="fa fa-server mr-2" aria-hidden="true"></i>
-                      Configuración del Servidor
+                      Parámetros del Sistema
                     </Link>
                   </>
                 )}

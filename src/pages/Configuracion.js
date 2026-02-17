@@ -52,7 +52,7 @@ const Configuracion = () => {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h2 className="mb-0">
               <i className="fa fa-cog mr-2" aria-hidden="true"></i>
-              Configuración del Sistema
+              Parámetros del sistema
             </h2>
             <button
               className="btn btn-primary"

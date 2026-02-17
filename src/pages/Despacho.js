@@ -397,9 +397,19 @@ const Despacho = () => {
       const headers = [];
       const tableData = [];
 
-      // Agregar columnas según selección
+      // Función para obtener el nombre del usuario que pidió
+      const obtenerUsuarioPidio = (pedido) => {
+        const nombre = pedido.user_name || pedido.userName || pedido.nombre || pedido.UsuarioNombre || pedido.ComensalNombre || pedido.NombreComensal || '';
+        const apellido = pedido.user_lastName || pedido.userLastName || pedido.apellido || pedido.UsuarioApellido || pedido.ComensalApellido || pedido.ApellidoComensal || '';
+        const nombreCompleto = `${nombre} ${apellido}`.trim();
+        if (nombreCompleto) return nombreCompleto;
+        const legajo = pedido.user_fileNumber || pedido.userFileNumber || pedido.legajo || pedido.Legajo || pedido.UsuarioLegajo || '';
+        return legajo ? `Legajo ${legajo}` : '-';
+      };
+
+      // Agregar columnas según selección (Usuario que lo pidió siempre incluido)
       if (columnasSeleccionadas.npedido) headers.push('Nº Pedido');
-      if (columnasSeleccionadas.usuario) headers.push('Usuario');
+      headers.push('Usuario que lo pidió');
       if (columnasSeleccionadas.plato) headers.push('Plato');
       if (columnasSeleccionadas.importe) headers.push('Importe ($)');
       if (columnasSeleccionadas.fecha) headers.push('Fecha');
@@ -489,9 +499,18 @@ const Despacho = () => {
         return;
       }
 
+      const obtenerUsuarioPidioExcel = (pedido) => {
+        const nombre = pedido.user_name || pedido.userName || pedido.nombre || pedido.UsuarioNombre || pedido.ComensalNombre || pedido.NombreComensal || '';
+        const apellido = pedido.user_lastName || pedido.userLastName || pedido.apellido || pedido.UsuarioApellido || pedido.ComensalApellido || pedido.ApellidoComensal || '';
+        const nombreCompleto = `${nombre} ${apellido}`.trim();
+        if (nombreCompleto) return nombreCompleto;
+        const legajo = pedido.user_fileNumber || pedido.userFileNumber || pedido.legajo || pedido.Legajo || pedido.UsuarioLegajo || '';
+        return legajo ? `Legajo ${legajo}` : '-';
+      };
+
       const headers = [];
       if (columnasSeleccionadas.npedido) headers.push('Nº Pedido');
-      if (columnasSeleccionadas.usuario) headers.push('Usuario');
+      headers.push('Usuario que lo pidió');
       if (columnasSeleccionadas.plato) headers.push('Plato');
       if (columnasSeleccionadas.importe) headers.push('Importe ($)');
       if (columnasSeleccionadas.fecha) headers.push('Fecha');
@@ -509,11 +528,7 @@ const Despacho = () => {
       pedidosConFiltro.forEach((pedido) => {
         const fila = [];
         if (columnasSeleccionadas.npedido) fila.push(pedido.Npedido || pedido.npedido || '-');
-        if (columnasSeleccionadas.usuario) {
-          const nombre = pedido.user_name || pedido.userName || pedido.nombre || '';
-          const apellido = pedido.user_lastName || pedido.userLastName || pedido.apellido || '';
-          fila.push(`${nombre} ${apellido}`.trim() || '-');
-        }
+        fila.push(obtenerUsuarioPidioExcel(pedido));
         if (columnasSeleccionadas.plato) fila.push(pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || '-');
         if (columnasSeleccionadas.importe) fila.push(formatearImporte(pedido.Importe || pedido.importe || pedido.Monto || pedido.monto || 0));
         if (columnasSeleccionadas.fecha) fila.push(formatearFecha(pedido.Fecha || pedido.fecha));
