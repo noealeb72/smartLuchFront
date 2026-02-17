@@ -28,8 +28,8 @@ const Footer = memo(({ variant = 'full' }) => {
   return (
       <footer className="smart-bg text-white">
       <div className="container">
-        <div className="row" style={{ paddingTop: '0.5rem', marginTop: '0.5rem' }}>
-          <div className="col-6">
+        <div className="row footer-row-desktop" style={{ paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+          <div className="col-6 footer-smartlunch-col">
             <div className="footer-widget pr-lg-5 pr-0">
               <h4 className="text-white" style={{ marginTop: '0', marginBottom: '0.5rem', paddingTop: '0' }}>SmartLunch</h4>
               <p style={{ marginTop: '0.5rem' }}>Sistema de Gestión de concesiones y servicios de comedores indoor de compañías.</p>
@@ -46,7 +46,7 @@ const Footer = memo(({ variant = 'full' }) => {
               </nav>
             </div>
           </div>
-          <div className="col-6">
+          <div className="col-6 footer-turnos-col">
             <div className="footer-widget px-lg-5 px-0">
               <h4 className="text-white" style={{ marginTop: '0', marginBottom: '0.5rem', paddingTop: '0' }}>Turnos de Atención</h4>
               {turnos.length > 0 ? (
