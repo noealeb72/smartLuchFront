@@ -1662,7 +1662,7 @@ const Index = () => {
                 </div>
 
                 {/* Bienvenida - Mobile */}
-                <div className="container-fluid mt-4 row d-block d-md-none" style={{ marginLeft: 0, marginRight: 0, paddingLeft: '1rem', paddingRight: '1rem' }}>
+                <div className="container-fluid row d-block d-md-none bienvenida-movil" style={{ marginLeft: 0, marginRight: 0, paddingLeft: '1rem', paddingRight: '1rem' }}>
                   <div className="col-sm-12 bienvenida">
                     <h3>
                       <i className="lnr lnr-user"></i> Bienvenido {(() => {

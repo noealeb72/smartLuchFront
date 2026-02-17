@@ -24,3 +24,10 @@
   margin-top: auto;
 }
 
+/* En móvil: reducir espacio entre Cambiar contraseña y footer */
+@media (max-width: 767.98px) {
+  .layout-content:has(.cambiar-contrasena-page) {
+    padding-bottom: 0.25rem !important;
+  }
+}
+

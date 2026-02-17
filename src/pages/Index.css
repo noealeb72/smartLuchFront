@@ -33,6 +33,17 @@
   line-height: 1.4;
 }
 
+/* Bienvenida en móvil: subir con pequeño margen superior */
+@media (max-width: 767.98px) {
+  #gtco-welcome {
+    padding-top: 0.75rem !important;
+    margin-top: 0.5rem !important;
+  }
+  .bienvenida-movil {
+    margin-top: 0.5rem !important;
+  }
+}
+
 /* Estilos para el select de calificación */
 #pedidoCalificacion {
   font-size: 18px !important;
