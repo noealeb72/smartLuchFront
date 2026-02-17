@@ -107,8 +107,8 @@ const Navbar = memo(() => {
       if (!event.target.closest('.dropdown')) {
         setOpenDropdowns({});
       }
-      // Cerrar menú móvil si se hace clic fuera del navbar
-      if (isMobileMenuOpen && !event.target.closest('.navbar')) {
+      // Cerrar menú móvil si se hace clic fuera del navbar y del menú móvil (el menú móvil está fuera del nav)
+      if (isMobileMenuOpen && !event.target.closest('.navbar') && !event.target.closest('.navbar-mobile-menu')) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -141,12 +141,31 @@ const Navbar = memo(() => {
     <nav className="navbar navbar-expand-lg navbar-dark smart-bg" role="navigation" aria-label="Navegación principal" style={{ margin: 0, padding: 0, position: 'relative' }}>
       <div className="container-fluid" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', width: '100%', position: 'relative', flexWrap: 'nowrap' }}>
         {/* Logo - Desktop (usa componente Logo; para imagen: useImage) */}
-        <h3 className="navbar-brand mb-0 d-none d-md-inline-flex" style={{ marginLeft: '1.5rem', display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap', gap: '0', flexShrink: 0, marginRight: 'auto' }}>
+        <h3 className="navbar-brand mb-0 d-none d-md-inline-flex" style={{ marginLeft: '1.5rem', display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap', gap: '0', flexShrink: 0 }}>
           <Logo variant="navbar" />
         </h3>
+        {/* Jerarquía y fecha/hora - al medio entre SmartLunch y el icono Inicio (se oculta en pantallas estrechas para evitar superposición) */}
+        {isDesktop && (jerarquiaNombre || currentDateTime) && (
+          <div className="d-none d-md-flex navbar-jerarquia-fecha align-items-center justify-content-center" style={{ flex: 1, minWidth: 0, gap: '1rem', fontSize: '0.85em', opacity: 0.95 }}>
+            {jerarquiaNombre && (
+              <span className="d-flex align-items-center" aria-label="Jerarquía del usuario">
+                <i className="fa fa-user mr-1" style={{ fontSize: '1em' }} aria-hidden="true"></i>
+                <span className="badge badge-light text-dark" style={{ fontSize: '0.85em', padding: '0.25em 0.5em' }}>
+                  {jerarquiaNombre}
+                </span>
+              </span>
+            )}
+            <span className="d-flex align-items-center" aria-label="Fecha y hora actual">
+              <i className="fa fa-clock mr-1" style={{ fontSize: '1em' }} aria-hidden="true"></i>
+              <time id="current-datetime" dateTime={new Date().toISOString()}>
+                {currentDateTime}
+              </time>
+            </span>
+          </div>
+        )}
 
         {/* Logo y botón hamburguesa en móvil */}
-        <div className="d-md-none d-flex align-items-center justify-content-between w-100">
+        <div className="d-md-none d-flex align-items-center justify-content-between w-100 navbar-mobile-header">
           <h4 className="navbar-brand smart-title mb-0" style={{ marginLeft: '1.5rem', display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap', gap: '0' }}>
             <Logo variant="navbar" />
           </h4>
@@ -169,36 +188,6 @@ const Navbar = memo(() => {
           >
             <i className={`fa ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`} aria-hidden="true"></i>
           </button>
-        </div>
-
-        {/* Jerarquía y fecha/hora en el centro - visible solo en pantallas extra grandes (xl >= 1200px) */}
-        <div className="d-none d-xl-flex align-items-center" style={{ fontSize: '0.8em', fontWeight: 'normal', opacity: 0.9, position: 'absolute', left: '50%', transform: 'translateX(-50%)', zIndex: 1, pointerEvents: 'none' }} aria-live="polite">
-          {jerarquiaNombre && (
-            <span className="mr-3 d-flex align-items-center" aria-label="Jerarquía del usuario">
-              <i className="fa fa-user mr-1" style={{ fontSize: '1.1em' }} aria-hidden="true"></i>
-              <span className="badge badge-light text-dark" style={{ fontSize: '0.9em', padding: '0.3em 0.6em' }} aria-label={`Jerarquía: ${jerarquiaNombre}`}>
-                {jerarquiaNombre}
-              </span>
-            </span>
-          )}
-          <span className="d-flex align-items-center" aria-label="Fecha y hora actual">
-            <i className="fa fa-clock mr-1" style={{ fontSize: '1.1em' }} aria-hidden="true"></i>
-            <time id="current-datetime" style={{ fontSize: '1em' }} dateTime={new Date().toISOString()}>
-              {currentDateTime}
-            </time>
-          </span>
-        </div>
-
-        {/* Solo jerarquía en pantallas grandes (lg >= 992px, sin hora) */}
-        <div className="d-none d-lg-flex d-xl-none align-items-center" style={{ fontSize: '0.8em', fontWeight: 'normal', opacity: 0.9, position: 'absolute', left: '50%', transform: 'translateX(-50%)', zIndex: 1, pointerEvents: 'none' }} aria-live="polite">
-          {jerarquiaNombre && (
-            <span className="d-flex align-items-center" aria-label="Jerarquía del usuario">
-              <i className="fa fa-user mr-1" style={{ fontSize: '1.1em' }} aria-hidden="true"></i>
-              <span className="badge badge-light text-dark" style={{ fontSize: '0.9em', padding: '0.3em 0.6em' }} aria-label={`Jerarquía: ${jerarquiaNombre}`}>
-                {jerarquiaNombre}
-              </span>
-            </span>
-          )}
         </div>
 
         {/* Desktop/Tablet: Menú visible cuando cabe en pantalla */}
@@ -429,7 +418,7 @@ const Navbar = memo(() => {
     {/* Mobile/Tablet pequeña: Menú colapsable con hamburguesa - FUERA del nav principal */}
     {isMobileMenuOpen && (
       <div 
-        className="d-md-none" 
+        className="d-md-none navbar-mobile-menu" 
         id="navbarSupportedContentMobile"
         style={{ 
           width: '100%', 

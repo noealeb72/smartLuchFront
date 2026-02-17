@@ -1,4 +1,19 @@
 /* Estilos del Navbar */
+
+/* Ocultar jerarquía y fecha cuando la pantalla es estrecha para evitar superposición con Inicio */
+@media (max-width: 1100px) {
+  .navbar-jerarquia-fecha {
+    display: none !important;
+  }
+}
+
+/* Margen izquierdo al icono del logo (tenedor y cuchillo) cuando aparece el menú hamburguesa */
+@media (max-width: 767.98px) {
+  .navbar-mobile-header .smartlunch-logo .fa-utensils {
+    margin-left: 0.75rem !important;
+  }
+}
+
 .navbar {
   margin: 0 !important;
   padding: 0 !important;
@@ -179,10 +194,6 @@
   display: flex !important;
 }
 
-#navbarSupportedContentMobile.d-md-none {
-  display: none !important;
-}
-
 /* Forzar que solo un menú se muestre a la vez */
 @media (min-width: 768px) {
   #navbarSupportedContentMobile {
@@ -211,11 +222,6 @@
 
 #navbarSupportedContent.d-md-flex {
   display: flex !important;
-}
-
-/* Asegurar que el menú móvil esté oculto en desktop */
-#navbarSupportedContentMobile.d-md-none {
-  display: none !important;
 }
 
 /* Mostrar dropdown cuando tiene clase 'show' */
@@ -262,12 +268,27 @@
     margin-left: auto;
   }
 
-  /* Menú móvil fuera del nav */
+  /* Elementos del menú móvil (Inicio, Configuración, etc.) alineados a la izquierda */
+  #navbarSupportedContentMobile .navbar-nav {
+    align-items: flex-start !important;
+    text-align: left !important;
+  }
+  #navbarSupportedContentMobile .nav-link,
+  #navbarSupportedContentMobile .nav-link button {
+    justify-content: flex-start !important;
+    text-align: left !important;
+  }
+  #navbarSupportedContentMobile .dropdown-menu,
+  #navbarSupportedContentMobile .dropdown-item {
+    text-align: left !important;
+  }
+
+  /* Menú móvil fuera del nav - elementos alineados a la izquierda */
   #navbarSupportedContentMobile {
     display: block !important;
     width: 100% !important;
     background-color: var(--smart-primary) !important;
-    padding: 0.5rem 0 !important;
+    padding: 0.5rem 0 0.5rem 1.5rem !important;
     position: relative !important;
     z-index: 999 !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
@@ -287,6 +308,7 @@
   #navbarSupportedContentMobile .dropdown-item {
     color: white !important;
     padding: 0.75rem 1.5rem !important;
+    text-align: left !important;
   }
 
   #navbarSupportedContentMobile .dropdown-item:hover {
