@@ -118,7 +118,7 @@ const CambiarContraseña = ({ obligatorio = false }) => {
 
   return (
     <div className="cambiar-contrasena-page">
-      <div className="cambiar-contrasena-page-dialog cambiar-contrasena-modal-dialog">
+      <div className="cambiar-contrasena-page-dialog cambiar-contrasena-modal-dialog" style={{ flexShrink: 0 }}>
         <div className="cambiar-contrasena-modal-icon">
           <i className="fa fa-lock"></i>
         </div>
@@ -247,6 +247,7 @@ const CambiarContraseña = ({ obligatorio = false }) => {
           </div>
         </form>
       </div>
+      <div className="cambiar-contrasena-page-spacer" aria-hidden="true" />
     </div>
   );
 };

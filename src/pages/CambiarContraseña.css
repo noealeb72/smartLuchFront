@@ -8,9 +8,32 @@
   box-sizing: border-box;
 }
 
+/* En desktop: centrar vertical y horizontalmente */
+@media (min-width: 768px) {
+  .cambiar-contrasena-page {
+    width: 100%;
+    min-height: 100%;
+    flex: 1 0 auto;
+  }
+}
+
 .cambiar-contrasena-page .cambiar-contrasena-page-dialog {
   max-height: none;
   width: 100%;
+}
+
+/* En móvil: quitar sombra y bordes que generan la línea negra debajo de los botones */
+@media (max-width: 767.98px) {
+  .cambiar-contrasena-page .cambiar-contrasena-page-dialog {
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .cambiar-contrasena-page .cambiar-contrasena-modal-form,
+  .cambiar-contrasena-page .cambiar-contrasena-modal-buttons {
+    border: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+  }
 }
 
 .cambiar-contrasena-modal-btn.cerrar.disabled {
@@ -35,4 +58,25 @@
 .cambiar-contrasena-cartel i {
   font-size: 1.25rem;
   flex-shrink: 0;
+}
+
+/* Espaciador: oculto en desktop */
+.cambiar-contrasena-page-spacer {
+  display: none;
+}
+
+/* En móvil: espaciador con color del footer para que no se vea espacio blanco */
+@media (max-width: 767.98px) {
+  .cambiar-contrasena-page {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    min-height: 100% !important;
+    padding: 1rem 1rem 0 !important;
+  }
+  .cambiar-contrasena-page-spacer {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 1px;
+    background-color: var(--smart-gray-dark);
+  }
 }

@@ -167,6 +167,15 @@
   z-index: 1050 !important;
 }
 
+/* Dropdown de Configuración en desktop: alinear debajo del botón (evitar desplazamiento) */
+@media (min-width: 768px) {
+  .navbar-nav .nav-item.dropdown .dropdown-menu[aria-labelledby="ddConfig"] {
+    left: 0 !important;
+    right: auto !important;
+    margin-top: 0.25rem !important;
+  }
+}
+
 /* Asegurar que los nav-items no se superpongan */
 .navbar-nav .nav-item {
   position: relative !important;

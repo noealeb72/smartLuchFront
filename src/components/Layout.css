@@ -24,7 +24,16 @@
   margin-top: auto;
 }
 
-/* En móvil: reducir espacio entre Cambiar contraseña y footer */
+/* En desktop: centrar Cambiar contraseña vertical y horizontalmente */
+@media (min-width: 768px) {
+  .layout-content:has(.cambiar-contrasena-page) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+/* En móvil: reducir padding en Cambiar contraseña */
 @media (max-width: 767.98px) {
   .layout-content:has(.cambiar-contrasena-page) {
     padding-bottom: 0.25rem !important;
