@@ -24,7 +24,7 @@ export const inicioService = {
       const usuarioIdParam = !isNaN(usuarioIdNumero) ? usuarioIdNumero : usuarioId;
       
       // Construir URL completa
-      const url = `${baseUrl}/api/inicio/web?id=${usuarioIdParam}`;
+      const url = `${baseUrl}/api/inicio/web`;
       
       // Agregar timestamp a la URL para forzar que cada request sea único
       const timestamp = Date.now();

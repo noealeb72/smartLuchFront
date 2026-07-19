@@ -300,6 +300,9 @@ const Index = () => {
       return;
     }
 
+    let erroresConsecutivos = 0;
+    let intervalId = null;
+
     // Función para actualizar datos
     const actualizarDatosPeriodicamente = async () => {
       // Evitar múltiples llamadas simultáneas
@@ -315,11 +318,18 @@ const Index = () => {
         // Usar la ref del turno actual para que el polling siempre envíe el turno seleccionado (evita closure con selectedTurno null)
         const turnoId = latestTurnoIdRef.current;
         
+        // Si no hay un turno válido (0, null, undefined), abortamos la petición silenciosamente
+        if (!turnoId || turnoId === 0 || turnoId === '0') {
+          requestInProgressRef.current = false;
+          return;
+        }
+
         // Llamar al endpoint de actualización con la fecha del día (id, turno, fecha)
         const data = await inicioService.getInicioWebActualizado(usuarioId, turnoId, fechaHoy);
         
         // Si hay datos, actualizar el contexto
         if (data && isMountedRef.current) {
+          erroresConsecutivos = 0; // Se resetean los errores porque tuvimos éxito
           try {
             actualizarDatos(data);
             
@@ -351,9 +361,13 @@ const Index = () => {
           }
         }
       } catch (error) {
+        erroresConsecutivos++;
         if (error.response?.status === 401) {
           localStorage.clear();
           window.location.href = '/login';
+        } else if (erroresConsecutivos >= 3 && intervalId) {
+          console.warn('Demasiados errores consecutivos al intentar refrescar datos. Se detiene el auto-refresh para no saturar el servidor.');
+          clearInterval(intervalId);
         }
       } finally {
         requestInProgressRef.current = false;
@@ -367,13 +381,13 @@ const Index = () => {
     }, 3000);
 
     // Configurar intervalo para ejecutar cada 2 segundos después del delay inicial
-    const intervalId = setInterval(() => {
+    intervalId = setInterval(() => {
       actualizarDatosPeriodicamente();
     }, 2000);
 
     // Limpiar intervalo y timeout al desmontar o cuando cambien las dependencias
     return () => {
-      clearInterval(intervalId);
+      if (intervalId) clearInterval(intervalId);
       clearTimeout(initialDelay);
     };
   }, [user?.id, usuarioData?.id, actualizarDatos]);
@@ -1757,9 +1771,11 @@ const Index = () => {
                   </div>
 
                   <div className="col-sm-6" style={{ paddingLeft: '0.75rem', paddingRight: '0.75rem', display: 'flex', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
-                    <label className="mb-0" htmlFor="turno" style={{ paddingRight: '0.75rem', flexShrink: 0, textAlign: 'right', minWidth: 'fit-content', whiteSpace: 'nowrap' }}>
-                      Ver opciones para turno:
-                    </label>
+                    {turnos.length > 0 && (
+                      <label className="mb-0" htmlFor="turno" style={{ paddingRight: '0.75rem', flexShrink: 0, textAlign: 'right', minWidth: 'fit-content', whiteSpace: 'nowrap' }}>
+                        Ver opciones para turno:
+                      </label>
+                    )}
 
                     {turnos.length > 0 ? (
                       <div style={{ flex: '1 1 auto', minWidth: 0, maxWidth: '100%' }}>
@@ -1829,9 +1845,11 @@ const Index = () => {
                   </div>
 
                   <div className="col-sm-12 d-flex flex-column align-items-start" style={{ paddingLeft: '0.75rem', paddingRight: '0.75rem', width: '100%' }}>
-                    <label className="w-100 text-left mb-1" htmlFor="selectedTurno" style={{ margin: 0, padding: 0 }}>
-                      Ver opciones para turno:
-                    </label>
+                    {turnos.length > 0 && (
+                      <label className="w-100 text-left mb-1" htmlFor="selectedTurno" style={{ margin: 0, padding: 0 }}>
+                        Ver opciones para turno:
+                      </label>
+                    )}
 
                     {turnos.length > 0 ? (
                       <div style={{ width: '100%', maxWidth: '100%' }}>
