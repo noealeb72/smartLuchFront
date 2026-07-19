@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { formatearImporte } from '../utils/formatearImporte';
 
-const MenuItem = memo(({ item, index, defaultImage, bonificacionDisponible, cantidadBonificacionesHoy, porcentajeBonificacion, turnoDisponible, onHacerPedido, onAplicarBonificacion }) => {
+const MenuItem = memo(({ item, index, defaultImage, bonificacionDisponible, pedidosRestantes, porcentajeBonificacion, turnoDisponible, puedeAplicarBonificacion, tooltipDeshabilitado, onHacerPedido, onAplicarBonificacion }) => {
   return (
     <div className="card mt-2 pl-2">
       <div className="row no-gutters">
@@ -60,7 +60,7 @@ const MenuItem = memo(({ item, index, defaultImage, bonificacionDisponible, cant
             </p>
 
             {bonificacionDisponible &&
-              cantidadBonificacionesHoy < 1 &&
+              pedidosRestantes > 0 &&
               item.costo > 0 && (
                 <div className="bonificacion-container mt-3">
                   <div className="custom-checkbox-wrapper">
@@ -68,10 +68,16 @@ const MenuItem = memo(({ item, index, defaultImage, bonificacionDisponible, cant
                       className="custom-checkbox"
                       type="checkbox"
                       checked={item.aplicarBonificacion || false}
+                      disabled={!puedeAplicarBonificacion}
                       onChange={(e) => onAplicarBonificacion(item, e.target.checked)}
                       id={`bonificacion_${index}`}
+                      title={tooltipDeshabilitado || ''}
                     />
-                    <label className="custom-checkbox-label" htmlFor={`bonificacion_${index}`}>
+                    <label
+                      className={`custom-checkbox-label ${!puedeAplicarBonificacion ? 'disabled' : ''}`}
+                      htmlFor={puedeAplicarBonificacion ? `bonificacion_${index}` : undefined}
+                      style={!puedeAplicarBonificacion ? { opacity: 0.6, cursor: 'not-allowed', pointerEvents: 'none' } : {}}
+                    >
                       <div className="checkbox-content">
                         <div className="discount-icon">
                           <i className="fas fa-percentage"></i>
@@ -87,11 +93,6 @@ const MenuItem = memo(({ item, index, defaultImage, bonificacionDisponible, cant
                 </div>
               )}
 
-            {cantidadBonificacionesHoy >= 1 && bonificacionDisponible && item.costo > 0 && (
-              <div className="alert alert-info mt-2" style={{ fontSize: '0.8em', padding: '0.5rem' }}>
-                <i className="fas fa-info-circle"></i> Ya utilizaste tu bonificación del día
-              </div>
-            )}
           </div>
         </div>
       </div>

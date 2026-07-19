@@ -19,6 +19,7 @@ const ADMIN_ROUTES = [
   '/menudeldia',
   '/reportegcomensales',
   '/reporteggestion',
+  '/reportefacturacion',
   '/configuracion',
 ];
 

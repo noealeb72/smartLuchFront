@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { centrosDeCostoService } from '../services/centrosDeCostoService';
 import { catalogosService } from '../services/catalogosService';
 import { useSmartTime } from '../contexts/SmartTimeContext';
@@ -25,9 +25,19 @@ const CentroDeCosto = () => {
   
   // Estado de paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const OPCIONES_BASE = [5, 10, 25, 50];
+  const opcionesPageSize = useMemo(() => {
+    if (totalItems <= 0) return [5];
+    const filtradas = OPCIONES_BASE.filter((n) => n <= totalItems);
+    if (!filtradas.includes(totalItems) && totalItems > 5) {
+      filtradas.push(totalItems);
+      filtradas.sort((a, b) => a - b);
+    }
+    return filtradas.length > 0 ? filtradas : [totalItems];
+  }, [totalItems]);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -45,14 +55,10 @@ const CentroDeCosto = () => {
     try {
       setIsLoading(true);
       
-      // Si hay término de búsqueda, usar pageSize=100 y page=1 para obtener todos los resultados
-      // Si no hay búsqueda, usar la paginación normal
-      const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
-      const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
-      
+      // Siempre traer de a pageSize registros y armar tabs según la cantidad total
       const data = await centrosDeCostoService.getCentrosDeCostoLista(
-        pageToUse,      // page: 1 si hay búsqueda, sino usar el page actual
-        pageSizeToUse,  // pageSize: 100 si hay búsqueda, sino usar 5
+        page,
+        pageSize,
         searchTerm,     // término de búsqueda
         mostrarActivos  // activo = true o false según el combo
       );
@@ -83,9 +89,8 @@ const CentroDeCosto = () => {
         is_default: centro.Is_default === 1 || centro.Is_default === true || centro.is_default === 1 || centro.is_default === true || centro.IsDefault === 1 || centro.IsDefault === true,
       }));
       
-      // Usar los valores de paginación del backend
-      const totalItemsBackend = data.totalItems || centrosNormalizados.length;
-      const totalPagesBackend = data.totalPages || Math.ceil(totalItemsBackend / pageSize);
+      const totalItemsBackend = data.totalItems ?? data.totalCount ?? centrosNormalizados.length;
+      const totalPagesBackend = data.totalPages ?? (Math.ceil(Number(totalItemsBackend) / pageSize) || 1);
       
       setCentros(centrosNormalizados);
       setTotalPages(totalPagesBackend);
@@ -119,10 +124,21 @@ const CentroDeCosto = () => {
     }
   }, []);
 
-  // Cuando cambia el filtro o filtroActivo, resetear a página 1
+  // Cuando cambia el filtro, filtroActivo o pageSize, resetear a página 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [filtro, filtroActivo]);
+  }, [filtro, filtroActivo, pageSize]);
+
+  // Si pageSize no está en las opciones disponibles, usar 5 como base
+  useEffect(() => {
+    if (totalItems <= 0) return;
+    const opciones = OPCIONES_BASE.filter((n) => n <= totalItems);
+    const conTotal = opciones.includes(totalItems) ? opciones : [...opciones, totalItems].sort((a, b) => a - b);
+    const validas = conTotal.length > 0 ? conTotal : [totalItems];
+    if (!validas.includes(pageSize) || pageSize > totalItems) {
+      setPageSize(validas[0] ?? 5);
+    }
+  }, [totalItems, pageSize]);
 
   // Cargar centros cuando cambia la página, el filtro o el filtroActivo
   useEffect(() => {
@@ -689,7 +705,7 @@ const CentroDeCosto = () => {
               type="button"
               className="btn"
               onClick={handleExportarPDF}
-              disabled={centros.length === 0}
+              disabled={totalItems === 0}
               title="Exportar a PDF"
               style={{
                 backgroundColor: '#dc3545',
@@ -711,7 +727,7 @@ const CentroDeCosto = () => {
               type="button"
               className="btn"
               onClick={handleExportarExcel}
-              disabled={centros.length === 0}
+              disabled={totalItems === 0}
               title="Exportar a Excel"
               style={{
                 backgroundColor: '#28a745',
@@ -796,7 +812,7 @@ const CentroDeCosto = () => {
               return;
             }
             // No permitir eliminar si solo hay un centro de costo
-            if (centros.length === 1) {
+            if (totalItems === 1) {
               Swal.fire({
                 title: 'No permitido',
                 text: 'No se puede dar de baja el único centro de costo disponible. Debe haber al menos uno en el sistema.',
@@ -976,11 +992,24 @@ const CentroDeCosto = () => {
           pageSize={pageSize}
         />
         
-        {/* Controles de paginación del servidor (siempre que haya más de una página) */}
-        {totalPages > 1 && (
-          <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
-            <div>
-              <span className="text-muted">
+        {/* Controles de paginación y combo de registros a mostrar */}
+        {totalItems > 0 && (
+          <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem' }}>
+            <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
+              <label className="d-flex align-items-center gap-2 mb-0" style={{ whiteSpace: 'nowrap' }}>
+                <span className="text-muted small">Registros a mostrar:</span>
+                <select
+                  className="form-control form-control-sm"
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  style={{ width: 'auto', minWidth: '70px' }}
+                >
+                  {opcionesPageSize.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </label>
+              <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>
                 Mostrando página {currentPage} de {totalPages} ({totalItems} centros de costo)
               </span>
             </div>

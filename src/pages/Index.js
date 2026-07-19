@@ -12,6 +12,36 @@ import Swal from 'sweetalert2';
 import './Index.css';
 import '../styles/smartstyle.css';
 
+// Fusiona items frescos con cache preservando aplicarBonificacion, precioFinal, bonificado
+// Usa codigo, platoId y prefijo de codigo para matching (el formato puede variar entre menuDelDia y API)
+const mergeMenuItemsConCache = (freshItems, cachedItems) => {
+  if (!cachedItems || cachedItems.length === 0) return freshItems;
+  const cachedByCodigo = new Map(cachedItems.map((i) => [String(i.codigo ?? ''), i]));
+  const cachedByPlatoId = new Map(cachedItems.map((i) => [String(i.platoId ?? i.codigo ?? ''), i]));
+  return freshItems.map((fresh) => {
+    const codigoStr = String(fresh.codigo ?? '');
+    const platoIdStr = String(fresh.platoId ?? fresh.codigo ?? '');
+    let cached = cachedByCodigo.get(codigoStr);
+    if (!cached) cached = cachedByPlatoId.get(platoIdStr);
+    if (!cached) {
+      cached = cachedItems.find(
+        (c) =>
+          String(c.codigo) === codigoStr ||
+          String(c.platoId) === platoIdStr ||
+          String(c.codigo).startsWith(codigoStr) ||
+          codigoStr.startsWith(String(c.codigo))
+      );
+    }
+    if (!cached) return fresh;
+    return {
+      ...fresh,
+      aplicarBonificacion: cached.aplicarBonificacion || false,
+      precioFinal: cached.precioFinal ?? fresh.costo,
+      bonificado: cached.bonificado ?? 0,
+    };
+  });
+};
+
 const Index = () => {
   const { user } = useAuth();
   const { turnos, pedidosHoy, menuDelDia, usuarioData, actualizarDatos } = useDashboard();
@@ -19,7 +49,8 @@ const Index = () => {
   const [showLoading, setShowLoading] = useState(false);
   const loadingTimeoutRef = useRef(null);
   const [selectedTurno, setSelectedTurno] = useState(null);
-  const [menuItems, setMenuItems] = useState([]);
+  // Menú por turno para persistir bonificaciones al cambiar de turno
+  const [menuItemsByTurno, setMenuItemsByTurno] = useState({});
   const [pedidosVigentes, setPedidosVigentes] = useState(pedidosHoy);
   const [usuarioNombre, setUsuarioNombre] = useState('');
   const [usuarioApellido, setUsuarioApellido] = useState('');
@@ -30,11 +61,13 @@ const Index = () => {
   const [pedidoComentario, setPedidoComentario] = useState('');
   const [pedidoCalificacion, setPedidoCalificacion] = useState(1);
   const [bonificacionDisponible, setBonificacionDisponible] = useState(false);
-  const [cantidadBonificacionesHoy, setCantidadBonificacionesHoy] = useState(0);
   const [porcentajeBonificacion, setPorcentajeBonificacion] = useState(0);
-  const [pedidosRestantes, setPedidosRestantes] = useState(0);
   const [turnoDisponible, setTurnoDisponible] = useState(true);
+  const [bonificacionesAplicadasPending, setBonificacionesAplicadasPending] = useState(0);
   const defaultImage = '/Views/img/logo-preview.png';
+
+  const turnoIdActual = selectedTurno?.id || selectedTurno?.Id || selectedTurno?.ID;
+  const menuItems = (menuItemsByTurno[turnoIdActual] ?? []);
   
   // Ref para evitar múltiples llamadas simultáneas
   const requestInProgressRef = useRef(false);
@@ -372,17 +405,6 @@ const Index = () => {
     }
   }, [turnos, selectedTurno]);
 
-  const verificarBonificacionHoy = useCallback(() => {
-    const hoy = new Date().toISOString().split('T')[0];
-    const bonificacionHoy = localStorage.getItem(`bonificacion_${hoy}`);
-    if (bonificacionHoy === 'true') {
-      setCantidadBonificacionesHoy(1);
-      setPedidosRestantes(0);
-    } else {
-      setCantidadBonificacionesHoy(0);
-    }
-  }, []);
-
   const inicializarBonificaciones = useCallback(() => {
     const bonificacion = user?.bonificacion;
     if (bonificacion && bonificacion !== 'null' && bonificacion !== 'undefined') {
@@ -390,12 +412,73 @@ const Index = () => {
         const bonifData = JSON.parse(bonificacion);
         setBonificacionDisponible(true);
         setPorcentajeBonificacion(bonifData.porcentaje || 0);
-        setPedidosRestantes(bonifData.cantidad || 0);
       } catch (e) {
       }
     }
-    verificarBonificacionHoy();
-  }, [user?.bonificacion, verificarBonificacionHoy]);
+  }, [user?.bonificacion]);
+
+  // Sincronizar descuento desde usuarioData
+  useEffect(() => {
+    const descuentoVal = usuarioData?.descuento ?? user?.descuento;
+    const tieneValorDescuento = descuentoVal !== undefined && descuentoVal !== null && descuentoVal !== '' && Number(descuentoVal) > 0;
+    if (tieneValorDescuento) {
+      setBonificacionDisponible(true);
+      setPorcentajeBonificacion(Number(descuentoVal));
+    }
+  }, [usuarioData?.descuento, user?.descuento]);
+
+  // Contar pedidos con bonificación aplicada desde "Tu próximo pedido reservado" (misma fuente y lógica que la UI)
+  // Solo contamos los pedidos que mostramos (E/P) y que tienen descuento visible; descontamos de ahí
+  const pedidosBonificadosEnVigentes = useMemo(() => {
+    const hoy = new Date().toISOString().split('T')[0];
+    // Mismo filtro que la sección "Tu próximo pedido reservado": solo E (En Aceptación) y P (Pendiente)
+    const pedidosReservados = (pedidosVigentes || []).filter((p) => {
+      const estado = p.Estado ?? p.estado ?? p.user_Pedido?.Estado ?? p.user_Pedido?.estado;
+      return estado === 'E' || estado === 'P';
+    });
+    // De esos, los que tienen bonificación (misma lógica que PedidoVigente para el badge)
+    const bonificados = pedidosReservados.filter((p) => {
+      const bonifVal = p.Bonificado ?? p.bonificado ?? p.Bonificacion ?? p.bonificacion ?? p.user_Pedido?.Bonificado ?? p.user_Pedido?.bonificado ?? p.Comanda?.Bonificado ?? p.Comanda?.bonificado ?? p.Pedido?.Bonificado ?? p.Pedido?.bonificado;
+      const bonificado = bonifVal === true || bonifVal === 'true' || bonifVal === 1 || bonifVal === '1';
+      if (!bonificado) return false;
+      const fechaPedido = p.user_Pedido?.fecha_hora ?? p.fecha_hora ?? p.Fecha ?? p.fecha ?? p.Comanda?.Fecha ?? p.Pedido?.fecha_hora;
+      const fechaStr = fechaPedido ? new Date(fechaPedido).toISOString().split('T')[0] : null;
+      return fechaStr === hoy || !fechaStr;
+    });
+    // Agrupar por Npedido: varios ítems pueden pertenecer al mismo pedido (uno por plato)
+    const npedidosUnicos = new Set();
+    bonificados.forEach((p) => {
+      const np = p.Npedido ?? p.npedido ?? p.user_Pedido?.npedido ?? p.user_Pedido?.Npedido ?? p.user_Pedido?.id ?? p.user_Pedido?.Id ?? p.Id ?? p.id;
+      if (np != null && String(np).trim() !== '') npedidosUnicos.add(String(np));
+    });
+    return npedidosUnicos.size;
+  }, [pedidosVigentes]);
+
+  // Calcular pedidosRestantes: descontamos desde pedidos reservados visibles (prioridad) o backend
+  const pedidosRestantes = useMemo(() => {
+    const bonif = usuarioData?.bonificaciones ?? user?.bonificaciones;
+    if (bonif === undefined || bonif === null || bonif === '') return 0;
+    const totalBonificaciones = parseInt(bonif);
+    if (isNaN(totalBonificaciones) || totalBonificaciones <= 0) return 0;
+    const bonifAplicadas = usuarioData?.bonificacionesAplicadas ?? user?.bonificacionesAplicadas;
+    let aplicadas = pedidosBonificadosEnVigentes;
+    if (bonifAplicadas !== undefined && bonifAplicadas !== null && bonifAplicadas !== '') {
+      const aplicadasBackend = parseInt(bonifAplicadas);
+      if (!isNaN(aplicadasBackend)) {
+        aplicadas = Math.max(aplicadas, aplicadasBackend + (bonificacionesAplicadasPending || 0));
+      }
+    }
+    return Math.max(0, totalBonificaciones - aplicadas);
+  }, [usuarioData?.bonificaciones, usuarioData?.bonificacionesAplicadas, user?.bonificaciones, user?.bonificacionesAplicadas, pedidosBonificadosEnVigentes, bonificacionesAplicadasPending]);
+
+  // Bonificaciones restantes para mostrar: descontar las ya seleccionadas en el carrito (menuItemsByTurno)
+  const bonificacionesRestantesParaMostrar = useMemo(() => {
+    const seleccionadasEnCarrito = Object.values(menuItemsByTurno || {}).reduce(
+      (sum, items) => sum + (items?.filter((m) => m.aplicarBonificacion)?.length || 0),
+      0
+    );
+    return Math.max(0, pedidosRestantes - seleccionadasEnCarrito);
+  }, [pedidosRestantes, menuItemsByTurno]);
 
   useEffect(() => {
     inicializarBonificaciones();
@@ -547,10 +630,20 @@ const Index = () => {
         return platos;
   }, [selectedTurno, menuDelDia, defaultImage]);
 
-  // Actualizar menuItems cuando cambian los datos procesados
+  // Actualizar menuItemsByTurno cuando cambian los datos procesados (merge con cache para preservar bonificaciones)
   useEffect(() => {
-    setMenuItems(menuItemsProcesados);
-  }, [menuItemsProcesados]);
+    if (!turnoIdActual) return;
+    setMenuItemsByTurno((prev) => {
+      if (menuItemsProcesados.length === 0) {
+        // No sobrescribir cache con vacío: conservar datos previos si existen
+        if (prev[turnoIdActual]?.length > 0) return prev;
+        return { ...prev, [turnoIdActual]: [] };
+      }
+      const cached = prev[turnoIdActual];
+      const merged = mergeMenuItemsConCache(menuItemsProcesados, cached);
+      return { ...prev, [turnoIdActual]: merged };
+    });
+  }, [menuItemsProcesados, turnoIdActual]);
 
   const cargarMenuDesdeAPI = useCallback(async () => {
     if (!selectedTurno) return;
@@ -560,10 +653,7 @@ const Index = () => {
       // setIsLoading(true);
 
       const turnoId = selectedTurno.id || selectedTurno.Id || selectedTurno.ID;
-      if (!turnoId) {
-        setMenuItems([]);
-        return;
-      }
+      if (!turnoId) return;
       
       let data;
       try {
@@ -676,9 +766,13 @@ const Index = () => {
           platos.push(plato);
         }
 
-        setMenuItems(platos);
+        setMenuItemsByTurno((prev) => {
+          const cached = prev[turnoId];
+          const merged = mergeMenuItemsConCache(platos, cached);
+          return { ...prev, [turnoId]: merged };
+        });
       } else {
-        setMenuItems([]);
+        setMenuItemsByTurno((prev) => ({ ...prev, [turnoId]: [] }));
       }
     } catch (error) {
       if (!error.redirectToLogin) {
@@ -692,7 +786,8 @@ const Index = () => {
           timerProgressBar: true,
         });
       }
-      setMenuItems([]);
+      const tid = selectedTurno?.id || selectedTurno?.Id || selectedTurno?.ID;
+      if (tid) setMenuItemsByTurno((prev) => ({ ...prev, [tid]: [] }));
     } finally {
       // No quitar loading porque no lo pusimos en true para evitar parpadeo
       // setIsLoading(false);
@@ -704,8 +799,6 @@ const Index = () => {
     if (selectedTurno && (!menuDelDia || menuDelDia.length === 0)) {
       // No mostrar loading para evitar parpadeo cuando se actualiza después de enviar/cancelar pedido
       cargarMenuDesdeAPI();
-    } else if (!selectedTurno) {
-      setMenuItems([]);
     }
   }, [selectedTurno, menuDelDia, cargarMenuDesdeAPI]);
 
@@ -714,7 +807,7 @@ const Index = () => {
 
 
   const calcularPrecioConBonificacion = useCallback((precio, aplicar) => {
-    if (!aplicar || !bonificacionDisponible || cantidadBonificacionesHoy >= 1) {
+    if (!aplicar || !bonificacionDisponible || pedidosRestantes <= 0) {
       return { precioFinal: precio, bonificado: 0 };
     }
 
@@ -723,12 +816,23 @@ const Index = () => {
       precioFinal: precio - descuento,
       bonificado: descuento,
     };
-  }, [bonificacionDisponible, cantidadBonificacionesHoy, porcentajeBonificacion]);
+  }, [bonificacionDisponible, pedidosRestantes, porcentajeBonificacion]);
 
   const aplicarBonificacion = useCallback((item, aplicar) => {
+    const tid = selectedTurno?.id || selectedTurno?.Id || selectedTurno?.ID;
+    if (!tid) return;
+    if (aplicar) {
+      const bonificacionesEnOtrosTurnos = Object.entries(menuItemsByTurno || {})
+        .filter(([turnoId]) => Number(turnoId) !== Number(tid))
+        .reduce((sum, [, items]) => sum + (items?.filter((m) => m.aplicarBonificacion)?.length || 0), 0);
+      const otrosConBonificacionEnEsteTurno = menuItems.filter((m) => m.aplicarBonificacion && m.codigo !== item.codigo).length;
+      const totalEnCarrito = bonificacionesEnOtrosTurnos + otrosConBonificacionEnEsteTurno;
+      if (totalEnCarrito >= pedidosRestantes) return;
+    }
     const calculo = calcularPrecioConBonificacion(item.costo, aplicar);
-    setMenuItems((prevItems) =>
-      prevItems.map((menuItem) =>
+    setMenuItemsByTurno((prev) => ({
+      ...prev,
+      [tid]: (prev[tid] || []).map((menuItem) =>
         menuItem.codigo === item.codigo
           ? {
               ...menuItem,
@@ -737,9 +841,9 @@ const Index = () => {
               aplicarBonificacion: aplicar,
             }
           : menuItem
-      )
-    );
-  }, [calcularPrecioConBonificacion]);
+      ),
+    }));
+  }, [calcularPrecioConBonificacion, menuItems, menuItemsByTurno, pedidosRestantes, selectedTurno]);
 
   const hacerPedido = useCallback((item) => {
     if (!selectedTurno) {
@@ -912,7 +1016,7 @@ const Index = () => {
       const monto = parseFloat(pedidoSeleccionado.precioFinal || pedidoSeleccionado.costo || 0);
 
       // Bonificado (si aplicó bonificación)
-      const bonificado = !!pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1;
+      const bonificado = !!pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && pedidosRestantes > 0;
 
       // Construir el DTO según ComandaCreateDto
       // Id y Npedido: No se envían, el backend los genera automáticamente
@@ -937,12 +1041,15 @@ const Index = () => {
 
       await comandasService.crearPedido(comandaDto, parseInt(usuarioId));
 
-      // Consumir bonificación si aplica
-      if (pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1) {
-        const hoy = new Date().toISOString().split('T')[0];
-        localStorage.setItem(`bonificacion_${hoy}`, 'true');
-        setCantidadBonificacionesHoy(1);
-        setPedidosRestantes(0);
+      // Actualización optimista: si usó bonificación, actualizar contador para que muestre 0 de inmediato
+      if (bonificado) {
+        setBonificacionesAplicadasPending((p) => p + 1);
+        const nuevoPedidoBonificado = {
+          user_Pedido: { Bonificado: true, fecha_hora: fecha.toISOString() },
+          Bonificado: true,
+          bonificado: true,
+        };
+        setPedidosVigentes((prev) => [...(prev || []), nuevoPedidoBonificado]);
       }
 
       Swal.fire({
@@ -1080,6 +1187,22 @@ const Index = () => {
       // Cerrar modal y recargar datos
         setShowConfirmModal(false);
         setPedidoComentario('');
+        // Quitar bonificación del ítem ordenado en menuItemsByTurno (ya fue consumida)
+        const turnoIdConfirmado = selectedTurno?.id || selectedTurno?.Id || selectedTurno?.ID;
+        const codigoOrdenado = pedidoSeleccionado?.codigo;
+        if (turnoIdConfirmado && codigoOrdenado) {
+          setMenuItemsByTurno((prev) => {
+            const items = prev[turnoIdConfirmado] || [];
+            return {
+              ...prev,
+              [turnoIdConfirmado]: items.map((it) =>
+                it.codigo === codigoOrdenado
+                  ? { ...it, aplicarBonificacion: false, precioFinal: it.costo, bonificado: 0 }
+                  : it
+              ),
+            };
+          });
+        }
       
         // Recargar datos desde /api/inicio/web en segundo plano (sin mostrar loading para evitar parpadeo)
         try {
@@ -1092,6 +1215,7 @@ const Index = () => {
           actualizarDatos(data);
           const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
           setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
+          setBonificacionesAplicadasPending(0);
         } catch (error) {
           // Error silencioso, ya se mostrará en el siguiente render
         }
@@ -1148,7 +1272,7 @@ const Index = () => {
         }
       }
     }
-  }, [pedidoSeleccionado, user, pedidoComentario, bonificacionDisponible, cantidadBonificacionesHoy, selectedTurno, actualizarDatos, menuDelDia, usuarioData?.centroCostoId, usuarioData?.id, usuarioData?.jerarquiaId, usuarioData?.plantaId, usuarioData?.proyectoId]);
+  }, [pedidoSeleccionado, user, pedidoComentario, bonificacionDisponible, pedidosRestantes, selectedTurno, actualizarDatos, menuDelDia, usuarioData?.centroCostoId, usuarioData?.id, usuarioData?.jerarquiaId, usuarioData?.plantaId, usuarioData?.proyectoId]);
 
   const actualizaPedido = useCallback(async (nuevoEstado) => {
     if (!pedidoSeleccionado) {
@@ -1191,6 +1315,14 @@ const Index = () => {
 
         const npedidoInt = parseInt(npedido);
         await comandasService.cancelarPedido(npedidoInt);
+        // Actualización optimista: quitar el pedido cancelado de pedidosVigentes para que pedidosRestantes se actualice (bonificación liberada)
+        const teniaBonificacion = pedidoSeleccionado.Bonificado === true || pedidoSeleccionado.bonificado === true || pedidoSeleccionado.user_Pedido?.Bonificado === true || pedidoSeleccionado.user_Pedido?.bonificado === true;
+        if (teniaBonificacion) {
+          setPedidosVigentes((prev) => (prev || []).filter((p) => {
+            const np = p.Npedido || p.npedido || p.user_Pedido?.npedido || p.user_Pedido?.Npedido || p.user_Pedido?.id || p.user_Pedido?.Id || p.Id || p.id;
+            return Number(np) !== npedidoInt;
+          }));
+        }
       } else if (nuevoEstado === 'D') {
         // Si el estado es 'D' (Devolver), usar el endpoint específico de devolver
         if (!npedido || npedido <= 0 || isNaN(parseInt(npedido))) {
@@ -1399,6 +1531,7 @@ const Index = () => {
           actualizarDatos(data);
           const pedidosData = data.PlatosPedidos || data.platosPedidos || data.PedidosHoy || data.pedidosHoy || [];
           setPedidosVigentes(Array.isArray(pedidosData) ? pedidosData : []);
+          setBonificacionesAplicadasPending(0);
         } catch (error) {
           // Error silencioso, ya se mostrará en el siguiente render
         }
@@ -1425,7 +1558,6 @@ const Index = () => {
     if (turnoSeleccionado) {
       latestTurnoIdRef.current = turnoId;
       setSelectedTurno(turnoSeleccionado);
-      setMenuItems([]);
 
       // Misma lógica que cargarMenuDesdeAPI: primero getMenuByTurnoId (solo turnoId, backend usa token), luego fallback a getMenuByTurno
       try {
@@ -1551,16 +1683,20 @@ const Index = () => {
               precioFinal: costo,
             };
 
-            platos.push(plato);
-          }
+          platos.push(plato);
+        }
 
-          setMenuItems(platos);
+          setMenuItemsByTurno((prev) => {
+            const cached = prev[turnoId];
+            const merged = mergeMenuItemsConCache(platos, cached);
+            return { ...prev, [turnoId]: merged };
+          });
         } else {
-          setMenuItems([]);
+          setMenuItemsByTurno((prev) => ({ ...prev, [turnoId]: [] }));
         }
       } catch (error) {
         console.log('[Turno select] Error en getMenuByTurno:', error?.message || error);
-        setMenuItems([]);
+        setMenuItemsByTurno((prev) => ({ ...prev, [turnoId]: [] }));
       }
     }
   }, [turnos, usuarioData, user, defaultImage]);
@@ -1613,10 +1749,7 @@ const Index = () => {
                       return (
                         <>
                           <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
-                            <i className="lnr lnr-user" style={{ color: '#28a745' }}></i> Bonificaciones del usuario: {parseInt(bonif)} ({Number(descuentoVal)}% descuento)
-                          </h5>
-                          <h5 style={{ color: '#6c757d' }}>
-                            <i className="lnr lnr-gift"></i> Te {pedidosRestantes === 1 ? 'queda' : 'quedan'} {pedidosRestantes} {pedidosRestantes === 1 ? 'bonificación para consumir hoy' : 'bonificaciones para consumir hoy'}
+                            <i className="lnr lnr-user" style={{ color: '#28a745' }}></i> Bonificaciones del usuario: {bonificacionesRestantesParaMostrar} ({Number(descuentoVal)}% descuento)
                           </h5>
                         </>
                       );
@@ -1688,11 +1821,7 @@ const Index = () => {
                         <>
                           <h5 style={{ color: '#6c757d', marginTop: '0.5rem' }}>
                             <i className="lnr lnr-user" style={{ color: '#28a745' }}></i>&nbsp;&nbsp;
-                            Bonificaciones del usuario: {parseInt(bonif)} ({Number(descuentoVal)}% descuento)
-                          </h5>
-                          <h5 style={{ color: '#6c757d' }}>
-                            <i className="lnr lnr-gift"></i>&nbsp;&nbsp;
-                            Te {pedidosRestantes === 1 ? 'queda' : 'quedan'} {pedidosRestantes} {pedidosRestantes === 1 ? 'bonificación para consumir hoy' : 'bonificaciones para consumir hoy'}
+                            Bonificaciones del usuario: {bonificacionesRestantesParaMostrar} ({Number(descuentoVal)}% descuento)
                           </h5>
                         </>
                       );
@@ -1757,7 +1886,7 @@ const Index = () => {
                   {(() => {
                     // Filtrar pedidos que tienen Estado 'E' (En Aceptación) o 'P' (Pendiente)
                     const pedidosFiltrados = pedidosVigentes.filter((pedido) => {
-                      const estado = pedido.Estado || pedido.estado;
+                      const estado = pedido.Estado ?? pedido.estado ?? pedido.user_Pedido?.Estado ?? pedido.user_Pedido?.estado;
                       return estado === 'E' || estado === 'P';
                     });
 
@@ -1776,6 +1905,7 @@ const Index = () => {
                           pedido={pedido}
                           index={index}
                           defaultImage={defaultImage}
+                          porcentajeBonificacion={porcentajeBonificacion}
                           onCancelar={handleCancelarPedido}
                           onRecibir={handleRecibirPedido}
                             isLast={index === pedidosFiltrados.length - 1}
@@ -1804,20 +1934,36 @@ const Index = () => {
                           No hay platos disponibles para este turno.
                         </div>
                       )}
-                      {menuItems.map((item, index) => (
-                        <MenuItem
-                          key={item.codigo || index}
-                          item={item}
-                          index={index}
-                          defaultImage={defaultImage}
-                          bonificacionDisponible={bonificacionDisponible}
-                          cantidadBonificacionesHoy={cantidadBonificacionesHoy}
-                          porcentajeBonificacion={porcentajeBonificacion}
-                          turnoDisponible={turnoDisponible}
-                          onHacerPedido={hacerPedido}
-                          onAplicarBonificacion={aplicarBonificacion}
-                        />
-                      ))}
+                      {menuItems.map((item, index) => {
+                        const turnoIdActual = selectedTurno?.id || selectedTurno?.Id || selectedTurno?.ID;
+                        const bonificacionesEnOtrosTurnos = Object.entries(menuItemsByTurno || {})
+                          .filter(([tid]) => Number(tid) !== Number(turnoIdActual))
+                          .reduce((sum, [, items]) => sum + (items?.filter((m) => m.aplicarBonificacion)?.length || 0), 0);
+                        const otrosConBonificacionEnEsteTurno = menuItems.filter((m) => m.aplicarBonificacion && m.codigo !== item.codigo).length;
+                        const totalBonificacionesEnCarrito = bonificacionesEnOtrosTurnos + otrosConBonificacionEnEsteTurno;
+                        const puedeAplicarBonificacion = item.aplicarBonificacion || totalBonificacionesEnCarrito < pedidosRestantes;
+                        const tooltipDeshabilitado = !puedeAplicarBonificacion
+                          ? (bonificacionesEnOtrosTurnos > 0
+                              ? 'Ya aplicaste tu bonificación en otro turno'
+                              : `Solo puedes aplicar ${pedidosRestantes} bonificación${pedidosRestantes !== 1 ? 'es' : ''}`)
+                          : '';
+                        return (
+                          <MenuItem
+                            key={item.codigo || index}
+                            item={item}
+                            index={index}
+                            defaultImage={defaultImage}
+                            bonificacionDisponible={bonificacionDisponible}
+                            pedidosRestantes={pedidosRestantes}
+                            porcentajeBonificacion={porcentajeBonificacion}
+                            turnoDisponible={turnoDisponible}
+                            puedeAplicarBonificacion={puedeAplicarBonificacion}
+                            tooltipDeshabilitado={tooltipDeshabilitado}
+                            onHacerPedido={hacerPedido}
+                            onAplicarBonificacion={aplicarBonificacion}
+                          />
+                        );
+                      })}
                     </>
                   )}
 
@@ -1875,7 +2021,7 @@ const Index = () => {
                     </div>
                     <div className="container row">
                       <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Importe</span>
-                      {pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1 ? (
+                      {pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && pedidosRestantes > 0 ? (
                         <>
                           <span style={{ textDecoration: 'line-through', color: '#6c757d' }}>
                             {formatearImporte(pedidoSeleccionado.costo)}
@@ -1959,7 +2105,7 @@ const Index = () => {
                       alt={pedidoSeleccionado.descripcion || 'Imagen del plato seleccionado'}
                     />
                   </div>
-                  {pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && cantidadBonificacionesHoy < 1 && (
+                  {pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && pedidosRestantes > 0 && (
                     <div className="col-12 mt-4 pl-4">
                       <div className="alert alert-success" style={{ fontSize: '0.9em', padding: '0.5rem' }}>
                         <i className="fas fa-percentage"></i>

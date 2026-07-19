@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { usuariosService } from '../services/usuariosService';
 import { reportesService } from '../services/reportesService';
 import Swal from 'sweetalert2';
@@ -6,6 +6,7 @@ import { mapUsuarios } from '../utils/dataMapper';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import { exportAoaToExcel } from '../utils/excelReportHeader';
 import { formatearImporte } from '../utils/formatearImporte';
 import { getApiBaseUrl } from '../services/configService';
 import './Usuarios.css';
@@ -23,8 +24,19 @@ const ReporteGComensales = () => {
   const [reporte, setReporte] = useState(null);
   const [mostrarReporte, setMostrarReporte] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
   const [isCargandoHistorial] = useState(false);
+  const OPCIONES_BASE = [5, 10, 25, 50];
+  const totalItemsReporte = reporte?.totalItems ?? 0;
+  const opcionesPageSize = useMemo(() => {
+    if (totalItemsReporte <= 0) return [5];
+    const filtradas = OPCIONES_BASE.filter((n) => n <= totalItemsReporte);
+    if (!filtradas.includes(totalItemsReporte) && totalItemsReporte > 5) {
+      filtradas.push(totalItemsReporte);
+      filtradas.sort((a, b) => a - b);
+    }
+    return filtradas.length > 0 ? filtradas : [totalItemsReporte];
+  }, [totalItemsReporte]);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(true);
   
   // Estado del formulario
@@ -105,18 +117,29 @@ const ReporteGComensales = () => {
       const apellido = (usuario.apellido || '').toLowerCase();
       const legajo = (usuario.legajo || '').toString().toLowerCase();
       const username = (usuario.username || '').toLowerCase();
+      const jerarquia = (usuario.jerarquia_nombre || usuario.jerarquiaNombre || usuario.jerarquia || '').toLowerCase();
       const nombreCompleto = `${nombre} ${apellido}`.trim();
       
       return nombre.includes(termino) ||
              apellido.includes(termino) ||
              legajo.includes(termino) ||
              username.includes(termino) ||
-             nombreCompleto.includes(termino);
+             nombreCompleto.includes(termino) ||
+             jerarquia.includes(termino);
     });
 
     setUsuariosFiltrados(filtrados);
     setMostrarDropdown(filtrados.length > 0);
   }, [busquedaUsuario, usuarios]);
+
+  // Si pageSize no está en las opciones disponibles (ej. totalItems bajó), usar 5 como base
+  useEffect(() => {
+    if (totalItemsReporte <= 0) return;
+    const validas = opcionesPageSize;
+    if (!validas.includes(pageSize) || pageSize > totalItemsReporte) {
+      setPageSize(validas[0] ?? 5);
+    }
+  }, [totalItemsReporte, pageSize, opcionesPageSize]);
 
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
@@ -228,8 +251,8 @@ const ReporteGComensales = () => {
     return true;
   };
 
-  // Paginar historial localmente
-  const paginarHistorial = useCallback((historial, page) => {
+  // Paginar historial localmente (pageSizeOverride: opcional, para cuando se cambia el combo antes del re-render)
+  const paginarHistorial = useCallback((historial, page, pageSizeOverride = null) => {
     if (!historial || historial.length === 0) {
       return {
         items: [],
@@ -239,10 +262,11 @@ const ReporteGComensales = () => {
       };
     }
     
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
+    const sizeToUse = pageSizeOverride ?? pageSize;
+    const startIndex = (page - 1) * sizeToUse;
+    const endIndex = startIndex + sizeToUse;
     const items = historial.slice(startIndex, endIndex);
-    const totalPages = Math.ceil(historial.length / pageSize);
+    const totalPages = Math.ceil(historial.length / sizeToUse);
     
     return {
       items,
@@ -323,11 +347,20 @@ const ReporteGComensales = () => {
       const consumidos = Array.isArray(data.consumidos) ? data.consumidos : 
                         Array.isArray(data.Consumidos) ? data.Consumidos : [];
       const resumen = data.resumen || data.Resumen || {};
+      // Debug: si el primer consumido no tiene npedido ni turno, loguear estructura para inspección
+      if (consumidos.length > 0 && typeof window !== 'undefined' && window.location?.search?.includes('debug=reporte')) {
+        const p = consumidos[0];
+        const tieneNpedido = p?.npedido ?? p?.Npedido ?? p?.user_npedido ?? p?.Pedido?.Npedido ?? p?.user_Pedido?.id;
+        const tieneTurno = p?.turnoNombre ?? p?.TurnoNombre ?? p?.Turno?.Nombre ?? p?.turno?.nombre;
+        if (!tieneNpedido || !tieneTurno) {
+          console.log('[ReporteGComensales] consumidos[0] (para inspeccionar npedido/turno):', p);
+        }
+      }
 
       // Mapear los consumidos a formato interno
       const historialCompleto = consumidos.map(comanda => ({
         id: comanda.id ?? comanda.Id ?? comanda.ID,
-        npedido: comanda.npedido ?? comanda.Npedido ?? comanda.NPedido,
+        npedido: comanda.npedido ?? comanda.Npedido ?? comanda.NPedido ?? comanda.user_npedido ?? comanda.User_Npedido ?? comanda.pedidoId ?? comanda.PedidoId ?? comanda.Pedido?.Npedido ?? comanda.Pedido?.npedido ?? comanda.Pedido?.id ?? comanda.Comanda?.Npedido ?? comanda.Comanda?.npedido ?? comanda.user_Pedido?.Npedido ?? comanda.user_Pedido?.npedido ?? comanda.user_Pedido?.id ?? comanda.user_Pedido?.Id ?? comanda.id ?? comanda.Id ?? comanda.ID,
         fecha: comanda.fecha ?? comanda.Fecha,
         monto: parseFloat(comanda.monto ?? comanda.Monto ?? 0),
         bonificado: comanda.bonificado ?? comanda.Bonificado ?? false,
@@ -338,7 +371,7 @@ const ReporteGComensales = () => {
         platoId: comanda.platoId ?? comanda.PlatoId,
         platoDescripcion: comanda.descripcionPlato ?? comanda.DescripcionPlato ?? comanda.platoDescripcion ?? comanda.PlatoDescripcion ?? '-',
         turnoId: comanda.turnoId ?? comanda.TurnoId,
-        turnoNombre: comanda.turnoNombre ?? comanda.TurnoNombre ?? '-',
+        turnoNombre: comanda.turnoNombre ?? comanda.TurnoNombre ?? comanda.turno_nombre ?? comanda.Turno_Nombre ?? comanda.Turno?.Nombre ?? comanda.Turno?.nombre ?? comanda.turno?.Nombre ?? comanda.turno?.nombre ?? comanda.Comanda?.Turno?.Nombre ?? comanda.Comanda?.turno?.Nombre ?? comanda.Pedido?.Turno?.Nombre ?? comanda.user_Pedido?.Turno?.Nombre ?? '-',
         planNutricional: comanda.planNutricional ?? comanda.PlanNutricional ?? '-',
         plantaId: comanda.plantaId ?? comanda.PlantaId,
         plantaNombre: comanda.plantaNombre ?? comanda.PlantaNombre ?? '-',
@@ -358,10 +391,11 @@ const ReporteGComensales = () => {
       const historialPaginado = paginarHistorial(historialCompleto, 1);
 
       // Calcular métricas del resumen antes de crear el objeto reporteData
-      // Contar cantidad de devueltos: platos con estado 'D'
+      // Contar cantidad de devueltos: solo platos con estado 'D', excluir cancelados ('C')
       const cantidadDevueltos = consumidos.filter(comanda => {
-        const estado = (comanda.estado ?? comanda.Estado ?? '').toString().toUpperCase();
-        return estado === 'D';
+        const estado = (comanda.estado ?? comanda.Estado ?? '').toString().toUpperCase().trim();
+        const esCancelado = estado === 'C' || comanda.Cancelado === true || comanda.cancelado === true;
+        return estado === 'D' && !esCancelado;
       }).length;
       
       // Calcular costo total: sumar solo los platos con estado 'R' (Recibido)
@@ -503,12 +537,20 @@ const ReporteGComensales = () => {
     // Convertir comandas a formato de historial para la paginación
     const historialParaPaginacion = reporte.comandas.map(comanda => ({
       fecha: comanda.fecha,
+      npedido: comanda.npedido,
       plato: comanda.plato,
       descripcionPlato: comanda.plato,
+      platoDescripcion: comanda.plato,
       monto: comanda.monto,
       estado: comanda.estado,
       bonificado: comanda.bonificado === 'Sí',
-      invitado: comanda.invitado === 'Sí'
+      invitado: comanda.invitado === 'Sí',
+      turnoNombre: comanda.turnoNombre,
+      plantaNombre: comanda.plantaNombre,
+      centroCostoNombre: comanda.centroCostoNombre,
+      proyectoNombre: comanda.proyectoNombre,
+      jerarquiaNombre: comanda.jerarquiaNombre,
+      planNutricional: comanda.planNutricional
     }));
     
     const historialPaginado = paginarHistorial(historialParaPaginacion, page);
@@ -522,27 +564,27 @@ const ReporteGComensales = () => {
     }));
   };
 
-  // Formatear fecha
+  // Formatear fecha dd/mm/yy
   const formatearFecha = (fecha) => {
     if (!fecha) return '';
     const date = new Date(fecha);
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
+    const year = String(date.getFullYear()).slice(-2);
     return `${day}/${month}/${year}`;
   };
 
-  // Formatear fecha con hora
+  // Formatear fecha con hora dd/mm/yy HH:mm:ss
   const formatearFechaHora = (fecha) => {
     if (!fecha) return '';
     const date = new Date(fecha);
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
+    const year = String(date.getFullYear()).slice(-2);
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
-    return `${day}/${month}/${year}-${hours}:${minutes}:${seconds}`;
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   };
 
   const formatearMoneda = (valor) => formatearImporte(valor);
@@ -635,9 +677,9 @@ const ReporteGComensales = () => {
     try {
       // Manejar diferentes formas de importación de jsPDF
       const JSPDF = jsPDF.default || jsPDF;
-      const doc = new JSPDF();
+      const doc = new JSPDF('l', 'mm', 'a4'); // Orientación horizontal
       
-      let yPos = await addPdfReportHeader(doc, 'Reporte por Comensal');
+      let yPos = await addPdfReportHeader(doc, 'Reporte por Comensal', 14, true);
       
       // Período del reporte
       const periodo = `${formatearFecha(formData.fechaDesde)} - ${formatearFecha(formData.fechaHasta)}`;
@@ -655,46 +697,32 @@ const ReporteGComensales = () => {
       doc.setFontSize(10);
       doc.setFont(undefined, 'normal');
       
-      // Sección 1: Datos del usuario
-      doc.setFontSize(12);
-      doc.setFont(undefined, 'bold');
-      doc.text('Datos del Usuario', 14, yPos);
-      yPos += 8;
-      
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      doc.text(`Nombre completo: ${reporte.usuario.nombreCompleto || '-'}`, 14, yPos);
+      // Fila 1: Nombre, Legajo, DNI en 3 columnas
+      const col1 = 14;
+      const col2 = 75;
+      const col3 = 136;
+      doc.text(`Nombre: ${reporte.usuario.nombreCompleto || '-'}`, col1, yPos);
+      doc.text(`Legajo: ${reporte.usuario.legajo || '-'}`, col2, yPos);
+      doc.text(`DNI: ${reporte.usuario.dni || '-'}`, col3, yPos);
       yPos += 6;
-      doc.text(`Legajo: ${reporte.usuario.legajo || '-'}`, 14, yPos);
-      yPos += 6;
-      doc.text(`DNI: ${reporte.usuario.dni || '-'}`, 14, yPos);
-      yPos += 6;
-      if (reporte.usuario.cuil) {
-        doc.text(`CUIL: ${reporte.usuario.cuil}`, 14, yPos);
+      if (reporte.usuario.cuil && String(reporte.usuario.cuil).trim()) {
+        doc.text(`CUIL: ${reporte.usuario.cuil}`, col1, yPos);
         yPos += 6;
       }
       yPos += 4;
       
-      // Sección 2: Información organizacional
-      doc.setFontSize(12);
-      doc.setFont(undefined, 'bold');
-      doc.text('Información Organizacional', 14, yPos);
-      yPos += 8;
+      // Fila 2: Planta, Centro de Costo, Proyecto en 3 columnas
+      doc.text(`Planta: ${reporte.organizacion.planta}`, col1, yPos);
+      doc.text(`Centro de Costo: ${reporte.organizacion.centroCosto}`, col2, yPos);
+      doc.text(`Proyecto: ${reporte.organizacion.proyecto}`, col3, yPos);
+      yPos += 6;
       
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      doc.text(`Planta: ${reporte.organizacion.planta}`, 14, yPos);
-      yPos += 6;
-      doc.text(`Centro de Costo: ${reporte.organizacion.centroCosto}`, 14, yPos);
-      yPos += 6;
-      doc.text(`Proyecto: ${reporte.organizacion.proyecto}`, 14, yPos);
-      yPos += 6;
-      doc.text(`Jerarquía: ${limpiarJerarquia(reporte.organizacion.jerarquia)}`, 14, yPos);
-      yPos += 6;
-      doc.text(`Plan Nutricional: ${reporte.organizacion.planNutricional}`, 14, yPos);
+      // Fila 3: Jerarquía y Plan Nutricional
+      doc.text(`Jerarquía: ${limpiarJerarquia(reporte.organizacion.jerarquia)}`, col1, yPos);
+      doc.text(`Plan Nutricional: ${reporte.organizacion.planNutricional}`, col2, yPos);
       yPos += 10;
       
-      // Sección 3: Resumen del reporte
+      // Resumen del Reporte: Cantidad platos, Cantidad devueltos, Costo total en 3 columnas
       doc.setFontSize(12);
       doc.setFont(undefined, 'bold');
       doc.text('Resumen del Reporte', 14, yPos);
@@ -702,17 +730,9 @@ const ReporteGComensales = () => {
       
       doc.setFontSize(10);
       doc.setFont(undefined, 'normal');
-      doc.text(`Cantidad de platos: ${reporte.resumen?.cantidadPlatos || reporte.comandas?.length || 0}`, 14, yPos);
-      yPos += 6;
-      if (reporte.resumen?.promedioCalificacion !== null && 
-          reporte.resumen?.promedioCalificacion !== undefined && 
-          reporte.resumen?.promedioCalificacion > 0) {
-        doc.text(`Promedio calificación: ${reporte.resumen.promedioCalificacion.toFixed(2)}`, 14, yPos);
-        yPos += 6;
-      }
-      doc.text(`Cantidad devueltos: ${reporte.resumen?.cantidadDevueltos || 0}`, 14, yPos);
-      yPos += 6;
-      doc.text(`Costo total: ${formatearMoneda(reporte.resumen?.costoTotal || 0)}`, 14, yPos);
+      doc.text(`Cantidad platos: ${reporte.resumen?.cantidadPlatos || reporte.comandas?.length || 0}`, col1, yPos);
+      doc.text(`Cantidad devueltos: ${reporte.resumen?.cantidadDevueltos || 0}`, col2, yPos);
+      doc.text(`Costo total: ${formatearMoneda(reporte.resumen?.costoTotal || 0)}`, col3, yPos);
       yPos += 10;
       
       // Sección 5: Historial de Pedidos
@@ -786,6 +806,76 @@ const ReporteGComensales = () => {
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el reporte a PDF',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    }
+  };
+
+  // Exportar reporte a Excel (usa exportAoaToExcel de excelReportHeader donde XLSX funciona)
+  const handleExportarExcel = () => {
+    if (!reporte || !reporte.usuario || !reporte.comandas || reporte.comandas.length === 0) {
+      Swal.fire({
+        title: 'Error',
+        text: 'No hay pedidos para exportar',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+      return;
+    }
+
+    try {
+      const periodo = `${formatearFecha(formData.fechaDesde)} - ${formatearFecha(formData.fechaHasta)}`;
+
+      const aoa = [
+        [],
+        [`Período: ${periodo}`],
+        [],
+        ['Información del Comensal'],
+        ['Nombre', reporte.usuario.nombreCompleto || '-', 'Legajo', reporte.usuario.legajo || '-', 'DNI', reporte.usuario.dni || '-'],
+        ['Planta', reporte.organizacion.planta, 'Centro de Costo', reporte.organizacion.centroCosto, 'Proyecto', reporte.organizacion.proyecto],
+        ['Jerarquía', limpiarJerarquia(reporte.organizacion.jerarquia), 'Plan Nutricional', reporte.organizacion.planNutricional],
+        [],
+        ['Resumen del Reporte'],
+        ['Cantidad platos', reporte.resumen?.cantidadPlatos || reporte.comandas?.length || 0, 'Cantidad devueltos', reporte.resumen?.cantidadDevueltos || 0, 'Costo total', formatearMoneda(reporte.resumen?.costoTotal || 0)],
+        [],
+        ['Fecha', 'Nº Pedido', 'Plato', 'Turno', 'Estado', 'Bonificación', 'Importe'],
+        ...reporte.comandas.map((comanda) => [
+          formatearFechaHora(comanda.fecha),
+          comanda.npedido || '-',
+          comanda.descripcionPlato || comanda.plato || comanda.platoDescripcion || '-',
+          comanda.turnoNombre || '-',
+          obtenerTextoEstado(comanda.estado),
+          comanda.bonificado === 'Sí' || comanda.bonificado === true ? 'Sí' : 'No',
+          formatearMoneda(comanda.monto || comanda.platoImporte || 0),
+        ]),
+      ];
+
+      if (reporte.platosDistintos && reporte.platosDistintos.length > 0) {
+        aoa.push([]);
+        aoa.push(['Platos Distintos Consumidos']);
+        reporte.platosDistintos.forEach((plato) => {
+          aoa.push([plato || '-']);
+        });
+      }
+
+      const nombreUsuario = (reporte.usuario.nombreCompleto || 'comensal').replace(/\s+/g, '_');
+      const fechaArchivo = new Date().toISOString().split('T')[0];
+      exportAoaToExcel(aoa, 'Reporte por Comensal', `reporte_${nombreUsuario}_${fechaArchivo}.xlsx`);
+
+      Swal.fire({
+        title: 'Exportado',
+        text: 'El reporte se ha exportado correctamente en formato Excel',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      Swal.fire({
+        title: 'Error',
+        text: error.message || 'Error al exportar el reporte a Excel',
         icon: 'error',
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#F34949',
@@ -1114,11 +1204,13 @@ const ReporteGComensales = () => {
                             <strong>Legajo:</strong> {reporte.usuario.legajo || '-'}
                           </div>
                         </div>
-                        <div className="col-md-3">
-                          <div>
-                            <strong>CUIL:</strong> {reporte.usuario.cuil || '-'}
+                        {reporte.usuario.cuil && String(reporte.usuario.cuil).trim() && (
+                          <div className="col-md-3">
+                            <div>
+                              <strong>CUIL:</strong> {reporte.usuario.cuil}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                       
                       {/* Segunda fila: Planta, Proyecto (misma columna que DNI), Perfil nutricional, Jerarquía */}
@@ -1314,33 +1406,60 @@ const ReporteGComensales = () => {
                     Historial de Pedidos ({formatearFecha(formData.fechaDesde)} - {formatearFecha(formData.fechaHasta)})
                   </h3>
                   {reporte.comandas && reporte.comandas.length > 0 && (
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={handleExportarPDF}
-                      style={{
-                        backgroundColor: '#dc3545',
-                        border: 'none',
-                        color: 'white',
-                        padding: '0.5rem 1rem',
-                        fontSize: '1.25rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '0.25rem',
-                        marginRight: '1rem'
-                      }}
-                      title="Exportar reporte a PDF"
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#c82333';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#dc3545';
-                      }}
-                    >
-                      <i className="fa fa-file-pdf"></i>
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginRight: '1rem' }}>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={handleExportarPDF}
+                        style={{
+                          backgroundColor: '#dc3545',
+                          border: 'none',
+                          color: 'white',
+                          padding: '0.5rem 1rem',
+                          fontSize: '1.25rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '0.25rem'
+                        }}
+                        title="Exportar reporte a PDF"
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#c82333';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#dc3545';
+                        }}
+                      >
+                        <i className="fa fa-file-pdf"></i>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={handleExportarExcel}
+                        style={{
+                          backgroundColor: '#28a745',
+                          border: 'none',
+                          color: 'white',
+                          padding: '0.5rem 1rem',
+                          fontSize: '1.25rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '0.25rem'
+                        }}
+                        title="Exportar reporte a Excel"
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#218838';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#28a745';
+                        }}
+                      >
+                        <i className="fa fa-file-excel"></i>
+                      </button>
+                    </div>
                   )}
                 </div>
                 <div className="form-section-content" style={{ padding: '1.5rem' }}>
@@ -1369,9 +1488,9 @@ const ReporteGComensales = () => {
                             {reporte.historialPedidos.map((pedido, index) => (
                               <tr key={index}>
                                 <td>{formatearFechaHora(pedido.fecha || pedido.Fecha || pedido.fechaPedido)}</td>
-                                <td>{pedido.npedido || pedido.Npedido || '-'}</td>
+                                <td>{(pedido.npedido ?? pedido.Npedido ?? pedido.user_npedido ?? pedido.id ?? pedido.Id ?? '-').toString()}</td>
                                 <td>{pedido.descripcionPlato || pedido.plato || pedido.platoDescripcion || '-'}</td>
-                                <td>{pedido.turnoNombre || '-'}</td>
+                                <td>{pedido.turnoNombre || pedido.TurnoNombre || pedido.turno_nombre || '-'}</td>
                                 <td>
                                   {obtenerEstadoBadge(pedido.estado)}
                                 </td>
@@ -1383,94 +1502,94 @@ const ReporteGComensales = () => {
                         </table>
                       </div>
 
-                      {/* Paginación */}
-                      {reporte.totalPages > 1 && (
-                        <div className="d-flex justify-content-between align-items-center mt-3">
-                          <div>
-                            <span className="text-muted">
-                              Mostrando {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, reporte.totalItems)} de {reporte.totalItems} registros
+                      {/* Paginación - estilo Usuarios */}
+                      {reporte.totalItems > 0 && (
+                        <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem' }}>
+                          <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
+                            <label className="d-flex align-items-center gap-2 mb-0" style={{ whiteSpace: 'nowrap' }}>
+                              <span className="text-muted small">Registros a mostrar:</span>
+                              <select
+                                className="form-control form-control-sm"
+                                value={pageSize}
+                                onChange={(e) => {
+                                  const newPageSize = Number(e.target.value);
+                                  setPageSize(newPageSize);
+                                  setCurrentPage(1);
+                                  if (reporte && reporte.comandas && reporte.comandas.length > 0) {
+                                    const historialParaPaginacion = reporte.comandas.map(comanda => ({
+                                      fecha: comanda.fecha,
+                                      npedido: comanda.npedido,
+                                      plato: comanda.plato,
+                                      descripcionPlato: comanda.plato,
+                                      platoDescripcion: comanda.plato,
+                                      monto: comanda.monto,
+                                      estado: comanda.estado,
+                                      bonificado: comanda.bonificado === 'Sí',
+                                      invitado: comanda.invitado === 'Sí',
+                                      turnoNombre: comanda.turnoNombre,
+                                      plantaNombre: comanda.plantaNombre,
+                                      centroCostoNombre: comanda.centroCostoNombre,
+                                      proyectoNombre: comanda.proyectoNombre,
+                                      jerarquiaNombre: comanda.jerarquiaNombre,
+                                      planNutricional: comanda.planNutricional
+                                    }));
+                                    const historialPaginado = paginarHistorial(historialParaPaginacion, 1, newPageSize);
+                                    setReporte(prev => ({
+                                      ...prev,
+                                      historialPedidos: historialPaginado.items,
+                                      totalItems: historialPaginado.totalItems,
+                                      totalPages: historialPaginado.totalPages,
+                                      currentPage: 1
+                                    }));
+                                  }
+                                }}
+                                style={{ width: 'auto', minWidth: '70px' }}
+                              >
+                                {opcionesPageSize.map((n) => (
+                                  <option key={n} value={n}>{n}</option>
+                                ))}
+                              </select>
+                            </label>
+                            <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>
+                              Mostrando página {currentPage} de {reporte.totalPages} ({reporte.totalItems} registros)
                             </span>
-                          </div>
-                          <div className="d-flex align-items-center" style={{ gap: '0.5rem' }}>
-                            <label className="mr-2" style={{ margin: 0 }}>Filas por página:</label>
-                            <select
-                              className="form-control form-control-sm"
-                              style={{ width: 'auto' }}
-                              value={pageSize}
-                              onChange={(e) => {
-                                const newPageSize = parseInt(e.target.value);
-                                setPageSize(newPageSize);
-                                setCurrentPage(1);
-                                if (reporte && reporte.comandas && reporte.comandas.length > 0) {
-                                  // Convertir comandas a formato de historial para la paginación
-                                  const historialParaPaginacion = reporte.comandas.map(comanda => ({
-                                    fecha: comanda.fecha,
-                                    plato: comanda.plato,
-                                    descripcionPlato: comanda.plato,
-                                    monto: comanda.monto,
-                                    estado: comanda.estado,
-                                    bonificado: comanda.bonificado === 'Sí',
-                                    invitado: comanda.invitado === 'Sí'
-                                  }));
-                                  
-                                  const historialPaginado = paginarHistorial(historialParaPaginacion, 1);
-                                  setReporte(prev => ({
-                                    ...prev,
-                                    historialPedidos: historialPaginado.items,
-                                    totalItems: historialPaginado.totalItems,
-                                    totalPages: historialPaginado.totalPages,
-                                    currentPage: 1
-                                  }));
-                                }
-                              }}
-                            >
-                              <option value={5}>5</option>
-                              <option value={10}>10</option>
-                              <option value={20}>20</option>
-                              <option value={50}>50</option>
-                            </select>
                           </div>
                           <nav>
                             <ul className="pagination mb-0">
                               <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
                                 <button
                                   className="page-link"
-                                  onClick={() => handlePageChange(1)}
-                                  disabled={currentPage === 1}
-                                >
-                                  «
-                                </button>
-                              </li>
-                              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                                <button
-                                  className="page-link"
                                   onClick={() => handlePageChange(currentPage - 1)}
                                   disabled={currentPage === 1}
                                 >
-                                  &lt;
+                                  Anterior
                                 </button>
                               </li>
-                              {[...Array(Math.min(reporte.totalPages, 5))].map((_, index) => {
-                                let page;
-                                if (reporte.totalPages <= 5) {
-                                  page = index + 1;
-                                } else if (currentPage <= 3) {
-                                  page = index + 1;
-                                } else if (currentPage >= reporte.totalPages - 2) {
-                                  page = reporte.totalPages - 4 + index;
-                                } else {
-                                  page = currentPage - 2 + index;
+                              {[...Array(reporte.totalPages)].map((_, index) => {
+                                const page = index + 1;
+                                if (
+                                  page === 1 ||
+                                  page === reporte.totalPages ||
+                                  (page >= currentPage - 1 && page <= currentPage + 1)
+                                ) {
+                                  return (
+                                    <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                                      <button
+                                        className="page-link"
+                                        onClick={() => handlePageChange(page)}
+                                      >
+                                        {page}
+                                      </button>
+                                    </li>
+                                  );
+                                } else if (page === currentPage - 2 || page === currentPage + 2) {
+                                  return (
+                                    <li key={page} className="page-item disabled">
+                                      <span className="page-link">...</span>
+                                    </li>
+                                  );
                                 }
-                                return (
-                                  <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
-                                    <button
-                                      className="page-link"
-                                      onClick={() => handlePageChange(page)}
-                                    >
-                                      {page}
-                                    </button>
-                                  </li>
-                                );
+                                return null;
                               })}
                               <li className={`page-item ${currentPage === reporte.totalPages ? 'disabled' : ''}`}>
                                 <button
@@ -1478,23 +1597,11 @@ const ReporteGComensales = () => {
                                   onClick={() => handlePageChange(currentPage + 1)}
                                   disabled={currentPage === reporte.totalPages}
                                 >
-                                  &gt;
-                                </button>
-                              </li>
-                              <li className={`page-item ${currentPage === reporte.totalPages ? 'disabled' : ''}`}>
-                                <button
-                                  className="page-link"
-                                  onClick={() => handlePageChange(reporte.totalPages)}
-                                  disabled={currentPage === reporte.totalPages}
-                                >
-                                  »
+                                  Siguiente
                                 </button>
                               </li>
                             </ul>
                           </nav>
-                          <div className="ml-3">
-                            <span className="text-muted">Página {currentPage} de {reporte.totalPages}</span>
-                          </div>
                         </div>
                       )}
                     </>

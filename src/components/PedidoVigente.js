@@ -1,12 +1,19 @@
 import React, { memo, useMemo } from 'react';
 import { getApiBaseUrl } from '../services/configService';
+import { formatearImporte } from '../utils/formatearImporte';
 import { QRCodeSVG } from 'qrcode.react';
 
-const PedidoVigente = memo(({ pedido, index, defaultImage, onCancelar, onRecibir, isLast }) => {
+const PedidoVigente = memo(({ pedido, index, defaultImage, porcentajeBonificacion, onCancelar, onRecibir, isLast }) => {
   // Obtener el Npedido para el QR
   const npedido = useMemo(() => {
     return pedido.Npedido || pedido.npedido || pedido.user_npedido || (pedido.user_Pedido && pedido.user_Pedido.id) || null;
   }, [pedido.Npedido, pedido.npedido, pedido.user_npedido, pedido.user_Pedido]);
+
+  // Detectar si el pedido tiene bonificación (soporta múltiples estructuras del backend)
+  const tieneBonificacion = useMemo(() => {
+    const bonifVal = pedido.Bonificado ?? pedido.bonificado ?? pedido.Bonificacion ?? pedido.bonificacion ?? pedido.user_Pedido?.Bonificado ?? pedido.user_Pedido?.bonificado ?? pedido.Comanda?.Bonificado ?? pedido.Comanda?.bonificado ?? pedido.Pedido?.Bonificado ?? pedido.Pedido?.bonificado;
+    return bonifVal === true || bonifVal === 'true' || bonifVal === 1 || bonifVal === '1';
+  }, [pedido.Bonificado, pedido.bonificado, pedido.Bonificacion, pedido.bonificacion, pedido.user_Pedido, pedido.Comanda, pedido.Pedido]);
 
   // Construir la URL de la foto desde el campo Foto del backend
   const fotoUrl = useMemo(() => {
@@ -125,6 +132,21 @@ const PedidoVigente = memo(({ pedido, index, defaultImage, onCancelar, onRecibir
                 </span>
                 {(pedido.Invitado === true || pedido.invitado === true) && <span className="badge badge-secondary">Invitado</span>}
               </p>
+              {tieneBonificacion && (
+                <p className="mb-1">
+                  <span className="badge badge-success mr-2">{porcentajeBonificacion || 40}% descuento aplicado</span>
+                  <span>
+                    Importe: <span className="text-success" style={{ fontWeight: 600 }}>
+                      {formatearImporte(pedido.Monto ?? pedido.monto ?? pedido.PlatoImporte ?? pedido.platoImporte ?? pedido.Importe ?? pedido.importe ?? 0)}
+                    </span>
+                  </span>
+                </p>
+              )}
+              {!tieneBonificacion && (pedido.Monto ?? pedido.monto ?? pedido.PlatoImporte ?? pedido.platoImporte) != null && (
+                <p className="mb-1">
+                  <span>Importe: {formatearImporte(pedido.Monto ?? pedido.monto ?? pedido.PlatoImporte ?? pedido.platoImporte ?? pedido.Importe ?? pedido.importe ?? 0)}</span>
+                </p>
+              )}
             </div>
             <div className="col-sm-6">
               {npedido && (

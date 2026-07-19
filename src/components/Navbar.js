@@ -283,6 +283,14 @@ const Navbar = memo(() => {
                 >
                   Reporte de Gestión
                 </Link>
+                <Link 
+                  className="dropdown-item" 
+                  to="/reportefacturacion" 
+                  role="menuitem"
+                  onClick={() => setOpenDropdowns({})}
+                >
+                  Reporte de Facturación
+                </Link>
               </div>
             </li>
           )}
@@ -543,6 +551,17 @@ const Navbar = memo(() => {
                   }}
                 >
                   Reporte de Gestión
+                </Link>
+                <Link 
+                  className="dropdown-item" 
+                  to="/reportefacturacion" 
+                  role="menuitem"
+                  onClick={() => {
+                    setOpenDropdowns({});
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Reporte de Facturación
                 </Link>
               </div>
             </li>

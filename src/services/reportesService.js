@@ -169,5 +169,55 @@ export const reportesService = {
       throw error;
     }
   },
+
+  getReporteFacturacion: async (fechaDesde, fechaHasta, plantaId = null, proyectoId = null, centrodecostoId = null) => {
+    const baseUrl = getApiBaseUrl();
+    const params = {};
+
+    if (fechaDesde) {
+      const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (fechaDesde instanceof Date) {
+        params.fechaDesde = fechaDesde.toISOString().split('T')[0];
+      } else if (typeof fechaDesde === 'string' && fechaRegex.test(fechaDesde)) {
+        params.fechaDesde = fechaDesde;
+      } else {
+        throw new Error('Formato de fecha desde inválido. Debe ser YYYY-MM-DD');
+      }
+    }
+
+    if (fechaHasta) {
+      const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (fechaHasta instanceof Date) {
+        params.fechaHasta = fechaHasta.toISOString().split('T')[0];
+      } else if (typeof fechaHasta === 'string' && fechaRegex.test(fechaHasta)) {
+        params.fechaHasta = fechaHasta;
+      } else {
+        throw new Error('Formato de fecha hasta inválido. Debe ser YYYY-MM-DD');
+      }
+    }
+
+    if (plantaId !== null && plantaId !== undefined && plantaId !== '' && !isNaN(parseInt(plantaId))) {
+      params.plantaId = parseInt(plantaId);
+    }
+    if (proyectoId !== null && proyectoId !== undefined && proyectoId !== '' && !isNaN(parseInt(proyectoId))) {
+      params.proyectoId = parseInt(proyectoId);
+    }
+    if (centrodecostoId !== null && centrodecostoId !== undefined && centrodecostoId !== '' && !isNaN(parseInt(centrodecostoId))) {
+      params.centrodecostoId = parseInt(centrodecostoId);
+    }
+
+    try {
+      const response = await api.get(`${baseUrl}/api/reporte/Facturacion`, { params });
+      return response.data;
+    } catch (error) {
+      if (!error.response) {
+        if (error.message && error.message.includes('CORS')) {
+          throw new Error('Error CORS: El backend no permite peticiones desde este origen.');
+        }
+        throw new Error('Error de conexión con el servidor.');
+      }
+      throw error;
+    }
+  },
 };
 

@@ -465,6 +465,28 @@ body.modal-open {
     font-size: 0.85rem;
     padding: 0.35rem 0.5rem;
   }
+
+  /* Columna Acciones siempre visible en móvil (sticky a la derecha) */
+  .usuarios-container .table thead th:last-child,
+  .usuarios-container .table tbody td:last-child {
+    position: sticky !important;
+    right: 0 !important;
+    background-color: inherit !important;
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.08) !important;
+    z-index: 2 !important;
+  }
+  .usuarios-lista .table-responsive .table thead th:last-child {
+    background-color: var(--smart-gray-dark) !important;
+  }
+  .usuarios-lista .table-responsive .table tbody tr:nth-child(even) td:last-child {
+    background-color: var(--smart-gray-lightest) !important;
+  }
+  .usuarios-lista .table-responsive .table tbody tr:nth-child(odd) td:last-child {
+    background-color: var(--smart-white) !important;
+  }
+  .usuarios-lista .table-responsive .table tbody tr:hover td:last-child {
+    background-color: #e9ecef !important;
+  }
 }
 
 /* Estilos para el botón de mostrar/ocultar contraseña */

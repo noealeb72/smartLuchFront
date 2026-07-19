@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { turnosService } from '../services/turnosService';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
@@ -22,9 +22,19 @@ const Turno = () => {
   
   // Estado de paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const OPCIONES_BASE = [5, 10, 25, 50];
+  const opcionesPageSize = useMemo(() => {
+    if (totalItems <= 0) return [5];
+    const filtradas = OPCIONES_BASE.filter((n) => n <= totalItems);
+    if (!filtradas.includes(totalItems) && totalItems > 5) {
+      filtradas.push(totalItems);
+      filtradas.sort((a, b) => a - b);
+    }
+    return filtradas.length > 0 ? filtradas : [totalItems];
+  }, [totalItems]);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -39,12 +49,8 @@ const Turno = () => {
     try {
       setIsLoading(true);
       
-      // Si hay término de búsqueda, usar pageSize=100 y page=1 para obtener todos los resultados
-      // Si no hay búsqueda, usar la paginación normal
-      const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
-      const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
-      
-      const data = await turnosService.getTurnosLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
+      // Siempre traer de a pageSize registros y armar tabs según la cantidad total
+      const data = await turnosService.getTurnosLista(page, pageSize, searchTerm, mostrarActivos);
       
       // Función auxiliar para convertir hora a minutos para comparación numérica
       const horaAMinutos = (horaString) => {
@@ -101,9 +107,8 @@ const Turno = () => {
       // Ordenar los turnos por hora
       const turnosOrdenados = ordenarTurnos(turnosData);
       
-      // Usar los valores de paginación del backend
-      const totalItemsBackend = data.totalItems || turnosOrdenados.length;
-      const totalPagesBackend = data.totalPages || Math.ceil(totalItemsBackend / pageSize);
+      const totalItemsBackend = data.totalItems ?? data.totalCount ?? turnosOrdenados.length;
+      const totalPagesBackend = data.totalPages ?? (Math.ceil(Number(totalItemsBackend) / pageSize) || 1);
       
       setTurnos(turnosOrdenados);
       setTotalPages(totalPagesBackend);
@@ -127,10 +132,21 @@ const Turno = () => {
     }
   }, [pageSize]);
 
-  // Cuando cambia el filtro o filtroActivo, resetear a página 1
+  // Cuando cambia el filtro, filtroActivo o pageSize, resetear a página 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [filtro, filtroActivo]);
+  }, [filtro, filtroActivo, pageSize]);
+
+  // Si pageSize no está en las opciones disponibles, usar 5 como base
+  useEffect(() => {
+    if (totalItems <= 0) return;
+    const opciones = OPCIONES_BASE.filter((n) => n <= totalItems);
+    const conTotal = opciones.includes(totalItems) ? opciones : [...opciones, totalItems].sort((a, b) => a - b);
+    const validas = conTotal.length > 0 ? conTotal : [totalItems];
+    if (!validas.includes(pageSize) || pageSize > totalItems) {
+      setPageSize(validas[0] ?? 5);
+    }
+  }, [totalItems, pageSize]);
 
   // Cargar turnos cuando cambia la página, el filtro o el filtroActivo
   useEffect(() => {
@@ -888,7 +904,7 @@ const Turno = () => {
               type="button"
               className="btn"
               onClick={handleExportarPDF}
-              disabled={turnos.length === 0}
+              disabled={totalItems === 0}
               title="Exportar a PDF"
               style={{
                 backgroundColor: '#dc3545',
@@ -910,7 +926,7 @@ const Turno = () => {
               type="button"
               className="btn"
               onClick={handleExportarExcel}
-              disabled={turnos.length === 0}
+              disabled={totalItems === 0}
               title="Exportar a Excel"
               style={{
                 backgroundColor: '#28a745',
@@ -1055,7 +1071,7 @@ const Turno = () => {
           }}
           canDelete={(turno) => {
             // No permitir eliminar si solo hay un turno
-            if (turnos.length <= 1) {
+            if (totalItems <= 1) {
               return false;
             }
             // No permitir eliminar si el turno está inactivo
@@ -1149,11 +1165,24 @@ const Turno = () => {
           pageSize={pageSize}
         />
         
-        {/* Controles de paginación del servidor (siempre que haya más de una página o más de 5 registros) */}
-        {totalPages > 1 && (
-          <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
-            <div>
-              <span className="text-muted">
+        {/* Controles de paginación y combo de registros a mostrar */}
+        {totalItems > 0 && (
+          <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem' }}>
+            <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
+              <label className="d-flex align-items-center gap-2 mb-0" style={{ whiteSpace: 'nowrap' }}>
+                <span className="text-muted small">Registros a mostrar:</span>
+                <select
+                  className="form-control form-control-sm"
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  style={{ width: 'auto', minWidth: '70px' }}
+                >
+                  {opcionesPageSize.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </label>
+              <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>
                 Mostrando página {currentPage} de {totalPages} ({totalItems} turnos)
               </span>
             </div>

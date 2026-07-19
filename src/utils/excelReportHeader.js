@@ -1,9 +1,16 @@
 /**
  * Utilidad para agregar el encabezado a exportaciones Excel (sin logo).
  * Estructura: smartLunch (izq) | Exportado el: [fecha] (der) | Título centrado abajo
+ * Usa window.XLSX (cargado desde public/xlsx.full.min.js) para evitar problemas con Webpack.
  */
 
-import * as XLSX from 'xlsx';
+const getXLSX = () => {
+  const XLSX = typeof window !== 'undefined' ? window.XLSX : null;
+  if (!XLSX || !XLSX.utils) {
+    throw new Error('XLSX no está disponible. Verifica que xlsx.full.min.js esté en public/ y cargado en index.html');
+  }
+  return XLSX;
+};
 
 /**
  * Crea una hoja Excel con encabezado estándar (smartLunch + fecha + título) para uso con XLSX.
@@ -12,6 +19,7 @@ import * as XLSX from 'xlsx';
  * @returns {object} - Worksheet de XLSX con encabezado y datos
  */
 export function createExcelSheetWithHeaderXLSX(datosExcel, titulo) {
+  const XLSX = getXLSX();
   const fecha = new Date().toLocaleDateString('es-ES', {
     year: 'numeric',
     month: 'long',
@@ -32,6 +40,37 @@ export function createExcelSheetWithHeaderXLSX(datosExcel, titulo) {
   ws['!merges'] = ws['!merges'] || [];
   ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 9 } });
   return ws;
+}
+
+/**
+ * Crea una hoja Excel desde array de arrays (aoa) con encabezado estándar y descarga el archivo.
+ * @param {Array<Array>} aoa - Array de arrays con los datos
+ * @param {string} titulo - Título del reporte
+ * @param {string} nombreArchivo - Nombre del archivo a descargar
+ */
+export function exportAoaToExcel(aoa, titulo, nombreArchivo) {
+  const XLSX = getXLSX();
+  const fecha = new Date().toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const headerRows = [
+    ['smartLunch', '', '', '', '', '', '', '', '', `Exportado el: ${fecha}`],
+    [titulo],
+  ];
+  const fullAoa = [...headerRows, [], ...aoa];
+  const ws = XLSX.utils.aoa_to_sheet(fullAoa);
+  ws['!merges'] = ws['!merges'] || [];
+  ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 9 } });
+  // Orientación horizontal para que todo quepa en la hoja
+  ws['!pageSetup'] = ws['!pageSetup'] || {};
+  ws['!pageSetup'].orientation = 'landscape';
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, titulo.substring(0, 31));
+  XLSX.writeFile(wb, nombreArchivo);
 }
 
 /**

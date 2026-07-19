@@ -5,9 +5,24 @@ import { useConfig } from '../contexts/ConfigContext';
 import Logo from '../components/Logo';
 import './Login.css';
 
+const REMEMBERED_USER_KEY = 'smartLunch_remembered_username';
+
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(() => {
+    try {
+      return localStorage.getItem(REMEMBERED_USER_KEY) || '';
+    } catch {
+      return '';
+    }
+  });
   const [password, setPassword] = useState('');
+  const [rememberUser, setRememberUser] = useState(() => {
+    try {
+      return !!localStorage.getItem(REMEMBERED_USER_KEY);
+    } catch {
+      return false;
+    }
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -94,6 +109,17 @@ const Login = () => {
             inicioService.getInicioWeb(userData.id).catch(() => {});
           });
         }
+      }
+
+      // Recordar usuario si el checkbox está marcado
+      if (rememberUser) {
+        try {
+          localStorage.setItem(REMEMBERED_USER_KEY, username.trim());
+        } catch { /* ignorar */ }
+      } else {
+        try {
+          localStorage.removeItem(REMEMBERED_USER_KEY);
+        } catch { /* ignorar */ }
       }
 
       navigate(rutaFinal, { replace: true });
@@ -199,13 +225,17 @@ const Login = () => {
                   </div>
                 </div>
 
-                <div className="form-group mb-3" style={{ marginBottom: isMobile ? '0.75rem' : '1.25rem' }}>
-                  <div className="custom-control custom-checkbox">
-                    <input type="checkbox" className="custom-control-input" id="customControlInline" />
-                    <label className="custom-control-label" htmlFor="customControlInline" style={{ color: 'var(--smart-gray)', fontSize: isMobile ? '0.85rem' : '0.95rem' }}>
-                      Recordar sesión
-                    </label>
-                  </div>
+                <div className="form-group mb-3 remember-user-row" style={{ marginBottom: isMobile ? '0.75rem' : '1.25rem' }}>
+                  <label className="remember-user-label" htmlFor="rememberUser">
+                    <input
+                      type="checkbox"
+                      id="rememberUser"
+                      checked={rememberUser}
+                      onChange={(e) => setRememberUser(e.target.checked)}
+                      className="remember-user-checkbox"
+                    />
+                    <span>Recordar usuario</span>
+                  </label>
                 </div>
 
                 <div className="d-flex justify-content-center login_container" style={{ marginTop: isMobile ? '1rem' : '1.5rem', marginBottom: 0 }}>

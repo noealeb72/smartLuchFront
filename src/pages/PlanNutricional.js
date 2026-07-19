@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { planesNutricionalesService } from '../services/planesNutricionalesService';
 import { catalogosService } from '../services/catalogosService';
 import { useSmartTime } from '../contexts/SmartTimeContext';
@@ -24,7 +24,19 @@ const PlanNutricional = () => {
   
   // Estado de paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(5);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const OPCIONES_BASE = [5, 10, 25, 50];
+  const opcionesPageSize = useMemo(() => {
+    if (totalItems <= 0) return [5];
+    const filtradas = OPCIONES_BASE.filter((n) => n <= totalItems);
+    if (!filtradas.includes(totalItems) && totalItems > 5) {
+      filtradas.push(totalItems);
+      filtradas.sort((a, b) => a - b);
+    }
+    return filtradas.length > 0 ? filtradas : [totalItems];
+  }, [totalItems]);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -44,12 +56,8 @@ const PlanNutricional = () => {
       // Limpiar caché antes de cargar para asegurar datos frescos
       clearApiCache();
       
-      // Si hay término de búsqueda, usar pageSize=100 y page=1 para obtener todos los resultados
-      // Si no hay búsqueda, usar la paginación normal
-      const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
-      const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
-      
-      const data = await planesNutricionalesService.getPlanesNutricionalesLista(pageToUse, pageSizeToUse, searchTerm, mostrarActivos);
+      // Siempre traer de a pageSize registros y armar tabs según la cantidad total
+      const data = await planesNutricionalesService.getPlanesNutricionalesLista(page, pageSize, searchTerm, mostrarActivos);
       
       // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
       let planesData = [];
@@ -82,7 +90,12 @@ const PlanNutricional = () => {
         is_default: plan.Is_default === 1 || plan.Is_default === true || plan.is_default === 1 || plan.is_default === true || plan.IsDefault === 1 || plan.IsDefault === true,
       }));
       
+      const totalItemsBackend = data.totalItems ?? data.totalCount ?? planesNormalizados.length;
+      const totalPagesBackend = data.totalPages ?? (Math.ceil(Number(totalItemsBackend) / pageSize) || 1);
+      
       setPlanes(planesNormalizados);
+      setTotalPages(totalPagesBackend);
+      setTotalItems(totalItemsBackend);
     } catch (error) {
       if (!error.redirectToLogin) {
         Swal.fire({
@@ -95,15 +108,34 @@ const PlanNutricional = () => {
       }
       
       setPlanes([]);
+      setTotalPages(1);
+      setTotalItems(0);
     } finally {
       setIsLoading(false);
     }
   }, [pageSize]);
 
-  // Cuando cambia el filtro o filtroActivo, resetear a página 1
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  // Cuando cambia el filtro, filtroActivo o pageSize, resetear a página 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [filtro, filtroActivo]);
+  }, [filtro, filtroActivo, pageSize]);
+
+  // Si pageSize no está en las opciones disponibles, usar 5 como base
+  useEffect(() => {
+    if (totalItems <= 0) return;
+    const opciones = OPCIONES_BASE.filter((n) => n <= totalItems);
+    const conTotal = opciones.includes(totalItems) ? opciones : [...opciones, totalItems].sort((a, b) => a - b);
+    const validas = conTotal.length > 0 ? conTotal : [totalItems];
+    if (!validas.includes(pageSize) || pageSize > totalItems) {
+      setPageSize(validas[0] ?? 5);
+    }
+  }, [totalItems, pageSize]);
 
   // Cargar planes cuando cambia la página, el filtro o el filtroActivo
   useEffect(() => {
@@ -550,7 +582,7 @@ const PlanNutricional = () => {
               type="button"
               className="btn"
               onClick={handleExportarPDF}
-              disabled={planes.length === 0}
+              disabled={totalItems === 0}
               title="Exportar a PDF"
               style={{
                 backgroundColor: '#dc3545',
@@ -572,7 +604,7 @@ const PlanNutricional = () => {
               type="button"
               className="btn"
               onClick={handleExportarExcel}
-              disabled={planes.length === 0}
+              disabled={totalItems === 0}
               title="Exportar a Excel"
               style={{
                 backgroundColor: '#28a745',
@@ -865,8 +897,80 @@ const PlanNutricional = () => {
             return null;
           }}
           pageSize={pageSize}
-          enablePagination={true}
+          enablePagination={false}
         />
+
+        {/* Controles de paginación y combo de registros a mostrar */}
+        {totalItems > 0 && (
+          <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem' }}>
+            <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
+              <label className="d-flex align-items-center gap-2 mb-0" style={{ whiteSpace: 'nowrap' }}>
+                <span className="text-muted small">Registros a mostrar:</span>
+                <select
+                  className="form-control form-control-sm"
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  style={{ width: 'auto', minWidth: '70px' }}
+                >
+                  {opcionesPageSize.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </label>
+              <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>
+                Mostrando página {currentPage} de {totalPages} ({totalItems} planes nutricionales)
+              </span>
+            </div>
+            <nav>
+              <ul className="pagination mb-0">
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </button>
+                </li>
+                {[...Array(totalPages)].map((_, index) => {
+                  const page = index + 1;
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                        <button
+                          className="page-link"
+                          onClick={() => handlePageChange(page)}
+                        >
+                          {page}
+                        </button>
+                      </li>
+                    );
+                  } else if (page === currentPage - 2 || page === currentPage + 2) {
+                    return (
+                      <li key={page} className="page-item disabled">
+                        <span className="page-link">...</span>
+                      </li>
+                    );
+                  }
+                  return null;
+                })}
+                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Siguiente
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -129,11 +129,13 @@ const Despacho = () => {
       const legajo = (pedido.user_fileNumber || pedido.userFileNumber || pedido.legajo || '').toString().toLowerCase();
       const plato = (pedido.PlatoDescripcion || pedido.platoDescripcion || pedido.descripcion || pedido.Descripcion || pedido.plato || pedido.Plato || '').toLowerCase();
       const npedido = (pedido.Npedido || pedido.npedido || '').toString().toLowerCase();
+      const comentario = (pedido.Comentario || pedido.comentario || '').toLowerCase();
       return nombre.includes(textoFiltro) ||
              apellido.includes(textoFiltro) ||
              legajo.includes(textoFiltro) ||
              plato.includes(textoFiltro) ||
-             npedido.includes(textoFiltro);
+             npedido.includes(textoFiltro) ||
+             comentario.includes(textoFiltro);
     });
     setPedidosFiltrados(filtrados);
   }, [filtro, pedidos]);
@@ -817,32 +819,67 @@ const Despacho = () => {
                   align: 'center',
                   render: (v, row) => {
                     const estado = row.Estado || row.estado || 'P';
-                    if (estado === 'P' || estado === 'PT') {
-                      return (
-                        <button
-                          className="btn btn-sm"
-                          onClick={() => handleVerDetalle(row)}
-                          disabled={isLoading}
-                          title="Ver detalle y despachar"
-                          style={{ 
-                            backgroundColor: '#343a40',
-                            color: 'white',
-                            border: '1px solid #343a40',
-                            whiteSpace: 'nowrap',
-                            padding: '0.25rem 0.5rem',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.25rem',
-                            cursor: 'pointer',
-                            borderRadius: '0.25rem',
-                          }}
-                        >
-                          <i className="fa fa-truck"></i>
-                        </button>
-                      );
-                    }
-                    return '-';
+                    const comentario = row.Comentario || row.comentario || row.user_Pedido?.Comentario || row.user_Pedido?.comentario || row.Comanda?.Comentario || row.Comanda?.comentario || '';
+                    const handleVerComentarios = () => {
+                      const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                      Swal.fire({
+                        title: 'Comentarios',
+                        html: comentario ? `<p style="text-align: left; white-space: pre-wrap;">${esc(comentario)}</p>` : '<p class="text-muted">Sin comentarios</p>',
+                        icon: comentario ? 'info' : null,
+                        confirmButtonText: 'Cerrar',
+                        confirmButtonColor: '#343a40',
+                        width: '400px',
+                      });
+                    };
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                        {comentario && (
+                          <button
+                            type="button"
+                            className="btn btn-sm"
+                            onClick={handleVerComentarios}
+                            title="Ver comentarios"
+                            style={{
+                              backgroundColor: '#6c757d',
+                              color: 'white',
+                              border: '1px solid #6c757d',
+                              padding: '0.25rem 0.5rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              borderRadius: '0.25rem',
+                            }}
+                          >
+                            <i className="fa fa-comment"></i>
+                          </button>
+                        )}
+                        {(estado === 'P' || estado === 'PT') && (
+                          <button
+                            className="btn btn-sm"
+                            onClick={() => handleVerDetalle(row)}
+                            disabled={isLoading}
+                            title="Ver detalle y despachar"
+                            style={{
+                              backgroundColor: '#343a40',
+                              color: 'white',
+                              border: '1px solid #343a40',
+                              whiteSpace: 'nowrap',
+                              padding: '0.25rem 0.5rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.25rem',
+                              cursor: 'pointer',
+                              borderRadius: '0.25rem',
+                            }}
+                          >
+                            <i className="fa fa-truck"></i>
+                          </button>
+                        )}
+                        {!comentario && (estado !== 'P' && estado !== 'PT') && <span>-</span>}
+                      </div>
+                    );
                   },
                 },
               ]}

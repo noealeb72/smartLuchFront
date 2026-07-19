@@ -89,6 +89,7 @@ export const DashboardProvider = ({ children }) => {
           jerarquiaId: usuario.JerarquiaId || usuario.jerarquiaId,
           jerarquiaNombre: jerarquiaNombre,
           bonificaciones: usuario.Bonificaciones || usuario.bonificaciones || 0,
+          bonificacionesAplicadas: usuario.BonificacionesAplicadas ?? usuario.bonificacionesAplicadas ?? 0,
           bonificacionesInvitado: usuario.BonificacionesInvitado || usuario.bonificacionesInvitado || 0,
           descuento: usuario.Descuento !== undefined ? usuario.Descuento : (usuario.descuento !== undefined ? usuario.descuento : 0),
           activo: usuario.Activo !== undefined ? usuario.Activo : (usuario.activo !== undefined ? usuario.activo : true),

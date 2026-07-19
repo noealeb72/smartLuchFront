@@ -56,6 +56,7 @@ const Plato = lazy(() => import('./pages/Plato'));
 const MenuDelDia = lazy(() => import('./pages/MenuDelDia'));
 const ReporteGComensales = lazy(() => import('./pages/ReporteGComensales'));
 const ReporteGGestion = lazy(() => import('./pages/ReporteGGestion'));
+const ReporteFacturacion = lazy(() => import('./pages/ReporteFacturacion'));
 // Pantallas vacías - comentadas hasta que se implementen
 // const DatosPersonales = lazy(() => import('./pages/DatosPersonales'));
 // const Calificacion = lazy(() => import('./pages/Calificacion'));
@@ -200,6 +201,16 @@ function App() {
                     <PrivateRoute allowedRoles={['Gerencia']}>
                       <Layout>
                         <ReporteGGestion />
+                      </Layout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/reportefacturacion"
+                  element={
+                    <PrivateRoute allowedRoles={['Gerencia']}>
+                      <Layout>
+                        <ReporteFacturacion />
                       </Layout>
                     </PrivateRoute>
                   }

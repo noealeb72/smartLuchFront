@@ -6,7 +6,8 @@
 import { loadLogoAsBase64 } from './logoLoader';
 
 const LOGO_SIZE = 6; // mm - tamaño compacto para el logo
-const PAGE_WIDTH = 210; // mm - A4
+const PAGE_WIDTH_PORTRAIT = 210; // mm - A4
+const PAGE_WIDTH_LANDSCAPE = 297; // mm - A4 horizontal
 const MARGIN_RIGHT = 14;
 
 /**
@@ -14,9 +15,11 @@ const MARGIN_RIGHT = 14;
  * @param {object} doc - Instancia de jsPDF
  * @param {string} titulo - Título del reporte
  * @param {number} marginLeft - Margen izquierdo (default 14)
+ * @param {boolean} landscape - Si true, usa ancho de página horizontal (297mm)
  * @returns {Promise<number>} - startY para el contenido siguiente
  */
-export async function addPdfReportHeader(doc, titulo, marginLeft = 14) {
+export async function addPdfReportHeader(doc, titulo, marginLeft = 14, landscape = false) {
+  const PAGE_WIDTH = landscape ? PAGE_WIDTH_LANDSCAPE : PAGE_WIDTH_PORTRAIT;
   const x = marginLeft;
   let y = 10;
 

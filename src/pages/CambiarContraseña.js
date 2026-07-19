@@ -100,6 +100,15 @@ const CambiarContraseña = ({ obligatorio = false }) => {
         showConfirmButton: false,
         timer: 4000,
         timerProgressBar: true,
+        didOpen: () => {
+          setTimeout(() => {
+            const popup = document.querySelector('.swal2-popup');
+            if (popup) {
+              const ocultar = (el) => { el.style.cssText = 'display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;'; };
+              popup.querySelectorAll('input, textarea, select, label, .swal2-input, .swal2-select, .swal2-textarea, .swal2-file, .swal2-file-label').forEach(ocultar);
+            }
+          }, 10);
+        },
       });
       logout();
     } catch (error) {

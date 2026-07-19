@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { reportesService } from '../services/reportesService';
 import { catalogosService } from '../services/catalogosService';
 import { platosService } from '../services/platosService';
@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addPdfReportHeader } from '../utils/pdfReportHeader';
+import { exportAoaToExcel } from '../utils/excelReportHeader';
 import { formatearImporte } from '../utils/formatearImporte';
 import './Usuarios.css';
 import '../styles/smartstyle.css';
@@ -239,6 +240,54 @@ const ReporteGGestion = () => {
 
   // Estado para almacenar los resultados del reporte
   const [reporteData, setReporteData] = useState(null);
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const OPCIONES_BASE = [5, 10, 25, 50];
+
+  const totalItemsReporte = useMemo(() => {
+    if (!reporteData) return 0;
+    const detalles = Array.isArray(reporteData)
+      ? reporteData
+      : (reporteData.detalles || reporteData.detalle || reporteData.items || reporteData.data || []);
+    return detalles.length;
+  }, [reporteData]);
+
+  const opcionesPageSize = useMemo(() => {
+    if (totalItemsReporte <= 0) return [10];
+    const filtradas = OPCIONES_BASE.filter((n) => n <= totalItemsReporte);
+    if (!filtradas.includes(totalItemsReporte) && totalItemsReporte > 5) {
+      filtradas.push(totalItemsReporte);
+      filtradas.sort((a, b) => a - b);
+    }
+    return filtradas.length > 0 ? filtradas : [totalItemsReporte];
+  }, [totalItemsReporte]);
+
+  const paginarHistorial = useCallback((historial, page, pageSizeOverride = null) => {
+    if (!historial || historial.length === 0) {
+      return { items: [], totalItems: 0, totalPages: 1, currentPage: 1 };
+    }
+    const sizeToUse = pageSizeOverride ?? pageSize;
+    const startIndex = (page - 1) * sizeToUse;
+    const endIndex = startIndex + sizeToUse;
+    const items = historial.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(historial.length / sizeToUse);
+    return { items, totalItems: historial.length, totalPages, currentPage: page };
+  }, [pageSize]);
+
+  // Resetear página al cambiar reporteData
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [reporteData]);
+
+  // Ajustar pageSize si totalItems baja
+  useEffect(() => {
+    if (totalItemsReporte <= 0) return;
+    const validas = opcionesPageSize;
+    if (!validas.includes(pageSize) || pageSize > totalItemsReporte) {
+      setPageSize(validas[0] ?? 10);
+    }
+  }, [totalItemsReporte, pageSize, opcionesPageSize]);
 
   // Exportar reporte a PDF
   const handleExportarPDF = useCallback(async () => {
@@ -271,12 +320,20 @@ const ReporteGGestion = () => {
       }
 
       const JSPDF = jsPDF.default || jsPDF;
-      const doc = new JSPDF();
+      const doc = new JSPDF('l', 'mm', 'a4'); // Orientación horizontal
       
-      let yPos = await addPdfReportHeader(doc, 'Reporte de Gestión');
+      let yPos = await addPdfReportHeader(doc, 'Reporte de Gestión', 14, true);
       
-      // Período del reporte
-      const periodo = `${formData.fechaDesde || '-'} - ${formData.fechaHasta || '-'}`;
+      // Período del reporte (dd/mm/yy)
+      const fmtPeriodo = (s) => {
+        if (!s) return '-';
+        try {
+          const d = new Date(s);
+          if (isNaN(d.getTime())) return s;
+          return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)}`;
+        } catch { return s; }
+      };
+      const periodo = `${fmtPeriodo(formData.fechaDesde)} - ${fmtPeriodo(formData.fechaHasta)}`;
       doc.setFontSize(10);
       doc.setFont(undefined, 'normal');
       doc.text(`Período: ${periodo}`, 14, yPos);
@@ -295,7 +352,7 @@ const ReporteGGestion = () => {
         return estados[estadoStr] || estado || '-';
       };
 
-      // Formatear fecha
+      // Formatear fecha dd/mm/yy
       const formatearFecha = (fecha) => {
         if (!fecha) return '-';
         try {
@@ -303,7 +360,7 @@ const ReporteGGestion = () => {
           if (isNaN(date.getTime())) return fecha;
           const dia = String(date.getDate()).padStart(2, '0');
           const mes = String(date.getMonth() + 1).padStart(2, '0');
-          const año = date.getFullYear();
+          const año = String(date.getFullYear()).slice(-2);
           const horas = String(date.getHours()).padStart(2, '0');
           const minutos = String(date.getMinutes()).padStart(2, '0');
           const segundos = String(date.getSeconds()).padStart(2, '0');
@@ -388,6 +445,152 @@ const ReporteGGestion = () => {
       Swal.fire({
         title: 'Error',
         text: 'Error al exportar el reporte a PDF',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+    }
+  }, [reporteData, formData]);
+
+  // Exportar reporte a Excel
+  const handleExportarExcel = useCallback(() => {
+    if (!reporteData) {
+      Swal.fire({
+        title: 'Error',
+        text: 'No hay datos para exportar',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+      return;
+    }
+
+    const detalles = Array.isArray(reporteData)
+      ? reporteData
+      : (reporteData.detalles || reporteData.detalle || reporteData.items || reporteData.data || []);
+
+    if (detalles.length === 0) {
+      Swal.fire({
+        title: 'Error',
+        text: 'No hay datos para exportar',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      });
+      return;
+    }
+
+    try {
+      const fmtPeriodo = (s) => {
+        if (!s) return '-';
+        try {
+          const d = new Date(s);
+          if (isNaN(d.getTime())) return s;
+          return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(-2)}`;
+        } catch { return s; }
+      };
+      const periodo = `${fmtPeriodo(formData.fechaDesde)} - ${fmtPeriodo(formData.fechaHasta)}`;
+
+      const formatearFecha = (fecha) => {
+        if (!fecha) return '-';
+        try {
+          const date = new Date(fecha);
+          if (isNaN(date.getTime())) return fecha;
+          const dia = String(date.getDate()).padStart(2, '0');
+          const mes = String(date.getMonth() + 1).padStart(2, '0');
+          const año = String(date.getFullYear()).slice(-2);
+          const horas = String(date.getHours()).padStart(2, '0');
+          const minutos = String(date.getMinutes()).padStart(2, '0');
+          const segundos = String(date.getSeconds()).padStart(2, '0');
+          return `${dia}/${mes}/${año} ${horas}:${minutos}:${segundos}`;
+        } catch (e) {
+          return fecha;
+        }
+      };
+
+      const obtenerTextoEstado = (estado) => {
+        const estadoStr = (estado || '').toString().toUpperCase();
+        const estados = {
+          'P': 'Pendiente',
+          'D': 'Devuelto',
+          'C': 'Cancelado',
+          'R': 'Recibido',
+          'E': 'En Aceptación',
+        };
+        return estados[estadoStr] || estado || '-';
+      };
+
+      const cantidadRecibidos = detalles.filter(item => {
+        const estado = (item.estado || item.Estado || '').toString().toUpperCase();
+        return estado === 'R';
+      }).length;
+      const cantidadDevueltos = detalles.filter(item =>
+        (item.estado === 'D' || item.Estado === 'D')
+      ).length;
+      const costoTotal = detalles
+        .filter(item => {
+          const estado = (item.estado || item.Estado || '').toString().toUpperCase();
+          return estado === 'R';
+        })
+        .reduce((sum, item) => {
+          const costo = parseFloat(item.costo || item.Costo || item.monto || item.Monto || item.importe || item.Importe || 0);
+          return sum + (isNaN(costo) ? 0 : costo);
+        }, 0);
+
+      const aoa = [
+        [],
+        [`Período: ${periodo}`],
+        [],
+        ['Resumen del Reporte'],
+        ['Cantidad platos', detalles.length, 'Cantidad recibidos', cantidadRecibidos, 'Cantidad devueltos', cantidadDevueltos, 'Costo total', formatearImporte(costoTotal)],
+        [],
+        ['Fecha', 'Planta', 'CC', 'Proyecto', 'Perfil', 'Legajo', 'Nombre completo', 'Plato', 'Estado', 'Costo', 'Bonificación', 'Importe bonificado'],
+        ...detalles.map((item) => {
+          const fecha = item.fecha || item.Fecha || item.fechaCreacion || item.FechaCreacion;
+          const planta = item.plantaNombre || item.PlantaNombre || item.planta || item.Planta || '-';
+          const centroCosto = item.centroCostoNombre || item.CentroCostoNombre || item.centroCosto || item.CentroCosto || item.CC || '-';
+          const proyecto = item.proyectoNombre || item.ProyectoNombre || item.proyecto || item.Proyecto || '-';
+          const jerarquia = item.jerarquiaNombre || item.JerarquiaNombre || item.jerarquia || item.Jerarquia || item.perfil || item.Perfil || '-';
+          const legajo = item.legajo || item.Legajo || item.userLegajo || item.UserLegajo || '-';
+          const nombreCompleto = item.nombreCompleto || item.NombreCompleto ||
+            `${item.nombre || item.Nombre || ''} ${item.apellido || item.Apellido || ''}`.trim() || '-';
+          const plato = item.platoDescripcion || item.PlatoDescripcion || item.plato || item.Plato || item.descripcion || item.Descripcion || '-';
+          const estado = item.estado || item.Estado || '-';
+          const bonificado = item.bonificado || item.Bonificado || false;
+          const costo = item.costo || item.Costo || item.monto || item.Monto || item.importe || item.Importe || 0;
+          const bonificacion = bonificado ? costo : 0;
+          const importeBonificado = costo - bonificacion;
+          return [
+            formatearFecha(fecha),
+            planta,
+            centroCosto,
+            proyecto,
+            jerarquia,
+            legajo,
+            nombreCompleto,
+            plato,
+            obtenerTextoEstado(estado),
+            formatearImporte(costo),
+            formatearImporte(bonificacion),
+            formatearImporte(importeBonificado),
+          ];
+        }),
+      ];
+
+      const fechaArchivo = new Date().toISOString().split('T')[0];
+      exportAoaToExcel(aoa, 'Reporte de Gestión', `reporte_gestion_${fechaArchivo}.xlsx`);
+
+      Swal.fire({
+        title: 'Éxito',
+        text: 'El reporte se ha exportado correctamente en formato Excel',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      Swal.fire({
+        title: 'Error',
+        text: error.message || 'Error al exportar el reporte a Excel',
         icon: 'error',
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#F34949',
@@ -929,10 +1132,12 @@ const ReporteGGestion = () => {
               <div style={{ padding: 0 }}>
                 {(() => {
                   // Extraer datos del reporte (puede venir en diferentes formatos)
-                  const detalles = Array.isArray(reporteData) 
-                    ? reporteData 
+                  const detalles = Array.isArray(reporteData)
+                    ? reporteData
                     : (reporteData.detalles || reporteData.detalle || reporteData.items || reporteData.data || []);
-                  
+                  const paginado = paginarHistorial(detalles, currentPage);
+                  const detallePaginado = paginado.items;
+
                   // Calcular resumen desde los detalles
                   const cantidadPlatos = detalles.length;
                   const cantidadDevueltos = detalles.filter(item => 
@@ -952,7 +1157,7 @@ const ReporteGGestion = () => {
                       return sum + (isNaN(costo) ? 0 : costo);
                     }, 0);
 
-                  // Formatear fecha
+                  // Formatear fecha dd/mm/yy
                   const formatearFecha = (fecha) => {
                     if (!fecha) return '-';
                     try {
@@ -960,7 +1165,7 @@ const ReporteGGestion = () => {
                       if (isNaN(date.getTime())) return fecha;
                       const dia = String(date.getDate()).padStart(2, '0');
                       const mes = String(date.getMonth() + 1).padStart(2, '0');
-                      const año = date.getFullYear();
+                      const año = String(date.getFullYear()).slice(-2);
                       const horas = String(date.getHours()).padStart(2, '0');
                       const minutos = String(date.getMinutes()).padStart(2, '0');
                       const segundos = String(date.getSeconds()).padStart(2, '0');
@@ -1057,33 +1262,60 @@ const ReporteGGestion = () => {
                             Detalle del Reporte
                           </h3>
                           {detalles.length > 0 && (
-                            <button
-                              type="button"
-                              className="btn"
-                              onClick={handleExportarPDF}
-                              style={{
-                                backgroundColor: '#dc3545',
-                                border: 'none',
-                                color: 'white',
-                                padding: '0.5rem 1rem',
-                                fontSize: '1.25rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: '0.25rem',
-                                marginRight: '1rem'
-                              }}
-                              title="Exportar reporte a PDF"
-                              onMouseEnter={(e) => {
-                                e.target.style.backgroundColor = '#c82333';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.backgroundColor = '#dc3545';
-                              }}
-                            >
-                              <i className="fa fa-file-pdf"></i>
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.5rem', marginRight: '1rem' }}>
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={handleExportarPDF}
+                                style={{
+                                  backgroundColor: '#dc3545',
+                                  border: 'none',
+                                  color: 'white',
+                                  padding: '0.5rem 1rem',
+                                  fontSize: '1.25rem',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderRadius: '0.25rem'
+                                }}
+                                title="Exportar reporte a PDF"
+                                onMouseEnter={(e) => {
+                                  e.target.style.backgroundColor = '#c82333';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.backgroundColor = '#dc3545';
+                                }}
+                              >
+                                <i className="fa fa-file-pdf"></i>
+                              </button>
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={handleExportarExcel}
+                                style={{
+                                  backgroundColor: '#28a745',
+                                  border: 'none',
+                                  color: 'white',
+                                  padding: '0.5rem 1rem',
+                                  fontSize: '1.25rem',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderRadius: '0.25rem'
+                                }}
+                                title="Exportar reporte a Excel"
+                                onMouseEnter={(e) => {
+                                  e.target.style.backgroundColor = '#218838';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.backgroundColor = '#28a745';
+                                }}
+                              >
+                                <i className="fa fa-file-excel"></i>
+                              </button>
+                            </div>
                           )}
                         </div>
                         <div className="form-section-content" style={{ 
@@ -1118,7 +1350,7 @@ const ReporteGGestion = () => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {detalles.map((item, index) => {
+                                {detallePaginado.map((item, index) => {
                                   const fecha = item.fecha || item.Fecha || item.fechaCreacion || item.FechaCreacion;
                                   const planta = item.plantaNombre || item.PlantaNombre || item.planta || item.Planta || '-';
                                   const centroCosto = item.centroCostoNombre || item.CentroCostoNombre || item.centroCosto || item.CentroCosto || item.CC || '-';
@@ -1153,6 +1385,82 @@ const ReporteGGestion = () => {
                                 })}
                               </tbody>
                             </table>
+                          )}
+
+                          {/* Paginación */}
+                          {detalles.length > 0 && (
+                            <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem', padding: '1rem 1.5rem' }}>
+                              <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
+                                <label className="d-flex align-items-center gap-2 mb-0" style={{ whiteSpace: 'nowrap' }}>
+                                  <span className="text-muted small">Registros a mostrar:</span>
+                                  <select
+                                    className="form-control form-control-sm"
+                                    value={pageSize}
+                                    onChange={(e) => {
+                                      const newPageSize = Number(e.target.value);
+                                      setPageSize(newPageSize);
+                                      setCurrentPage(1);
+                                    }}
+                                    style={{ width: 'auto', minWidth: '70px' }}
+                                  >
+                                    {opcionesPageSize.map((n) => (
+                                      <option key={n} value={n}>{n}</option>
+                                    ))}
+                                  </select>
+                                </label>
+                                <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>
+                                  Mostrando página {currentPage} de {paginado.totalPages} ({paginado.totalItems} registros)
+                                </span>
+                              </div>
+                              <nav>
+                                <ul className="pagination mb-0">
+                                  <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                                    <button
+                                      className="page-link"
+                                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                      disabled={currentPage === 1}
+                                    >
+                                      Anterior
+                                    </button>
+                                  </li>
+                                  {[...Array(paginado.totalPages)].map((_, index) => {
+                                    const page = index + 1;
+                                    if (
+                                      page === 1 ||
+                                      page === paginado.totalPages ||
+                                      (page >= currentPage - 1 && page <= currentPage + 1)
+                                    ) {
+                                      return (
+                                        <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                                          <button
+                                            className="page-link"
+                                            onClick={() => setCurrentPage(page)}
+                                          >
+                                            {page}
+                                          </button>
+                                        </li>
+                                      );
+                                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                                      return (
+                                        <li key={page} className="page-item disabled">
+                                          <span className="page-link">...</span>
+                                        </li>
+                                      );
+                                    }
+                                    return null;
+                                  })}
+                                  <li className={`page-item ${currentPage === paginado.totalPages ? 'disabled' : ''}`}>
+                                    <button
+                                      className="page-link"
+                                      onClick={() => setCurrentPage((p) => Math.min(paginado.totalPages, p + 1))}
+                                      disabled={currentPage === paginado.totalPages}
+                                    >
+                                      Siguiente
+                                    </button>
+                                  </li>
+                                </ul>
+                              </nav>
+                            </div>
                           )}
                         </div>
                       </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { usuariosService } from '../services/usuariosService';
 import { catalogosService } from '../services/catalogosService';
+import { jerarquiasService } from '../services/jerarquiasService';
 import { esJerarquiaAdmin } from '../constants/jerarquias';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
@@ -39,9 +40,20 @@ const Usuarios = () => {
   
   // Estado de paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const OPCIONES_BASE = [5, 10, 25, 50];
+  // Opciones del combo: 5 como base, el resto solo valores <= totalItems; si totalItems no está en la lista, agregarlo
+  const opcionesPageSize = useMemo(() => {
+    if (totalItems <= 0) return [5];
+    const filtradas = OPCIONES_BASE.filter((n) => n <= totalItems);
+    if (!filtradas.includes(totalItems) && totalItems > 5) {
+      filtradas.push(totalItems);
+      filtradas.sort((a, b) => a - b);
+    }
+    return filtradas.length > 0 ? filtradas : [totalItems];
+  }, [totalItems]);
 
   const usernameInputRef = useRef(null);
   const legajoInputRef = useRef(null);
@@ -97,10 +109,9 @@ const Usuarios = () => {
     try {
       setIsLoading(true);
       
-      // Si hay término de búsqueda, usar pageSize=100 y page=1 para obtener todos los resultados
-      // Si no hay búsqueda, usar la paginación normal
-      const pageToUse = (searchTerm && searchTerm.trim()) ? 1 : page;
-      const pageSizeToUse = (searchTerm && searchTerm.trim()) ? 100 : pageSize;
+      // Siempre traer de a 5 registros y armar tabs según la cantidad total
+      const pageToUse = page;
+      const pageSizeToUse = pageSize;
       
       // Convertir el filtro a boolean para el backend
       // true = solo activos, false = inactivos
@@ -119,9 +130,9 @@ const Usuarios = () => {
         usuariosArray = data.data;
       }
       
-      // Usar los valores de paginación del backend
-      const totalItemsBackend = data.totalItems || usuariosArray.length;
-      const totalPagesBackend = data.totalPages || Math.ceil(totalItemsBackend / pageSize);
+      // Usar los valores de paginación del backend (5 por página)
+      const totalItemsBackend = data.totalItems ?? data.totalCount ?? usuariosArray.length;
+      const totalPagesBackend = data.totalPages ?? (Math.ceil(Number(totalItemsBackend) / pageSizeToUse) || 1);
       
       if (usuariosArray.length > 0) {
         // Mapear usuarios del formato del backend al formato esperado
@@ -170,14 +181,20 @@ const Usuarios = () => {
         proyectosData,
         planesData,
       ] = await Promise.all([
-        catalogosService.getJerarquias(),
+        jerarquiasService.getJerarquiasLista(1, 9999, '', true),
         catalogosService.getPlantas(),
         catalogosService.getCentrosDeCosto(),
         catalogosService.getProyectos(),
         catalogosService.getPlanesNutricionales(),
       ]);
   
-      const jerarquiasArray = jerarquiasData || [];
+      const jerarquiasRaw = jerarquiasData?.items || jerarquiasData?.data || (Array.isArray(jerarquiasData) ? jerarquiasData : []);
+      const jerarquiasArray = jerarquiasRaw.map(j => ({
+        id: j.Id || j.id,
+        nombre: j.Nombre || j.nombre || '',
+        descripcion: j.Descripcion || j.descripcion || '',
+        bonificacion: j.Bonificacion !== undefined ? j.Bonificacion : (j.bonificacion !== undefined ? j.bonificacion : 0),
+      }));
       const plantasArray = plantasData || [];
       const centrosArray = centrosData || [];
       const proyectosArray = proyectosData || [];
@@ -624,6 +641,18 @@ const Usuarios = () => {
     // DNI, Legajo y CUIL tienen sus propios handlers específicos, no usar handleInputChange para ellos
     if (name === 'dni' || name === 'legajo' || name === 'cuil') {
       return; // Estos campos tienen handlers específicos en el JSX
+    }
+
+    // Al cambiar jerarquía, ajustar bonificaciones según el % de la jerarquía seleccionada
+    if (name === 'jerarquia_id') {
+      const jerarquiaSeleccionada = jerarquias.find(j => String(j.id) === String(value));
+      const bonificacionPct = parseFloat(jerarquiaSeleccionada?.bonificacion ?? jerarquiaSeleccionada?.Bonificacion ?? 0);
+      setFormData((prev) => ({
+        ...prev,
+        jerarquia_id: value,
+        bonificaciones: bonificacionPct > 0 ? '1' : '0',
+      }));
+      return;
     }
     
     setFormData((prev) => ({
@@ -1649,10 +1678,21 @@ const Usuarios = () => {
     setTabActivo(tab);
   };
 
-  // Cuando cambia el filtro o filtroActivo, resetear a página 1
+  // Cuando cambia el filtro, filtroActivo o pageSize, resetear a página 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [filtro, filtroActivo]);
+  }, [filtro, filtroActivo, pageSize]);
+
+  // Si pageSize no está en las opciones disponibles (ej. totalItems bajó), usar 5 como base
+  useEffect(() => {
+    if (totalItems <= 0) return;
+    const opciones = OPCIONES_BASE.filter((n) => n <= totalItems);
+    const conTotal = opciones.includes(totalItems) ? opciones : [...opciones, totalItems].sort((a, b) => a - b);
+    const validas = conTotal.length > 0 ? conTotal : [totalItems];
+    if (!validas.includes(pageSize) || pageSize > totalItems) {
+      setPageSize(validas[0] ?? 5);
+    }
+  }, [totalItems, pageSize]);
 
   // Cuando cambia la página, el filtro o filtroActivo, recargar desde el servidor
   useEffect(() => {
@@ -2155,6 +2195,17 @@ const Usuarios = () => {
                         La jerarquía del usuario root no puede ser modificada
                       </small>
                     )}
+                    {(() => {
+                      const jerSel = jerarquias.find(j => String(j.id) === String(formData.jerarquia_id));
+                      if (!jerSel) return null;
+                      const pct = parseFloat(jerSel.bonificacion ?? jerSel.Bonificacion ?? 0);
+                      return (
+                        <small className="form-text" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', color: pct > 0 ? '#28a745' : '#6c757d' }}>
+                          <i className="fa fa-percent mr-1"></i>
+                          Bonificación de la jerarquía: <strong style={{ marginLeft: '0.25rem' }}>{pct > 0 ? `${Number.isInteger(pct) ? pct : pct.toFixed(2)}%` : 'Sin bonificación'}</strong>
+                        </small>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="col-md-4">
@@ -2391,27 +2442,8 @@ const Usuarios = () => {
                     </small>
                   </div>
                 </div>
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="bonificaciones_invitado">Bonificaciones Invitados</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      id="bonificaciones_invitado"
-                      name="bonificaciones_invitado"
-                      value={formData.bonificaciones_invitado || '0'}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, '');
-                        setFormData((prev) => ({
-                          ...prev,
-                          bonificaciones_invitado: value || '0',
-                        }));
-                      }}
-                      min="0"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
+                {/* Campo Bonificaciones Invitados oculto - se envía el valor al backend pero no se muestra */}
+                <input type="hidden" name="bonificaciones_invitado" value={formData.bonificaciones_invitado || '0'} />
               </div>
               </div>
               </div>
@@ -2659,6 +2691,7 @@ const Usuarios = () => {
         </div>
 
         {/* Tabla de usuarios */}
+        <div className="usuarios-lista">
         <DataTable
           columns={[
             { key: 'username', field: 'username', label: 'Username' },
@@ -2882,11 +2915,24 @@ const Usuarios = () => {
           pageSize={pageSize}
         />
         
-        {/* Controles de paginación del servidor (siempre que haya más de una página) */}
-        {totalPages > 1 && (
-          <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
-            <div>
-              <span className="text-muted">
+        {/* Controles de paginación y combo de registros a mostrar */}
+        {totalItems > 0 && (
+          <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem' }}>
+            <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
+              <label className="d-flex align-items-center gap-2 mb-0" style={{ whiteSpace: 'nowrap' }}>
+                <span className="text-muted small">Registros a mostrar:</span>
+                <select
+                  className="form-control form-control-sm"
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  style={{ width: 'auto', minWidth: '70px' }}
+                >
+                  {opcionesPageSize.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </label>
+              <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>
                 Mostrando página {currentPage} de {totalPages} ({totalItems} usuarios)
               </span>
             </div>
@@ -2941,6 +2987,7 @@ const Usuarios = () => {
             </nav>
           </div>
         )}
+        </div>
 
       </div>
     </div>
