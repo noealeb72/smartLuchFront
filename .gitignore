@@ -26,6 +26,7 @@ yarn-error.log*
 .vs
 *.swp
 *.swo
+.cursor/
 
 # OS
 Thumbs.db
@@ -39,3 +40,4 @@ Thumbs.db
 .DS_Store
 Thumbs.db
 
+*.zip
