@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { centrosDeCostoService } from '../services/centrosDeCostoService';
 import { catalogosService } from '../services/catalogosService';
 import { useSmartTime } from '../contexts/SmartTimeContext';
@@ -7,12 +7,52 @@ import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
+import BotonAyuda from '../components/BotonAyuda';
+import SelectorRegistros from '../components/SelectorRegistros';
+import { usePaginacion } from '../hooks/usePaginacion';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addPdfReportHeader } from '../utils/pdfReportHeader';
 import ExcelJS from 'exceljs';
 import { addExcelReportHeader } from '../utils/excelReportHeader';
 import './Usuarios.css';
+
+const MANUAL_CENTROS_COSTO = [
+  {
+    tipo: 'parrafo',
+    texto:
+      'El centro de costo es la unidad contable a la que se le imputa el consumo de un usuario, para ' +
+      'que administración pueda distribuir el gasto de comedor entre áreas de la empresa.',
+  },
+  { tipo: 'subtitulo', texto: 'Campos' },
+  {
+    tipo: 'tabla',
+    head: ['Campo', 'Qué es'],
+    body: [
+      ['Nombre', 'Nombre del centro de costo'],
+      ['Planta', 'Comedor al que pertenece (se autoselecciona si solo hay una planta cargada)'],
+      ['Descripción', 'Texto libre opcional'],
+    ],
+  },
+  { tipo: 'subtitulo', texto: 'Dónde se usa' },
+  {
+    tipo: 'lista',
+    items: [
+      'Se asigna a cada usuario en la pestaña "Organización" de su ficha.',
+      'Se asigna también a cada Proyecto.',
+      'Aparece en los reportes de gestión y facturación para agrupar consumos por centro de costo.',
+    ],
+  },
+  { tipo: 'subtitulo', texto: 'Cómo administrar' },
+  {
+    tipo: 'lista',
+    items: [
+      'Agregar: botón "+ Agregar" arriba del listado.',
+      'Editar / Dar de baja / Activar: íconos en la fila.',
+      'El centro de costo "predeterminado" se marca desde el listado con el botón de estrella, no desde el formulario.',
+    ],
+  },
+];
 
 const CentroDeCosto = () => {
   const [centros, setCentros] = useState([]);
@@ -24,20 +64,14 @@ const CentroDeCosto = () => {
   const [plantas, setPlantas] = useState([]);
   
   // Estado de paginación
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const OPCIONES_BASE = [5, 10, 25, 50];
-  const opcionesPageSize = useMemo(() => {
-    if (totalItems <= 0) return [5];
-    const filtradas = OPCIONES_BASE.filter((n) => n <= totalItems);
-    if (!filtradas.includes(totalItems) && totalItems > 5) {
-      filtradas.push(totalItems);
-      filtradas.sort((a, b) => a - b);
-    }
-    return filtradas.length > 0 ? filtradas : [totalItems];
-  }, [totalItems]);
+  const {
+    currentPage, setCurrentPage,
+    pageSize, setPageSize,
+    totalPages, setTotalPages,
+    totalItems, setTotalItems,
+    opcionesPageSize,
+    handlePageChange,
+  } = usePaginacion(5);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -124,21 +158,10 @@ const CentroDeCosto = () => {
     }
   }, []);
 
-  // Cuando cambia el filtro, filtroActivo o pageSize, resetear a página 1
+  // Cuando cambia el filtro o filtroActivo, resetear a página 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [filtro, filtroActivo, pageSize]);
-
-  // Si pageSize no está en las opciones disponibles, usar 5 como base
-  useEffect(() => {
-    if (totalItems <= 0) return;
-    const opciones = OPCIONES_BASE.filter((n) => n <= totalItems);
-    const conTotal = opciones.includes(totalItems) ? opciones : [...opciones, totalItems].sort((a, b) => a - b);
-    const validas = conTotal.length > 0 ? conTotal : [totalItems];
-    if (!validas.includes(pageSize) || pageSize > totalItems) {
-      setPageSize(validas[0] ?? 5);
-    }
-  }, [totalItems, pageSize]);
+  }, [filtro, filtroActivo]);
 
   // Cargar centros cuando cambia la página, el filtro o el filtroActivo
   useEffect(() => {
@@ -316,11 +339,6 @@ const CentroDeCosto = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Manejar cambio de página
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
   };
 
   // Crear nuevo centro de costo
@@ -602,6 +620,16 @@ const CentroDeCosto = () => {
               </div>
             </div>
 
+            {/* Leyenda de campos requeridos */}
+            <div className="row mt-2">
+              <div className="col-12">
+                <small style={{ color: '#6c757d' }}>
+                  <i className="fa fa-exclamation-triangle mr-1" style={{ color: '#ffc107' }} aria-hidden="true"></i>
+                  Los campos con * son requeridos
+                </small>
+              </div>
+            </div>
+
             <div className="row mt-3">
               <div className="col-12 d-flex justify-content-end">
                 <button
@@ -649,10 +677,11 @@ const CentroDeCosto = () => {
   return (
     <div className="container-fluid" style={{ padding: 0 }}>
       {/* Barra negra con título Centros de Costo */}
-      <div className="page-title-bar">
-        <h3>
+      <div className="page-title-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h3 style={{ margin: 0 }}>
           <i className="fa fa-dollar-sign mr-2" aria-hidden="true"></i>Centros de Costo
         </h3>
+        <BotonAyuda titulo="Manual — Centros de Costo" contenido={MANUAL_CENTROS_COSTO} nombreArchivo="manual_centros_costo.pdf" />
       </div>
       
       <div style={{ paddingTop: '1.5rem', paddingLeft: '3rem', paddingRight: '3rem', width: '100%', boxSizing: 'border-box' }}>
@@ -996,20 +1025,8 @@ const CentroDeCosto = () => {
         {totalItems > 0 && (
           <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem' }}>
             <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
-              <label className="d-flex align-items-center gap-2 mb-0" style={{ whiteSpace: 'nowrap' }}>
-                <span className="text-muted small">Registros a mostrar:</span>
-                <select
-                  className="form-control form-control-sm"
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
-                  style={{ width: 'auto', minWidth: '70px' }}
-                >
-                  {opcionesPageSize.map((n) => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
-              </label>
-              <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>
+              <SelectorRegistros pageSize={pageSize} opciones={opcionesPageSize} onChange={setPageSize} className="d-flex align-items-center" />
+              <span className="text-muted" style={{ whiteSpace: 'nowrap', fontSize: '0.9rem' }}>
                 Mostrando página {currentPage} de {totalPages} ({totalItems} centros de costo)
               </span>
             </div>

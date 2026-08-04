@@ -6,6 +6,10 @@
     "Cocina": false,
     "Comensal": false,
     "Gerencia": false
+  },
+  "camposVisibles": {
+    "planta": true,
+    "centroCosto": false,
+    "proyecto": false
   }
 }
-

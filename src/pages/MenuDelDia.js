@@ -9,16 +9,68 @@ import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
+import BotonAyuda from '../components/BotonAyuda';
+import SelectorRegistros from '../components/SelectorRegistros';
+import { usePaginacion } from '../hooks/usePaginacion';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addPdfReportHeader } from '../utils/pdfReportHeader';
 import ExcelJS from 'exceljs';
 import { addExcelReportHeader } from '../utils/excelReportHeader';
+import { getCamposVisibles } from '../services/configService';
 import './Usuarios.css';
+
+const MANUAL_MENU_DEL_DIA = [
+  {
+    tipo: 'parrafo',
+    texto:
+      'Acá se carga, para una fecha puntual, qué plato del catálogo está disponible en cada turno y ' +
+      'comedor, con qué cantidad de cupos. Es lo que ve el comensal al pedir en Inicio, y lo que ve ' +
+      'Cocina en Despacho.',
+  },
+  { tipo: 'subtitulo', texto: 'Campos' },
+  {
+    tipo: 'tabla',
+    head: ['Campo', 'Qué es'],
+    body: [
+      ['Plato', 'Producto del catálogo de Platos que se ofrece'],
+      ['Plan Nutricional', 'Se completa según el plato elegido'],
+      ['Cantidad', 'Cupos disponibles para ese plato, turno, comedor y fecha. No se puede bajar por debajo de la cantidad ya asignada (pedida) si el menú está en edición'],
+      ['Fecha', 'Día en que estará disponible'],
+      ['Turno', 'En qué franja horaria se sirve'],
+      ['Comedor', 'En qué planta/comedor está disponible'],
+      ['Jerarquía', 'A qué jerarquía de comensales se les muestra'],
+      ['Proyecto', 'Proyecto al que se imputa (si aplica)'],
+      ['Centro de Costo', 'Centro de costo al que se imputa (si aplica)'],
+    ],
+  },
+  {
+    tipo: 'parrafo',
+    texto:
+      'La columna "Asignados" del listado muestra cuántos de los cupos cargados ya fueron pedidos por ' +
+      'comensales — no se puede eliminar un menú con pedidos activos, solo darlo de baja.',
+  },
+  { tipo: 'subtitulo', texto: 'Cómo administrar' },
+  {
+    tipo: 'lista',
+    items: [
+      'Agregar: botón "+ Agregar" arriba del listado.',
+      'Editar / Dar de baja / Activar: íconos en la fila.',
+      'Filtros: por fecha, por comedor y por estado (activos/inactivos), arriba del listado.',
+      'Imprimir: el botón de impresión deja elegir columnas y exportar a PDF o Excel.',
+    ],
+  },
+];
 
 const MenuDelDia = () => {
   useAuth();
-  
+
+  // Campos que se pueden ocultar por configuración (public/config.json -> camposVisibles)
+  const camposVisibles = getCamposVisibles();
+  const mostrarPlanta = camposVisibles.planta !== false;
+  const mostrarCentroCosto = camposVisibles.centroCosto !== false;
+  const mostrarProyecto = camposVisibles.proyecto !== false;
+
   // Función para obtener la fecha local en formato YYYY-MM-DD
   const obtenerFechaLocal = () => {
     const ahora = new Date();
@@ -27,14 +79,15 @@ const MenuDelDia = () => {
     const dia = String(ahora.getDate()).padStart(2, '0');
     return `${año}-${mes}-${dia}`;
   };
-  
+
   const [menus, setMenus] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filtro, setFiltro] = useState('');
   const [filtroActivo, setFiltroActivo] = useState('activo');
+  const [filtroPlantaId, setFiltroPlantaId] = useState(''); // Filtro por comedor (Planta)
   const [vista, setVista] = useState('lista'); // 'lista' | 'editar' | 'crear'
   const [fechaSeleccionada, setFechaSeleccionada] = useState(obtenerFechaLocal()); // Fecha de hoy por defecto
-  
+
   // Estados para el modal de impresión
   const [mostrarModalImpresion, setMostrarModalImpresion] = useState(false);
   const [columnasSeleccionadas, setColumnasSeleccionadas] = useState({
@@ -65,7 +118,7 @@ const MenuDelDia = () => {
   const [busquedaPlato, setBusquedaPlato] = useState('');
   const [mostrarDropdownPlato, setMostrarDropdownPlato] = useState(false);
   const [, setPlatoSeleccionadoNombre] = useState('');
-  
+
   // Ref para rastrear el plan nutricional anterior y evitar limpiar el plato en la primera carga
   const planNutricionalAnteriorRef = useRef(null);
   // Ref para rastrear si estamos cargando un menú para editar
@@ -82,10 +135,14 @@ const MenuDelDia = () => {
   const [plantas, setPlantas] = useState([]);
 
   // Paginación
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const {
+    currentPage, setCurrentPage,
+    pageSize, setPageSize,
+    totalPages, setTotalPages,
+    totalItems, setTotalItems,
+    opcionesPageSize,
+    handlePageChange,
+  } = usePaginacion(5);
 
   // Form
   const [formData, setFormData] = useState({
@@ -152,7 +209,7 @@ const MenuDelDia = () => {
       // getTurnosLista devuelve un objeto con items, totalItems, etc.
       const turnosArray = Array.isArray(turnosData) ? turnosData : (turnosData?.items || turnosData?.data || []);
       const platosArray = Array.isArray(platosData) ? (platosData.items || platosData.data || platosData) : [];
-      
+
       setTurnos(turnosArray);
       setPlatos(platosArray);
       setJerarquias(Array.isArray(jerarquiasData) ? jerarquiasData : []);
@@ -177,22 +234,23 @@ const MenuDelDia = () => {
     async (page = 1, searchTerm = '', fecha = null) => {
       try {
         setIsLoading(true);
-        
+
         // Usar la fecha proporcionada o la fecha seleccionada
         const fechaFiltro = fecha || fechaSeleccionada;
-        
+
         // Solo pasar los parámetros que acepta el endpoint según la firma del método
         // public HttpResponseMessage ObtenerLista(int page, int pageSize, DateTime? fechaDesde, 
         // DateTime? fechaHasta, string search, bool activo)
         // Convertir filtroActivo a boolean para el backend
         // 'activo' -> true, 'inactivo' -> false
         const soloActivos = filtroActivo === 'activo' ? true : false;
-        
+
         const filtros = {
           activo: soloActivos, // true para activos, false para de baja
           fechaDesde: fechaFiltro,
           fechaHasta: fechaFiltro,
           search: searchTerm && searchTerm.trim() ? searchTerm.trim() : null,
+          plantaId: filtroPlantaId ? parseInt(filtroPlantaId) : null,
         };
 
         // Llamar a ObtenerLista de la API
@@ -233,7 +291,7 @@ const MenuDelDia = () => {
         setIsLoading(false);
       }
     },
-    [pageSize, filtroActivo, fechaSeleccionada]
+    [pageSize, filtroActivo, fechaSeleccionada, filtroPlantaId]
   );
 
   useEffect(() => {
@@ -244,7 +302,7 @@ const MenuDelDia = () => {
   useEffect(() => {
     // Cargar menús inmediatamente con la fecha de hoy, sin esperar a que los platos estén cargados
     cargarMenus(currentPage, filtro, fechaSeleccionada);
-  }, [currentPage, filtro, filtroActivo, cargarMenus, fechaSeleccionada]);
+  }, [currentPage, filtro, filtroActivo, cargarMenus, fechaSeleccionada, filtroPlantaId]);
 
   // Auto-seleccionar valores cuando hay un solo elemento disponible en los catálogos
   // SOLO en modo editar, NO en modo crear (en crear siempre debe estar "-- Seleccionar --")
@@ -252,44 +310,44 @@ const MenuDelDia = () => {
     if (vista === 'editar') {
       setFormData(prev => {
         const nuevo = { ...prev };
-        
+
         // Solo auto-seleccionar si el campo está vacío
         // Auto-seleccionar jerarquía si hay una sola
         if (jerarquias.length === 1 && !prev.jerarquiaId) {
           const jerarquiaId = jerarquias[0].id || jerarquias[0].Id || jerarquias[0].ID;
           nuevo.jerarquiaId = String(jerarquiaId);
         }
-        
+
         // Auto-seleccionar turno si hay uno solo (editar: un solo turno)
         if (turnos.length === 1 && !prev.turnoId) {
           const turnoId = turnos[0].id || turnos[0].Id || turnos[0].ID;
           nuevo.turnoId = String(turnoId);
         }
-        
+
         // Auto-seleccionar proyecto si hay uno solo
         if (proyectos.length === 1 && !prev.proyectoId) {
           const proyectoId = proyectos[0].id || proyectos[0].Id || proyectos[0].ID;
           nuevo.proyectoId = String(proyectoId);
         }
-        
+
         // Auto-seleccionar centro de costo si hay uno solo
         if (centrosDeCosto.length === 1 && !prev.centroCostoId) {
           const centroId = centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID;
           nuevo.centroCostoId = String(centroId);
         }
-        
+
         // Auto-seleccionar planta si hay una sola
         if (plantas.length === 1 && !prev.plantaId) {
           const plantaId = plantas[0].id || plantas[0].Id || plantas[0].ID;
           nuevo.plantaId = String(plantaId);
         }
-        
+
         // Auto-seleccionar plan nutricional si hay uno solo
         if (planesNutricionales.length === 1 && !prev.plannutricional_id) {
           const planId = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
           nuevo.plannutricional_id = String(planId);
         }
-        
+
         return nuevo;
       });
     }
@@ -342,14 +400,14 @@ const MenuDelDia = () => {
       const planExiste = planesNutricionales.some(
         (p) => String(p.id || p.Id || p.ID) === planIdActual
       );
-      
+
       if (!planExiste) {
         // Intentar encontrar el plan por ID numérico
         const planIdNum = parseInt(planIdActual);
         const planEncontrado = planesNutricionales.find(
           (p) => (p.id || p.Id || p.ID) === planIdNum
         );
-        
+
         if (planEncontrado) {
           const planIdCorrecto = String(planEncontrado.id || planEncontrado.Id || planEncontrado.ID);
           setFormData(prev => ({
@@ -365,7 +423,7 @@ const MenuDelDia = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     // Si se cambia el plan nutricional, limpiar la selección de plato
     if (name === 'plannutricional_id') {
       setFormData((prev) => ({
@@ -377,7 +435,7 @@ const MenuDelDia = () => {
       setPlatoSeleccionadoNombre('');
       return;
     }
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
@@ -397,7 +455,7 @@ const MenuDelDia = () => {
           plannutricional_id: planIdParaUsar
         }));
       }
-      
+
       if (!planIdParaUsar || planIdParaUsar === '' || planIdParaUsar === '-- Seleccionar --') {
         setPlatosPorPlan([]);
         return;
@@ -412,12 +470,12 @@ const MenuDelDia = () => {
 
         setIsLoading(true);
         const platosData = await platosService.obtenerPorPlanNutricional(planId, true);
-        
+
         // Normalizar la respuesta
-        const platosArray = Array.isArray(platosData) 
-          ? platosData 
+        const platosArray = Array.isArray(platosData)
+          ? platosData
           : (platosData?.items || platosData?.data || []);
-        
+
         setPlatosPorPlan(platosArray);
       } catch (error) {
         setPlatosPorPlan([]);
@@ -443,7 +501,7 @@ const MenuDelDia = () => {
       const plato = platosPorPlan.find(
         (p) => (p.id || p.Id || p.ID) === platoId
       );
-      
+
       if (plato) {
         const nombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
         // Solo actualizar si no hay nombre establecido o si el nombre actual está vacío
@@ -461,17 +519,17 @@ const MenuDelDia = () => {
       // Si no hay plan nutricional seleccionado, no mostrar ningún plato
       return [];
     }
-    
+
     // Usar los platos cargados desde el API
     let platosDisponibles = platosPorPlan;
-    
+
     // Si estamos editando y hay un plato seleccionado que no está en la lista del API,
     // agregarlo para que no se pierda la selección
     if (formData.platoId && vista === 'editar') {
       const platoSeleccionado = platos.find(
         (p) => (p.id || p.Id || p.ID) === parseInt(formData.platoId)
       );
-      
+
       if (platoSeleccionado && !platosDisponibles.find(
         (p) => (p.id || p.Id || p.ID) === (platoSeleccionado.id || platoSeleccionado.Id || platoSeleccionado.ID)
       )) {
@@ -479,7 +537,7 @@ const MenuDelDia = () => {
         platosDisponibles = [platoSeleccionado, ...platosDisponibles];
       }
     }
-    
+
     return platosDisponibles;
   }, [platosPorPlan, formData.plannutricional_id, formData.platoId, vista, platos]);
 
@@ -488,7 +546,7 @@ const MenuDelDia = () => {
     if (!busquedaPlato.trim()) {
       return [];
     }
-    
+
     const termino = busquedaPlato.toLowerCase().trim();
     return platosFiltrados.filter((plato) => {
       const nombre = (plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '').toLowerCase();
@@ -515,24 +573,24 @@ const MenuDelDia = () => {
   useEffect(() => {
     if (formData.platoId) {
       const platoId = parseInt(formData.platoId);
-      
+
       // Buscar el plato en múltiples fuentes: platosPorPlan, platosFiltrados, y platos
       let plato = platosPorPlan.find(
         (p) => (p.id || p.Id || p.ID) === platoId
       );
-      
+
       if (!plato) {
         plato = platosFiltrados.find(
           (p) => (p.id || p.Id || p.ID) === platoId
         );
       }
-      
+
       if (!plato) {
         plato = platos.find(
           (p) => (p.id || p.Id || p.ID) === platoId
         );
       }
-      
+
       if (plato) {
         const nombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
         setPlatoSeleccionadoNombre(nombre);
@@ -550,10 +608,10 @@ const MenuDelDia = () => {
     if (cargandoParaEditarRef.current) {
       return;
     }
-    
+
     const planActual = formData.plannutricional_id;
     const planAnterior = planNutricionalAnteriorRef.current;
-    
+
     // Si no hay plan seleccionado o es el placeholder, limpiar
     if (!planActual || planActual === '' || planActual === '-- Seleccionar --') {
       // Solo limpiar si no estamos en modo editar con un platoId ya establecido
@@ -565,7 +623,7 @@ const MenuDelDia = () => {
       planNutricionalAnteriorRef.current = planActual;
       return;
     }
-    
+
     // Si el plan cambió (no es la primera carga) y NO estamos en modo editar con un plato ya seleccionado
     // Solo limpiar si el usuario cambió el plan manualmente, no cuando se carga para editar
     if (planAnterior !== null && planAnterior !== planActual) {
@@ -576,7 +634,7 @@ const MenuDelDia = () => {
         setFormData(prev => ({ ...prev, platoId: '' }));
       }
     }
-    
+
     // Actualizar la referencia
     planNutricionalAnteriorRef.current = planActual;
   }, [formData.plannutricional_id, vista, formData.platoId]);
@@ -684,7 +742,7 @@ const MenuDelDia = () => {
     }
 
     if (columnas.planta) {
-      headers.push('Planta');
+      headers.push('Comedor');
       const plantaNombre =
         menu.plantaNombre ||
         menu.PlantaNombre ||
@@ -711,7 +769,7 @@ const MenuDelDia = () => {
 
     if (columnas.fecha) {
       headers.push('Fecha');
-      const fechaMenu = menu.fecha 
+      const fechaMenu = menu.fecha
         ? (menu.fecha.split('T')[0] || menu.fecha.split(' ')[0])
         : '-';
       datos.push(fechaMenu);
@@ -785,10 +843,10 @@ const MenuDelDia = () => {
   const handleExportarPDF = async (columnas = null, filtros = null) => {
     const cols = columnas || columnasSeleccionadas;
     const filtrosAplicar = filtros || filtrosImpresion;
-    
+
     try {
       setIsLoading(true);
-      
+
       // Mapear columnas seleccionadas al formato del endpoint
       const columnasRequest = {
         incluirPlato: cols.plato || false,
@@ -821,9 +879,9 @@ const MenuDelDia = () => {
         ...columnasRequest,
         ...filtrosRequest,
       };
-      
+
       const menusFiltrados = await menuService.getImpresion(requestData);
-      
+
       if (!menusFiltrados || menusFiltrados.length === 0) {
         Swal.fire({
           title: 'Sin datos',
@@ -843,10 +901,10 @@ const MenuDelDia = () => {
         || (menusFiltrados[0]?.fecha || menusFiltrados[0]?.Fecha);
       const fechaFormateada = fechaReporte
         ? (() => {
-            const s = String(fechaReporte).split('T')[0] || String(fechaReporte).split(' ')[0] || '';
-            const [y, m, d] = s.split('-');
-            return (d && m && y) ? `${d}-${m}-${y}` : s;
-          })()
+          const s = String(fechaReporte).split('T')[0] || String(fechaReporte).split(' ')[0] || '';
+          const [y, m, d] = s.split('-');
+          return (d && m && y) ? `${d}-${m}-${y}` : s;
+        })()
         : '-';
 
       doc.setFontSize(10);
@@ -858,7 +916,7 @@ const MenuDelDia = () => {
         Plato: 'Plato',
         Turno: 'Turno',
         Proyecto: 'Proyecto',
-        Planta: 'Planta',
+        Planta: 'Comedor',
         PlanNutricional: 'Plan Nutricional',
         Jerarquia: 'Jerarquía',
         CentroCosto: 'Centro de Costo',
@@ -868,7 +926,7 @@ const MenuDelDia = () => {
         plato: 'Plato',
         turno: 'Turno',
         proyecto: 'Proyecto',
-        planta: 'Planta',
+        planta: 'Comedor',
         planNutricional: 'Plan Nutricional',
         jerarquia: 'Jerarquía',
         centroCosto: 'Centro de Costo',
@@ -914,7 +972,7 @@ const MenuDelDia = () => {
       });
 
       doc.save('menus-del-dia.pdf');
-      
+
       if (columnas || filtros) {
         setMostrarModalImpresion(false);
       }
@@ -934,10 +992,10 @@ const MenuDelDia = () => {
   const handleExportarExcel = async (columnas = null, filtros = null) => {
     const cols = columnas || columnasSeleccionadas;
     const filtrosAplicar = filtros || filtrosImpresion;
-    
+
     try {
       setIsLoading(true);
-      
+
       // Mapear columnas seleccionadas al formato del endpoint
       const columnasRequest = {
         incluirPlato: cols.plato || false,
@@ -970,9 +1028,9 @@ const MenuDelDia = () => {
         ...columnasRequest,
         ...filtrosRequest,
       };
-      
+
       const menusFiltrados = await menuService.getImpresion(requestData);
-      
+
       if (!menusFiltrados || menusFiltrados.length === 0) {
         Swal.fire({
           title: 'Sin datos',
@@ -989,10 +1047,10 @@ const MenuDelDia = () => {
         || (menusFiltrados[0]?.fecha || menusFiltrados[0]?.Fecha);
       const fechaFormateadaExcel = fechaReporteExcel
         ? (() => {
-            const s = String(fechaReporteExcel).split('T')[0] || String(fechaReporteExcel).split(' ')[0] || '';
-            const [y, m, d] = s.split('-');
-            return (d && m && y) ? `${d}-${m}-${y}` : s;
-          })()
+          const s = String(fechaReporteExcel).split('T')[0] || String(fechaReporteExcel).split(' ')[0] || '';
+          const [y, m, d] = s.split('-');
+          return (d && m && y) ? `${d}-${m}-${y}` : s;
+        })()
         : '-';
 
       // Mapeo de nombres de columnas del API - excluir Fecha
@@ -1000,7 +1058,7 @@ const MenuDelDia = () => {
         Plato: 'Plato',
         Turno: 'Turno',
         Proyecto: 'Proyecto',
-        Planta: 'Planta',
+        Planta: 'Comedor',
         PlanNutricional: 'Plan Nutricional',
         Jerarquia: 'Jerarquía',
         CentroCosto: 'Centro de Costo',
@@ -1010,7 +1068,7 @@ const MenuDelDia = () => {
         plato: 'Plato',
         turno: 'Turno',
         proyecto: 'Proyecto',
-        planta: 'Planta',
+        planta: 'Comedor',
         planNutricional: 'Plan Nutricional',
         jerarquia: 'Jerarquía',
         centroCosto: 'Centro de Costo',
@@ -1067,7 +1125,7 @@ const MenuDelDia = () => {
       a.download = 'menus-del-dia.xlsx';
       a.click();
       URL.revokeObjectURL(a.href);
-      
+
       if (columnas || filtros) {
         setMostrarModalImpresion(false);
       }
@@ -1172,7 +1230,7 @@ const MenuDelDia = () => {
           '-';
 
         const cantidad = menu.cantidad || menu.Cantidad || menu.Cant || 0;
-        const fechaMenu = menu.fecha 
+        const fechaMenu = menu.fecha
           ? (menu.fecha.split('T')[0] || menu.fecha.split(' ')[0])
           : '-';
         const activo = menu.activo !== undefined ? menu.activo : menu.Activo !== undefined ? menu.Activo : true;
@@ -1193,7 +1251,7 @@ const MenuDelDia = () => {
 
       doc.autoTable({
         startY: 28,
-        head: [['Plato', 'Turno', 'Jerarquía', 'Plan Nutricional', 'Proyecto', 'Centro de Costo', 'Planta', 'Cantidad', 'Fecha', 'Estado']],
+        head: [['Plato', 'Turno', 'Jerarquía', 'Plan Nutricional', 'Proyecto', 'Centro de Costo', 'Comedor', 'Cantidad', 'Fecha', 'Estado']],
         body: tableData,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [52, 58, 64] },
@@ -1215,7 +1273,7 @@ const MenuDelDia = () => {
   const handleExportarExcelOriginal = async () => {
     try {
       const worksheetData = [
-        ['Plato', 'Turno', 'Jerarquía', 'Plan Nutricional', 'Proyecto', 'Centro de Costo', 'Planta', 'Cantidad', 'Fecha', 'Estado'],
+        ['Plato', 'Turno', 'Jerarquía', 'Plan Nutricional', 'Proyecto', 'Centro de Costo', 'Comedor', 'Cantidad', 'Fecha', 'Estado'],
         ...menus.map((menu) => {
           const platoNombre =
             menu.platoNombre ||
@@ -1286,7 +1344,7 @@ const MenuDelDia = () => {
             '-';
 
           const cantidad = menu.cantidad || menu.Cantidad || menu.Cant || 0;
-          const fechaMenu = menu.fecha 
+          const fechaMenu = menu.fecha
             ? (menu.fecha.split('T')[0] || menu.fecha.split(' ')[0])
             : '-';
           const activo = menu.activo !== undefined ? menu.activo : menu.Activo !== undefined ? menu.Activo : true;
@@ -1333,7 +1391,7 @@ const MenuDelDia = () => {
 
   const handleCrearMenu = () => {
     setVista('crear');
-    
+
     // Todos los select deben comenzar con "-- Seleccionar --" (valor vacío)
     const nuevoFormData = {
       id: null,
@@ -1354,7 +1412,7 @@ const MenuDelDia = () => {
       fecha: obtenerFechaLocal(),
       activo: true,
     };
-    
+
     setFormData(nuevoFormData);
     // Limpiar también el buscador de plato
     setBusquedaPlato('');
@@ -1366,10 +1424,10 @@ const MenuDelDia = () => {
       setIsLoading(true);
       cargandoParaEditarRef.current = true; // Marcar que estamos cargando para editar
       const menuCompleto = await menuService.getPorId(menu.id || menu.Id || menu.ID);
-      
+
       // Obtener el plan nutricional ID - PlanNutricionalId es el campo que trae el DTO
       let planNutricionalId = '';
-      
+
       if (menuCompleto.PlanNutricionalId !== undefined && menuCompleto.PlanNutricionalId !== null) {
         planNutricionalId = menuCompleto.PlanNutricionalId;
       } else if (menuCompleto.planNutricionalId !== undefined && menuCompleto.planNutricionalId !== null) {
@@ -1387,7 +1445,7 @@ const MenuDelDia = () => {
       } else if (menuCompleto.planNutricional?.ID !== undefined && menuCompleto.planNutricional?.ID !== null) {
         planNutricionalId = menuCompleto.planNutricional.ID;
       }
-      
+
       // Convertir a string y validar que exista en planesNutricionales
       if (planNutricionalId !== '' && planNutricionalId !== null && planNutricionalId !== undefined) {
         // Convertir a número primero para normalizar
@@ -1400,7 +1458,7 @@ const MenuDelDia = () => {
               return pId === planIdNum || parseInt(pId) === planIdNum;
             }
           );
-          
+
           if (planEncontrado) {
             planNutricionalId = String(planEncontrado.id || planEncontrado.Id || planEncontrado.ID);
 
@@ -1416,25 +1474,25 @@ const MenuDelDia = () => {
 
         planNutricionalId = '';
       }
-      
+
       // Obtener el platoId y el nombre del plato si está disponible
       const platoId = menuCompleto.PlatoId || menuCompleto.platoId || menuCompleto.plato_id || '';
       // PlatoNombre es la propiedad que trae el nombre del plato desde el API
-      const platoNombre = menuCompleto.PlatoNombre || 
-                          menuCompleto.platoNombre || 
-                          menuCompleto.plato_nombre ||
-                          menuCompleto.plato?.descripcion ||
-                          menuCompleto.Plato?.Descripcion ||
-                          menuCompleto.plato?.nombre ||
-                          menuCompleto.Plato?.Nombre ||
-                          '';
-      
+      const platoNombre = menuCompleto.PlatoNombre ||
+        menuCompleto.platoNombre ||
+        menuCompleto.plato_nombre ||
+        menuCompleto.plato?.descripcion ||
+        menuCompleto.Plato?.Descripcion ||
+        menuCompleto.plato?.nombre ||
+        menuCompleto.Plato?.Nombre ||
+        '';
+
       // Establecer el nombre del plato ANTES de establecer formData
       if (platoNombre) {
         setPlatoSeleccionadoNombre(platoNombre);
         setBusquedaPlato(platoNombre);
       }
-      
+
       // Comandadas/asignados: del API o de la fila de la tabla por si el getPorId no lo trae
       const comandadas = Number(
         menuCompleto.Comandas ?? menuCompleto.comandas ?? menuCompleto.comandadas ??
@@ -1451,14 +1509,14 @@ const MenuDelDia = () => {
         plantaId: menuCompleto.plantaId || menuCompleto.PlantaId || menuCompleto.planta_id || '',
         cantidad: menuCompleto.cantidad || menuCompleto.Cantidad || menuCompleto.Cant || '',
         comandadas,
-        fecha: menuCompleto.fecha 
+        fecha: menuCompleto.fecha
           ? (menuCompleto.fecha.split('T')[0] || menuCompleto.fecha.split(' ')[0])
           : obtenerFechaLocal(),
         activo: menuCompleto.activo !== undefined ? menuCompleto.activo : menuCompleto.Activo !== undefined ? menuCompleto.Activo : true,
       });
-      
+
       setVista('editar');
-      
+
       // Establecer el nombre del plato después de cambiar la vista como respaldo
       setTimeout(() => {
         if (platoNombre) {
@@ -1468,11 +1526,11 @@ const MenuDelDia = () => {
           // Si no hay nombre pero sí hay platoId, intentar buscarlo en las listas disponibles
           const platoIdNum = parseInt(platoId);
           let plato = platos.find((p) => (p.id || p.Id || p.ID) === platoIdNum);
-          
+
           if (!plato && platosPorPlan.length > 0) {
             plato = platosPorPlan.find((p) => (p.id || p.Id || p.ID) === platoIdNum);
           }
-          
+
           if (plato) {
             const nombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
             setPlatoSeleccionadoNombre(nombre);
@@ -1509,34 +1567,34 @@ const MenuDelDia = () => {
     try {
       // Asignar automáticamente valores únicos si hay un solo valor disponible
       const datosActualizados = { ...formData };
-      
+
       // Plan nutricional
       if (!datosActualizados.plannutricional_id && planesNutricionales.length === 1) {
         const planId = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
         datosActualizados.plannutricional_id = String(planId);
       }
-      
+
       // Proyecto
       if (!datosActualizados.proyectoId && proyectos.length === 1) {
         const proyectoId = proyectos[0].id || proyectos[0].Id || proyectos[0].ID;
         datosActualizados.proyectoId = String(proyectoId);
       }
-      
+
       // Centro de costo
       if (!datosActualizados.centroCostoId && centrosDeCosto.length === 1) {
         const centroId = centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID;
         datosActualizados.centroCostoId = String(centroId);
       }
-      
+
       // Planta
       if (!datosActualizados.plantaId && plantas.length === 1) {
         const plantaId = plantas[0].id || plantas[0].Id || plantas[0].ID;
         datosActualizados.plantaId = String(plantaId);
       }
-      
+
       // Actualizar formData con los valores asignados automáticamente
       setFormData(datosActualizados);
-      
+
       // Validaciones
       if (!datosActualizados.plannutricional_id) {
         Swal.fire({
@@ -1553,6 +1611,17 @@ const MenuDelDia = () => {
         Swal.fire({
           title: 'Error',
           text: 'Debe seleccionar un plato',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      if (turnos.length === 0) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Debe existir Turno',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -1833,11 +1902,12 @@ const MenuDelDia = () => {
     return (
       <div className="container-fluid" style={{ padding: 0 }}>
         {/* Barra negra título */}
-        <div className="page-title-bar">
-          <h3>
+        <div className="page-title-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0 }}>
             <i className="fa fa-calendar-day mr-2" aria-hidden="true"></i>
             <span>Menú del Día</span>
           </h3>
+          <BotonAyuda titulo="Manual — Menú del Día" contenido={MANUAL_MENU_DEL_DIA} nombreArchivo="manual_menu_del_dia.pdf" />
         </div>
 
         <div
@@ -1927,6 +1997,49 @@ const MenuDelDia = () => {
                   <option value="inactivo">Inactivos</option>
                 </select>
               </div>
+              {/* Comedor (Planta) */}
+              {mostrarPlanta && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <label style={{ margin: 0, fontSize: '0.875rem', color: '#495057', whiteSpace: 'nowrap', fontWeight: 'normal' }}>
+                    Comedor:
+                  </label>
+                  <select
+                    className="form-control"
+                    value={filtroPlantaId}
+                    onChange={(e) => {
+                      setFiltroPlantaId(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    style={{
+                      height: '38px',
+                      minHeight: '38px',
+                      maxHeight: '38px',
+                      boxSizing: 'border-box',
+                      padding: '0.25rem 0.5rem 0.25rem 0.75rem',
+                      fontSize: '0.9rem',
+                      lineHeight: '1.25',
+                      border: '1px solid #ced4da',
+                      borderRadius: '0.25rem',
+                      backgroundColor: 'white',
+                      color: '#495057',
+                      cursor: 'pointer',
+                      width: 'auto',
+                      minWidth: 'fit-content',
+                    }}
+                  >
+                    <option value="">Todos</option>
+                    {plantas.map((planta) => {
+                      const plantaId = planta.id || planta.Id || planta.ID;
+                      const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
+                      return (
+                        <option key={plantaId} value={String(plantaId)}>
+                          {plantaNombre}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
               {/* Botón impresión */}
               <button
                 type="button"
@@ -1955,275 +2068,319 @@ const MenuDelDia = () => {
           </div>
 
           {/* Tabla */}
-          <div style={{ 
-            width: '100%', 
+          <div style={{
+            width: '100%',
             overflowX: 'auto',
             maxWidth: '100%',
             boxSizing: 'border-box'
           }}>
-          <DataTable
-            columns={[
-              {
-                key: 'plato',
-                field: 'plato',
-                label: 'Plato',
-                render: (v, row) => {
-                  const platoNombre =
-                    row.platoNombre ||
-                    row.PlatoNombre ||
-                    row.plato_nombre ||
-                    row.platos?.find((p) => (p.id || p.Id) === (row.platoId || row.PlatoId))?.descripcion ||
-                    row.plato?.descripcion ||
-                    row.Plato?.Descripcion ||
-                    '-';
-                  return platoNombre;
+            <DataTable
+              columns={[
+                {
+                  key: 'plato',
+                  field: 'plato',
+                  label: 'Plato',
+                  render: (v, row) => {
+                    const platoNombre =
+                      row.platoNombre ||
+                      row.PlatoNombre ||
+                      row.plato_nombre ||
+                      row.platos?.find((p) => (p.id || p.Id) === (row.platoId || row.PlatoId))?.descripcion ||
+                      row.plato?.descripcion ||
+                      row.Plato?.Descripcion ||
+                      '-';
+                    return platoNombre;
+                  },
                 },
-              },
-              {
-                key: 'plannutricional',
-                field: 'plannutricional',
-                label: 'Plan Nutricional',
-                render: (v, row) => {
-                  const planNombre =
-                    row.PlanNutricionalNombre ||
-                    row.planNutricionalNombre ||
-                    row.plannutricionalNombre ||
-                    row.PlannutricionalNombre ||
-                    row.plan_nutricional_nombre ||
-                    planesNutricionales.find((p) => (p.id || p.Id) === (row.PlanNutricionalId || row.planNutricionalId || row.plannutricional_id || row.Plannutricional_id))?.nombre ||
-                    planesNutricionales.find((p) => (p.id || p.Id) === (row.PlanNutricionalId || row.planNutricionalId || row.plannutricional_id || row.Plannutricional_id))?.Nombre ||
-                    row.planNutricional?.nombre ||
-                    row.PlanNutricional?.Nombre ||
-                    '-';
-                  return planNombre;
+                {
+                  key: 'plannutricional',
+                  field: 'plannutricional',
+                  label: 'Plan Nutricional',
+                  render: (v, row) => {
+                    const planNombre =
+                      row.PlanNutricionalNombre ||
+                      row.planNutricionalNombre ||
+                      row.plannutricionalNombre ||
+                      row.PlannutricionalNombre ||
+                      row.plan_nutricional_nombre ||
+                      planesNutricionales.find((p) => (p.id || p.Id) === (row.PlanNutricionalId || row.planNutricionalId || row.plannutricional_id || row.Plannutricional_id))?.nombre ||
+                      planesNutricionales.find((p) => (p.id || p.Id) === (row.PlanNutricionalId || row.planNutricionalId || row.plannutricional_id || row.Plannutricional_id))?.Nombre ||
+                      row.planNutricional?.nombre ||
+                      row.PlanNutricional?.Nombre ||
+                      '-';
+                    return planNombre;
+                  },
                 },
-              },
-              {
-                key: 'turno',
-                field: 'turno',
-                label: 'Turno',
-                render: (v, row) => {
-                  const turnoNombre =
-                    row.turnoNombre ||
-                    row.TurnoNombre ||
-                    row.turno_nombre ||
-                    turnos.find((t) => (t.id || t.Id) === (row.turnoId || row.TurnoId))?.nombre ||
-                    turnos.find((t) => (t.id || t.Id) === (row.turnoId || row.TurnoId))?.Nombre ||
-                    row.turno?.nombre ||
-                    row.Turno?.Nombre ||
-                    '-';
-                  return turnoNombre;
+                {
+                  key: 'turno',
+                  field: 'turno',
+                  label: 'Turno',
+                  render: (v, row) => {
+                    const turnoNombre =
+                      row.turnoNombre ||
+                      row.TurnoNombre ||
+                      row.turno_nombre ||
+                      turnos.find((t) => (t.id || t.Id) === (row.turnoId || row.TurnoId))?.nombre ||
+                      turnos.find((t) => (t.id || t.Id) === (row.turnoId || row.TurnoId))?.Nombre ||
+                      row.turno?.nombre ||
+                      row.Turno?.Nombre ||
+                      '-';
+                    return turnoNombre;
+                  },
                 },
-              },
-              {
-                key: 'jerarquia',
-                field: 'jerarquia',
-                label: 'Jerarquía',
-                render: (v, row) => {
-                  const jerarquiaNombre =
-                    row.jerarquiaNombre ||
-                    row.JerarquiaNombre ||
-                    row.jerarquia_nombre ||
-                    jerarquias.find((j) => (j.id || j.Id) === (row.jerarquiaId || row.JerarquiaId))?.nombre ||
-                    jerarquias.find((j) => (j.id || j.Id) === (row.jerarquiaId || row.JerarquiaId))?.Nombre ||
-                    row.jerarquia?.nombre ||
-                    row.Jerarquia?.Nombre ||
-                    '-';
-                  return jerarquiaNombre;
+                {
+                  key: 'jerarquia',
+                  field: 'jerarquia',
+                  label: 'Jerarquía',
+                  render: (v, row) => {
+                    const jerarquiaNombre =
+                      row.jerarquiaNombre ||
+                      row.JerarquiaNombre ||
+                      row.jerarquia_nombre ||
+                      jerarquias.find((j) => (j.id || j.Id) === (row.jerarquiaId || row.JerarquiaId))?.nombre ||
+                      jerarquias.find((j) => (j.id || j.Id) === (row.jerarquiaId || row.JerarquiaId))?.Nombre ||
+                      row.jerarquia?.nombre ||
+                      row.Jerarquia?.Nombre ||
+                      '-';
+                    return jerarquiaNombre;
+                  },
                 },
-              },
-              {
-                key: 'proyecto',
-                field: 'proyecto',
-                label: 'Proyecto',
-                render: (v, row) => {
-                  const proyectoNombre =
-                    row.proyectoNombre ||
-                    row.ProyectoNombre ||
-                    row.proyecto_nombre ||
-                    proyectos.find((p) => (p.id || p.Id) === (row.proyectoId || row.ProyectoId))?.nombre ||
-                    proyectos.find((p) => (p.id || p.Id) === (row.proyectoId || row.ProyectoId))?.Nombre ||
-                    row.proyecto?.nombre ||
-                    row.Proyecto?.Nombre ||
-                    '-';
-                  return proyectoNombre;
-                },
-              },
-              {
-                key: 'centroCosto',
-                field: 'centroCosto',
-                label: 'Centro de costo',
-                render: (v, row) => {
-                  const centroNombre =
-                    row.centroCostoNombre ||
-                    row.CentroCostoNombre ||
-                    row.centro_costo_nombre ||
-                    centrosDeCosto.find((c) => (c.id || c.Id) === (row.centroCostoId || row.CentroCostoId))?.nombre ||
-                    centrosDeCosto.find((c) => (c.id || c.Id) === (row.centroCostoId || row.CentroCostoId))?.Nombre ||
-                    row.centroCosto?.nombre ||
-                    row.CentroCosto?.Nombre ||
-                    '-';
-                  return centroNombre;
-                },
-              },
-              {
-                key: 'planta',
-                field: 'planta',
-                label: 'Planta',
-                render: (v, row) => {
-                  const plantaNombre =
-                    row.plantaNombre ||
-                    row.PlantaNombre ||
-                    row.planta_nombre ||
-                    plantas.find((p) => (p.id || p.Id) === (row.plantaId || row.PlantaId))?.nombre ||
-                    plantas.find((p) => (p.id || p.Id) === (row.plantaId || row.PlantaId))?.Nombre ||
-                    row.planta?.nombre ||
-                    row.Planta?.Nombre ||
-                    '-';
-                  return plantaNombre;
-                },
-              },
-              {
-                key: 'cantidad',
-                field: 'cantidad',
-                label: 'Cantidad',
-                align: 'center',
-                render: (v, row) => {
-                  const cantidad = row.cantidad || row.Cantidad || row.Cant || 0;
-                  const comandadas = row.Comandas || row.comandas || row.comandadas || 0;
-                  const disponible = Math.max(0, cantidad - comandadas);
-                  
-                  // Si asignados es mayor a 0, mostrar cantidad tachada y resultado al lado
-                  if (comandadas > 0) {
-                  return (
-                      <span>
-                    <span
-                      style={{
-                            position: 'relative',
-                            color: '#6c757d', 
-                            marginRight: '8px',
-                            display: 'inline-block'
-                          }}
-                        >
-                          {cantidad}
+                ...(mostrarProyecto ? [{
+                  key: 'proyecto',
+                  field: 'proyecto',
+                  label: 'Proyecto',
+                  render: (v, row) => {
+                    const proyectoNombre =
+                      row.proyectoNombre ||
+                      row.ProyectoNombre ||
+                      row.proyecto_nombre ||
+                      proyectos.find((p) => (p.id || p.Id) === (row.proyectoId || row.ProyectoId))?.nombre ||
+                      proyectos.find((p) => (p.id || p.Id) === (row.proyectoId || row.ProyectoId))?.Nombre ||
+                      row.proyecto?.nombre ||
+                      row.Proyecto?.Nombre ||
+                      '-';
+                    return proyectoNombre;
+                  },
+                }] : []),
+                ...(mostrarCentroCosto ? [{
+                  key: 'centroCosto',
+                  field: 'centroCosto',
+                  label: 'Centro de costo',
+                  render: (v, row) => {
+                    const centroNombre =
+                      row.centroCostoNombre ||
+                      row.CentroCostoNombre ||
+                      row.centro_costo_nombre ||
+                      centrosDeCosto.find((c) => (c.id || c.Id) === (row.centroCostoId || row.CentroCostoId))?.nombre ||
+                      centrosDeCosto.find((c) => (c.id || c.Id) === (row.centroCostoId || row.CentroCostoId))?.Nombre ||
+                      row.centroCosto?.nombre ||
+                      row.CentroCosto?.Nombre ||
+                      '-';
+                    return centroNombre;
+                  },
+                }] : []),
+                ...(mostrarPlanta ? [{
+                  key: 'planta',
+                  field: 'planta',
+                  label: 'Comedor',
+                  render: (v, row) => {
+                    const plantaNombre =
+                      row.plantaNombre ||
+                      row.PlantaNombre ||
+                      row.planta_nombre ||
+                      plantas.find((p) => (p.id || p.Id) === (row.plantaId || row.PlantaId))?.nombre ||
+                      plantas.find((p) => (p.id || p.Id) === (row.plantaId || row.PlantaId))?.Nombre ||
+                      row.planta?.nombre ||
+                      row.Planta?.Nombre ||
+                      '-';
+                    return plantaNombre;
+                  },
+                }] : []),
+                {
+                  key: 'cantidad',
+                  field: 'cantidad',
+                  label: 'Cantidad',
+                  align: 'center',
+                  render: (v, row) => {
+                    const cantidad = row.cantidad || row.Cantidad || row.Cant || 0;
+                    const comandadas = row.Comandas || row.comandas || row.comandadas || 0;
+                    const disponible = Math.max(0, cantidad - comandadas);
+
+                    // Si asignados es mayor a 0, mostrar cantidad tachada y resultado al lado
+                    if (comandadas > 0) {
+                      return (
+                        <span>
                           <span
                             style={{
-                              position: 'absolute',
-                              top: '50%',
-                              left: 0,
-                              right: 0,
-                              height: '2px',
-                              background: '#6c757d',
-                              transform: 'rotate(-15deg)',
-                              transformOrigin: 'center',
+                              position: 'relative',
+                              color: '#6c757d',
+                              marginRight: '8px',
+                              display: 'inline-block'
                             }}
-                          />
+                          >
+                            {cantidad}
+                            <span
+                              style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: 0,
+                                right: 0,
+                                height: '2px',
+                                background: '#6c757d',
+                                transform: 'rotate(-15deg)',
+                                transformOrigin: 'center',
+                              }}
+                            />
+                          </span>
+                          <span style={{ fontWeight: 'bold', color: '#28a745' }}>
+                            {disponible}
+                          </span>
                         </span>
-                        <span style={{ fontWeight: 'bold', color: '#28a745' }}>
-                          {disponible}
-                        </span>
+                      );
+                    }
+
+                    // Si asignados es 0, solo mostrar la cantidad sin tachar
+                    return (
+                      <span>
+                        {cantidad}
                       </span>
                     );
-                  }
-                  
-                  // Si asignados es 0, solo mostrar la cantidad sin tachar
-                  return (
-                    <span>
-                      {cantidad}
-                    </span>
-                  );
+                  },
                 },
-              },
-              {
-                key: 'comandadas',
-                field: 'comandadas',
-                label: 'Asignados',
-                align: 'center',
-                render: (v, row) => row.Comandas || row.comandas || row.comandadas || 0,
-              },
-            ]}
-            data={menus}
-            isLoading={isLoading}
-            emptyMessage={
-              filtro
-                ? 'No se encontraron menús que coincidan con la búsqueda'
-                : 'No hay menús del día registrados'
-            }
-            onEdit={handleEditarMenu}
-            canEdit={(menu) => !esMenuInactivo(menu)}
-            onDelete={(menu) => {
-              Swal.fire({
-                title: '¿Está seguro?',
-                text: `¿Desea dar de baja este menú del día?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#F34949',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, dar de baja',
-                cancelButtonText: 'Cancelar',
-              }).then(async (result) => {
-                if (result.isConfirmed) {
-                  try {
-                    setIsLoading(true);
-                    const menuId = menu.id || menu.Id || menu.ID;
-                    await menuService.eliminarMenu(menuId);
-                    Swal.fire({
-                      title: 'Dado de baja',
-                      text: 'El menú del día ha sido dado de baja correctamente',
-                      icon: 'success',
-                      confirmButtonText: 'Aceptar',
-                      confirmButtonColor: '#F34949',
-                    });
-                    cargarMenus(currentPage, filtro, fechaSeleccionada);
-                  } catch (error) {
-                    if (!error.redirectToLogin) {
+                {
+                  key: 'comandadas',
+                  field: 'comandadas',
+                  label: 'Asignados',
+                  align: 'center',
+                  render: (v, row) => row.Comandas || row.comandas || row.comandadas || 0,
+                },
+              ]}
+              data={menus}
+              isLoading={isLoading}
+              emptyMessage={
+                filtro
+                  ? 'No se encontraron menús que coincidan con la búsqueda'
+                  : 'No hay menús del día registrados'
+              }
+              onEdit={handleEditarMenu}
+              canEdit={(menu) => !esMenuInactivo(menu)}
+              onDelete={(menu) => {
+                Swal.fire({
+                  title: '¿Está seguro?',
+                  text: `¿Desea dar de baja este menú del día?`,
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonColor: '#F34949',
+                  cancelButtonColor: '#6c757d',
+                  confirmButtonText: 'Sí, dar de baja',
+                  cancelButtonText: 'Cancelar',
+                }).then(async (result) => {
+                  if (result.isConfirmed) {
+                    try {
+                      setIsLoading(true);
+                      const menuId = menu.id || menu.Id || menu.ID;
+                      await menuService.eliminarMenu(menuId);
                       Swal.fire({
-                        title: 'Error',
-                        text: error.message || 'Error al dar de baja el menú del día',
-                        icon: 'error',
+                        title: 'Dado de baja',
+                        text: 'El menú del día ha sido dado de baja correctamente',
+                        icon: 'success',
                         confirmButtonText: 'Aceptar',
                         confirmButtonColor: '#F34949',
                       });
+                      cargarMenus(currentPage, filtro, fechaSeleccionada);
+                    } catch (error) {
+                      if (!error.redirectToLogin) {
+                        Swal.fire({
+                          title: 'Error',
+                          text: error.message || 'Error al dar de baja el menú del día',
+                          icon: 'error',
+                          confirmButtonText: 'Aceptar',
+                          confirmButtonColor: '#F34949',
+                        });
+                      }
+                    } finally {
+                      setIsLoading(false);
                     }
-                  } finally {
-                    setIsLoading(false);
                   }
+                });
+              }}
+              canDelete={(menu) => !esMenuInactivo(menu)}
+              renderActions={(menu) => {
+                const isInactivo = esMenuInactivo(menu);
+
+                if (isInactivo) {
+                  return (
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => handleActivarMenu(menu.id || menu.Id || menu.ID)}
+                      style={{
+                        backgroundColor: '#28A745',
+                        borderColor: '#28A745',
+                        color: 'white',
+                        padding: '0.25rem 0.5rem',
+                        fontSize: '0.875rem',
+                      }}
+                      title="Activar menú"
+                    >
+                      <i className="fa fa-check"></i>
+                    </button>
+                  );
                 }
-              });
-            }}
-            canDelete={(menu) => !esMenuInactivo(menu)}
-            renderActions={(menu) => {
-              const isInactivo = esMenuInactivo(menu);
-              
-              if (isInactivo) {
-                return (
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => handleActivarMenu(menu.id || menu.Id || menu.ID)}
-                    style={{
-                      backgroundColor: '#28A745',
-                      borderColor: '#28A745',
-                      color: 'white',
-                      padding: '0.25rem 0.5rem',
-                      fontSize: '0.875rem',
-                    }}
-                    title="Activar menú"
-                  >
-                    <i className="fa fa-check"></i>
-                  </button>
-                );
-              }
-              
-              return null; // Los botones de editar y eliminar se muestran por defecto
-            }}
-            pageSize={pageSize}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            totalItems={totalItems}
-            enablePagination={true}
-          />
-        </div>
+
+                return null; // Los botones de editar y eliminar se muestran por defecto
+              }}
+              pageSize={pageSize}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={totalItems}
+              enablePagination={false}
+            />
+          </div>
+
+          {totalItems > 0 && (
+            <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem' }}>
+              <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
+                <SelectorRegistros pageSize={pageSize} opciones={opcionesPageSize} onChange={setPageSize} className="d-flex align-items-center" />
+                <span className="text-muted" style={{ whiteSpace: 'nowrap', fontSize: '0.9rem' }}>
+                  Mostrando página {currentPage} de {totalPages} ({totalItems} menús)
+                </span>
+              </div>
+              <nav>
+                <ul className="pagination mb-0">
+                  <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                    <button className="page-link" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
+                      Anterior
+                    </button>
+                  </li>
+                  {[...Array(totalPages)].map((_, index) => {
+                    const page = index + 1;
+                    if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                      return (
+                        <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                          <button className="page-link" onClick={() => handlePageChange(page)}>
+                            {page}
+                          </button>
+                        </li>
+                      );
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return (
+                        <li key={page} className="page-item disabled">
+                          <span className="page-link">...</span>
+                        </li>
+                      );
+                    }
+                    return null;
+                  })}
+                  <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                    <button className="page-link" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+                      Siguiente
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          )}
         </div>
 
         {/* Modal de opciones de impresión */}
@@ -2305,7 +2462,7 @@ const MenuDelDia = () => {
                       jerarquia: 'Jerarquía',
                       proyecto: 'Proyecto',
                       centroCosto: 'Centro de Costo',
-                      planta: 'Planta',
+                      planta: 'Comedor',
                       cantidad: 'Cantidad',
                       comandadas: 'Asignados',
                       fecha: 'Fecha',
@@ -2359,15 +2516,15 @@ const MenuDelDia = () => {
 
               {/* Filtros */}
               <div style={{ marginBottom: '2rem' }}>
-                <h5 style={{ 
-                  marginBottom: '1rem', 
-                  fontSize: '1rem', 
+                <h5 style={{
+                  marginBottom: '1rem',
+                  fontSize: '1rem',
                   fontWeight: '600',
                   color: '#333'
                 }}>Filtros:</h5>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(2, 1fr)', 
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
                   gap: '1rem',
                   padding: '1rem',
                   backgroundColor: '#f8f9fa',
@@ -2375,9 +2532,9 @@ const MenuDelDia = () => {
                   border: '1px solid #e0e0e0'
                 }}>
                   <div key="filtro-fecha">
-                    <label style={{ 
-                      fontSize: '0.875rem', 
-                      marginBottom: '0.5rem', 
+                    <label style={{
+                      fontSize: '0.875rem',
+                      marginBottom: '0.5rem',
                       display: 'block',
                       fontWeight: '500',
                       color: '#555'
@@ -2387,7 +2544,7 @@ const MenuDelDia = () => {
                       className="form-control"
                       value={filtrosImpresion.fecha}
                       onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, fecha: e.target.value }))}
-                      style={{ 
+                      style={{
                         fontSize: '0.875rem',
                         padding: '0.5rem',
                         border: '1px solid #ced4da',
@@ -2397,9 +2554,9 @@ const MenuDelDia = () => {
                     />
                   </div>
                   <div key="filtro-turno">
-                    <label style={{ 
-                      fontSize: '0.875rem', 
-                      marginBottom: '0.5rem', 
+                    <label style={{
+                      fontSize: '0.875rem',
+                      marginBottom: '0.5rem',
                       display: 'block',
                       fontWeight: '500',
                       color: '#555'
@@ -2408,7 +2565,7 @@ const MenuDelDia = () => {
                       className="form-control"
                       value={filtrosImpresion.turnoId}
                       onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, turnoId: e.target.value }))}
-                      style={{ 
+                      style={{
                         fontSize: '0.875rem',
                         padding: '0.5rem',
                         border: '1px solid #ced4da',
@@ -2429,9 +2586,9 @@ const MenuDelDia = () => {
                     </select>
                   </div>
                   <div key="filtro-plan">
-                    <label style={{ 
-                      fontSize: '0.875rem', 
-                      marginBottom: '0.5rem', 
+                    <label style={{
+                      fontSize: '0.875rem',
+                      marginBottom: '0.5rem',
                       display: 'block',
                       fontWeight: '500',
                       color: '#555'
@@ -2440,7 +2597,7 @@ const MenuDelDia = () => {
                       className="form-control"
                       value={filtrosImpresion.planNutricionalId}
                       onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, planNutricionalId: e.target.value }))}
-                      style={{ 
+                      style={{
                         fontSize: '0.875rem',
                         padding: '0.5rem',
                         border: '1px solid #ced4da',
@@ -2461,9 +2618,9 @@ const MenuDelDia = () => {
                     </select>
                   </div>
                   <div>
-                    <label style={{ 
-                      fontSize: '0.875rem', 
-                      marginBottom: '0.5rem', 
+                    <label style={{
+                      fontSize: '0.875rem',
+                      marginBottom: '0.5rem',
                       display: 'block',
                       fontWeight: '500',
                       color: '#555'
@@ -2472,7 +2629,7 @@ const MenuDelDia = () => {
                       className="form-control"
                       value={filtrosImpresion.jerarquiaId}
                       onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, jerarquiaId: e.target.value }))}
-                      style={{ 
+                      style={{
                         fontSize: '0.875rem',
                         padding: '0.5rem',
                         border: '1px solid #ced4da',
@@ -2493,9 +2650,9 @@ const MenuDelDia = () => {
                     </select>
                   </div>
                   <div key="filtro-proyecto">
-                    <label style={{ 
-                      fontSize: '0.875rem', 
-                      marginBottom: '0.5rem', 
+                    <label style={{
+                      fontSize: '0.875rem',
+                      marginBottom: '0.5rem',
                       display: 'block',
                       fontWeight: '500',
                       color: '#555'
@@ -2504,7 +2661,7 @@ const MenuDelDia = () => {
                       className="form-control"
                       value={filtrosImpresion.proyectoId}
                       onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, proyectoId: e.target.value }))}
-                      style={{ 
+                      style={{
                         fontSize: '0.875rem',
                         padding: '0.5rem',
                         border: '1px solid #ced4da',
@@ -2525,9 +2682,9 @@ const MenuDelDia = () => {
                     </select>
                   </div>
                   <div key="filtro-centro">
-                    <label style={{ 
-                      fontSize: '0.875rem', 
-                      marginBottom: '0.5rem', 
+                    <label style={{
+                      fontSize: '0.875rem',
+                      marginBottom: '0.5rem',
                       display: 'block',
                       fontWeight: '500',
                       color: '#555'
@@ -2536,7 +2693,7 @@ const MenuDelDia = () => {
                       className="form-control"
                       value={filtrosImpresion.centroCostoId}
                       onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, centroCostoId: e.target.value }))}
-                      style={{ 
+                      style={{
                         fontSize: '0.875rem',
                         padding: '0.5rem',
                         border: '1px solid #ced4da',
@@ -2557,18 +2714,18 @@ const MenuDelDia = () => {
                     </select>
                   </div>
                   <div key="filtro-planta">
-                    <label style={{ 
-                      fontSize: '0.875rem', 
-                      marginBottom: '0.5rem', 
+                    <label style={{
+                      fontSize: '0.875rem',
+                      marginBottom: '0.5rem',
                       display: 'block',
                       fontWeight: '500',
                       color: '#555'
-                    }}>Planta:</label>
+                    }}>Comedor:</label>
                     <select
                       className="form-control"
                       value={filtrosImpresion.plantaId}
                       onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, plantaId: e.target.value }))}
-                      style={{ 
+                      style={{
                         fontSize: '0.875rem',
                         padding: '0.5rem',
                         border: '1px solid #ced4da',
@@ -2589,9 +2746,9 @@ const MenuDelDia = () => {
                     </select>
                   </div>
                   <div key="filtro-estado">
-                    <label style={{ 
-                      fontSize: '0.875rem', 
-                      marginBottom: '0.5rem', 
+                    <label style={{
+                      fontSize: '0.875rem',
+                      marginBottom: '0.5rem',
                       display: 'block',
                       fontWeight: '500',
                       color: '#555'
@@ -2606,7 +2763,7 @@ const MenuDelDia = () => {
                           activo: value === '' ? null : value === 'activo',
                         }));
                       }}
-                      style={{ 
+                      style={{
                         fontSize: '0.875rem',
                         padding: '0.5rem',
                         border: '1px solid #ced4da',
@@ -2623,9 +2780,9 @@ const MenuDelDia = () => {
               </div>
 
               {/* Botones de acción */}
-              <div style={{ 
-                display: 'flex', 
-                gap: '0.75rem', 
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
                 justifyContent: 'flex-end',
                 marginTop: '1.5rem',
                 paddingTop: '1.5rem',
@@ -2799,10 +2956,10 @@ const MenuDelDia = () => {
                       style={{
                         ...(planesNutricionales.length === 1
                           ? {
-                              backgroundColor: '#e9ecef',
-                              cursor: 'not-allowed',
-                              opacity: 0.7,
-                            }
+                            backgroundColor: '#e9ecef',
+                            cursor: 'not-allowed',
+                            opacity: 0.7,
+                          }
                           : {})
                       }}
                     >
@@ -2815,31 +2972,31 @@ const MenuDelDia = () => {
                       ) : (
                         <>
                           {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                      {planesNutricionales.map((plan) => {
-                        const planId = plan.id || plan.Id || plan.ID;
-                        const planNombre = plan.nombre || plan.Nombre || plan.descripcion || plan.Descripcion || '';
-                        return (
-                          <option key={planId} value={String(planId)}>
-                            {planNombre}
-                          </option>
-                        );
-                      })}
+                          {planesNutricionales.map((plan) => {
+                            const planId = plan.id || plan.Id || plan.ID;
+                            const planNombre = plan.nombre || plan.Nombre || plan.descripcion || plan.Descripcion || '';
+                            return (
+                              <option key={planId} value={String(planId)}>
+                                {planNombre}
+                              </option>
+                            );
+                          })}
                         </>
                       )}
                     </select>
                     {planesNutricionales.length === 1 && (
                       <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <i 
-                          className="fa fa-info-circle" 
+                        <i
+                          className="fa fa-info-circle"
                           title="Solo hay una opción disponible"
-                          style={{ 
+                          style={{
                             color: '#6c757d',
                             fontSize: '0.875rem',
                             cursor: 'help',
                           }}
                           aria-hidden="true"
                         ></i>
-                        <span style={{ 
+                        <span style={{
                           color: '#6c757d',
                           fontSize: '0.875rem',
                         }}>
@@ -2858,9 +3015,9 @@ const MenuDelDia = () => {
                       <div className="input-group">
                         <input
                           type="text"
-                      className="form-control"
-                      id="platoId"
-                      name="platoId"
+                          className="form-control"
+                          id="platoId"
+                          name="platoId"
                           value={busquedaPlato}
                           onChange={(e) => {
                             const valor = e.target.value;
@@ -2881,17 +3038,17 @@ const MenuDelDia = () => {
                             }
                           }}
                           placeholder={(!formData.plannutricional_id || formData.plannutricional_id === '') && planesNutricionales.length !== 1
-                            ? 'Primero seleccione un Plan Nutricional' 
+                            ? 'Primero seleccione un Plan Nutricional'
                             : 'Buscar plato por nombre o código...'}
                           disabled={(!formData.plannutricional_id || formData.plannutricional_id === '') && planesNutricionales.length !== 1}
-                      required
+                          required
                           style={{
                             fontSize: '0.875rem',
                             padding: '0.4rem 0.75rem',
                             height: '38px',
                             boxSizing: 'border-box',
                             lineHeight: '1.5',
-                            ...( (!formData.plannutricional_id || formData.plannutricional_id === '') && planesNutricionales.length !== 1 ? {
+                            ...((!formData.plannutricional_id || formData.plannutricional_id === '') && planesNutricionales.length !== 1 ? {
                               backgroundColor: '#e9ecef',
                               cursor: 'not-allowed',
                               opacity: 0.7,
@@ -2928,7 +3085,7 @@ const MenuDelDia = () => {
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Dropdown con resultados */}
                       {mostrarDropdownPlato && platosBuscados.length > 0 && (
                         <div
@@ -2949,10 +3106,10 @@ const MenuDelDia = () => {
                           }}
                         >
                           {platosBuscados.map((plato) => {
-                        const platoId = plato.id || plato.Id || plato.ID;
-                        const platoNombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
+                            const platoId = plato.id || plato.Id || plato.ID;
+                            const platoNombre = plato.descripcion || plato.Descripcion || plato.nombre || plato.Nombre || '';
                             const platoCodigo = plato.codigo || plato.Codigo || '';
-                        return (
+                            return (
                               <div
                                 key={platoId}
                                 onClick={() => {
@@ -2981,11 +3138,11 @@ const MenuDelDia = () => {
                                   </div>
                                 )}
                               </div>
-                        );
-                      })}
-                  </div>
+                            );
+                          })}
+                        </div>
                       )}
-                      
+
                       {/* Mensaje cuando no hay resultados */}
                       {busquedaPlato.trim() && platosBuscados.length === 0 && mostrarDropdownPlato && (
                         <div
@@ -3006,30 +3163,30 @@ const MenuDelDia = () => {
                           }}
                         >
                           No se encontraron platos que coincidan con "{busquedaPlato}"
-                </div>
+                        </div>
                       )}
                     </div>
-                    
+
                     {/* Input oculto para validación HTML5 */}
                     <input
                       type="hidden"
                       value={formData.platoId || ''}
                       required
                     />
-                    
+
                     {(!formData.plannutricional_id || formData.plannutricional_id === '') && planesNutricionales.length !== 1 && (
                       <div style={{ marginTop: '0.25rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <i 
-                          className="fa fa-info-circle" 
+                        <i
+                          className="fa fa-info-circle"
                           title="Debe seleccionar el plan nutricional para poder buscar y agregar platos"
-                          style={{ 
+                          style={{
                             color: '#6c757d',
                             fontSize: '0.875rem',
                             cursor: 'help',
                           }}
                           aria-hidden="true"
                         ></i>
-                        <span style={{ 
+                        <span style={{
                           color: '#6c757d',
                           fontSize: '0.875rem',
                         }}>
@@ -3039,17 +3196,17 @@ const MenuDelDia = () => {
                     )}
                     {planesNutricionales.length === 1 && (
                       <div style={{ marginTop: '0.25rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <i 
-                          className="fa fa-info-circle" 
+                        <i
+                          className="fa fa-info-circle"
                           title="El plan nutricional está seleccionado automáticamente"
-                          style={{ 
+                          style={{
                             color: '#6c757d',
                             fontSize: '0.875rem',
                             cursor: 'help',
                           }}
                           aria-hidden="true"
                         ></i>
-                        <span style={{ 
+                        <span style={{
                           color: '#6c757d',
                           fontSize: '0.875rem',
                         }}>
@@ -3166,10 +3323,10 @@ const MenuDelDia = () => {
                           style={{
                             ...(jerarquias.length === 1
                               ? {
-                                  backgroundColor: '#e9ecef',
-                                  cursor: 'not-allowed',
-                                  opacity: 0.7,
-                                }
+                                backgroundColor: '#e9ecef',
+                                cursor: 'not-allowed',
+                                opacity: 0.7,
+                              }
                               : {})
                           }}
                         >
@@ -3261,10 +3418,10 @@ const MenuDelDia = () => {
                           style={{
                             ...(turnos.length === 1
                               ? {
-                                  backgroundColor: '#e9ecef',
-                                  cursor: 'not-allowed',
-                                  opacity: 0.7,
-                                }
+                                backgroundColor: '#e9ecef',
+                                cursor: 'not-allowed',
+                                opacity: 0.7,
+                              }
                               : {})
                           }}
                         >
@@ -3306,271 +3463,287 @@ const MenuDelDia = () => {
                     )}
                   </div>
                 </div>
-                <div className="col-md-2">
-                  <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-                    <label htmlFor="proyectoId" style={{ marginBottom: '0.25rem' }}>
-                      Proyecto {proyectos.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
-                    </label>
-                    {vista === 'crear' && proyectos.length >= 2 ? (
-                      <>
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setMostrarModalProyectos(true)}
-                          onKeyDown={(e) => e.key === 'Enter' && setMostrarModalProyectos(true)}
-                          className="form-control"
-                          style={{
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            minHeight: '38px',
-                          }}
-                        >
-                          <span style={{ color: (formData.proyectoIds?.length || 0) > 0 ? '#212529' : '#6c757d' }}>
-                            {(formData.proyectoIds?.length || 0) > 0
-                              ? `${formData.proyectoIds.length} proyecto(s) seleccionado(s)`
-                              : 'Seleccionar proyectos...'}
-                          </span>
-                          <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
-                        </div>
-                        {(vista === 'crear' ? (formData.proyectoIds?.length || 0) : (formData.proyectoId ? 1 : 0)) > 0 && vista === 'crear' && (
-                          <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
-                            {proyectos
-                              .filter((p) => formData.proyectoIds?.includes(String(p.id || p.Id || p.ID)))
-                              .map((p) => p.nombre || p.Nombre || p.descripcion || p.Descripcion)
-                              .join(', ')}
+                {mostrarProyecto && (
+                  <div className="col-md-2">
+                    <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                      <label htmlFor="proyectoId" style={{ marginBottom: '0.25rem' }}>
+                        Proyecto {proyectos.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
+                      </label>
+                      {vista === 'crear' && proyectos.length >= 2 ? (
+                        <>
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setMostrarModalProyectos(true)}
+                            onKeyDown={(e) => e.key === 'Enter' && setMostrarModalProyectos(true)}
+                            className="form-control"
+                            style={{
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              minHeight: '38px',
+                            }}
+                          >
+                            <span style={{ color: (formData.proyectoIds?.length || 0) > 0 ? '#212529' : '#6c757d' }}>
+                              {(formData.proyectoIds?.length || 0) > 0
+                                ? `${formData.proyectoIds.length} proyecto(s) seleccionado(s)`
+                                : 'Seleccionar proyectos...'}
+                            </span>
+                            <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
                           </div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <select
-                          className="form-control"
-                          id="proyectoId"
-                          name="proyectoId"
-                          value={formData.proyectoId || (proyectos.length === 1 ? String(proyectos[0].id || proyectos[0].Id || proyectos[0].ID) : '')}
-                          onChange={handleInputChange}
-                          disabled={isLoading || proyectos.length === 1}
-                          required
-                          style={{
-                            ...(proyectos.length === 1
-                              ? {
+                          {(vista === 'crear' ? (formData.proyectoIds?.length || 0) : (formData.proyectoId ? 1 : 0)) > 0 && vista === 'crear' && (
+                            <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
+                              {proyectos
+                                .filter((p) => formData.proyectoIds?.includes(String(p.id || p.Id || p.ID)))
+                                .map((p) => p.nombre || p.Nombre || p.descripcion || p.Descripcion)
+                                .join(', ')}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <select
+                            className="form-control"
+                            id="proyectoId"
+                            name="proyectoId"
+                            value={formData.proyectoId || (proyectos.length === 1 ? String(proyectos[0].id || proyectos[0].Id || proyectos[0].ID) : '')}
+                            onChange={handleInputChange}
+                            disabled={isLoading || proyectos.length === 1}
+                            required
+                            style={{
+                              ...(proyectos.length === 1
+                                ? {
                                   backgroundColor: '#e9ecef',
                                   cursor: 'not-allowed',
                                   opacity: 0.7,
                                 }
-                              : {})
-                          }}
-                        >
-                          {proyectos.length === 0 ? (
-                            <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
-                          ) : proyectos.length === 1 ? (
-                            <option value={String(proyectos[0].id || proyectos[0].Id || proyectos[0].ID)}>
-                              {proyectos[0].nombre || proyectos[0].Nombre || proyectos[0].descripcion || proyectos[0].Descripcion}
-                            </option>
-                          ) : (
-                            <>
-                              {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                              {proyectos.map((proyecto) => {
-                                const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
-                                const proyectoNombre = proyecto.nombre || proyecto.Nombre || proyecto.descripcion || proyecto.Descripcion || '';
-                                return (
-                                  <option key={proyectoId} value={String(proyectoId)}>
-                                    {proyectoNombre}
-                                  </option>
-                                );
-                              })}
-                            </>
+                                : {})
+                            }}
+                          >
+                            {proyectos.length === 0 ? (
+                              <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                            ) : proyectos.length === 1 ? (
+                              <option value={String(proyectos[0].id || proyectos[0].Id || proyectos[0].ID)}>
+                                {proyectos[0].nombre || proyectos[0].Nombre || proyectos[0].descripcion || proyectos[0].Descripcion}
+                              </option>
+                            ) : (
+                              <>
+                                {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                                {proyectos.map((proyecto) => {
+                                  const proyectoId = proyecto.id || proyecto.Id || proyecto.ID;
+                                  const proyectoNombre = proyecto.nombre || proyecto.Nombre || proyecto.descripcion || proyecto.Descripcion || '';
+                                  return (
+                                    <option key={proyectoId} value={String(proyectoId)}>
+                                      {proyectoNombre}
+                                    </option>
+                                  );
+                                })}
+                              </>
+                            )}
+                          </select>
+                          {proyectos.length === 1 && (
+                            <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <i className="fa fa-info-circle" title="Solo hay una opción disponible" style={{ color: '#6c757d', fontSize: '0.875rem', cursor: 'help' }} aria-hidden="true" />
+                              <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>Solo hay una opción disponible</span>
+                            </div>
                           )}
-                        </select>
-                        {proyectos.length === 1 && (
-                          <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <i className="fa fa-info-circle" title="Solo hay una opción disponible" style={{ color: '#6c757d', fontSize: '0.875rem', cursor: 'help' }} aria-hidden="true" />
-                            <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>Solo hay una opción disponible</span>
-                          </div>
-                        )}
-                      </>
-                    )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div key="col-centro" className="col-md-3">
-                  <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-                    <label htmlFor="centroCostoId" style={{ marginBottom: '0.25rem' }}>
-                      Centro de costo {centrosDeCosto.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
-                    </label>
-                    {vista === 'crear' && centrosDeCosto.length >= 2 ? (
-                      <>
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setMostrarModalCentrosCosto(true)}
-                          onKeyDown={(e) => e.key === 'Enter' && setMostrarModalCentrosCosto(true)}
-                          className="form-control"
-                          style={{
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            minHeight: '38px',
-                          }}
-                        >
-                          <span style={{ color: (formData.centroCostoIds?.length || 0) > 0 ? '#212529' : '#6c757d' }}>
-                            {(formData.centroCostoIds?.length || 0) > 0
-                              ? `${formData.centroCostoIds.length} centro(s) seleccionado(s)`
-                              : 'Seleccionar centros de costo...'}
-                          </span>
-                          <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
-                        </div>
-                        {(formData.centroCostoIds?.length || 0) > 0 && (
-                          <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
-                            {centrosDeCosto
-                              .filter((c) => formData.centroCostoIds?.includes(String(c.id || c.Id || c.ID)))
-                              .map((c) => c.nombre || c.Nombre || c.descripcion || c.Descripcion)
-                              .join(', ')}
+                )}
+                {mostrarCentroCosto && (
+                  <div key="col-centro" className="col-md-3">
+                    <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                      <label htmlFor="centroCostoId" style={{ marginBottom: '0.25rem' }}>
+                        Centro de costo {centrosDeCosto.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
+                      </label>
+                      {vista === 'crear' && centrosDeCosto.length >= 2 ? (
+                        <>
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setMostrarModalCentrosCosto(true)}
+                            onKeyDown={(e) => e.key === 'Enter' && setMostrarModalCentrosCosto(true)}
+                            className="form-control"
+                            style={{
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              minHeight: '38px',
+                            }}
+                          >
+                            <span style={{ color: (formData.centroCostoIds?.length || 0) > 0 ? '#212529' : '#6c757d' }}>
+                              {(formData.centroCostoIds?.length || 0) > 0
+                                ? `${formData.centroCostoIds.length} centro(s) seleccionado(s)`
+                                : 'Seleccionar centros de costo...'}
+                            </span>
+                            <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
                           </div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <select
-                          className="form-control"
-                          id="centroCostoId"
-                          name="centroCostoId"
-                          value={formData.centroCostoId || (centrosDeCosto.length === 1 ? String(centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID) : '')}
-                          onChange={handleInputChange}
-                          disabled={isLoading || centrosDeCosto.length === 1}
-                          required
-                          style={{
-                            ...(centrosDeCosto.length === 1
-                              ? {
+                          {(formData.centroCostoIds?.length || 0) > 0 && (
+                            <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
+                              {centrosDeCosto
+                                .filter((c) => formData.centroCostoIds?.includes(String(c.id || c.Id || c.ID)))
+                                .map((c) => c.nombre || c.Nombre || c.descripcion || c.Descripcion)
+                                .join(', ')}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <select
+                            className="form-control"
+                            id="centroCostoId"
+                            name="centroCostoId"
+                            value={formData.centroCostoId || (centrosDeCosto.length === 1 ? String(centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID) : '')}
+                            onChange={handleInputChange}
+                            disabled={isLoading || centrosDeCosto.length === 1}
+                            required
+                            style={{
+                              ...(centrosDeCosto.length === 1
+                                ? {
                                   backgroundColor: '#e9ecef',
                                   cursor: 'not-allowed',
                                   opacity: 0.7,
                                 }
-                              : {})
-                          }}
-                        >
-                          {centrosDeCosto.length === 0 ? (
-                            <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
-                          ) : centrosDeCosto.length === 1 ? (
-                            <option value={String(centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID)}>
-                              {centrosDeCosto[0].nombre || centrosDeCosto[0].Nombre || centrosDeCosto[0].descripcion || centrosDeCosto[0].Descripcion}
-                            </option>
-                          ) : (
-                            <>
-                              {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                              {centrosDeCosto.map((centro) => {
-                                const centroId = centro.id || centro.Id || centro.ID;
-                                const centroNombre = centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion || '';
-                                return (
-                                  <option key={centroId} value={String(centroId)}>
-                                    {centroNombre}
-                                  </option>
-                                );
-                              })}
-                            </>
+                                : {})
+                            }}
+                          >
+                            {centrosDeCosto.length === 0 ? (
+                              <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                            ) : centrosDeCosto.length === 1 ? (
+                              <option value={String(centrosDeCosto[0].id || centrosDeCosto[0].Id || centrosDeCosto[0].ID)}>
+                                {centrosDeCosto[0].nombre || centrosDeCosto[0].Nombre || centrosDeCosto[0].descripcion || centrosDeCosto[0].Descripcion}
+                              </option>
+                            ) : (
+                              <>
+                                {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                                {centrosDeCosto.map((centro) => {
+                                  const centroId = centro.id || centro.Id || centro.ID;
+                                  const centroNombre = centro.nombre || centro.Nombre || centro.descripcion || centro.Descripcion || '';
+                                  return (
+                                    <option key={centroId} value={String(centroId)}>
+                                      {centroNombre}
+                                    </option>
+                                  );
+                                })}
+                              </>
+                            )}
+                          </select>
+                          {centrosDeCosto.length === 1 && (
+                            <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <i className="fa fa-info-circle" title="Solo hay una opción disponible" style={{ color: '#6c757d', fontSize: '0.875rem', cursor: 'help' }} aria-hidden="true" />
+                              <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>Solo hay una opción disponible</span>
+                            </div>
                           )}
-                        </select>
-                        {centrosDeCosto.length === 1 && (
-                          <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <i className="fa fa-info-circle" title="Solo hay una opción disponible" style={{ color: '#6c757d', fontSize: '0.875rem', cursor: 'help' }} aria-hidden="true" />
-                            <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>Solo hay una opción disponible</span>
-                          </div>
-                        )}
-                      </>
-                    )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div key="col-planta" className="col-md-3">
-                  <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-                    <label htmlFor="plantaId" style={{ marginBottom: '0.25rem' }}>
-                      Planta {plantas.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
-                    </label>
-                    {vista === 'crear' && plantas.length >= 2 ? (
-                      <>
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setMostrarModalPlantas(true)}
-                          onKeyDown={(e) => e.key === 'Enter' && setMostrarModalPlantas(true)}
-                          className="form-control"
-                          style={{
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            minHeight: '38px',
-                          }}
-                        >
-                          <span style={{ color: (formData.plantaIds?.length || 0) > 0 ? '#212529' : '#6c757d' }}>
-                            {(formData.plantaIds?.length || 0) > 0
-                              ? `${formData.plantaIds.length} planta(s) seleccionada(s)`
-                              : 'Seleccionar plantas...'}
-                          </span>
-                          <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
-                        </div>
-                        {(formData.plantaIds?.length || 0) > 0 && (
-                          <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
-                            {plantas
-                              .filter((p) => formData.plantaIds?.includes(String(p.id || p.Id || p.ID)))
-                              .map((p) => p.nombre || p.Nombre || p.descripcion || p.Descripcion)
-                              .join(', ')}
+                )}
+                {mostrarPlanta && (
+                  <div key="col-planta" className="col-md-3">
+                    <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                      <label htmlFor="plantaId" style={{ marginBottom: '0.25rem' }}>
+                        Comedor {plantas.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
+                      </label>
+                      {vista === 'crear' && plantas.length >= 2 ? (
+                        <>
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setMostrarModalPlantas(true)}
+                            onKeyDown={(e) => e.key === 'Enter' && setMostrarModalPlantas(true)}
+                            className="form-control"
+                            style={{
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              minHeight: '38px',
+                            }}
+                          >
+                            <span style={{ color: (formData.plantaIds?.length || 0) > 0 ? '#212529' : '#6c757d' }}>
+                              {(formData.plantaIds?.length || 0) > 0
+                                ? `${formData.plantaIds.length} planta(s) seleccionada(s)`
+                                : 'Seleccionar plantas...'}
+                            </span>
+                            <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
                           </div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <select
-                          className="form-control"
-                          id="plantaId"
-                          name="plantaId"
-                          value={formData.plantaId || (plantas.length === 1 ? String(plantas[0].id || plantas[0].Id || plantas[0].ID) : '')}
-                          onChange={handleInputChange}
-                          disabled={isLoading || plantas.length === 1}
-                          required
-                          style={{
-                            ...(plantas.length === 1
-                              ? {
+                          {(formData.plantaIds?.length || 0) > 0 && (
+                            <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
+                              {plantas
+                                .filter((p) => formData.plantaIds?.includes(String(p.id || p.Id || p.ID)))
+                                .map((p) => p.nombre || p.Nombre || p.descripcion || p.Descripcion)
+                                .join(', ')}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <select
+                            className="form-control"
+                            id="plantaId"
+                            name="plantaId"
+                            value={formData.plantaId || (plantas.length === 1 ? String(plantas[0].id || plantas[0].Id || plantas[0].ID) : '')}
+                            onChange={handleInputChange}
+                            disabled={isLoading || plantas.length === 1}
+                            required
+                            style={{
+                              ...(plantas.length === 1
+                                ? {
                                   backgroundColor: '#e9ecef',
                                   cursor: 'not-allowed',
                                   opacity: 0.7,
                                 }
-                              : {})
-                          }}
-                        >
-                          {plantas.length === 0 ? (
-                            <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
-                          ) : plantas.length === 1 ? (
-                            <option value={String(plantas[0].id || plantas[0].Id || plantas[0].ID)}>
-                              {plantas[0].nombre || plantas[0].Nombre || plantas[0].descripcion || plantas[0].Descripcion}
-                            </option>
-                          ) : (
-                            <>
-                              {vista === 'crear' && <option value="">-- Seleccionar --</option>}
-                              {plantas.map((planta) => {
-                                const plantaId = planta.id || planta.Id || planta.ID;
-                                const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
-                                return (
-                                  <option key={plantaId} value={String(plantaId)}>
-                                    {plantaNombre}
-                                  </option>
-                                );
-                              })}
-                            </>
+                                : {})
+                            }}
+                          >
+                            {plantas.length === 0 ? (
+                              <option value="">{isLoading ? 'Cargando...' : (vista === 'crear' ? '-- Seleccionar --' : '')}</option>
+                            ) : plantas.length === 1 ? (
+                              <option value={String(plantas[0].id || plantas[0].Id || plantas[0].ID)}>
+                                {plantas[0].nombre || plantas[0].Nombre || plantas[0].descripcion || plantas[0].Descripcion}
+                              </option>
+                            ) : (
+                              <>
+                                {vista === 'crear' && <option value="">-- Seleccionar --</option>}
+                                {plantas.map((planta) => {
+                                  const plantaId = planta.id || planta.Id || planta.ID;
+                                  const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
+                                  return (
+                                    <option key={plantaId} value={String(plantaId)}>
+                                      {plantaNombre}
+                                    </option>
+                                  );
+                                })}
+                              </>
+                            )}
+                          </select>
+                          {plantas.length === 1 && (
+                            <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <i className="fa fa-info-circle" title="Solo hay una opción disponible" style={{ color: '#6c757d', fontSize: '0.875rem', cursor: 'help' }} aria-hidden="true" />
+                              <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>Solo hay una opción disponible</span>
+                            </div>
                           )}
-                        </select>
-                        {plantas.length === 1 && (
-                          <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <i className="fa fa-info-circle" title="Solo hay una opción disponible" style={{ color: '#6c757d', fontSize: '0.875rem', cursor: 'help' }} aria-hidden="true" />
-                            <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>Solo hay una opción disponible</span>
-                          </div>
-                        )}
-                      </>
-                    )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
+            </div>
+          </div>
+
+          {/* Leyenda de campos requeridos */}
+          <div className="row mt-2">
+            <div className="col-md-12">
+              <small style={{ color: '#6c757d' }}>
+                <i className="fa fa-exclamation-triangle mr-1" style={{ color: '#ffc107' }} aria-hidden="true"></i>
+                Los campos con * son requeridos
+              </small>
             </div>
           </div>
 
@@ -4060,34 +4233,34 @@ const MenuDelDia = () => {
                       type="checkbox"
                       checked={
                         centrosDeCosto
-                            .filter((c) => {
-                              const nombre = (c.nombre || c.Nombre || c.descripcion || c.Descripcion || '').toLowerCase();
-                              return !busquedaCentroCosto || nombre.includes(busquedaCentroCosto.toLowerCase());
-                            })
-                            .every((c) => formData.centroCostoIds?.includes(String(c.id || c.Id || c.ID)))
-                        }
-                        onChange={(e) => {
-                          const filtrados = centrosDeCosto.filter((c) => {
+                          .filter((c) => {
                             const nombre = (c.nombre || c.Nombre || c.descripcion || c.Descripcion || '').toLowerCase();
                             return !busquedaCentroCosto || nombre.includes(busquedaCentroCosto.toLowerCase());
-                          });
-                          if (e.target.checked) {
-                            setFormData((prev) => ({
-                              ...prev,
-                              centroCostoIds: [...new Set([...(prev.centroCostoIds || []), ...filtrados.map((c) => String(c.id || c.Id || c.ID))])],
-                            }));
-                          } else {
-                            const idsFiltrados = new Set(filtrados.map((c) => String(c.id || c.Id || c.ID)));
-                            setFormData((prev) => ({
-                              ...prev,
-                              centroCostoIds: (prev.centroCostoIds || []).filter((id) => !idsFiltrados.has(id)),
-                            }));
-                          }
-                        }}
-                        style={{ marginRight: '0.5rem' }}
-                      />
-                      Seleccionar todos
-                    </label>
+                          })
+                          .every((c) => formData.centroCostoIds?.includes(String(c.id || c.Id || c.ID)))
+                      }
+                      onChange={(e) => {
+                        const filtrados = centrosDeCosto.filter((c) => {
+                          const nombre = (c.nombre || c.Nombre || c.descripcion || c.Descripcion || '').toLowerCase();
+                          return !busquedaCentroCosto || nombre.includes(busquedaCentroCosto.toLowerCase());
+                        });
+                        if (e.target.checked) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            centroCostoIds: [...new Set([...(prev.centroCostoIds || []), ...filtrados.map((c) => String(c.id || c.Id || c.ID))])],
+                          }));
+                        } else {
+                          const idsFiltrados = new Set(filtrados.map((c) => String(c.id || c.Id || c.ID)));
+                          setFormData((prev) => ({
+                            ...prev,
+                            centroCostoIds: (prev.centroCostoIds || []).filter((id) => !idsFiltrados.has(id)),
+                          }));
+                        }
+                      }}
+                      style={{ marginRight: '0.5rem' }}
+                    />
+                    Seleccionar todos
+                  </label>
                 </div>
                 {centrosDeCosto
                   .filter((c) => {
@@ -4160,7 +4333,7 @@ const MenuDelDia = () => {
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h5 style={{ marginBottom: '1rem', fontWeight: '600' }}>Seleccionar Plantas</h5>
+              <h5 style={{ marginBottom: '1rem', fontWeight: '600' }}>Seleccionar Comedores</h5>
               <input
                 type="text"
                 className="form-control"
@@ -4176,34 +4349,34 @@ const MenuDelDia = () => {
                       type="checkbox"
                       checked={
                         plantas
-                            .filter((p) => {
-                              const nombre = (p.nombre || p.Nombre || p.descripcion || p.Descripcion || '').toLowerCase();
-                              return !busquedaPlanta || nombre.includes(busquedaPlanta.toLowerCase());
-                            })
-                            .every((p) => formData.plantaIds?.includes(String(p.id || p.Id || p.ID)))
-                        }
-                        onChange={(e) => {
-                          const filtrados = plantas.filter((p) => {
+                          .filter((p) => {
                             const nombre = (p.nombre || p.Nombre || p.descripcion || p.Descripcion || '').toLowerCase();
                             return !busquedaPlanta || nombre.includes(busquedaPlanta.toLowerCase());
-                          });
-                          if (e.target.checked) {
-                            setFormData((prev) => ({
-                              ...prev,
-                              plantaIds: [...new Set([...(prev.plantaIds || []), ...filtrados.map((p) => String(p.id || p.Id || p.ID))])],
-                            }));
-                          } else {
-                            const idsFiltrados = new Set(filtrados.map((p) => String(p.id || p.Id || p.ID)));
-                            setFormData((prev) => ({
-                              ...prev,
-                              plantaIds: (prev.plantaIds || []).filter((id) => !idsFiltrados.has(id)),
-                            }));
-                          }
-                        }}
-                        style={{ marginRight: '0.5rem' }}
-                      />
-                      Seleccionar todos
-                    </label>
+                          })
+                          .every((p) => formData.plantaIds?.includes(String(p.id || p.Id || p.ID)))
+                      }
+                      onChange={(e) => {
+                        const filtrados = plantas.filter((p) => {
+                          const nombre = (p.nombre || p.Nombre || p.descripcion || p.Descripcion || '').toLowerCase();
+                          return !busquedaPlanta || nombre.includes(busquedaPlanta.toLowerCase());
+                        });
+                        if (e.target.checked) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            plantaIds: [...new Set([...(prev.plantaIds || []), ...filtrados.map((p) => String(p.id || p.Id || p.ID))])],
+                          }));
+                        } else {
+                          const idsFiltrados = new Set(filtrados.map((p) => String(p.id || p.Id || p.ID)));
+                          setFormData((prev) => ({
+                            ...prev,
+                            plantaIds: (prev.plantaIds || []).filter((id) => !idsFiltrados.has(id)),
+                          }));
+                        }
+                      }}
+                      style={{ marginRight: '0.5rem' }}
+                    />
+                    Seleccionar todos
+                  </label>
                 </div>
                 {plantas
                   .filter((p) => {

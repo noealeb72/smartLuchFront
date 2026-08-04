@@ -72,10 +72,6 @@ const Login = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username, password]);
 
-  const isFormValid = () => {
-    return username.trim().length > 0 && password.trim().length > 0;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -242,7 +238,7 @@ const Login = () => {
                   <button
                     type="submit"
                     className="btn login_btn"
-                    disabled={!isFormValid() || isLoading}
+                    disabled={isLoading}
                     style={{ 
                       fontWeight: 600, 
                       letterSpacing: '0.5px', 

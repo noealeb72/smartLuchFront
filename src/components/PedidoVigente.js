@@ -3,7 +3,7 @@ import { getApiBaseUrl } from '../services/configService';
 import { formatearImporte } from '../utils/formatearImporte';
 import { QRCodeSVG } from 'qrcode.react';
 
-const PedidoVigente = memo(({ pedido, index, defaultImage, porcentajeBonificacion, onCancelar, onRecibir, isLast }) => {
+const PedidoVigente = memo(({ pedido, index, defaultImage, onCancelar, onRecibir, isLast }) => {
   // Obtener el Npedido para el QR
   const npedido = useMemo(() => {
     return pedido.Npedido || pedido.npedido || pedido.user_npedido || (pedido.user_Pedido && pedido.user_Pedido.id) || null;
@@ -14,6 +14,19 @@ const PedidoVigente = memo(({ pedido, index, defaultImage, porcentajeBonificacio
     const bonifVal = pedido.Bonificado ?? pedido.bonificado ?? pedido.Bonificacion ?? pedido.bonificacion ?? pedido.user_Pedido?.Bonificado ?? pedido.user_Pedido?.bonificado ?? pedido.Comanda?.Bonificado ?? pedido.Comanda?.bonificado ?? pedido.Pedido?.Bonificado ?? pedido.Pedido?.bonificado;
     return bonifVal === true || bonifVal === 'true' || bonifVal === 1 || bonifVal === '1';
   }, [pedido.Bonificado, pedido.bonificado, pedido.Bonificacion, pedido.bonificacion, pedido.user_Pedido, pedido.Comanda, pedido.Pedido]);
+
+  // % real descontado, calculado desde el importe de lista y lo efectivamente cobrado
+  // (no desde porcentajeBonificacion: ese venía de la jerarquía del usuario, que ya no
+  // decide el descuento — lo decide la regla que haya matcheado el pedido, y puede ser
+  // cualquier valor, no necesariamente el mismo para todos).
+  const porcentajeReal = useMemo(() => {
+    const importeLista = pedido.PlatoImporte ?? pedido.platoImporte ?? pedido.Importe ?? pedido.importe;
+    const montoPagado = pedido.Monto ?? pedido.monto;
+    const lista = Number(importeLista);
+    const pagado = Number(montoPagado);
+    if (!lista || isNaN(lista) || isNaN(pagado)) return null;
+    return Math.round((1 - pagado / lista) * 100);
+  }, [pedido.PlatoImporte, pedido.platoImporte, pedido.Importe, pedido.importe, pedido.Monto, pedido.monto]);
 
   // Construir la URL de la foto desde el campo Foto del backend
   const fotoUrl = useMemo(() => {
@@ -134,7 +147,9 @@ const PedidoVigente = memo(({ pedido, index, defaultImage, porcentajeBonificacio
               </p>
               {tieneBonificacion && (
                 <p className="mb-1">
-                  <span className="badge badge-success mr-2">{porcentajeBonificacion || 40}% descuento aplicado</span>
+                  <span className="badge badge-success mr-2">
+                    {porcentajeReal != null ? `${porcentajeReal}% descuento aplicado` : 'Descuento aplicado'}
+                  </span>
                   <span>
                     Importe: <span className="text-success" style={{ fontWeight: 600 }}>
                       {formatearImporte(pedido.Monto ?? pedido.monto ?? pedido.PlatoImporte ?? pedido.platoImporte ?? pedido.Importe ?? pedido.importe ?? 0)}

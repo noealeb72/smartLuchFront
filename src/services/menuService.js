@@ -15,19 +15,20 @@ export const menuService = {
     
     // Solo pasar los parámetros que acepta el endpoint según la firma del método:
     // int page = 1, int pageSize = 10, DateTime? fechaDesde = null, DateTime? fechaHasta = null,
-    // string search = null, bool activo = true
+    // string search = null, bool activo = true, int? plantaId = null
     const params = {
       page,
       pageSize,
       activo: filtros.activo !== undefined ? filtros.activo : true,
     };
-    
+
     if (filtros.fechaDesde) params.fechaDesde = filtros.fechaDesde;
     if (filtros.fechaHasta) params.fechaHasta = filtros.fechaHasta;
     if (filtros.search && filtros.search.trim()) {
       params.search = filtros.search.trim();
     }
-    // No se envían: plantaId, centroCostoId, proyectoId, jerarquiaId, turnoId, platoId
+    if (filtros.plantaId) params.plantaId = filtros.plantaId;
+    // No se envían: centroCostoId, proyectoId, jerarquiaId, turnoId, platoId
     
     const headers = {};
     if (token && token !== 'null' && token !== 'undefined') {
@@ -237,13 +238,15 @@ export const menuService = {
     if (token && token !== 'null' && token !== 'undefined') {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
+    clearApiCache();
+
     try {
       const response = await api.get(`${baseUrl}/api/menudd/por-turno`, {
         params,
         headers,
       });
-      
+
       return response.data;
     } catch (error) {
       throw error;
@@ -255,32 +258,74 @@ export const menuService = {
    * El backend obtiene los datos del usuario (planta, centro, proyecto, jerarquía) del token
    * @param {number} turnoId - ID del turno (requerido)
    * @param {boolean} soloConStock - Solo mostrar items con stock disponible (default: true)
+   * @param {number} [plantaId] - Comedor específico a consultar (si no se manda, usa el propio del usuario)
    */
-  getMenuByTurnoId: async (turnoId, soloConStock = true) => {
+  getMenuByTurnoId: async (turnoId, soloConStock = true, plantaId = null) => {
     const baseUrl = getApiBaseUrl();
     const token = localStorage.getItem('token');
-    
+
     if (!turnoId || turnoId <= 0) {
       throw new Error('turnoId es requerido y debe ser un número válido');
     }
-    
+
     const headers = {};
     if (token && token !== 'null' && token !== 'undefined') {
       headers['Authorization'] = `Bearer ${token}`;
     } else {
       throw new Error('Token de autenticación requerido');
     }
-    
+
+    const params = { turnoId, soloConStock };
+    if (plantaId) {
+      params.plantaId = plantaId;
+    }
+
+    // Nunca servir esto desde caché: la disponibilidad cambia con cada pedido de otros usuarios,
+    // y al cambiar de turno o comedor siempre hay que traer el valor real, no uno de hace rato.
+    clearApiCache();
+
     try {
       const response = await api.get(`${baseUrl}/api/menudd/turno`, {
-        params: { turnoId, soloConStock },
+        params,
         headers,
       });
-      
+
       return response.data;
     } catch (error) {
       throw error;
     }
+  },
+
+  /**
+   * GET api/menudd/comedores-turno - Comedores con menú realmente cargado para ese turno,
+   * según la jerarquía del usuario logueado (no el catálogo completo de plantas)
+   * @param {number} turnoId - ID del turno (requerido)
+   * @param {boolean} soloConStock - Solo considerar ítems con stock disponible (default: true)
+   */
+  getComedoresPorTurno: async (turnoId, soloConStock = true) => {
+    const baseUrl = getApiBaseUrl();
+    const token = localStorage.getItem('token');
+
+    if (!turnoId || turnoId <= 0) {
+      throw new Error('turnoId es requerido y debe ser un número válido');
+    }
+
+    const headers = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      throw new Error('Token de autenticación requerido');
+    }
+
+    // Ídem getMenuByTurnoId: siempre fresco, nunca cacheado
+    clearApiCache();
+
+    const response = await api.get(`${baseUrl}/api/menudd/comedores-turno`, {
+      params: { turnoId, soloConStock },
+      headers,
+    });
+
+    return response.data;
   },
 
   /**

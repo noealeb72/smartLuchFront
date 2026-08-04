@@ -251,7 +251,7 @@ const DataTable = ({
       {shouldShowPagination && (
         <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
           <div>
-            <span className="text-muted">
+            <span className="text-muted" style={{ fontSize: '0.9rem' }}>
               {isServerSidePagination ? (
                 <>Mostrando {((currentPage - 1) * pageSize) + 1} a {Math.min(currentPage * pageSize, externalTotalItems || 0)} de {externalTotalItems || 0} registros</>
               ) : (

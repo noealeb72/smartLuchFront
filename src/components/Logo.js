@@ -46,8 +46,10 @@ const Logo = ({
   // Icono + texto (comportamiento actual)
   const isLogin = variant === 'login';
   const isFooter = variant === 'footer';
-  const iconSize = isLogin ? '2.5rem' : isFooter ? '1rem' : '1.25rem';
-  const textSize = isLogin ? '1.25rem' : isFooter ? '1rem' : '1.25rem';
+  // En login usa clamp() para achicarse solo en pantallas angostas (el contenedor circular
+  // ya se achica por CSS, pero un tamaño fijo en inline style no reaccionaba a eso)
+  const iconSize = isLogin ? 'clamp(1.5rem, 8vw, 2.5rem)' : isFooter ? '1rem' : '1.25rem';
+  const textSize = isLogin ? 'clamp(0.95rem, 4vw, 1.25rem)' : isFooter ? '1rem' : '1.25rem';
 
   return (
     <span

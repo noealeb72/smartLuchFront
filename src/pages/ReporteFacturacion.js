@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { reportesService } from '../services/reportesService';
 import { catalogosService } from '../services/catalogosService';
 import Swal from 'sweetalert2';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { addPdfReportHeader } from '../utils/pdfReportHeader';
 import { exportAoaToExcel } from '../utils/excelReportHeader';
 import { formatearImporte } from '../utils/formatearImporte';
 import './Usuarios.css';
@@ -14,14 +17,12 @@ const ReporteFacturacion = () => {
 
   const [plantas, setPlantas] = useState([]);
   const [proyectos, setProyectos] = useState([]);
-  const [centrosDeCosto, setCentrosDeCosto] = useState([]);
 
   const [formData, setFormData] = useState({
     fechaDesde: '',
     fechaHasta: '',
     plantaId: '',
     proyectoId: '',
-    centroDeCostoId: '',
   });
 
   const [reporteData, setReporteData] = useState(null);
@@ -32,14 +33,12 @@ const ReporteFacturacion = () => {
   const cargarCatalogos = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [plantasData, proyectosData, centrosData] = await Promise.all([
+      const [plantasData, proyectosData] = await Promise.all([
         catalogosService.getPlantas(),
         catalogosService.getProyectos(),
-        catalogosService.getCentrosDeCosto(),
       ]);
       setPlantas(Array.isArray(plantasData) ? plantasData : []);
       setProyectos(Array.isArray(proyectosData) ? proyectosData : []);
-      setCentrosDeCosto(Array.isArray(centrosData) ? centrosData : []);
     } catch (error) {
       Swal.fire({
         title: 'Error',
@@ -154,10 +153,16 @@ const ReporteFacturacion = () => {
     const apellido = item.apellido || item.Apellido || '';
     const nombre = item.nombre || item.Nombre || '';
     const nombreCompleto = `${apellido} ${nombre}`.trim() || '-';
+    const platoDescripcion = item.platoDescripcion || item.PlatoDescripcion || '-';
     const montoEmpleado = parseFloat(item.montoEmpleado || item.MontoEmpleado || 0);
-    const montoEmpresa = parseFloat(item.montoEmpresa || item.MontoEmpresa || 0);
+    const platoImporte = parseFloat(item.platoImporte || item.PlatoImporte || 0);
+    const costoProveedor = parseFloat(item.costoProveedor || item.CostoProveedor || 0);
+    // Diferencia entre el precio de lista del plato y lo que efectivamente pagó el
+    // empleado (bonificación aplicada). 0 si pagó el precio completo.
+    const descuento = Math.max(0, platoImporte - montoEmpleado);
+    const descuentoPorcentaje = platoImporte > 0 ? Math.round((descuento / platoImporte) * 100) : 0;
 
-    return { fecha, legajo, nombreCompleto, montoEmpleado, montoEmpresa };
+    return { fecha, legajo, nombreCompleto, platoDescripcion, montoEmpleado, platoImporte, costoProveedor, descuento, descuentoPorcentaje };
   };
 
   const handleBuscar = async () => {
@@ -168,8 +173,7 @@ const ReporteFacturacion = () => {
         formData.fechaDesde || null,
         formData.fechaHasta || null,
         formData.plantaId || null,
-        formData.proyectoId || null,
-        formData.centroDeCostoId || null
+        formData.proyectoId || null
       );
       setReporteData(resultado);
     } catch (error) {
@@ -183,6 +187,68 @@ const ReporteFacturacion = () => {
     }
   };
 
+  const handleExportarPDF = useCallback(async () => {
+    if (!detalles || detalles.length === 0) {
+      Swal.fire({ title: 'Error', text: 'No hay datos para exportar', icon: 'error', confirmButtonText: 'Aceptar', confirmButtonColor: '#F34949' });
+      return;
+    }
+    try {
+      const JSPDF = jsPDF.default || jsPDF;
+      const doc = new JSPDF('l', 'mm', 'a4'); // Horizontal: son 9 columnas
+      const startY = await addPdfReportHeader(doc, 'Reporte de Facturación', 14, true);
+
+      const periodo = `${formatearFechaCorta(formData.fechaDesde)} - ${formatearFechaCorta(formData.fechaHasta)}`;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Período: ${periodo}`, 14, startY);
+
+      let totalEmpleado = 0;
+      let totalCostoProveedor = 0;
+
+      const filas = detalles.map(item => {
+        const c = extraerCampos(item);
+        totalEmpleado += c.montoEmpleado;
+        totalCostoProveedor += c.costoProveedor;
+        return [
+          c.legajo,
+          c.nombreCompleto,
+          c.platoDescripcion,
+          formatearFechaCorta(c.fecha),
+          formatearHora(c.fecha),
+          formatearImporte(c.costoProveedor),
+          formatearImporte(c.platoImporte),
+          c.descuento > 0 ? `${c.descuentoPorcentaje}%` : '-',
+          formatearImporte(c.montoEmpleado),
+        ];
+      });
+
+      doc.autoTable({
+        startY: startY + 6,
+        head: [['Nro. Legajo', 'Apellido y Nombre', 'Plato', 'Fecha', 'Hora', 'Costo Interno', 'Costo de Venta', 'Descuento', 'Empleado']],
+        body: filas,
+        foot: [['', '', '', '', 'TOTALES', formatearImporte(totalCostoProveedor), '', '', formatearImporte(totalEmpleado)]],
+        styles: { fontSize: 7 },
+        headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
+        footStyles: { fillColor: [233, 236, 239], textColor: [33, 37, 41], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        columnStyles: {
+          5: { halign: 'right' },
+          6: { halign: 'right' },
+          7: { halign: 'right' },
+          8: { halign: 'right' },
+        },
+      });
+
+      const fechaArchivo = new Date().toISOString().split('T')[0];
+      doc.save(`reporte_facturacion_${fechaArchivo}.pdf`);
+
+      Swal.fire({ title: 'Éxito', text: 'Reporte exportado correctamente', icon: 'success', timer: 2000, showConfirmButton: false });
+    } catch (error) {
+      Swal.fire({ title: 'Error', text: error.message || 'Error al exportar', icon: 'error', confirmButtonText: 'Aceptar', confirmButtonColor: '#F34949' });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detalles, formData]);
+
   const handleExportarExcel = useCallback(() => {
     if (!detalles || detalles.length === 0) {
       Swal.fire({ title: 'Error', text: 'No hay datos para exportar', icon: 'error', confirmButtonText: 'Aceptar', confirmButtonColor: '#F34949' });
@@ -192,19 +258,22 @@ const ReporteFacturacion = () => {
       const periodo = `${formatearFechaCorta(formData.fechaDesde)} - ${formatearFechaCorta(formData.fechaHasta)}`;
 
       let totalEmpleado = 0;
-      let totalEmpresa = 0;
+      let totalCostoProveedor = 0;
 
       const filas = detalles.map(item => {
         const c = extraerCampos(item);
         totalEmpleado += c.montoEmpleado;
-        totalEmpresa += c.montoEmpresa;
+        totalCostoProveedor += c.costoProveedor;
         return [
           c.legajo,
           c.nombreCompleto,
+          c.platoDescripcion,
           formatearFechaCorta(c.fecha),
           formatearHora(c.fecha),
+          formatearImporte(c.costoProveedor),
+          formatearImporte(c.platoImporte),
+          c.descuento > 0 ? `${c.descuentoPorcentaje}%` : '-',
           formatearImporte(c.montoEmpleado),
-          formatearImporte(c.montoEmpresa),
         ];
       });
 
@@ -212,10 +281,10 @@ const ReporteFacturacion = () => {
         [],
         [`Período: ${periodo}`],
         [],
-        ['Nro. Legajo', 'Apellido y Nombre', 'Fecha', 'Hora', 'Monto Empleado', 'Monto Empresa'],
+        ['Nro. Legajo', 'Apellido y Nombre', 'Plato', 'Fecha', 'Hora', 'Costo Interno', 'Costo de Venta', 'Descuento', 'Empleado'],
         ...filas,
         [],
-        ['', '', '', 'TOTALES', formatearImporte(totalEmpleado), formatearImporte(totalEmpresa)],
+        ['', '', '', '', 'TOTALES', formatearImporte(totalCostoProveedor), '', '', formatearImporte(totalEmpleado)],
       ];
 
       const fechaArchivo = new Date().toISOString().split('T')[0];
@@ -231,13 +300,17 @@ const ReporteFacturacion = () => {
   // Totales para el resumen
   const resumen = useMemo(() => {
     let totalEmpleado = 0;
-    let totalEmpresa = 0;
+    let totalCostoProveedor = 0;
+    let totalDescuento = 0;
+    let totalPlatoImporte = 0;
     detalles.forEach(item => {
       const c = extraerCampos(item);
       totalEmpleado += c.montoEmpleado;
-      totalEmpresa += c.montoEmpresa;
+      totalCostoProveedor += c.costoProveedor;
+      totalDescuento += c.descuento;
+      totalPlatoImporte += c.platoImporte;
     });
-    return { totalEmpleado, totalEmpresa, cantidad: detalles.length };
+    return { totalEmpleado, totalCostoProveedor, totalDescuento, totalPlatoImporte, cantidad: detalles.length };
   }, [detalles]);
 
   return (
@@ -291,7 +364,7 @@ const ReporteFacturacion = () => {
                         <input type="date" className="form-control" id="fechaHasta" name="fechaHasta" value={formData.fechaHasta || ''} onChange={handleInputChange} />
                       </div>
                     </div>
-                    <div className="col-md-2">
+                    <div className="col-md-3">
                       <div className="form-group">
                         <label htmlFor="plantaId">Planta</label>
                         <select className="form-control" id="plantaId" name="plantaId" value={formData.plantaId || ''} onChange={handleInputChange} disabled={isLoading}>
@@ -303,19 +376,7 @@ const ReporteFacturacion = () => {
                         </select>
                       </div>
                     </div>
-                    <div className="col-md-2">
-                      <div className="form-group">
-                        <label htmlFor="centroDeCostoId">Centro de Costo</label>
-                        <select className="form-control" id="centroDeCostoId" name="centroDeCostoId" value={formData.centroDeCostoId || ''} onChange={handleInputChange} disabled={isLoading}>
-                          <option value="">-- Todos --</option>
-                          {centrosDeCosto.map(c => {
-                            const id = c.id || c.Id || c.ID;
-                            return <option key={id} value={id}>{c.nombre || c.Nombre || 'Sin nombre'}</option>;
-                          })}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="col-md-2">
+                    <div className="col-md-3">
                       <div className="form-group">
                         <label style={{ visibility: 'hidden' }}>Buscar</label>
                         <button type="button" className="btn" onClick={handleBuscar} disabled={isBuscando || isLoading} style={{ backgroundColor: '#6c757d', borderColor: '#6c757d', color: 'white', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', width: '100%' }}>
@@ -345,12 +406,20 @@ const ReporteFacturacion = () => {
                     <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Consumos</div>
                   </div>
                   <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc3545', marginBottom: '0.5rem' }}>{formatearImporte(resumen.totalEmpleado)}</div>
-                    <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Total a facturar al empleado</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#28a745', marginBottom: '0.5rem' }}>{formatearImporte(resumen.totalCostoProveedor)}</div>
+                    <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Total Costo Interno</div>
                   </div>
                   <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#28a745', marginBottom: '0.5rem' }}>{formatearImporte(resumen.totalEmpresa)}</div>
-                    <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Total a cargo de la empresa</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#007bff', marginBottom: '0.5rem' }}>{formatearImporte(resumen.totalPlatoImporte)}</div>
+                    <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Total Costo de Venta</div>
+                  </div>
+                  <div style={{ textAlign: 'center', minWidth: '150px' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#fd7e14', marginBottom: '0.5rem' }}>{formatearImporte(resumen.totalDescuento)}</div>
+                    <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Total Descuentos</div>
+                  </div>
+                  <div style={{ textAlign: 'center', minWidth: '150px' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc3545', marginBottom: '0.5rem' }}>{formatearImporte(resumen.totalEmpleado)}</div>
+                    <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Total Empleado</div>
                   </div>
                 </div>
               </div>
@@ -364,6 +433,9 @@ const ReporteFacturacion = () => {
                   </h3>
                   {detalles.length > 0 && (
                     <div style={{ display: 'flex', gap: '0.5rem', marginRight: '1rem' }}>
+                      <button type="button" className="btn" onClick={handleExportarPDF} style={{ backgroundColor: '#dc3545', border: 'none', color: 'white', padding: '0.5rem 1rem', fontSize: '1.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.25rem' }} title="Exportar a PDF" onMouseEnter={(e) => { e.target.style.backgroundColor = '#c82333'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = '#dc3545'; }}>
+                        <i className="fa fa-file-pdf"></i>
+                      </button>
                       <button type="button" className="btn" onClick={handleExportarExcel} style={{ backgroundColor: '#28a745', border: 'none', color: 'white', padding: '0.5rem 1rem', fontSize: '1.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.25rem' }} title="Exportar a Excel" onMouseEnter={(e) => { e.target.style.backgroundColor = '#218838'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = '#28a745'; }}>
                         <i className="fa fa-file-excel"></i>
                       </button>
@@ -382,10 +454,12 @@ const ReporteFacturacion = () => {
                         <tr>
                           <th style={{ whiteSpace: 'nowrap' }}>Nro. Legajo</th>
                           <th style={{ whiteSpace: 'nowrap' }}>Apellido y Nombre</th>
-                          <th style={{ whiteSpace: 'nowrap' }}>Fecha</th>
-                          <th style={{ whiteSpace: 'nowrap' }}>Hora</th>
-                          <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Monto Empleado</th>
-                          <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Monto Empresa</th>
+                          <th style={{ whiteSpace: 'nowrap' }}>Plato</th>
+                          <th style={{ whiteSpace: 'nowrap' }}>Fecha y Hora</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Costo Interno</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Costo de Venta</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Descuento</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Empleado</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -395,10 +469,15 @@ const ReporteFacturacion = () => {
                             <tr key={index}>
                               <td>{c.legajo}</td>
                               <td>{c.nombreCompleto}</td>
-                              <td style={{ whiteSpace: 'nowrap' }}>{formatearFechaCorta(c.fecha)}</td>
-                              <td style={{ whiteSpace: 'nowrap' }}>{formatearHora(c.fecha)}</td>
+                              <td>{c.platoDescripcion}</td>
+                              <td style={{ whiteSpace: 'nowrap', lineHeight: 1.3 }}>
+                                <div>{formatearFechaCorta(c.fecha)}</div>
+                                <div className="text-muted" style={{ fontSize: '0.85rem' }}>{formatearHora(c.fecha)}</div>
+                              </td>
+                              <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{formatearImporte(c.costoProveedor)}</td>
+                              <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{formatearImporte(c.platoImporte)}</td>
+                              <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{c.descuento > 0 ? `${c.descuentoPorcentaje}%` : '-'}</td>
                               <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{formatearImporte(c.montoEmpleado)}</td>
-                              <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{formatearImporte(c.montoEmpresa)}</td>
                             </tr>
                           );
                         })}
@@ -410,12 +489,12 @@ const ReporteFacturacion = () => {
                     <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem', padding: '1rem 1.5rem' }}>
                       <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
                         <label className="d-flex align-items-center gap-2 mb-0" style={{ whiteSpace: 'nowrap' }}>
-                          <span className="text-muted small">Registros a mostrar:</span>
+                          <span className="text-muted" style={{ fontSize: '0.9rem' }}>Registros a mostrar:</span>
                           <select className="form-control form-control-sm" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }} style={{ width: 'auto', minWidth: '70px' }}>
                             {opcionesPageSize.map(n => <option key={n} value={n}>{n}</option>)}
                           </select>
                         </label>
-                        <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>
+                        <span className="text-muted" style={{ whiteSpace: 'nowrap', fontSize: '0.9rem' }}>
                           Mostrando página {currentPage} de {paginado.totalPages} ({detalles.length} registros)
                         </span>
                       </div>

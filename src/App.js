@@ -61,6 +61,8 @@ const ReporteFacturacion = lazy(() => import('./pages/ReporteFacturacion'));
 // const DatosPersonales = lazy(() => import('./pages/DatosPersonales'));
 // const Calificacion = lazy(() => import('./pages/Calificacion'));
 const Configuracion = lazy(() => import('./pages/Configuracion'));
+const ScriptsPendientes = lazy(() => import('./pages/ScriptsPendientes'));
+const ReglaBonificacion = lazy(() => import('./pages/ReglaBonificacion'));
 
 function App() {
   return (
@@ -242,6 +244,26 @@ function App() {
                     <PrivateRoute allowedRoles={['Admin', 'Gerencia']}>
                       <Layout>
                         <Configuracion />
+                      </Layout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/reglas-bonificacion"
+                  element={
+                    <PrivateRoute allowedRoles={['Admin', 'Gerencia']}>
+                      <Layout>
+                        <ReglaBonificacion />
+                      </Layout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/scripts-pendientes"
+                  element={
+                    <PrivateRoute allowedRoles={['Admin']}>
+                      <Layout>
+                        <ScriptsPendientes />
                       </Layout>
                     </PrivateRoute>
                   }

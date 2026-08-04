@@ -6,41 +6,35 @@ import { useDashboard } from '../contexts/DashboardContext';
 import { inicioService } from '../services/inicioService';
 import { menuService } from '../services/menuService';
 import { comandasService } from '../services/comandasService';
-import { getApiBaseUrl } from '../services/configService';
+import { getApiBaseUrl, getCamposVisibles } from '../services/configService';
 import { formatearImporte } from '../utils/formatearImporte';
 import Swal from 'sweetalert2';
 import './Index.css';
 import '../styles/smartstyle.css';
 
-// Fusiona items frescos con cache preservando aplicarBonificacion, precioFinal, bonificado
-// Usa codigo, platoId y prefijo de codigo para matching (el formato puede variar entre menuDelDia y API)
-const mergeMenuItemsConCache = (freshItems, cachedItems) => {
-  if (!cachedItems || cachedItems.length === 0) return freshItems;
-  const cachedByCodigo = new Map(cachedItems.map((i) => [String(i.codigo ?? ''), i]));
-  const cachedByPlatoId = new Map(cachedItems.map((i) => [String(i.platoId ?? i.codigo ?? ''), i]));
-  return freshItems.map((fresh) => {
-    const codigoStr = String(fresh.codigo ?? '');
-    const platoIdStr = String(fresh.platoId ?? fresh.codigo ?? '');
-    let cached = cachedByCodigo.get(codigoStr);
-    if (!cached) cached = cachedByPlatoId.get(platoIdStr);
-    if (!cached) {
-      cached = cachedItems.find(
-        (c) =>
-          String(c.codigo) === codigoStr ||
-          String(c.platoId) === platoIdStr ||
-          String(c.codigo).startsWith(codigoStr) ||
-          codigoStr.startsWith(String(c.codigo))
-      );
-    }
-    if (!cached) return fresh;
+// Sobrescribe aplicarBonificacion/precioFinal/reglaNombre de cada ítem con el resultado real
+// de /api/comanda/previsualizar-bonificacion (por menuId), que es quien decide si corresponde
+// bonificación según las reglas activas. Sin match en el preview, el ítem se cobra completo.
+const aplicarPreviewBonificacion = (platos, previewPorMenuId) => {
+  if (!previewPorMenuId || Object.keys(previewPorMenuId).length === 0) return platos;
+  return platos.map((p) => {
+    const preview = previewPorMenuId[String(p.menuId)];
+    if (!preview) return { ...p, aplicarBonificacion: false, precioFinal: p.costo, reglaNombre: null };
     return {
-      ...fresh,
-      aplicarBonificacion: cached.aplicarBonificacion || false,
-      precioFinal: cached.precioFinal ?? fresh.costo,
-      bonificado: cached.bonificado ?? 0,
+      ...p,
+      aplicarBonificacion: !!preview.bonificado,
+      precioFinal: preview.precioFinal,
+      reglaNombre: preview.reglaNombre || null,
     };
   });
 };
+
+// Fusiona items frescos con cache. La bonificación ya no es una elección manual del usuario
+// (la decide el motor de reglas en el backend, ver aplicarPreviewBonificacion más arriba), así
+// que a diferencia de antes NO se preserva aplicarBonificacion/precioFinal desde el cache: el
+// valor fresco (recién calculado) es siempre la fuente de verdad.
+// Usa codigo, platoId y prefijo de codigo para matching (el formato puede variar entre menuDelDia y API)
+const mergeMenuItemsConCache = (freshItems) => freshItems;
 
 const Index = () => {
   const { user } = useAuth();
@@ -62,13 +56,55 @@ const Index = () => {
   const [pedidoCalificacion, setPedidoCalificacion] = useState(1);
   const [bonificacionDisponible, setBonificacionDisponible] = useState(false);
   const [porcentajeBonificacion, setPorcentajeBonificacion] = useState(0);
+  // Precio real por ítem del menú (según reglas de bonificación activas), por menuId
+  const [previewBonificacion, setPreviewBonificacion] = useState({});
   const [turnoDisponible, setTurnoDisponible] = useState(true);
   const [bonificacionesAplicadasPending, setBonificacionesAplicadasPending] = useState(0);
+  const [plantasDisponibles, setPlantasDisponibles] = useState([]);
+  const [filtroComedorId, setFiltroComedorId] = useState('');
   const defaultImage = '/Views/img/logo-preview.png';
+  const mostrarFiltroComedor = getCamposVisibles().planta !== false;
 
   const turnoIdActual = selectedTurno?.id || selectedTurno?.Id || selectedTurno?.ID;
   const menuItems = (menuItemsByTurno[turnoIdActual] ?? []);
-  
+  // Menú visible según el comedor elegido (si hay uno seleccionado); no afecta el conteo de bonificaciones, que sigue mirando menuItems completo
+  const menuItemsFiltrados = filtroComedorId
+    ? menuItems.filter((item) => String(item.plantaId ?? '') === String(filtroComedorId))
+    : menuItems;
+
+  // Comedores con menú real cargado para el turno actual (no el catálogo completo de plantas):
+  // se recarga cada vez que cambia el turno, y elige un comedor por defecto (el propio del
+  // usuario si tiene menú ahí, si no el primero) en vez de arrancar en "Todos".
+  useEffect(() => {
+    if (!mostrarFiltroComedor || !turnoIdActual) {
+      setPlantasDisponibles([]);
+      return;
+    }
+    let activo = true;
+    menuService
+      .getComedoresPorTurno(turnoIdActual)
+      .then((data) => {
+        if (!activo) return;
+        const lista = Array.isArray(data) ? data : (data?.items || data?.data || []);
+        setPlantasDisponibles(lista);
+
+        const idDe = (c) => String(c.plantaId ?? c.PlantaId ?? '');
+        setFiltroComedorId((actual) => {
+          if (actual && lista.some((c) => idDe(c) === String(actual))) return actual;
+          const propioId = usuarioData?.plantaId || user?.plantaId;
+          const propio = propioId != null ? lista.find((c) => idDe(c) === String(propioId)) : null;
+          const elegido = propio || lista[0];
+          return elegido ? idDe(elegido) : '';
+        });
+      })
+      .catch(() => {
+        if (activo) setPlantasDisponibles([]);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [mostrarFiltroComedor, turnoIdActual, usuarioData?.plantaId, user?.plantaId]);
+
   // Ref para evitar múltiples llamadas simultáneas
   const requestInProgressRef = useRef(false);
   // Ref para rastrear si el componente está montado
@@ -498,6 +534,36 @@ const Index = () => {
     inicializarBonificaciones();
   }, [inicializarBonificaciones]);
 
+  // Antes de mostrar el menú, consultar al backend si corresponde alguna bonificación
+  // (motor de reglas) para cada ítem de hoy. Se vuelve a pedir cada vez que cambian los
+  // pedidos vigentes porque la posición del próximo pedido (primero, segundo, ...) depende
+  // de cuántos ya tiene el usuario hoy.
+  const usuarioIdParaPreview = user?.id || usuarioData?.id || null;
+  useEffect(() => {
+    if (!usuarioIdParaPreview) return;
+    let cancelado = false;
+    comandasService.previsualizarBonificacion(usuarioIdParaPreview)
+      .then((items) => {
+        if (cancelado || !Array.isArray(items)) return;
+        const porMenuId = {};
+        items.forEach((it) => {
+          const menuddId = it.menuddId ?? it.MenuddId;
+          if (menuddId == null) return;
+          porMenuId[String(menuddId)] = {
+            costoLista: it.costoLista ?? it.CostoLista,
+            precioFinal: it.precioFinal ?? it.PrecioFinal,
+            bonificado: it.bonificado ?? it.Bonificado,
+            reglaNombre: it.reglaNombre ?? it.ReglaNombre,
+          };
+        });
+        setPreviewBonificacion(porMenuId);
+      })
+      .catch(() => {
+        // Si falla la previsualización, los ítems quedan al precio de lista (fallback seguro)
+      });
+    return () => { cancelado = true; };
+  }, [usuarioIdParaPreview, pedidosVigentes]);
+
   // Cargar menú cuando hay un turno seleccionado, usando menuDelDia del contexto
   // Optimizado: usar useMemo para procesar el menú de forma eficiente y no bloquear el render
   const menuItemsProcesados = useMemo(() => {
@@ -636,17 +702,26 @@ const Index = () => {
             cantidadDisponible: cantidadDisponible,
             aplicarBonificacion: false,
             precioFinal: costo,
+            // Comedor al que pertenece este menú (para distinguir "planta" de "administración" y evitar pedidos cruzados)
+            plantaId: menuItem.PlantaId ?? menuItem.plantaId ?? null,
+            plantaNombre: menuItem.PlantaNombre || menuItem.plantaNombre || null,
+            centroCostoNombre: menuItem.CentroCostoNombre || menuItem.centroCostoNombre || null,
+            proyectoNombre: menuItem.ProyectoNombre || menuItem.proyectoNombre || null,
           };
 
           platos.push(plato);
         }
 
-        return platos;
-  }, [selectedTurno, menuDelDia, defaultImage]);
+        return aplicarPreviewBonificacion(platos, previewBonificacion);
+  }, [selectedTurno, menuDelDia, defaultImage, previewBonificacion]);
 
-  // Actualizar menuItemsByTurno cuando cambian los datos procesados (merge con cache para preservar bonificaciones)
+  // Actualizar menuItemsByTurno cuando cambian los datos procesados (merge con cache para preservar bonificaciones).
+  // Si el filtro de comedor está habilitado, esto se ignora: menuDelDia (del contexto, refrescado cada 2s por el
+  // polling de actualizarDatosPeriodicamente) SIEMPRE viene del comedor propio del usuario, nunca del comedor
+  // elegido en el combo — dejarlo pisar acá haría que el menú del comedor elegido se revierta cada 2 segundos.
+  // En ese modo, cargarMenuDesdeAPI (por turno+comedor puntual) es la única fuente de verdad.
   useEffect(() => {
-    if (!turnoIdActual) return;
+    if (!turnoIdActual || mostrarFiltroComedor) return;
     setMenuItemsByTurno((prev) => {
       if (menuItemsProcesados.length === 0) {
         // No sobrescribir cache con vacío: conservar datos previos si existen
@@ -657,7 +732,7 @@ const Index = () => {
       const merged = mergeMenuItemsConCache(menuItemsProcesados, cached);
       return { ...prev, [turnoIdActual]: merged };
     });
-  }, [menuItemsProcesados, turnoIdActual]);
+  }, [menuItemsProcesados, turnoIdActual, mostrarFiltroComedor]);
 
   const cargarMenuDesdeAPI = useCallback(async () => {
     if (!selectedTurno) return;
@@ -672,7 +747,7 @@ const Index = () => {
       let data;
       try {
         // Intentar primero con getMenuByTurnoId
-        data = await menuService.getMenuByTurnoId(turnoId);
+        data = await menuService.getMenuByTurnoId(turnoId, true, filtroComedorId || null);
       } catch (error) {
         // Si falla, usar getMenuByTurno como fallback
         const hoy = new Date().toISOString().split('T')[0];
@@ -775,14 +850,17 @@ const Index = () => {
             cantidadDisponible: cantidadDisponible,
             aplicarBonificacion: false,
             precioFinal: costo,
+            plantaId: menuItem.PlantaId ?? menuItem.plantaId ?? null,
+            plantaNombre: menuItem.PlantaNombre || menuItem.plantaNombre || null,
           };
 
           platos.push(plato);
         }
 
+        const platosConPreview = aplicarPreviewBonificacion(platos, previewBonificacion);
         setMenuItemsByTurno((prev) => {
           const cached = prev[turnoId];
-          const merged = mergeMenuItemsConCache(platos, cached);
+          const merged = mergeMenuItemsConCache(platosConPreview, cached);
           return { ...prev, [turnoId]: merged };
         });
       } else {
@@ -806,7 +884,7 @@ const Index = () => {
       // No quitar loading porque no lo pusimos en true para evitar parpadeo
       // setIsLoading(false);
     }
-  }, [selectedTurno, defaultImage, usuarioData, user]);
+  }, [selectedTurno, defaultImage, usuarioData, user, previewBonificacion, filtroComedorId]);
 
   // Si hay turno seleccionado pero no hay menuDelDia, intentar cargar desde el API
   useEffect(() => {
@@ -815,6 +893,27 @@ const Index = () => {
       cargarMenuDesdeAPI();
     }
   }, [selectedTurno, menuDelDia, cargarMenuDesdeAPI]);
+
+  // Cada vez que se elige un comedor (incluida la selección por defecto al cargar el turno),
+  // pedir el menú de ese comedor puntual en vez de filtrar localmente datos de un solo comedor
+  useEffect(() => {
+    if (selectedTurno && filtroComedorId) {
+      cargarMenuDesdeAPI();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroComedorId]);
+
+  // La previsualización de bonificación se pide aparte (efecto propio) y puede llegar después de
+  // que el menú ya se mostró sin descuento. En vez de esperar a otra acción del usuario para que
+  // se note (ej. cambiar de comedor y volver), en cuanto llega se reaplica sobre lo ya cargado.
+  useEffect(() => {
+    if (!mostrarFiltroComedor || !turnoIdActual) return;
+    setMenuItemsByTurno((prev) => {
+      const actuales = prev[turnoIdActual];
+      if (!actuales || actuales.length === 0) return prev;
+      return { ...prev, [turnoIdActual]: aplicarPreviewBonificacion(actuales, previewBonificacion) };
+    });
+  }, [previewBonificacion, mostrarFiltroComedor, turnoIdActual]);
 
 
   // Ya no se necesita cargarMenu, se usa MenuDelDia del contexto
@@ -1029,8 +1128,9 @@ const Index = () => {
       // Monto (precio final)
       const monto = parseFloat(pedidoSeleccionado.precioFinal || pedidoSeleccionado.costo || 0);
 
-      // Bonificado (si aplicó bonificación)
-      const bonificado = !!pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && pedidosRestantes > 0;
+      // Bonificado (informativo: el backend recalcula esto de nuevo con el motor de reglas
+      // en crear-con-descuento, este valor no determina lo que efectivamente se cobra)
+      const bonificado = !!pedidoSeleccionado.aplicarBonificacion;
 
       // Construir el DTO según ComandaCreateDto
       // Id y Npedido: No se envían, el backend los genera automáticamente
@@ -1286,7 +1386,7 @@ const Index = () => {
         }
       }
     }
-  }, [pedidoSeleccionado, user, pedidoComentario, bonificacionDisponible, pedidosRestantes, selectedTurno, actualizarDatos, menuDelDia, usuarioData?.centroCostoId, usuarioData?.id, usuarioData?.jerarquiaId, usuarioData?.plantaId, usuarioData?.proyectoId]);
+  }, [pedidoSeleccionado, user, pedidoComentario, selectedTurno, actualizarDatos, menuDelDia, usuarioData?.centroCostoId, usuarioData?.id, usuarioData?.jerarquiaId, usuarioData?.plantaId, usuarioData?.proyectoId]);
 
   const actualizaPedido = useCallback(async (nuevoEstado) => {
     if (!pedidoSeleccionado) {
@@ -1578,7 +1678,7 @@ const Index = () => {
         let menuData;
         try {
           console.log('[Turno select] Llamando getMenuByTurnoId con turnoId:', turnoId);
-          menuData = await menuService.getMenuByTurnoId(turnoId);
+          menuData = await menuService.getMenuByTurnoId(turnoId, true, filtroComedorId || null);
         } catch (err) {
           const hoy = new Date().toISOString().split('T')[0];
           const planta = usuarioData?.plantaId || user?.plantaId || '';
@@ -1695,14 +1795,17 @@ const Index = () => {
               cantidadDisponible: cantidadDisponible,
               aplicarBonificacion: false,
               precioFinal: costo,
+              plantaId: menuItem.PlantaId ?? menuItem.plantaId ?? null,
+              plantaNombre: menuItem.PlantaNombre || menuItem.plantaNombre || null,
             };
 
           platos.push(plato);
         }
 
+          const platosConPreview = aplicarPreviewBonificacion(platos, previewBonificacion);
           setMenuItemsByTurno((prev) => {
             const cached = prev[turnoId];
-            const merged = mergeMenuItemsConCache(platos, cached);
+            const merged = mergeMenuItemsConCache(platosConPreview, cached);
             return { ...prev, [turnoId]: merged };
           });
         } else {
@@ -1713,7 +1816,7 @@ const Index = () => {
         setMenuItemsByTurno((prev) => ({ ...prev, [turnoId]: [] }));
       }
     }
-  }, [turnos, usuarioData, user, defaultImage]);
+  }, [turnos, usuarioData, user, defaultImage, previewBonificacion, filtroComedorId]);
 
   // Memoizar handlers para evitar recrearlos
   const handleCancelarPedido = useCallback((pedido) => {
@@ -1923,7 +2026,6 @@ const Index = () => {
                           pedido={pedido}
                           index={index}
                           defaultImage={defaultImage}
-                          porcentajeBonificacion={porcentajeBonificacion}
                           onCancelar={handleCancelarPedido}
                           onRecibir={handleRecibirPedido}
                             isLast={index === pedidosFiltrados.length - 1}
@@ -1935,8 +2037,34 @@ const Index = () => {
 
                   {turnoDisponible && (
                     <>
-                      <h4 className="mt-5" style={{ color: '#343a40' }}>Menú del día</h4>
-                      {!isLoading && menuItems.length === 0 && (
+                      <div className="mt-5 d-flex justify-content-between align-items-center flex-wrap" style={{ rowGap: '0.5rem' }}>
+                        <h4 className="mb-0" style={{ color: '#343a40' }}>Menú del día</h4>
+                        {mostrarFiltroComedor && plantasDisponibles.length > 0 && (
+                          <div className="d-flex align-items-center" style={{ gap: '0.5rem' }}>
+                            <label className="mb-0" htmlFor="filtroComedor" style={{ whiteSpace: 'nowrap' }}>
+                              Comedor:
+                            </label>
+                            <select
+                              id="filtroComedor"
+                              className="form-control"
+                              value={filtroComedorId}
+                              onChange={(e) => setFiltroComedorId(e.target.value)}
+                              style={{ width: 'auto', minWidth: '180px' }}
+                            >
+                              {plantasDisponibles.map((comedor, idx) => {
+                                const plantaId = comedor.plantaId ?? comedor.PlantaId;
+                                const plantaNombre = comedor.plantaNombre || comedor.PlantaNombre || '';
+                                return (
+                                  <option key={plantaId ?? `comedor-${idx}`} value={String(plantaId)}>
+                                    {plantaNombre}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                      {!isLoading && menuItemsFiltrados.length === 0 && (
                         <div 
                           className="alert mt-3" 
                           role="alert" 
@@ -1952,7 +2080,7 @@ const Index = () => {
                           No hay platos disponibles para este turno.
                         </div>
                       )}
-                      {menuItems.map((item, index) => {
+                      {menuItemsFiltrados.map((item, index) => {
                         const turnoIdActual = selectedTurno?.id || selectedTurno?.Id || selectedTurno?.ID;
                         const bonificacionesEnOtrosTurnos = Object.entries(menuItemsByTurno || {})
                           .filter(([tid]) => Number(tid) !== Number(turnoIdActual))
@@ -2039,7 +2167,7 @@ const Index = () => {
                     </div>
                     <div className="container row">
                       <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Importe</span>
-                      {pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && pedidosRestantes > 0 ? (
+                      {pedidoSeleccionado.aplicarBonificacion ? (
                         <>
                           <span style={{ textDecoration: 'line-through', color: '#6c757d' }}>
                             {formatearImporte(pedidoSeleccionado.costo)}
@@ -2053,12 +2181,14 @@ const Index = () => {
                       )}
                     </div>
                     <div className="container row">
-                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Planta</span>
+                      <span className="pr-2" style={{ color: 'black', fontWeight: 'bold' }}>Comedor</span>
                       <span>
-                        {usuarioData?.plantaNombre || 
-                         usuarioData?.PlantaNombre || 
-                         user?.plantaNombre || 
-                         user?.planta || 
+                        {/* Prioriza el comedor del plato elegido (puede no coincidir con el habitual del usuario) */}
+                        {pedidoSeleccionado.plantaNombre ||
+                         usuarioData?.plantaNombre ||
+                         usuarioData?.PlantaNombre ||
+                         user?.plantaNombre ||
+                         user?.planta ||
                          '-'}
                       </span>
                     </div>
@@ -2123,11 +2253,11 @@ const Index = () => {
                       alt={pedidoSeleccionado.descripcion || 'Imagen del plato seleccionado'}
                     />
                   </div>
-                  {pedidoSeleccionado.aplicarBonificacion && bonificacionDisponible && pedidosRestantes > 0 && (
+                  {pedidoSeleccionado.aplicarBonificacion && (
                     <div className="col-12 mt-4 pl-4">
                       <div className="alert alert-success" style={{ fontSize: '0.9em', padding: '0.5rem' }}>
                         <i className="fas fa-percentage"></i>
-                        Bonificación aplicada: {porcentajeBonificacion}% de descuento
+                        Bonificación aplicada{pedidoSeleccionado.reglaNombre ? `: ${pedidoSeleccionado.reglaNombre}` : ''}
                       </div>
                     </div>
                   )}

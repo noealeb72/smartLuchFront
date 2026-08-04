@@ -12,6 +12,14 @@ const defaultConfig = {
     Cocina: false,
     Comensal: false,
     Gerencia: false
+  },
+  // Permite mostrar/ocultar los campos Planta, Centro de Costo y Proyecto en
+  // "Menú del día" (formulario/listado) y en "Inicio" (etiqueta del comedor
+  // en cada plato), sin necesidad de recompilar el front.
+  camposVisibles: {
+    planta: true,
+    centroCosto: true,
+    proyecto: true
   }
 };
 
@@ -54,6 +62,11 @@ const validateConfig = (config) => {
     }
   }
 
+  // camposVisibles es opcional: si no viene o está incompleto, normalizeConfig lo completa
+  if (config.camposVisibles && typeof config.camposVisibles !== 'object') {
+    return false;
+  }
+
   return true;
 };
 
@@ -69,6 +82,11 @@ const normalizeConfig = (config) => {
       Cocina: config.bloqueos?.Cocina ?? defaultConfig.bloqueos.Cocina,
       Comensal: config.bloqueos?.Comensal ?? defaultConfig.bloqueos.Comensal,
       Gerencia: config.bloqueos?.Gerencia ?? defaultConfig.bloqueos.Gerencia,
+    },
+    camposVisibles: {
+      planta: config.camposVisibles?.planta ?? defaultConfig.camposVisibles.planta,
+      centroCosto: config.camposVisibles?.centroCosto ?? defaultConfig.camposVisibles.centroCosto,
+      proyecto: config.camposVisibles?.proyecto ?? defaultConfig.camposVisibles.proyecto,
     }
   };
 };
@@ -195,4 +213,25 @@ export function getBloqueos() {
 export function isRolBloqueado(rol) {
   const bloqueos = getBloqueos();
   return bloqueos[rol] === true;
+}
+
+/**
+ * Obtiene qué campos (planta, centroCosto, proyecto) deben mostrarse en
+ * "Menú del día" y en "Inicio". SIEMPRE usa la configuración del archivo,
+ * nunca valores por defecto si el archivo está cargado.
+ */
+export function getCamposVisibles() {
+  if (!appConfig) {
+    return defaultConfig.camposVisibles;
+  }
+  return appConfig.camposVisibles || defaultConfig.camposVisibles;
+}
+
+/**
+ * Verifica si un campo puntual (planta | centroCosto | proyecto) debe mostrarse.
+ * Por defecto true si no está configurado (no oculta nada sin que alguien lo pida).
+ */
+export function isCampoVisible(campo) {
+  const camposVisibles = getCamposVisibles();
+  return camposVisibles[campo] !== false;
 }

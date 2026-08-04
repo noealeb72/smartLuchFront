@@ -7,6 +7,9 @@ import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
+import BotonAyuda from '../components/BotonAyuda';
+import SelectorRegistros from '../components/SelectorRegistros';
+import { usePaginacion } from '../hooks/usePaginacion';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addPdfReportHeader } from '../utils/pdfReportHeader';
@@ -14,6 +17,46 @@ import ExcelJS from 'exceljs';
 import { addExcelReportHeader } from '../utils/excelReportHeader';
 import { formatearImporte } from '../utils/formatearImporte';
 import './Usuarios.css';
+
+const MANUAL_PLATOS = [
+  {
+    tipo: 'parrafo',
+    texto:
+      'Un plato es cada producto que se puede ofrecer en el Menú del Día. Acá se carga el catálogo ' +
+      'completo: nombre, precios y foto de cada uno.',
+  },
+  { tipo: 'subtitulo', texto: 'Campos' },
+  {
+    tipo: 'tabla',
+    head: ['Campo', 'Qué es'],
+    body: [
+      ['Código', 'Identificador corto del plato. Tiene un botón (varita) para generarlo automáticamente a partir de la descripción. No se puede cambiar una vez creado el plato.'],
+      ['Descripción', 'Nombre completo del plato'],
+      ['Costo de Venta ($)', 'Precio de lista: lo que ve y paga el comensal (antes de cualquier descuento)'],
+      ['Costo Interno ($)', 'Costo real que factura el proveedor — para conciliar, no lo ve el comensal'],
+      ['Plan Nutricional', 'Categoría nutricional del plato (se autoselecciona si solo hay un plan cargado)'],
+      ['Presentación', 'Texto libre opcional, cómo se presenta el plato'],
+      ['Ingredientes', 'Texto libre opcional'],
+      ['Imagen', 'Foto del plato: JPG o PNG, hasta 5 MB'],
+    ],
+  },
+  {
+    tipo: 'parrafo',
+    texto:
+      'Los pedidos siempre cobran el Importe Costo de Venta salvo que alguna regla activa en ' +
+      'Configuración → Reglas de Bonificación le aplique un descuento a ese pedido puntual.',
+  },
+  { tipo: 'subtitulo', texto: 'Cómo administrar' },
+  {
+    tipo: 'lista',
+    items: [
+      'Agregar: botón "+ Agregar" arriba del listado.',
+      'Editar / Dar de baja / Activar: íconos en la fila.',
+      'Buscar: el buscador filtra por código o descripción.',
+      'Imprimir: el botón de impresión deja elegir qué columnas incluir y filtrar por Plan Nutricional o Estado antes de exportar a PDF o Excel.',
+    ],
+  },
+];
 
 const Plato = () => {
   const [platos, setPlatos] = useState([]);
@@ -41,18 +84,23 @@ const Plato = () => {
   });
 
   // Paginación
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const {
+    currentPage, setCurrentPage,
+    pageSize, setPageSize,
+    totalPages, setTotalPages,
+    totalItems, setTotalItems,
+    opcionesPageSize,
+    handlePageChange,
+  } = usePaginacion(5);
   const [isServerSidePagination, setIsServerSidePagination] = useState(false);
- 
+
   // Form
   const [formData, setFormData] = useState({
     id: null,
     codigo: '',
     descripcion: '',
     costo: '',
+    costoProveedor: '',
     Plannutricional_id: '',
     presentacion: '',
     ingredientes: '',
@@ -146,22 +194,22 @@ const Plato = () => {
         let items = [];
         let totalItemsCount = 0;
         let totalPagesCount = 1;
-        
+
         if (Array.isArray(data)) {
           // El backend devuelve un array completo (sin paginación del servidor)
           items = data;
-          
+
           // Aplicar filtro local si hay búsqueda (el backend ya filtró por activos)
           if (searchTerm && searchTerm.trim()) {
             const termino = searchTerm.toLowerCase().trim();
-            items = items.filter(plato => 
+            items = items.filter(plato =>
               (plato.codigo && plato.codigo.toString().toLowerCase().includes(termino)) ||
               (plato.descripcion && plato.descripcion.toLowerCase().includes(termino)) ||
               (plato.Codigo && plato.Codigo.toString().toLowerCase().includes(termino)) ||
               (plato.Descripcion && plato.Descripcion.toLowerCase().includes(termino))
             );
           }
-          
+
           totalItemsCount = items.length;
           totalPagesCount = Math.ceil(items.length / pageSize);
           setIsServerSidePagination(false); // Usar paginación del cliente
@@ -172,7 +220,7 @@ const Plato = () => {
           totalPagesCount = data.totalPages || data.TotalPages || Math.ceil(totalItemsCount / pageSize);
           setIsServerSidePagination(true); // Usar paginación del servidor
         }
-        
+
         setPlatos(items);
         setCurrentPage(page);
         setTotalPages(totalPagesCount);
@@ -216,7 +264,7 @@ const Plato = () => {
       setFormData(prev => {
         const idExacto = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
         const idExactoString = String(idExacto);
-        
+
         // Actualizar siempre si el valor actual no coincide con el plan único disponible
         // Esto asegura que el valor por defecto se guarde en formData
         if (prev.Plannutricional_id !== idExactoString) {
@@ -244,7 +292,7 @@ const Plato = () => {
       });
       return;
     }
-    
+
     const codigoGenerado = generarCodigoDesdeDescripcion(formData.descripcion);
     if (codigoGenerado) {
       setFormData((prev) => ({
@@ -271,13 +319,13 @@ const Plato = () => {
 
     if (name === 'Foto' && files && files[0]) {
       const file = files[0];
-      
+
       // Validar tipo de archivo (solo JPG y PNG)
       const tiposPermitidos = ['image/jpeg', 'image/jpg', 'image/png'];
       const extensionesPermitidas = ['.jpg', '.jpeg', '.png'];
       const nombreArchivo = file.name.toLowerCase();
       const extensionArchivo = nombreArchivo.substring(nombreArchivo.lastIndexOf('.'));
-      
+
       if (!tiposPermitidos.includes(file.type) && !extensionesPermitidas.includes(extensionArchivo)) {
         Swal.fire({
           title: 'Error',
@@ -290,7 +338,7 @@ const Plato = () => {
         e.target.value = '';
         return;
       }
-      
+
       // Validar tamaño máximo (5MB = 5 * 1024 * 1024 bytes)
       const tamañoMaximo = 5 * 1024 * 1024; // 5MB
       if (file.size > tamañoMaximo) {
@@ -305,7 +353,7 @@ const Plato = () => {
         e.target.value = '';
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData((prev) => ({
@@ -353,6 +401,13 @@ const Plato = () => {
       else if (costoNum < 0) addError('El costo no puede ser negativo', 'costo');
     }
 
+    // Costo de proveedor: también opcional, se toma como 0 si no se ingresa
+    if (formData.costoProveedor !== '' && formData.costoProveedor !== null && formData.costoProveedor !== undefined) {
+      const costoProveedorNum = parseFloat(formData.costoProveedor);
+      if (isNaN(costoProveedorNum)) addError('El costo de proveedor debe ser un número válido', 'costoProveedor');
+      else if (costoProveedorNum < 0) addError('El costo de proveedor no puede ser negativo', 'costoProveedor');
+    }
+
     // Validar plan nutricional
     /*const plannutricionalIdValue = formData.Plannutricional_id && formData.Plannutricional_id !== ''
       ? parseInt(formData.Plannutricional_id)
@@ -396,6 +451,7 @@ const Plato = () => {
       codigo: '',
       descripcion: '',
       costo: '',
+      costoProveedor: '',
       Plannutricional_id:
         planesNutricionales.length === 1
           ? String(planesNutricionales[0].id)
@@ -479,23 +535,23 @@ const Plato = () => {
       const obtenerPresentacion = () => {
         // Según el DTO del backend (PlatoDetalleDto), el campo es Presentacion (string)
         return platoParaEditar.Presentacion ||
-        platoParaEditar.presentacion ||
-        (platoParaEditar.presentacion &&
-          typeof platoParaEditar.presentacion === 'object' &&
-          (platoParaEditar.presentacion.nombre ||
-            platoParaEditar.presentacion.descripcion)) ||
-        '';
+          platoParaEditar.presentacion ||
+          (platoParaEditar.presentacion &&
+            typeof platoParaEditar.presentacion === 'object' &&
+            (platoParaEditar.presentacion.nombre ||
+              platoParaEditar.presentacion.descripcion)) ||
+          '';
       };
 
       const obtenerIngredientes = () => {
         // Según el DTO del backend (PlatoDetalleDto), el campo es Ingredientes (string)
         return platoParaEditar.Ingredientes ||
-        platoParaEditar.ingredientes ||
-        (platoParaEditar.ingredientes &&
-          typeof platoParaEditar.ingredientes === 'object' &&
-          (platoParaEditar.ingredientes.nombre ||
-            platoParaEditar.ingredientes.descripcion)) ||
-        '';
+          platoParaEditar.ingredientes ||
+          (platoParaEditar.ingredientes &&
+            typeof platoParaEditar.ingredientes === 'object' &&
+            (platoParaEditar.ingredientes.nombre ||
+              platoParaEditar.ingredientes.descripcion)) ||
+          '';
       };
 
       const planId = obtenerPlanId();
@@ -506,28 +562,28 @@ const Plato = () => {
       const obtenerImagenPreview = () => {
         // Usar directamente el campo Foto del DTO del backend
         const foto = platoParaEditar.Foto || // PascalCase (DTO del backend)
-                     platoParaEditar.foto || // camelCase
-                     platoParaEditar.imagen || // español
-                     platoParaEditar.Imagen || // español PascalCase
-                     null;
+          platoParaEditar.foto || // camelCase
+          platoParaEditar.imagen || // español
+          platoParaEditar.Imagen || // español PascalCase
+          null;
 
         if (!foto || foto.trim() === '') {
 
           return null;
         }
-        
+
         // Si ya es una URL completa (http/https), devolverla tal cual
         if (foto.startsWith('http://') || foto.startsWith('https://')) {
 
           return foto;
         }
-        
+
         // Si es base64, devolverla tal cual
         if (foto.startsWith('data:')) {
 
           return foto;
         }
-        
+
         // Obtener la URL base del backend
         const baseUrl = getApiBaseUrl();
 
@@ -546,7 +602,7 @@ const Plato = () => {
             const partes = rutaRelativa.split('/');
             let nombreArchivo = partes.pop();
             const rutaBase = partes.join('/');
-            
+
             // Si el nombre ya está codificado (contiene % pero no espacios), decodificarlo primero
             if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
               try {
@@ -556,27 +612,27 @@ const Plato = () => {
 
               }
             }
-            
+
             // Codificar solo si tiene espacios o caracteres especiales que necesiten codificación
             let nombreArchivoCodificado = nombreArchivo;
             if (nombreArchivo.includes(' ') || (!nombreArchivo.includes('%') && /[^a-zA-Z0-9._-]/.test(nombreArchivo))) {
               nombreArchivoCodificado = encodeURIComponent(nombreArchivo);
             }
-            
+
             // Construir la URL completa del servidor backend
             const fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivoCodificado}`;
 
             return fotoUrl;
           }
         }
-        
+
         // Si es una ruta relativa que empieza con /uploads/platos/, construir URL del servidor backend
         if (foto.startsWith('/uploads/platos/')) {
           // Decodificar primero para obtener el nombre original, luego codificar solo si es necesario
           const partes = foto.split('/');
           let nombreArchivo = partes.pop();
           const rutaBase = partes.join('/');
-          
+
           // Si el nombre ya está codificado (contiene % pero no espacios), decodificarlo primero
           if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
             try {
@@ -586,19 +642,19 @@ const Plato = () => {
 
             }
           }
-          
+
           // Codificar solo si tiene espacios o caracteres especiales que necesiten codificación
           let nombreArchivoCodificado = nombreArchivo;
           if (nombreArchivo.includes(' ') || (!nombreArchivo.includes('%') && /[^a-zA-Z0-9._-]/.test(nombreArchivo))) {
             nombreArchivoCodificado = encodeURIComponent(nombreArchivo);
           }
-          
+
           // Construir la URL completa del servidor backend
           const fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivoCodificado}`;
 
           return fotoUrl;
         }
-        
+
         // Si es otra ruta relativa, construir URL del servidor backend
         const rutaNormalizada = foto.startsWith('/') ? foto : `/${foto}`;
         const fotoUrl = `${baseUrl}${rutaNormalizada}`;
@@ -609,7 +665,7 @@ const Plato = () => {
       let planIdFinal = planId;
       if (planId && planId !== '') {
         const planIdNum = parseInt(planId);
-        
+
         // Buscar el plan en los planes disponibles y usar el ID exacto que tiene el plan
         const planEncontrado = planesNutricionales.find(p => {
           const pId = p.id || p.Id || p.ID;
@@ -620,7 +676,7 @@ const Plato = () => {
             String(pId) === String(planId)
           );
         });
-        
+
         if (planEncontrado) {
           // Usar el ID exacto del plan encontrado (puede ser id, Id, o ID)
           const idExacto = planEncontrado.id || planEncontrado.Id || planEncontrado.ID;
@@ -653,6 +709,7 @@ const Plato = () => {
         codigo: platoParaEditar.Codigo || platoParaEditar.codigo || platoParaEditar.cod_plato || platoParaEditar.codPlato || '',
         descripcion: platoParaEditar.Descripcion || platoParaEditar.descripcion || '',
         costo: platoParaEditar.Costo || platoParaEditar.costo || platoParaEditar.precio || platoParaEditar.Precio || '',
+        costoProveedor: platoParaEditar.CostoProveedor || platoParaEditar.costoProveedor || '',
         Plannutricional_id: planIdFinal,
         presentacion,
         ingredientes,
@@ -684,6 +741,7 @@ const Plato = () => {
       codigo: '',
       descripcion: '',
       costo: '',
+      costoProveedor: '',
       Plannutricional_id: '',
       presentacion: '',
       ingredientes: '',
@@ -697,7 +755,7 @@ const Plato = () => {
   const handleEliminarImagen = async () => {
     // Obtener la ruta de la imagen actual para eliminarla del servidor
     const rutaImagenActual = formData.imagenPreview || platoEditando?.Foto || platoEditando?.foto;
-    
+
     if (rutaImagenActual) {
       try {
         // Eliminar el archivo del servidor
@@ -729,7 +787,7 @@ const Plato = () => {
       // Si hay un solo plan disponible, se selecciona automáticamente
       // Si hay múltiples planes o ninguno, puede ser null
       let plannutricionalId = null;
-      
+
       // Primero intentar obtener el valor del formData
       if (formData.Plannutricional_id && formData.Plannutricional_id !== '') {
         const parsedId = parseInt(formData.Plannutricional_id);
@@ -738,7 +796,7 @@ const Plato = () => {
 
         }
       }
-      
+
       // Si no hay plan en formData pero hay un solo plan disponible, usar ese plan
       if (!plannutricionalId && planesNutricionales.length === 1) {
         const planId = planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID;
@@ -751,7 +809,7 @@ const Plato = () => {
           }));
         }
       }
-      
+
       // Validar que si hay un plan seleccionado, sea válido (> 0)
       // Según el DTO: [Range(1, int.MaxValue)], así que debe ser > 0
       if (plannutricionalId !== null && plannutricionalId <= 0) {
@@ -780,9 +838,9 @@ const Plato = () => {
         }
       } else if (formData.Foto && formData.Foto instanceof File) {
         // Si hay un archivo nuevo, primero eliminar la imagen anterior si existe
-        const rutaImagenAnterior = platoEditando?.Foto || platoEditando?.foto || 
-                                   (formData.imagenPreview && formData.imagenPreview.includes('uploads/platos/') ? formData.imagenPreview : null);
-        
+        const rutaImagenAnterior = platoEditando?.Foto || platoEditando?.foto ||
+          (formData.imagenPreview && formData.imagenPreview.includes('uploads/platos/') ? formData.imagenPreview : null);
+
         if (rutaImagenAnterior && !formData.imagenPreview?.startsWith('data:')) {
           try {
 
@@ -792,7 +850,7 @@ const Plato = () => {
 
           }
         }
-        
+
         // Si hay un archivo nuevo, enviarlo al backend para que lo guarde
         try {
 
@@ -804,10 +862,10 @@ const Plato = () => {
 
           // Actualizar imagenPreview con la ruta retornada para que se muestre en la vista previa
           // Construir la URL completa para la vista previa
-          const fotoUrlParaPreview = fotoRuta.startsWith('/') 
-            ? `${process.env.PUBLIC_URL || ''}${fotoRuta}` 
+          const fotoUrlParaPreview = fotoRuta.startsWith('/')
+            ? `${process.env.PUBLIC_URL || ''}${fotoRuta}`
             : `${process.env.PUBLIC_URL || ''}/${fotoRuta}`;
-          
+
           setFormData((prev) => ({
             ...prev,
             imagenPreview: fotoUrlParaPreview,
@@ -881,8 +939,11 @@ const Plato = () => {
           Plannutricional_id: plannutricionalId && plannutricionalId > 0 ? plannutricionalId : null,
           Descripcion: (formData.descripcion || '').trim(),
           Costo: formData.costo && formData.costo !== '' && !isNaN(parseFloat(formData.costo))
-              ? parseFloat(formData.costo)
-              : 0,
+            ? parseFloat(formData.costo)
+            : 0,
+          CostoProveedor: formData.costoProveedor && formData.costoProveedor !== '' && !isNaN(parseFloat(formData.costoProveedor))
+            ? parseFloat(formData.costoProveedor)
+            : 0,
           Foto: fotoRuta || null, // El backend espera Foto (string), ruta del archivo (ej: /uploads/platos/imagen.jpg)
           EliminarFoto: eliminarFoto,
         };
@@ -905,8 +966,11 @@ const Plato = () => {
           Plannutricional_id: plannutricionalId && plannutricionalId > 0 ? plannutricionalId : null,
           Descripcion: (formData.descripcion || '').trim(),
           Costo: formData.costo && formData.costo !== '' && !isNaN(parseFloat(formData.costo))
-              ? parseFloat(formData.costo)
-              : 0,
+            ? parseFloat(formData.costo)
+            : 0,
+          CostoProveedor: formData.costoProveedor && formData.costoProveedor !== '' && !isNaN(parseFloat(formData.costoProveedor))
+            ? parseFloat(formData.costoProveedor)
+            : 0,
           Foto: fotoRuta || null, // El backend espera Foto (string), ruta del archivo (ej: /uploads/platos/imagen.jpg)
         };
 
@@ -928,7 +992,7 @@ const Plato = () => {
       if (!error.redirectToLogin) {
         // Extraer el mensaje de error del backend si está disponible
         let errorMessage = `Error al ${platoEditando ? 'actualizar' : 'crear'} el plato`;
-        
+
         if (error.backendMessage) {
           errorMessage = error.backendMessage;
         } else if (error.response?.data) {
@@ -966,10 +1030,10 @@ const Plato = () => {
   const handleExportarPDF = async (columnas = null, filtros = null) => {
     const cols = columnas || columnasSeleccionadas;
     const filtrosAplicar = filtros || filtrosImpresion;
-    
+
     try {
       setIsLoading(true);
-      
+
       // Mapear columnas seleccionadas al formato del endpoint
       const columnasRequest = {
         incluirCodigo: cols.codigo || false,
@@ -992,7 +1056,7 @@ const Plato = () => {
         ...columnasRequest,
         ...filtrosRequest,
       };
-      
+
       const platosFiltrados = await platosService.getImpresion(requestData);
 
       if (!platosFiltrados || platosFiltrados.length === 0) {
@@ -1012,7 +1076,7 @@ const Plato = () => {
       // Obtener headers y datos desde la respuesta del API
       const headers = [];
       const tableData = [];
-      
+
       // Mapeo de nombres de columnas del API (PascalCase) a labels
       const columnLabels = {
         Codigo: 'Código',
@@ -1077,7 +1141,7 @@ const Plato = () => {
       });
 
       doc.save('platos.pdf');
-      
+
       if (columnas || filtros) {
         setMostrarModalImpresion(false);
       }
@@ -1097,10 +1161,10 @@ const Plato = () => {
   const handleExportarExcel = async (columnas = null, filtros = null) => {
     const cols = columnas || columnasSeleccionadas;
     const filtrosAplicar = filtros || filtrosImpresion;
-    
+
     try {
       setIsLoading(true);
-      
+
       // Mapear columnas seleccionadas al formato del endpoint
       const columnasRequest = {
         incluirCodigo: cols.codigo || false,
@@ -1123,9 +1187,9 @@ const Plato = () => {
         ...columnasRequest,
         ...filtrosRequest,
       };
-      
+
       const platosFiltrados = await platosService.getImpresion(requestData);
-      
+
       if (!platosFiltrados || platosFiltrados.length === 0) {
         Swal.fire({
           title: 'Sin datos',
@@ -1139,7 +1203,7 @@ const Plato = () => {
 
       // Obtener headers y datos desde la respuesta del API
       const headers = [];
-      
+
       // Mapeo de nombres de columnas del API (PascalCase) a labels
       const columnLabels = {
         Codigo: 'Código',
@@ -1211,7 +1275,7 @@ const Plato = () => {
       a.download = 'platos.xlsx';
       a.click();
       URL.revokeObjectURL(a.href);
-      
+
       if (columnas || filtros) {
         setMostrarModalImpresion(false);
       }
@@ -1228,87 +1292,82 @@ const Plato = () => {
     }
   };
 
-  const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > totalPages) return;
-    setCurrentPage(newPage);
-  };
-
   const handleFiltroChange = (value) => {
     setFiltro(value);
     setCurrentPage(1);
   };
 
   // Función helper para determinar si un plato está inactivo
-// Función helper para determinar si un plato está inactivo
-const esPlatoInactivo = (plato) => {
-  if (!plato) return false;
+  // Función helper para determinar si un plato está inactivo
+  const esPlatoInactivo = (plato) => {
+    if (!plato) return false;
 
-  // Buscar el campo Deletemark / DeleteMark en varias variantes posibles
-  const rawDeleteMark =
-    plato.Deletemark !== undefined ? plato.Deletemark : // 👈 la que te devuelve el backend
-    plato.DeleteMark !== undefined ? plato.DeleteMark :
-    plato.deletemark !== undefined ? plato.deletemark :
-    plato.deleteMark !== undefined ? plato.deleteMark :
-    plato.delete_mark !== undefined ? plato.delete_mark :
-    false;
+    // Buscar el campo Deletemark / DeleteMark en varias variantes posibles
+    const rawDeleteMark =
+      plato.Deletemark !== undefined ? plato.Deletemark : // 👈 la que te devuelve el backend
+        plato.DeleteMark !== undefined ? plato.DeleteMark :
+          plato.deletemark !== undefined ? plato.deletemark :
+            plato.deleteMark !== undefined ? plato.deleteMark :
+              plato.delete_mark !== undefined ? plato.delete_mark :
+                false;
 
-  // Convertir a boolean si viene como string o número
-  const isInactivo =
-    rawDeleteMark === true ||
-    rawDeleteMark === 1 ||
-    rawDeleteMark === '1' ||
-    (typeof rawDeleteMark === 'string' &&
-      rawDeleteMark.toLowerCase() === 'true');
+    // Convertir a boolean si viene como string o número
+    const isInactivo =
+      rawDeleteMark === true ||
+      rawDeleteMark === 1 ||
+      rawDeleteMark === '1' ||
+      (typeof rawDeleteMark === 'string' &&
+        rawDeleteMark.toLowerCase() === 'true');
 
-  return isInactivo;
-};
+    return isInactivo;
+  };
 
 
   const handleActivarPlato = async (plato) => {
-  try {
-    setIsLoading(true);
-    const platoId = plato.id || plato.Id || plato.ID;
-    
-    if (!platoId) {
+    try {
+      setIsLoading(true);
+      const platoId = plato.id || plato.Id || plato.ID;
+
+      if (!platoId) {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo obtener el ID del plato',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+        return;
+      }
+
+      const usuario = getUsuarioLogueado();
+
+      // 👉 ahora llamamos directo al endpoint /api/plato/Activar
+      await platosService.activarPlato(platoId, usuario || null);
+
       Swal.fire({
-        title: 'Error',
-        text: 'No se pudo obtener el ID del plato',
-        icon: 'error',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
+        title: 'Éxito',
+        text: 'Plato activado correctamente',
+        icon: 'success',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
       });
-      return;
+
+      await cargarPlatos(currentPage, filtro);
+    } catch (error) {
+      if (!error.redirectToLogin) {
+        Swal.fire({
+          title: 'Error',
+          text: error.message || 'Error al activar el plato',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F34949',
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
-
-    const usuario = getUsuarioLogueado();
-
-    // 👉 ahora llamamos directo al endpoint /api/plato/Activar
-    await platosService.activarPlato(platoId, usuario || null);
-
-    Swal.fire({
-      title: 'Éxito',
-      text: 'Plato activado correctamente',
-      icon: 'success',
-      showConfirmButton: false,
-      timer: 2000,
-      timerProgressBar: true,
-    });
-    
-    await cargarPlatos(currentPage, filtro);
-  } catch (error) {
-    if (!error.redirectToLogin) {
-      Swal.fire({
-        title: 'Error',
-        text: error.message || 'Error al activar el plato',
-        icon: 'error',
-        confirmButtonText: 'Aceptar',
-        confirmButtonColor: '#F34949',
-      });
-    }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
 
   // ===================== render =====================
@@ -1317,11 +1376,12 @@ const esPlatoInactivo = (plato) => {
     return (
       <div className="container-fluid" style={{ padding: 0 }}>
         {/* Barra negra título */}
-        <div className="page-title-bar">
-          <h3>
+        <div className="page-title-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0 }}>
             <i className="fa fa-fish mr-2" aria-hidden="true"></i>
             <span>Platos</span>
           </h3>
+          <BotonAyuda titulo="Manual — Platos" contenido={MANUAL_PLATOS} nombreArchivo="manual_platos.pdf" />
         </div>
 
         <div
@@ -1359,10 +1419,10 @@ const esPlatoInactivo = (plato) => {
             <div style={{ display: 'flex', gap: '5.0rem', alignItems: 'center', flexShrink: 0, flexWrap: 'nowrap' }}>
               {/* Filtro de platos activos/inactivos */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
-                <label style={{ 
-                  margin: 0, 
-                  fontSize: '0.875rem', 
-                  color: '#495057', 
+                <label style={{
+                  margin: 0,
+                  fontSize: '0.875rem',
+                  color: '#495057',
                   whiteSpace: 'nowrap',
                   fontWeight: 'normal'
                 }}>
@@ -1417,6 +1477,8 @@ const esPlatoInactivo = (plato) => {
             </div>
           </div>
 
+          <SelectorRegistros pageSize={pageSize} opciones={opcionesPageSize} onChange={setPageSize} />
+
           {/* Tabla */}
           <DataTable
             columns={[
@@ -1452,9 +1514,9 @@ const esPlatoInactivo = (plato) => {
                       foto = `/uploads/platos/${nombreArchivo}`;
 
                     }
-                    
+
                     let fotoUrl = foto;
-                    
+
                     // Si es una URL completa (http/https) o base64, usarla tal cual
                     if (foto.startsWith('http://') || foto.startsWith('https://') || foto.startsWith('data:')) {
                       fotoUrl = foto;
@@ -1462,19 +1524,19 @@ const esPlatoInactivo = (plato) => {
                     } else if (foto.startsWith('/uploads/platos/') || foto.includes('uploads/platos/')) {
                       // Si es una ruta de uploads/platos/, construir la URL completa apuntando al servidor backend
                       const baseUrl = getApiBaseUrl();
-                      
+
                       // Si contiene 'uploads/platos/' pero no empieza con '/', extraer la parte relativa
                       let rutaRelativa = foto;
                       if (foto.includes('uploads/platos/') && !foto.startsWith('/uploads/platos/')) {
                         const indiceUploads = foto.indexOf('uploads/platos/');
                         rutaRelativa = `/${foto.substring(indiceUploads)}`;
                       }
-                      
+
                       // Decodificar primero para obtener el nombre original, luego codificar solo si es necesario
                       const partes = rutaRelativa.split('/');
                       let nombreArchivo = partes.pop();
                       const rutaBase = partes.join('/');
-                      
+
                       // Si el nombre ya está codificado (contiene % pero no espacios), decodificarlo primero
                       if (nombreArchivo.includes('%') && !nombreArchivo.includes(' ')) {
                         try {
@@ -1484,13 +1546,13 @@ const esPlatoInactivo = (plato) => {
 
                         }
                       }
-                      
+
                       // Codificar solo si tiene espacios o caracteres especiales que necesiten codificación
                       let nombreArchivoCodificado = nombreArchivo;
                       if (nombreArchivo.includes(' ') || (!nombreArchivo.includes('%') && /[^a-zA-Z0-9._-]/.test(nombreArchivo))) {
                         nombreArchivoCodificado = encodeURIComponent(nombreArchivo);
                       }
-                      
+
                       fotoUrl = `${baseUrl}${rutaBase}/${nombreArchivoCodificado}`;
                     } else {
                       // Si es otra ruta relativa, construir URL del servidor backend
@@ -1587,7 +1649,7 @@ const esPlatoInactivo = (plato) => {
                       </div>
                     );
                   }
-                  
+
                   // Si no hay foto, mostrar el mensaje "Sin foto"
                   return (
                     <div
@@ -1631,13 +1693,13 @@ const esPlatoInactivo = (plato) => {
                 label: 'Plan Nutricional',
                 render: (v, row) => {
                   // Primero intentar obtener el nombre directamente
-                  let planNombre = 
+                  let planNombre =
                     row.plannutricional_nombre ||
                     row.Plannutricional_nombre ||
                     row.planNutricional_nombre ||
                     row.planNutricionalNombre ||
                     row.plan_nutricional_nombre;
-                  
+
                   // Si no hay nombre directo, intentar desde el objeto anidado
                   if (!planNombre) {
                     if (row.planNutricional && typeof row.planNutricional === 'object') {
@@ -1646,7 +1708,7 @@ const esPlatoInactivo = (plato) => {
                       planNombre = row.PlanNutricional.nombre || row.PlanNutricional.Nombre || row.PlanNutricional.descripcion || row.PlanNutricional.Descripcion;
                     }
                   }
-                  
+
                   // Asegurar que siempre retornamos un string
                   return planNombre || '-';
                 },
@@ -1654,7 +1716,7 @@ const esPlatoInactivo = (plato) => {
               {
                 key: 'costo',
                 field: 'costo',
-                label: 'Importe ($)',
+                label: 'Costo de Venta ($)',
                 render: (v, row) => {
                   const costo =
                     row.costo ||
@@ -1663,6 +1725,18 @@ const esPlatoInactivo = (plato) => {
                     row.Precio ||
                     0;
                   return formatearImporte(costo);
+                },
+              },
+              {
+                key: 'costoProveedor',
+                field: 'costoProveedor',
+                label: 'Costo Interno ($)',
+                render: (v, row) => {
+                  const costoProveedor =
+                    row.costoProveedor ||
+                    row.CostoProveedor ||
+                    0;
+                  return formatearImporte(costoProveedor);
                 },
               },
             ]}
@@ -1681,12 +1755,11 @@ const esPlatoInactivo = (plato) => {
             onDelete={(plato) => {
               Swal.fire({
                 title: '¿Está seguro?',
-                text: `¿Desea dar de baja el plato ${
-                  plato.descripcion ||
+                text: `¿Desea dar de baja el plato ${plato.descripcion ||
                   plato.Descripcion ||
                   plato.codigo ||
                   plato.Codigo
-                }?`,
+                  }?`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#F34949',
@@ -1732,7 +1805,7 @@ const esPlatoInactivo = (plato) => {
             renderActions={(plato) => {
               // Verificar si el plato está inactivo
               const isInactivo = esPlatoInactivo(plato);
-              
+
               // Si el plato está inactivo, mostrar SOLO el botón de activar (tilde verde)
               if (isInactivo) {
                 return (
@@ -1741,9 +1814,9 @@ const esPlatoInactivo = (plato) => {
                     onClick={() => handleActivarPlato(plato)}
                     title="Activar plato"
                     disabled={isLoading}
-                    style={{ 
-                      backgroundColor: '#28a745', 
-                      borderColor: '#28a745', 
+                    style={{
+                      backgroundColor: '#28a745',
+                      borderColor: '#28a745',
                       color: 'white',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -1775,7 +1848,7 @@ const esPlatoInactivo = (plato) => {
                   </button>
                 );
               }
-              
+
               // Si está activo, no renderizar nada aquí (se mostrarán los botones de editar y eliminar por defecto)
               return null;
             }}
@@ -1787,6 +1860,7 @@ const esPlatoInactivo = (plato) => {
               onPageChange: handlePageChange
             } : {})}
             enablePagination={true}
+            pageSize={pageSize}
           />
         </div>
 
@@ -1919,15 +1993,15 @@ const esPlatoInactivo = (plato) => {
 
               {/* Filtros */}
               <div style={{ marginBottom: '2rem' }}>
-                <h5 style={{ 
-                  marginBottom: '1rem', 
-                  fontSize: '1rem', 
+                <h5 style={{
+                  marginBottom: '1rem',
+                  fontSize: '1rem',
                   fontWeight: '600',
                   color: '#333'
                 }}>Filtros:</h5>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(2, 1fr)', 
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
                   gap: '1rem',
                   padding: '1rem',
                   backgroundColor: '#f8f9fa',
@@ -1935,9 +2009,9 @@ const esPlatoInactivo = (plato) => {
                   border: '1px solid #e0e0e0'
                 }}>
                   <div>
-                    <label style={{ 
-                      fontSize: '0.875rem', 
-                      marginBottom: '0.5rem', 
+                    <label style={{
+                      fontSize: '0.875rem',
+                      marginBottom: '0.5rem',
                       display: 'block',
                       fontWeight: '500',
                       color: '#555'
@@ -1946,7 +2020,7 @@ const esPlatoInactivo = (plato) => {
                       className="form-control"
                       value={filtrosImpresion.planNutricionalId}
                       onChange={(e) => setFiltrosImpresion(prev => ({ ...prev, planNutricionalId: e.target.value }))}
-                      style={{ 
+                      style={{
                         fontSize: '0.875rem',
                         padding: '0.5rem',
                         border: '1px solid #ced4da',
@@ -1967,9 +2041,9 @@ const esPlatoInactivo = (plato) => {
                     </select>
                   </div>
                   <div>
-                    <label style={{ 
-                      fontSize: '0.875rem', 
-                      marginBottom: '0.5rem', 
+                    <label style={{
+                      fontSize: '0.875rem',
+                      marginBottom: '0.5rem',
                       display: 'block',
                       fontWeight: '500',
                       color: '#555'
@@ -1984,7 +2058,7 @@ const esPlatoInactivo = (plato) => {
                           activo: value === '' ? null : value === 'activo',
                         }));
                       }}
-                      style={{ 
+                      style={{
                         fontSize: '0.875rem',
                         padding: '0.5rem',
                         border: '1px solid #ced4da',
@@ -2001,9 +2075,9 @@ const esPlatoInactivo = (plato) => {
               </div>
 
               {/* Botones de acción */}
-              <div style={{ 
-                display: 'flex', 
-                gap: '0.75rem', 
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
                 justifyContent: 'flex-end',
                 marginTop: '1.5rem',
                 paddingTop: '1.5rem',
@@ -2177,7 +2251,7 @@ const esPlatoInactivo = (plato) => {
                         required
                         placeholder="Ingrese el código del plato"
                         disabled={vista === 'editar'}
-                        style={{ 
+                        style={{
                           flex: 1,
                           borderTopRightRadius: 0,
                           borderBottomRightRadius: 0,
@@ -2192,47 +2266,47 @@ const esPlatoInactivo = (plato) => {
                           border: '1px solid #ced4da',
                         }}
                       />
-                        <button
-                          type="button"
-                          className="btn btn-outline-secondary"
-                          onClick={handleGenerarCodigo}
-                          title="Generar código desde la descripción"
-                          style={{
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={handleGenerarCodigo}
+                        title="Generar código desde la descripción"
+                        style={{
                           borderColor: '#495057',
                           color: '#fff',
-                            whiteSpace: 'nowrap',
-                            padding: '0',
-                            margin: '0',
-                            borderTopLeftRadius: 0,
-                            borderBottomLeftRadius: 0,
-                            borderLeft: 'none',
-                            borderTop: '1px solid #495057',
-                            borderRight: '1px solid #495057',
-                            borderBottom: '1px solid #495057',
+                          whiteSpace: 'nowrap',
+                          padding: '0',
+                          margin: '0',
+                          borderTopLeftRadius: 0,
+                          borderBottomLeftRadius: 0,
+                          borderLeft: 'none',
+                          borderTop: '1px solid #495057',
+                          borderRight: '1px solid #495057',
+                          borderBottom: '1px solid #495057',
                           backgroundColor: '#495057',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            height: '38px',
-                            minHeight: '38px',
-                            maxHeight: '38px',
-                            width: '38px',
-                            fontSize: '0.875rem',
-                            boxSizing: 'border-box',
-                            lineHeight: '1',
-                            flexShrink: 0,
-                          }}
-                        >
-                          <i className="fa fa-magic"></i>
-                        </button>
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '38px',
+                          minHeight: '38px',
+                          maxHeight: '38px',
+                          width: '38px',
+                          fontSize: '0.875rem',
+                          boxSizing: 'border-box',
+                          lineHeight: '1',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <i className="fa fa-magic"></i>
+                      </button>
                     </div>
                     <small className="form-text text-muted" style={{ fontSize: '0.7rem', marginTop: '0.25rem', display: 'block', height: '18px', lineHeight: '18px' }}>
-                        <i className="fa fa-info-circle mr-1"></i>
+                      <i className="fa fa-info-circle mr-1"></i>
                       Presione el botón para generar
-                      </small>
+                    </small>
                   </div>
                 </div>
-                <div className="col-md-4">
+                <div className="col-md-3">
                   <div className="form-group" style={{ marginBottom: '0', display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <label htmlFor="descripcion" style={{ marginBottom: '0.35rem', fontSize: '0.875rem', fontWeight: '500', height: '20px', display: 'flex', alignItems: 'center' }}>
                       Descripción <span style={{ color: '#F34949' }}>*</span>
@@ -2254,7 +2328,7 @@ const esPlatoInactivo = (plato) => {
                 <div className="col-md-2">
                   <div className="form-group" style={{ marginBottom: '0', display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <label htmlFor="costo" style={{ marginBottom: '0.35rem', fontSize: '0.875rem', fontWeight: '500', height: '20px', display: 'flex', alignItems: 'center' }}>
-                      Importe ($)
+                      Costo de Venta ($)
                     </label>
                     <input
                       type="number"
@@ -2271,7 +2345,30 @@ const esPlatoInactivo = (plato) => {
                     <div style={{ height: '18px', marginTop: '0.25rem' }}></div>
                   </div>
                 </div>
-                <div className="col-md-3">
+                <div className="col-md-2">
+                  <div className="form-group" style={{ marginBottom: '0', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <label htmlFor="costoProveedor" style={{ marginBottom: '0.35rem', fontSize: '0.875rem', fontWeight: '500', height: '20px', display: 'flex', alignItems: 'center' }}>
+                      Costo Interno ($)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="form-control"
+                      id="costoProveedor"
+                      name="costoProveedor"
+                      value={formData.costoProveedor || ''}
+                      onChange={handleInputChange}
+                      placeholder="0.00 (opcional)"
+                      title="Costo real que factura el proveedor, distinto del importe que ve el comensal"
+                      style={{ fontSize: '0.875rem', padding: '0.4rem 0.75rem', height: '38px', boxSizing: 'border-box' }}
+                    />
+                    <small className="form-text text-muted" style={{ fontSize: '0.7rem', marginTop: '0.25rem', display: 'block', height: '18px', lineHeight: '18px' }}>
+                      Para conciliar con el proveedor
+                    </small>
+                  </div>
+                </div>
+                <div className="col-md-2">
                   <div className="form-group" style={{ marginBottom: '0', display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <label htmlFor="Plannutricional_id" style={{ marginBottom: '0.35rem', fontSize: '0.875rem', fontWeight: '500', height: '20px', display: 'flex', alignItems: 'center' }}>
                       Plan Nutricional
@@ -2291,10 +2388,10 @@ const esPlatoInactivo = (plato) => {
                         lineHeight: '1.5',
                         ...(planesNutricionales.length <= 1
                           ? {
-                              backgroundColor: '#e9ecef',
-                              cursor: 'not-allowed',
-                              opacity: 0.7,
-                            }
+                            backgroundColor: '#e9ecef',
+                            cursor: 'not-allowed',
+                            opacity: 0.7,
+                          }
                           : {})
                       }}
                     >
@@ -2314,11 +2411,11 @@ const esPlatoInactivo = (plato) => {
                             const planId = plan.id || plan.Id || plan.ID;
                             return (
                               <option key={planId} value={String(planId)}>
-                            {plan.nombre ||
-                              plan.Nombre ||
-                              plan.descripcion ||
-                              plan.Descripcion}
-                          </option>
+                                {plan.nombre ||
+                                  plan.Nombre ||
+                                  plan.descripcion ||
+                                  plan.Descripcion}
+                              </option>
                             );
                           })}
                         </>
@@ -2363,15 +2460,15 @@ const esPlatoInactivo = (plato) => {
                   <div className="form-group" style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column' }}>
                     <label htmlFor="Foto" style={{ marginBottom: '0.35rem', fontSize: '0.875rem', fontWeight: '500' }}>Imagen</label>
                     {!formData.imagenPreview && (
-                    <input
-                      type="file"
-                      className="form-control-file"
+                      <input
+                        type="file"
+                        className="form-control-file"
                         id="Foto"
                         name="Foto"
-                      accept="image/*"
-                      onChange={handleInputChange}
+                        accept="image/*"
+                        onChange={handleInputChange}
                         style={{ fontSize: '0.8rem', padding: '0.25rem 0' }}
-                    />
+                      />
                     )}
                     {formData.imagenPreview && (
                       <div style={{ position: 'relative', display: 'inline-block', width: '100%', maxWidth: '200px' }}>
@@ -2379,28 +2476,28 @@ const esPlatoInactivo = (plato) => {
                           src={formData.imagenPreview}
                           alt="Vista previa"
                           style={{
-                              width: '100%',
+                            width: '100%',
                             height: '95px',
                             minHeight: '95px',
                             borderRadius: '0.25rem',
                             border: '1px solid #ced4da',
                             padding: '0.4rem',
-                              objectFit: 'cover',
-                              display: 'block',
+                            objectFit: 'cover',
+                            display: 'block',
                             boxSizing: 'border-box',
-                            }}
-                            onError={() => {
-                              // Error silencioso al cargar imagen
-                            }}
-                            onLoad={() => {
-                              // Imagen cargada exitosamente
-                            }}
-                          />
+                          }}
+                          onError={() => {
+                            // Error silencioso al cargar imagen
+                          }}
+                          onLoad={() => {
+                            // Imagen cargada exitosamente
+                          }}
+                        />
                         <button
                           type="button"
                           className="btn btn-sm btn-danger"
                           onClick={handleEliminarImagen}
-                          style={{ 
+                          style={{
                             position: 'absolute',
                             top: '0',
                             right: '0',
@@ -2429,6 +2526,16 @@ const esPlatoInactivo = (plato) => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Leyenda de campos requeridos */}
+          <div className="row mt-2">
+            <div className="col-md-12">
+              <small style={{ color: '#6c757d' }}>
+                <i className="fa fa-exclamation-triangle mr-1" style={{ color: '#ffc107' }} aria-hidden="true"></i>
+                Los campos con * son requeridos
+              </small>
             </div>
           </div>
 

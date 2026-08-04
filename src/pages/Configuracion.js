@@ -14,7 +14,7 @@ const Configuracion = () => {
     try {
       await reloadConfigService();
       await reloadConfig();
-      
+
       Swal.fire({
         title: '¡Recargado!',
         text: 'La configuración se ha recargado desde public/config.json',
@@ -78,7 +78,7 @@ const Configuracion = () => {
       <div className="row">
         <div className="col-md-8">
           {/* Navegación de Tabs */}
-          <div style={{ 
+          <div style={{
             borderBottom: '2px solid #dee2e6',
             marginBottom: '1.5rem'
           }}>
@@ -252,6 +252,54 @@ const Configuracion = () => {
                   </div>
                 </div>
 
+                <div className="form-group mt-3">
+                  <label>
+                    <strong>Campos visibles en Menú del día / Inicio:</strong>
+                  </label>
+                  <div className="table-responsive">
+                    <table className="table table-sm table-bordered">
+                      <thead>
+                        <tr>
+                          <th>Campo</th>
+                          <th>Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Comedor</td>
+                          <td>
+                            {config?.camposVisibles?.planta !== false ? (
+                              <span className="badge badge-success">Visible</span>
+                            ) : (
+                              <span className="badge badge-secondary">Oculto</span>
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>Centro de Costo</td>
+                          <td>
+                            {config?.camposVisibles?.centroCosto !== false ? (
+                              <span className="badge badge-success">Visible</span>
+                            ) : (
+                              <span className="badge badge-secondary">Oculto</span>
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>Proyecto</td>
+                          <td>
+                            {config?.camposVisibles?.proyecto !== false ? (
+                              <span className="badge badge-success">Visible</span>
+                            ) : (
+                              <span className="badge badge-secondary">Oculto</span>
+                            )}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
                 <div className="alert alert-info mt-3">
                   <i className="fa fa-info-circle mr-2" aria-hidden="true"></i>
                   <strong>Fuente:</strong> public/config.json
@@ -274,7 +322,7 @@ const Configuracion = () => {
                   La configuración se lee directamente del archivo <code>public/config.json</code>.
                   Para modificar la configuración, edita este archivo directamente.
                 </p>
-                
+
                 <h6 className="mt-3">Pasos para editar:</h6>
                 <ol>
                   <li>Localiza el archivo <code>public/config.json</code> en tu proyecto</li>
@@ -286,7 +334,7 @@ const Configuracion = () => {
 
                 <h6 className="mt-3">Estructura del archivo:</h6>
                 <pre className="bg-light p-3 rounded" style={{ fontSize: '0.9rem' }}>
-{`{
+                  {`{
   "apiBaseUrl": "http://localhost:8000",
   "totemId": "T001",
   "bloqueos": {
@@ -294,9 +342,19 @@ const Configuracion = () => {
     "Cocina": false,
     "Comensal": false,
     "Gerencia": false
+  },
+  "camposVisibles": {
+    "planta": true,
+    "centroCosto": true,
+    "proyecto": true
   }
 }`}
                 </pre>
+                <p className="mt-2 mb-0" style={{ fontSize: '0.85rem' }}>
+                  <code>camposVisibles</code> controla si Planta, Centro de Costo y Proyecto se
+                  muestran en el formulario/listado de "Menú del día" y como etiqueta en cada
+                  plato de "Inicio". Poner en <code>false</code> el que no se necesite.
+                </p>
 
                 <div className="alert alert-warning mt-3">
                   <i className="fa fa-exclamation-triangle mr-2" aria-hidden="true"></i>
@@ -380,7 +438,7 @@ const Configuracion = () => {
               <code className="d-block mb-3" style={{ fontSize: '0.85rem' }}>
                 public/config.json
               </code>
-              
+
               <p className="mb-2">
                 <strong>En producción:</strong>
               </p>

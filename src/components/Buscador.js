@@ -2,8 +2,8 @@ import React from 'react';
 
 const Buscador = ({ filtro, setFiltro, placeholder = 'Filtrar por nombre, apellido, legajo...', onBlur }) => {
   return (
-    <div className="mb-3">
-      <label htmlFor="buscar" className="mr-2" style={{ fontWeight: 'normal' }}>Buscar</label>
+    <div className="mb-3" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', flexWrap: 'nowrap' }}>
+      <label htmlFor="buscar" className="mr-2 mb-0" style={{ fontWeight: 'normal', whiteSpace: 'nowrap' }}>Buscar</label>
       <div className="input-group" style={{ maxWidth: '650px', overflow: 'visible', display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'stretch' }}>
         <input
           type="text"

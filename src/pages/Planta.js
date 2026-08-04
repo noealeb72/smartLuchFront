@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { plantasService } from '../services/plantasService';
 import { catalogosService } from '../services/catalogosService';
 import { useSmartTime } from '../contexts/SmartTimeContext';
@@ -6,12 +6,52 @@ import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
+import BotonAyuda from '../components/BotonAyuda';
+import SelectorRegistros from '../components/SelectorRegistros';
+import { usePaginacion } from '../hooks/usePaginacion';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addPdfReportHeader } from '../utils/pdfReportHeader';
 import ExcelJS from 'exceljs';
 import { addExcelReportHeader } from '../utils/excelReportHeader';
 import './Usuarios.css';
+
+const MANUAL_PLANTAS = [
+  {
+    tipo: 'parrafo',
+    texto:
+      'Un comedor es una sede física donde se sirve comida. Si la empresa tiene más de un ' +
+      'comedor, cada uno se carga acá para poder separar menús, usuarios y reportes por comedor.',
+  },
+  { tipo: 'subtitulo', texto: 'Campos' },
+  {
+    tipo: 'tabla',
+    head: ['Campo', 'Qué es'],
+    body: [
+      ['Nombre', 'Nombre del comedor'],
+      ['Descripción', 'Texto libre opcional'],
+    ],
+  },
+  { tipo: 'subtitulo', texto: 'Dónde se usa' },
+  {
+    tipo: 'lista',
+    items: [
+      'Se asigna a cada usuario (de qué comedor es habitual).',
+      'Se asigna a cada plato del Menú del Día (en qué comedor está disponible).',
+      'Es una de las condiciones disponibles en Reglas de Bonificación.',
+      'Filtra el Menú del Día y los reportes de gestión/facturación.',
+    ],
+  },
+  { tipo: 'subtitulo', texto: 'Cómo administrar' },
+  {
+    tipo: 'lista',
+    items: [
+      'Agregar: botón "+ Agregar" arriba del listado.',
+      'Editar / Dar de baja / Activar: íconos en la fila.',
+      'El comedor "predeterminado" se marca desde el listado con el botón de estrella, no desde el formulario.',
+    ],
+  },
+];
 
 const Planta = () => {
   const [plantas, setPlantas] = useState([]);
@@ -22,20 +62,14 @@ const Planta = () => {
   const [vista, setVista] = useState('lista'); // 'lista' o 'editar' o 'crear'
   
   // Estado de paginación
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const OPCIONES_BASE = [5, 10, 25, 50];
-  const opcionesPageSize = useMemo(() => {
-    if (totalItems <= 0) return [5];
-    const filtradas = OPCIONES_BASE.filter((n) => n <= totalItems);
-    if (!filtradas.includes(totalItems) && totalItems > 5) {
-      filtradas.push(totalItems);
-      filtradas.sort((a, b) => a - b);
-    }
-    return filtradas.length > 0 ? filtradas : [totalItems];
-  }, [totalItems]);
+  const {
+    currentPage, setCurrentPage,
+    pageSize, setPageSize,
+    totalPages, setTotalPages,
+    totalItems, setTotalItems,
+    opcionesPageSize,
+    handlePageChange,
+  } = usePaginacion(5);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -95,7 +129,7 @@ const Planta = () => {
       if (!error.redirectToLogin) {
         Swal.fire({
           title: 'Error',
-          text: error.message || 'Error al cargar las plantas',
+          text: error.message || 'Error al cargar los comedores',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -110,27 +144,10 @@ const Planta = () => {
     }
   }, [pageSize]);
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
-      setCurrentPage(newPage);
-    }
-  };
-
-  // Cuando cambia el filtro, filtroActivo o pageSize, resetear a página 1
+  // Cuando cambia el filtro o filtroActivo, resetear a página 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [filtro, filtroActivo, pageSize]);
-
-  // Si pageSize no está en las opciones disponibles, usar 5 como base
-  useEffect(() => {
-    if (totalItems <= 0) return;
-    const opciones = OPCIONES_BASE.filter((n) => n <= totalItems);
-    const conTotal = opciones.includes(totalItems) ? opciones : [...opciones, totalItems].sort((a, b) => a - b);
-    const validas = conTotal.length > 0 ? conTotal : [totalItems];
-    if (!validas.includes(pageSize) || pageSize > totalItems) {
-      setPageSize(validas[0] ?? 5);
-    }
-  }, [totalItems, pageSize]);
+  }, [filtro, filtroActivo]);
 
   // Cargar plantas cuando cambia la página, el filtro o el filtroActivo
   useEffect(() => {
@@ -204,7 +221,7 @@ const Planta = () => {
         await plantasService.actualizarPlanta(plantaData);
         Swal.fire({
           title: 'Éxito',
-          text: 'Planta actualizada correctamente',
+          text: 'Comedor actualizado correctamente',
           icon: 'success',
           timer: 3000,
           timerProgressBar: true,
@@ -215,7 +232,7 @@ const Planta = () => {
         await plantasService.crearPlanta(plantaData);
         Swal.fire({
           title: 'Éxito',
-          text: 'Planta creada correctamente',
+          text: 'Comedor creado correctamente',
           icon: 'success',
           timer: 3000,
           timerProgressBar: true,
@@ -232,7 +249,7 @@ const Planta = () => {
       
       if (!error.redirectToLogin) {
         // Extraer el mensaje del error del backend
-        let errorMessage = 'Error al guardar la planta';
+        let errorMessage = 'Error al guardar el comedor';
         if (error.message) {
           errorMessage = error.message;
         } else if (error.response?.data?.message) {
@@ -280,7 +297,7 @@ const Planta = () => {
       if (!plantaId) {
         Swal.fire({
           title: 'Error',
-          text: 'No se pudo obtener el ID de la planta',
+          text: 'No se pudo obtener el ID del comedor',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -303,7 +320,7 @@ const Planta = () => {
       if (!error.redirectToLogin) {
         Swal.fire({
           title: 'Error',
-          text: error.message || 'Error al cargar los datos de la planta',
+          text: error.message || 'Error al cargar los datos del comedor',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -339,7 +356,7 @@ const Planta = () => {
       }));
 
       const doc = new jsPDF();
-      const startY = await addPdfReportHeader(doc, 'Listado de Plantas');
+      const startY = await addPdfReportHeader(doc, 'Listado de Comedores');
       
       const tableData = plantasParaExportar.map(planta => [
         (smarTimeHabilitado && planta.is_default ? (planta.nombre || '-') + ' (campo por defecto)' : (planta.nombre || '-')),
@@ -355,7 +372,7 @@ const Planta = () => {
         alternateRowStyles: { fillColor: [245, 245, 245] },
       });
       
-      const fileName = `plantas_${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileName = `comedores_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
       
       Swal.fire({
@@ -393,8 +410,8 @@ const Planta = () => {
       }));
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Plantas');
-      const startRow = await addExcelReportHeader(workbook, worksheet, 'Listado de Plantas');
+      const worksheet = workbook.addWorksheet('Comedores');
+      const startRow = await addExcelReportHeader(workbook, worksheet, 'Listado de Comedores');
 
       worksheet.getRow(startRow).values = ['Nombre', 'Descripción'];
       worksheet.getRow(startRow).font = { bold: true };
@@ -406,7 +423,7 @@ const Planta = () => {
       });
       worksheet.columns = [{ width: 20 }, { width: 40 }];
 
-      const fileName = `plantas_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const fileName = `comedores_${new Date().toISOString().split('T')[0]}.xlsx`;
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
@@ -453,7 +470,7 @@ const Planta = () => {
               <i className="fa fa-arrow-left"></i>
             </button>
             <h3>
-              {vista === 'editar' ? 'Editar Planta' : 'Nueva Planta'}
+              {vista === 'editar' ? 'Editar Comedor' : 'Nuevo Comedor'}
             </h3>
           </div>
         </div>
@@ -462,7 +479,7 @@ const Planta = () => {
         {vista === 'crear' && (
           <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
             <i className="fa fa-info-circle" style={{ color: '#0097A7' }}></i>
-            <span style={{ color: '#0097A7' }}>Creando nueva planta - Complete los campos obligatorios para guardar.</span>
+            <span style={{ color: '#0097A7' }}>Creando nuevo comedor - Complete los campos obligatorios para guardar.</span>
           </div>
         )}
 
@@ -470,7 +487,7 @@ const Planta = () => {
         {vista === 'editar' && (
           <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7' }}>
             <i className="fa fa-pencil-alt" style={{ color: '#0097A7' }}></i>
-            <span style={{ color: '#0097A7' }}>Editando planta - Modifique los campos necesarios y guarde los cambios.</span>
+            <span style={{ color: '#0097A7' }}>Editando comedor - Modifique los campos necesarios y guarde los cambios.</span>
           </div>
         )}
 
@@ -479,7 +496,7 @@ const Planta = () => {
             <div className="form-section">
               <div className="form-section-title">
                 <i className="fa fa-building mr-2"></i>
-                <span>Información de la Planta</span>
+                <span>Información del Comedor</span>
               </div>
               <div className="form-section-content">
                 <div className="row">
@@ -496,7 +513,7 @@ const Planta = () => {
                         value={formData.nombre || ''}
                         onChange={handleInputChange}
                         required
-                        placeholder="Ingrese el nombre de la planta"
+                        placeholder="Ingrese el nombre del comedor"
                       />
                     </div>
                   </div>
@@ -515,6 +532,16 @@ const Planta = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Leyenda de campos requeridos */}
+            <div className="row mt-2">
+              <div className="col-12">
+                <small style={{ color: '#6c757d' }}>
+                  <i className="fa fa-exclamation-triangle mr-1" style={{ color: '#ffc107' }} aria-hidden="true"></i>
+                  Los campos con * son requeridos
+                </small>
               </div>
             </div>
 
@@ -564,11 +591,12 @@ const Planta = () => {
   // Renderizar vista de lista
   return (
     <div className="container-fluid" style={{ padding: 0 }}>
-      {/* Barra negra con título Plantas */}
-      <div className="page-title-bar">
-        <h3>
-          <i className="fa fa-building mr-2" aria-hidden="true"></i>Plantas
+      {/* Barra negra con título Comedores */}
+      <div className="page-title-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h3 style={{ margin: 0 }}>
+          <i className="fa fa-building mr-2" aria-hidden="true"></i>Comedores
         </h3>
+        <BotonAyuda titulo="Manual — Comedores" contenido={MANUAL_PLANTAS} nombreArchivo="manual_comedores.pdf" />
       </div>
       
       <div style={{ paddingTop: '1.5rem', paddingLeft: '3rem', paddingRight: '3rem', width: '100%', boxSizing: 'border-box' }}>
@@ -696,13 +724,13 @@ const Planta = () => {
           data={plantas}
           isLoading={isLoading}
           emptyMessage={
-            filtro 
-              ? 'No se encontraron plantas que coincidan con la búsqueda' 
-              : filtroActivo === 'activo' 
-                ? 'No hay plantas registradas Activas' 
-                : filtroActivo === 'inactivo' 
-                  ? 'No hay plantas registradas Inactivas' 
-                  : 'No hay plantas registradas'
+            filtro
+              ? 'No se encontraron comedores que coincidan con la búsqueda'
+              : filtroActivo === 'activo'
+                ? 'No hay comedores registrados Activos'
+                : filtroActivo === 'inactivo'
+                  ? 'No hay comedores registrados Inactivos'
+                  : 'No hay comedores registrados'
           }
           onEdit={handleEditarPlanta}
           canEdit={(planta) => {
@@ -735,7 +763,7 @@ const Planta = () => {
             if (totalItems === 1) {
               Swal.fire({
                 title: 'No permitido',
-                text: 'No se puede dar de baja la única planta disponible. Debe haber al menos una planta en el sistema.',
+                text: 'No se puede dar de baja el único comedor disponible. Debe haber al menos un comedor en el sistema.',
                 icon: 'warning',
                 confirmButtonText: 'Aceptar',
                 confirmButtonColor: '#F34949',
@@ -745,7 +773,7 @@ const Planta = () => {
             
             Swal.fire({
               title: '¿Está seguro?',
-              text: `¿Desea dar de baja la planta ${planta.nombre}?`,
+              text: `¿Desea dar de baja el comedor ${planta.nombre}?`,
               icon: 'warning',
               showCancelButton: true,
               confirmButtonColor: '#F34949',
@@ -761,7 +789,7 @@ const Planta = () => {
                   if (!plantaId && plantaId !== 0) {
                     Swal.fire({
                       title: 'Error',
-                      text: 'No se pudo obtener el ID de la planta. Por favor, intente nuevamente.',
+                      text: 'No se pudo obtener el ID del comedor. Por favor, intente nuevamente.',
                       icon: 'error',
                       confirmButtonText: 'Aceptar',
                       confirmButtonColor: '#F34949',
@@ -772,7 +800,7 @@ const Planta = () => {
                   await plantasService.eliminarPlanta(plantaId);
                   Swal.fire({
                     title: 'Éxito',
-                    text: 'Planta dada de baja correctamente',
+                    text: 'Comedor dado de baja correctamente',
                     icon: 'success',
                     timer: 3000,
                     timerProgressBar: true,
@@ -784,7 +812,7 @@ const Planta = () => {
                   if (!error.redirectToLogin) {
                     Swal.fire({
                       title: 'Error',
-                      text: error.message || 'Error al dar de baja la planta',
+                      text: error.message || 'Error al dar de baja el comedor',
                       icon: 'error',
                       confirmButtonText: 'Aceptar',
                       confirmButtonColor: '#F34949',
@@ -849,7 +877,7 @@ const Planta = () => {
                       onClick={() => {
                         Swal.fire({
                           title: '¿Está seguro?',
-                          text: `¿Desea activar la planta ${planta.nombre}?`,
+                          text: `¿Desea activar el comedor ${planta.nombre}?`,
                           icon: 'question',
                           showCancelButton: true,
                           confirmButtonColor: '#28a745',
@@ -863,7 +891,7 @@ const Planta = () => {
                               await plantasService.activarPlanta(plantaId);
                               Swal.fire({
                                 title: 'Activado',
-                                text: 'Planta activada correctamente',
+                                text: 'Comedor activado correctamente',
                                 icon: 'success',
                                 timer: 3000,
                                 timerProgressBar: true,
@@ -876,7 +904,7 @@ const Planta = () => {
                               if (!error.redirectToLogin) {
                                 Swal.fire({
                                   title: 'Error',
-                                  text: error.message || 'Error al activar la planta',
+                                  text: error.message || 'Error al activar el comedor',
                                   icon: 'error',
                                   confirmButtonText: 'Aceptar',
                                   confirmButtonColor: '#F34949',
@@ -902,7 +930,7 @@ const Planta = () => {
                       onClick={() => {
                         Swal.fire({
                           title: 'Campo por defecto',
-                          text: `¿Desea establecer "${planta.nombre}" como planta por defecto?`,
+                          text: `¿Desea establecer "${planta.nombre}" como comedor por defecto?`,
                           icon: 'question',
                           showCancelButton: true,
                           confirmButtonColor: '#F34949',
@@ -916,7 +944,7 @@ const Planta = () => {
                               await catalogosService.setDefault('planta', plantaId);
                               Swal.fire({
                                 title: 'Establecido',
-                                text: 'Planta establecida como por defecto',
+                                text: 'Comedor establecido como por defecto',
                                 icon: 'success',
                                 timer: 3000,
                                 timerProgressBar: true,
@@ -929,7 +957,7 @@ const Planta = () => {
                               if (!error.redirectToLogin) {
                                 Swal.fire({
                                   title: 'Error',
-                                  text: error.message || 'Error al establecer la planta por defecto',
+                                  text: error.message || 'Error al establecer el comedor por defecto',
                                   icon: 'error',
                                   confirmButtonText: 'Aceptar',
                                   confirmButtonColor: '#F34949',
@@ -956,20 +984,8 @@ const Planta = () => {
         {totalItems > 0 && (
           <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem' }}>
             <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
-              <label className="d-flex align-items-center gap-2 mb-0" style={{ whiteSpace: 'nowrap' }}>
-                <span className="text-muted small">Registros a mostrar:</span>
-                <select
-                  className="form-control form-control-sm"
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
-                  style={{ width: 'auto', minWidth: '70px' }}
-                >
-                  {opcionesPageSize.map((n) => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
-              </label>
-              <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>
+              <SelectorRegistros pageSize={pageSize} opciones={opcionesPageSize} onChange={setPageSize} className="d-flex align-items-center" />
+              <span className="text-muted" style={{ whiteSpace: 'nowrap', fontSize: '0.9rem' }}>
                 Mostrando página {currentPage} de {totalPages} ({totalItems} plantas)
               </span>
             </div>

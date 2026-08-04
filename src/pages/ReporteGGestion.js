@@ -1392,7 +1392,7 @@ const ReporteGGestion = () => {
                             <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem', padding: '1rem 1.5rem' }}>
                               <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
                                 <label className="d-flex align-items-center gap-2 mb-0" style={{ whiteSpace: 'nowrap' }}>
-                                  <span className="text-muted small">Registros a mostrar:</span>
+                                  <span className="text-muted" style={{ fontSize: '0.9rem' }}>Registros a mostrar:</span>
                                   <select
                                     className="form-control form-control-sm"
                                     value={pageSize}
@@ -1408,7 +1408,7 @@ const ReporteGGestion = () => {
                                     ))}
                                   </select>
                                 </label>
-                                <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>
+                                <span className="text-muted" style={{ whiteSpace: 'nowrap', fontSize: '0.9rem' }}>
                                   Mostrando página {currentPage} de {paginado.totalPages} ({paginado.totalItems} registros)
                                 </span>
                               </div>

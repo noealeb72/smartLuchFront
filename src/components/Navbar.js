@@ -324,11 +324,11 @@ const Navbar = memo(() => {
                 </Link>
                 <Link 
                   className="dropdown-item" 
-                  to="/planta" 
+                  to="/planta"
                   role="menuitem"
                   onClick={() => setOpenDropdowns({})}
                 >
-                  Planta
+                  Comedor
                 </Link>
                 <Link 
                   className="dropdown-item" 
@@ -362,13 +362,21 @@ const Navbar = memo(() => {
                 >
                   Jerarquía
                 </Link>
-                <Link 
-                  className="dropdown-item" 
-                  to="/turno" 
+                <Link
+                  className="dropdown-item"
+                  to="/turno"
                   role="menuitem"
                   onClick={() => setOpenDropdowns({})}
                 >
                   Turnos
+                </Link>
+                <Link
+                  className="dropdown-item"
+                  to="/reglas-bonificacion"
+                  role="menuitem"
+                  onClick={() => setOpenDropdowns({})}
+                >
+                  Reglas de Bonificación
                 </Link>
                 {role === 'Admin' && (
                   <>
@@ -384,14 +392,23 @@ const Navbar = memo(() => {
                         Habilitar SmartTime
                       </button>
                     )}
-                    <Link 
-                      className="dropdown-item" 
-                      to="/configuracion" 
+                    <Link
+                      className="dropdown-item"
+                      to="/configuracion"
                       role="menuitem"
                       onClick={() => setOpenDropdowns({})}
                     >
                       <i className="fa fa-server mr-2" aria-hidden="true"></i>
                       Parámetros del Sistema
+                    </Link>
+                    <Link
+                      className="dropdown-item"
+                      to="/scripts-pendientes"
+                      role="menuitem"
+                      onClick={() => setOpenDropdowns({})}
+                    >
+                      <i className="fa fa-database mr-2" aria-hidden="true"></i>
+                      Scripts pendientes
                     </Link>
                   </>
                 )}
@@ -606,7 +623,7 @@ const Navbar = memo(() => {
                     setIsMobileMenuOpen(false);
                   }}
                 >
-                  Planta
+                  Comedor
                 </Link>
                 <Link 
                   className="dropdown-item" 
@@ -652,9 +669,9 @@ const Navbar = memo(() => {
                 >
                   Jerarquía
                 </Link>
-                <Link 
-                  className="dropdown-item" 
-                  to="/turno" 
+                <Link
+                  className="dropdown-item"
+                  to="/turno"
                   role="menuitem"
                   onClick={() => {
                     setOpenDropdowns({});
@@ -662,6 +679,17 @@ const Navbar = memo(() => {
                   }}
                 >
                   Turnos
+                </Link>
+                <Link
+                  className="dropdown-item"
+                  to="/reglas-bonificacion"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpenDropdowns({});
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Reglas de Bonificación
                 </Link>
                 {role === 'Admin' && (
                   <>
@@ -681,9 +709,9 @@ const Navbar = memo(() => {
                         Habilitar SmartTime
                       </button>
                     )}
-                    <Link 
-                      className="dropdown-item" 
-                      to="/configuracion" 
+                    <Link
+                      className="dropdown-item"
+                      to="/configuracion"
                       role="menuitem"
                       onClick={() => {
                         setOpenDropdowns({});
@@ -692,6 +720,18 @@ const Navbar = memo(() => {
                     >
                       <i className="fa fa-server mr-2" aria-hidden="true"></i>
                       Parámetros del Sistema
+                    </Link>
+                    <Link
+                      className="dropdown-item"
+                      to="/scripts-pendientes"
+                      role="menuitem"
+                      onClick={() => {
+                        setOpenDropdowns({});
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <i className="fa fa-database mr-2" aria-hidden="true"></i>
+                      Scripts pendientes
                     </Link>
                   </>
                 )}

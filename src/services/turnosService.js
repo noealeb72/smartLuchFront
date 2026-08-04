@@ -37,11 +37,12 @@ export const turnosService = {
   },
 
   /**
-   * Obtiene turnos disponibles (para compatibilidad)
+   * Obtiene los turnos activos, sin paginar (para selects/combos)
+   * GET /api/turno/activos-combo
    */
   getTurnosDisponibles: async () => {
     const baseUrl = getApiBaseUrl();
-    const response = await api.get(`${baseUrl}/api/turno/GetTurnosDisponibles`);
+    const response = await api.get(`${baseUrl}/api/turno/activos-combo`);
     return response.data;
   },
 

@@ -1,7 +1,14 @@
 import React, { memo } from 'react';
 import { formatearImporte } from '../utils/formatearImporte';
+import { getCamposVisibles } from '../services/configService';
 
 const MenuItem = memo(({ item, index, defaultImage, bonificacionDisponible, pedidosRestantes, porcentajeBonificacion, turnoDisponible, puedeAplicarBonificacion, tooltipDeshabilitado, onHacerPedido, onAplicarBonificacion }) => {
+  const camposVisibles = getCamposVisibles();
+  const mostrarPlanta = camposVisibles.planta !== false && !!item.plantaNombre;
+  const mostrarCentroCosto = camposVisibles.centroCosto !== false && !!item.centroCostoNombre;
+  const mostrarProyecto = camposVisibles.proyecto !== false && !!item.proyectoNombre;
+  const hayEtiquetasDeUbicacion = mostrarPlanta || mostrarCentroCosto || mostrarProyecto;
+
   return (
     <div className="card mt-2 pl-2">
       <div className="row no-gutters">
@@ -26,6 +33,32 @@ const MenuItem = memo(({ item, index, defaultImage, bonificacionDisponible, pedi
             <div style={{ fontSize: '1.25rem', color: '#212529', fontWeight: 'normal', marginBottom: '0.5rem' }}>
               {item.descripcion}
             </div>
+            {hayEtiquetasDeUbicacion && (
+              <p style={{ marginBottom: '0.5rem' }}>
+                {mostrarPlanta && (
+                  <span
+                    className="badge badge-secondary mr-1"
+                    style={{ fontSize: '0.75rem', fontWeight: 500 }}
+                    title={`Comedor: ${item.plantaNombre}`}
+                  >
+                    <i className="fa fa-utensils mr-1" aria-hidden="true"></i>
+                    {item.plantaNombre}
+                  </span>
+                )}
+                {mostrarCentroCosto && (
+                  <span className="badge badge-secondary mr-1" style={{ fontSize: '0.75rem', fontWeight: 500 }}>
+                    <i className="fa fa-building mr-1" aria-hidden="true"></i>
+                    {item.centroCostoNombre}
+                  </span>
+                )}
+                {mostrarProyecto && (
+                  <span className="badge badge-secondary mr-1" style={{ fontSize: '0.75rem', fontWeight: 500 }}>
+                    <i className="fa fa-diagram-project mr-1" aria-hidden="true"></i>
+                    {item.proyectoNombre}
+                  </span>
+                )}
+              </p>
+            )}
             <p className="card-text">{item.ingredientes}</p>
             <p>
               <span style={{ fontSize: '0.8em' }}>* Plan Nutricional: </span>

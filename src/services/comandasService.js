@@ -71,38 +71,56 @@ export const comandasService = {
 
   /**
    * Crea un nuevo pedido
-   * POST /api/comanda/crear?usuarioId={usuarioId}
-   * Usa el DTO ComandaCreateDto en el body y usuarioId como query parameter
+   * POST /api/comanda/crear-con-descuento?usuarioId={usuarioId}
+   * Usa el DTO ComandaCreateDto en el body y usuarioId como query parameter.
+   * El monto/bonificado que viaja en el DTO es solo informativo: el backend
+   * recalcula el monto real según el motor de reglas de bonificación
+   * (ServicioComanda.CrearConDescuento) y ese es el que efectivamente se cobra.
    */
   crearPedido: async (pedidoData, usuarioId) => {
     const baseUrl = getApiBaseUrl();
     const token = localStorage.getItem('token');
-    
+
     const headers = {
       'Content-Type': 'application/json; charset=utf-8',
     };
-    
+
     if (token && token !== 'null' && token !== 'undefined') {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     // Extraer usuarioId del DTO si no se pasó como parámetro separado
     const userId = usuarioId || pedidoData.UsuarioId;
-    
+
     // Remover UsuarioId del DTO ya que se envía como parámetro separado
     const { UsuarioId, ...dtoSinUsuarioId } = pedidoData;
-    
+
     const params = {
       usuarioId: parseInt(userId),
     };
-    
-    const response = await api.post(`${baseUrl}/api/comanda/crear`, dtoSinUsuarioId, {
+
+    const response = await api.post(`${baseUrl}/api/comanda/crear-con-descuento`, dtoSinUsuarioId, {
       params,
       headers,
     });
-    
+
     clearApiCache();
     return response.data;
+  },
+
+  /**
+   * Previsualiza el precio de cada ítem del menú del día de hoy según las reglas de
+   * bonificación activas (sin crear ninguna comanda). Devuelve un array de
+   * { menuddId, costoLista, precioFinal, bonificado, reglaNombre }.
+   * GET /api/comanda/previsualizar-bonificacion?usuarioId={usuarioId}
+   */
+  previsualizarBonificacion: async (usuarioId) => {
+    if (!usuarioId) return [];
+    const baseUrl = getApiBaseUrl();
+    const response = await api.get(`${baseUrl}/api/comanda/previsualizar-bonificacion`, {
+      params: { usuarioId: parseInt(usuarioId) },
+    });
+    return response.data?.data ?? response.data ?? [];
   },
 
   /**

@@ -20,7 +20,9 @@ export { centrosDeCostoService } from './centrosDeCostoService';
 export { proyectosService } from './proyectosService';
 export { planesNutricionalesService } from './planesNutricionalesService';
 export { jerarquiasService } from './jerarquiasService';
+export { reglaBonificacionService } from './reglaBonificacionService';
 export { configApiService } from './configApiService';
+export { dbScriptsService } from './dbScriptsService';
 
 // Servicio de configuración (local)
 export * from './configService';

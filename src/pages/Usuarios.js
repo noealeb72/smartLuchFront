@@ -7,6 +7,9 @@ import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
 import Buscador from '../components/Buscador';
 import DataTable from '../components/DataTable';
+import BotonAyuda from '../components/BotonAyuda';
+import SelectorRegistros from '../components/SelectorRegistros';
+import { usePaginacion } from '../hooks/usePaginacion';
 import { mapUsuarios } from '../utils/dataMapper';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -17,6 +20,72 @@ import './Usuarios.css';
 import '../components/CambiarContraseñaModal.css';
 
 const MIN_PASSWORD_LENGTH = 8;
+
+const MANUAL_USUARIOS = [
+  {
+    tipo: 'parrafo',
+    texto:
+      'Cada usuario es una persona que puede pedir comida (comensal) o acceder al sistema (cocina, ' +
+      'gerencia, admin). El formulario de alta/edición está organizado en 5 pestañas.',
+  },
+  { tipo: 'subtitulo', texto: 'Información Personal' },
+  {
+    tipo: 'lista',
+    items: [
+      'Nombre de usuario: es lo que se usa para iniciar sesión. Una vez creado el usuario, no se puede cambiar.',
+      'Nombre y Apellido.',
+      'Foto: opcional, se sube como imagen y se puede reemplazar o borrar.',
+    ],
+  },
+  { tipo: 'subtitulo', texto: 'Identificación' },
+  {
+    tipo: 'lista',
+    items: [
+      'Legajo: solo números. Tiene que ser único — si ya existe otro usuario con el mismo legajo, el sistema rechaza el alta.',
+      'DNI: solo números, entre 1.000.000 y 99.999.999.',
+      'CUIL: opcional, solo números, sin guiones ni espacios.',
+    ],
+  },
+  { tipo: 'subtitulo', texto: 'Contacto' },
+  { tipo: 'parrafo', texto: 'Email y Teléfono, ambos opcionales.' },
+  { tipo: 'subtitulo', texto: 'Organización' },
+  {
+    tipo: 'lista',
+    items: [
+      'Jerarquía, Plan Nutricional, Planta y Centro de Costo: si solo hay una opción cargada en el catálogo correspondiente, se autoselecciona y queda deshabilitada.',
+      'Proyecto: se elige entre los proyectos cargados.',
+      'Fecha de Ingreso y Contrato: opcionales, informativos.',
+      'Bonificaciones: cantidad de bonificaciones que tiene disponibles el usuario por día. Es un valor informativo — el descuento real de cada pedido lo calcula el motor de Reglas de Bonificación (Configuración → Reglas de Bonificación), no este número.',
+    ],
+  },
+  { tipo: 'subtitulo', texto: 'Seguridad' },
+  {
+    tipo: 'lista',
+    items: [
+      'Al crear un usuario, la contraseña es obligatoria. Al editar uno existente, se puede dejar en blanco para no cambiarla.',
+      'Requisitos de la contraseña: mínimo 8 caracteres, al menos una mayúscula, y al menos un número o carácter especial.',
+      'Hay que repetirla en "Confirmar contraseña" — el sistema no deja guardar si no coinciden.',
+    ],
+  },
+  { tipo: 'subtitulo', texto: 'Particularidades' },
+  {
+    tipo: 'lista',
+    items: [
+      'El usuario "root" no puede cambiar de jerarquía desde acá.',
+      'Jerarquías protegidas (Admin, Cocina, Comensal, Gerencia) no se pueden borrar ni renombrar desde la pantalla de Jerarquías, y son las que determinan qué puede hacer cada usuario en el sistema.',
+    ],
+  },
+  { tipo: 'subtitulo', texto: 'Cómo administrar' },
+  {
+    tipo: 'lista',
+    items: [
+      'Agregar: botón "+ Agregar" arriba del listado.',
+      'Editar: ícono de lápiz en la fila.',
+      'Dar de baja / Activar: ícono de tacho o de check — un usuario dado de baja no puede iniciar sesión.',
+      'Buscar: el buscador filtra por nombre, apellido o legajo.',
+    ],
+  },
+];
 
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -30,30 +99,23 @@ const Usuarios = () => {
   const [proyectos, setProyectos] = useState([]);
   const [jerarquias, setJerarquias] = useState([]);
   const [planesNutricionales, setPlanesNutricionales] = useState([]);
-  
+
   // Estado para controlar qué tab está activa (solapas)
   const [tabActivo, setTabActivo] = useState('personal');
-  
+
   // Estado para mostrar/ocultar contraseñas
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Estado de paginación
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const OPCIONES_BASE = [5, 10, 25, 50];
-  // Opciones del combo: 5 como base, el resto solo valores <= totalItems; si totalItems no está en la lista, agregarlo
-  const opcionesPageSize = useMemo(() => {
-    if (totalItems <= 0) return [5];
-    const filtradas = OPCIONES_BASE.filter((n) => n <= totalItems);
-    if (!filtradas.includes(totalItems) && totalItems > 5) {
-      filtradas.push(totalItems);
-      filtradas.sort((a, b) => a - b);
-    }
-    return filtradas.length > 0 ? filtradas : [totalItems];
-  }, [totalItems]);
+  const {
+    currentPage, setCurrentPage,
+    pageSize, setPageSize,
+    totalPages, setTotalPages,
+    totalItems, setTotalItems,
+    opcionesPageSize,
+    handlePageChange,
+  } = usePaginacion(5);
 
   const usernameInputRef = useRef(null);
   const legajoInputRef = useRef(null);
@@ -108,20 +170,20 @@ const Usuarios = () => {
   const cargarUsuarios = useCallback(async (page = 1, searchTerm = '', soloActivos = true) => {
     try {
       setIsLoading(true);
-      
+
       // Siempre traer de a 5 registros y armar tabs según la cantidad total
       const pageToUse = page;
       const pageSizeToUse = pageSize;
-      
+
       // Convertir el filtro a boolean para el backend
       // true = solo activos, false = inactivos
       const soloActivosParam = soloActivos === true;
-      
+
       const data = await usuariosService.getUsuarios(pageToUse, pageSizeToUse, searchTerm, soloActivosParam);
-      
+
       // El backend devuelve estructura paginada: { page, pageSize, totalItems, totalPages, items: [...] }
       let usuariosArray = [];
-      
+
       if (data.items && Array.isArray(data.items)) {
         usuariosArray = data.items;
       } else if (Array.isArray(data)) {
@@ -129,11 +191,11 @@ const Usuarios = () => {
       } else if (data.data && Array.isArray(data.data)) {
         usuariosArray = data.data;
       }
-      
+
       // Usar los valores de paginación del backend (5 por página)
       const totalItemsBackend = data.totalItems ?? data.totalCount ?? usuariosArray.length;
       const totalPagesBackend = data.totalPages ?? (Math.ceil(Number(totalItemsBackend) / pageSizeToUse) || 1);
-      
+
       if (usuariosArray.length > 0) {
         // Mapear usuarios del formato del backend al formato esperado
         const usuariosMapeados = mapUsuarios(usuariosArray);
@@ -146,12 +208,12 @@ const Usuarios = () => {
       } else {
         setUsuarios(usuariosArray);
       }
-      
+
       setTotalPages(totalPagesBackend);
       setTotalItems(totalItemsBackend);
     } catch (error) {
       // Error al cargar usuarios
-      
+
       // Si hay error de conexión, el interceptor ya redirige automáticamente
       if (!error.redirectToLogin) {
         Swal.fire(configurarSwal({
@@ -162,7 +224,7 @@ const Usuarios = () => {
           confirmButtonColor: '#F34949',
         }));
       }
-      
+
       setUsuarios([]);
       setTotalPages(1);
       setTotalItems(0);
@@ -187,7 +249,7 @@ const Usuarios = () => {
         catalogosService.getProyectos(),
         catalogosService.getPlanesNutricionales(),
       ]);
-  
+
       const jerarquiasRaw = jerarquiasData?.items || jerarquiasData?.data || (Array.isArray(jerarquiasData) ? jerarquiasData : []);
       const jerarquiasArray = jerarquiasRaw.map(j => ({
         id: j.Id || j.id,
@@ -199,7 +261,7 @@ const Usuarios = () => {
       const centrosArray = centrosData || [];
       const proyectosArray = proyectosData || [];
       const planesArray = planesData || [];
-  
+
       setJerarquias(jerarquiasArray);
       setPlantas(plantasArray);
       setCentrosDeCosto(centrosArray);
@@ -234,7 +296,7 @@ const Usuarios = () => {
       // Swal.fire({ ... });
     }
   }, [vista, usuarioEditando]);
-  
+
   // Asignar automáticamente valores únicos cuando hay una sola opción disponible
   // Esto se ejecuta cuando cambian los arrays de opciones o cuando cambia formData
   useEffect(() => {
@@ -367,7 +429,7 @@ const Usuarios = () => {
     setShowPassword(false);
     setShowConfirmPassword(false);
     setTabActivo('personal'); // Siempre mostrar Información personal por defecto
-    
+
     // Preparar formData inicial con valores automáticos SOLO si hay una sola opción disponible
     // Si hay múltiples opciones, dejar vacío para que aparezca "Seleccionar..."
     const nuevoFormData = {
@@ -392,7 +454,7 @@ const Usuarios = () => {
       bonificaciones: '0',
       bonificaciones_invitado: '0',
     };
-    
+
     setFormData(nuevoFormData);
     setVista('crear');
   };
@@ -442,7 +504,7 @@ const Usuarios = () => {
     }
     try {
       setIsLoading(true);
-      
+
       // Obtener el ID del usuario
       const usuarioId = usuario.id || usuario.Id || usuario.ID;
       if (!usuarioId) {
@@ -462,7 +524,7 @@ const Usuarios = () => {
       const usuarioParaEditar = usuarioCompleto || usuario;
 
       setUsuarioEditando(usuarioParaEditar);
-    
+
       // Función auxiliar para obtener el ID correctamente, buscando en múltiples variantes
       const obtenerId = (arrayOpciones, campoNombre) => {
         // Buscar en múltiples variantes de nombres (camelCase, snake_case, PascalCase)
@@ -474,13 +536,13 @@ const Usuarios = () => {
           `${campoNombre}_ID`,
           campoNombre,
           // PascalCase específicos
-          campoNombre === 'jerarquia' ? 'JerarquiaId' : 
-          campoNombre === 'plannutricional' ? 'PlanNutricionalId' :
-          campoNombre === 'planta' ? 'PlantaId' :
-          campoNombre === 'centrodecosto' ? 'CentroCostoId' :
-          campoNombre === 'proyecto' ? 'ProyectoId' : null
+          campoNombre === 'jerarquia' ? 'JerarquiaId' :
+            campoNombre === 'plannutricional' ? 'PlanNutricionalId' :
+              campoNombre === 'Comedor' ? 'PlantaId' :
+                campoNombre === 'centrodecosto' ? 'CentroCostoId' :
+                  campoNombre === 'proyecto' ? 'ProyectoId' : null
         ].filter(v => v !== null);
-        
+
         // Agregar variantes adicionales específicas para plan nutricional
         if (campoNombre === 'plannutricional') {
           variantes = [
@@ -497,7 +559,7 @@ const Usuarios = () => {
             'Plannutricional_id'
           ];
         }
-        
+
         let idValue = null;
         for (const variante of variantes) {
           if (usuarioParaEditar[variante] !== undefined && usuarioParaEditar[variante] !== null && usuarioParaEditar[variante] !== '') {
@@ -506,7 +568,7 @@ const Usuarios = () => {
             break;
           }
         }
-        
+
         // Si no se encontró en las variantes directas, buscar en objetos anidados (solo para plan nutricional)
         if (!idValue && campoNombre === 'plannutricional') {
           const planNutricionalObj = usuarioParaEditar.PlanNutricional || usuarioParaEditar.planNutricional || usuarioParaEditar.plan_nutricional || null;
@@ -517,19 +579,19 @@ const Usuarios = () => {
             }
           }
         }
-        
+
         // Validar que el ID encontrado existe en las opciones disponibles
         if (idValue !== null && idValue !== undefined && idValue !== '') {
           const idValueStr = String(idValue);
           const idValueNum = parseInt(idValue);
-          
+
           // Buscar coincidencia en las opciones disponibles
           const opcionEncontrada = arrayOpciones.find(opcion => {
             const opcionId = String(opcion.id || opcion.Id || opcion.ID || '');
             const opcionIdNum = parseInt(opcion.id || opcion.Id || opcion.ID || 0);
             return opcionId === idValueStr || opcionIdNum === idValueNum;
           });
-          
+
           if (opcionEncontrada) {
 
             return idValueStr;
@@ -538,7 +600,7 @@ const Usuarios = () => {
             idValue = null; // Invalidar el ID si no existe en las opciones
           }
         }
-        
+
         // NO asignar automáticamente si hay múltiples opciones - solo si realmente no se encontró y hay una sola opción
         // Esto evita asignar "Diabético" cuando hay otros planes disponibles
         if ((!idValue || idValue === '' || idValue === 0) && arrayOpciones.length === 1) {
@@ -548,10 +610,10 @@ const Usuarios = () => {
         } else if (!idValue && arrayOpciones.length > 1) {
 
         }
-        
+
         return '';
       };
-      
+
       // Obtener IDs como strings
       const jerarquiaId = obtenerId(jerarquias, 'jerarquia');
       const planId = obtenerId(planesNutricionales, 'plannutricional');
@@ -559,18 +621,18 @@ const Usuarios = () => {
       const plantaId = obtenerId(plantas, 'planta');
       const centroId = obtenerId(centrosDeCosto, 'centrodecosto');
       const proyectoId = obtenerId(proyectos, 'proyecto');
-      
-      
+
+
       // Buscar la foto en diferentes variantes de nombres (priorizar Foto con mayúscula)
       const fotoUsuario = usuarioParaEditar.Foto || usuarioParaEditar.foto || usuarioParaEditar.fotoUrl || usuarioParaEditar.foto_url || usuarioParaEditar.fotoBase64 || usuarioParaEditar.foto_base64 || null;
-      
+
       // Si la foto es base64, asegurarse de que tenga el prefijo correcto para mostrarla
       let fotoParaMostrar = fotoUsuario;
       if (fotoUsuario && typeof fotoUsuario === 'string' && !fotoUsuario.startsWith('data:') && !fotoUsuario.startsWith('http')) {
         // Si es base64 puro, agregar el prefijo
         fotoParaMostrar = `data:image/jpeg;base64,${fotoUsuario}`;
       }
-      
+
       // Convertir fecha de ingreso al formato YYYY-MM-DD para el input date
       let fechaIngresoFormateada = '';
       const fechaIngresoRaw = usuarioParaEditar.fecha_ingreso || usuarioParaEditar.fechaIngreso || usuarioParaEditar.FechaIngreso || '';
@@ -592,7 +654,7 @@ const Usuarios = () => {
 
         }
       }
-      
+
       setFormData({
         id: usuarioParaEditar.id || usuarioParaEditar.Id || usuarioParaEditar.ID,
         username: usuarioParaEditar.username || usuarioParaEditar.Username || '',
@@ -637,7 +699,7 @@ const Usuarios = () => {
   // Manejar cambios en el formulario
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // DNI, Legajo y CUIL tienen sus propios handlers específicos, no usar handleInputChange para ellos
     if (name === 'dni' || name === 'legajo' || name === 'cuil') {
       return; // Estos campos tienen handlers específicos en el JSX
@@ -654,7 +716,7 @@ const Usuarios = () => {
       }));
       return;
     }
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -674,7 +736,7 @@ const Usuarios = () => {
 
       const doc = new jsPDF();
       const startY = await addPdfReportHeader(doc, 'Listado de Usuarios');
-      
+
       const tableData = usuariosParaExportar.map(usuario => [
         usuario.username || '-',
         usuario.nombre || '-',
@@ -684,7 +746,7 @@ const Usuarios = () => {
         obtenerNombreJerarquia(usuario),
         usuario.plannutricional_nombre || usuario.plannutricional || '-'
       ]);
-      
+
       // Crear tabla
       doc.autoTable({
         startY,
@@ -694,11 +756,11 @@ const Usuarios = () => {
         headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 245, 245] },
       });
-      
+
       // Guardar archivo
       const fileName = `usuarios_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
-      
+
       Swal.fire(configurarSwal({
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato PDF',
@@ -710,13 +772,13 @@ const Usuarios = () => {
       }));
     } catch (error) {
       // Error al exportar PDF
-        Swal.fire(configurarSwal({
-          title: 'Error',
-          text: 'Error al exportar el listado a PDF',
-          icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
-        }));
+      Swal.fire(configurarSwal({
+        title: 'Error',
+        text: 'Error al exportar el listado a PDF',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      }));
     }
   };
 
@@ -766,7 +828,7 @@ const Usuarios = () => {
       a.download = fileName;
       a.click();
       URL.revokeObjectURL(url);
-      
+
       Swal.fire(configurarSwal({
         title: 'Éxito',
         text: 'El listado se ha exportado correctamente en formato Excel',
@@ -778,13 +840,13 @@ const Usuarios = () => {
       }));
     } catch (error) {
       // Error al exportar Excel
-        Swal.fire(configurarSwal({
-          title: 'Error',
-          text: 'Error al exportar el listado a Excel',
-          icon: 'error',
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#F34949',
-        }));
+      Swal.fire(configurarSwal({
+        title: 'Error',
+        text: 'Error al exportar el listado a Excel',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#F34949',
+      }));
     }
   };
 
@@ -803,7 +865,7 @@ const Usuarios = () => {
         }));
         return;
       }
-      
+
       // Validar tamaño (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         Swal.fire(configurarSwal({
@@ -980,7 +1042,7 @@ const Usuarios = () => {
       }
     }
 
-      // Validar contraseña solo si es nuevo usuario o si se está cambiando
+    // Validar contraseña solo si es nuevo usuario o si se está cambiando
     if (!usuarioEditando) {
       // Al crear, la contraseña es obligatoria y debe cumplir requisitos
       const passwordValue = datos.contraseña?.trim() || '';
@@ -1050,7 +1112,7 @@ const Usuarios = () => {
           ${htmlErrores}
         </div>
       `;
-      
+
       Swal.fire(configurarSwal({
         title: 'Error de validación',
         html: htmlMensaje,
@@ -1204,7 +1266,7 @@ const Usuarios = () => {
         datosActualizados.proyecto_id = '';
       }
     }
-    
+
     // Validar con los datos actualizados (pasar datosActualizados como parámetro)
     // IMPORTANTE: No actualizar formData antes de validar para evitar re-renders innecesarios
 
@@ -1285,7 +1347,7 @@ const Usuarios = () => {
         setIsLoading(false);
         return;
       }
-      
+
       // Validar que Legajo y Dni sean válidos
       const legajoValue = parseInt(datosActualizados.legajo);
       if (!legajoValue || isNaN(legajoValue) || legajoValue <= 0) {
@@ -1299,7 +1361,7 @@ const Usuarios = () => {
         setIsLoading(false);
         return;
       }
-      
+
       const dniValue = datosActualizados.dni ? parseInt(datosActualizados.dni) : 0;
       if (!dniValue || isNaN(dniValue) || dniValue < 1000000 || dniValue > 99999999) {
         Swal.fire(configurarSwal({
@@ -1374,8 +1436,8 @@ const Usuarios = () => {
         JerarquiaId: jerarquiaId,
         Bonificaciones: (() => {
           // Tomar el valor directamente de formData (estado actual del formulario)
-          const valor = formData.bonificaciones !== undefined && formData.bonificaciones !== null && formData.bonificaciones !== '' 
-            ? String(formData.bonificaciones).trim() 
+          const valor = formData.bonificaciones !== undefined && formData.bonificaciones !== null && formData.bonificaciones !== ''
+            ? String(formData.bonificaciones).trim()
             : (datosActualizados.bonificaciones !== undefined && datosActualizados.bonificaciones !== null && datosActualizados.bonificaciones !== ''
               ? String(datosActualizados.bonificaciones).trim()
               : '0');
@@ -1403,7 +1465,7 @@ const Usuarios = () => {
         Foto: fotoBase64,
         OrigenDatos: datosActualizados.origenDatos || null,
       };
-      
+
       // Si es actualización, agregar el ID
       if (usuarioEditando && datosActualizados.id) {
         usuarioData.Id = parseInt(datosActualizados.id);
@@ -1475,7 +1537,7 @@ const Usuarios = () => {
         }
         usuarioData.Password = passwordValue;
       }
-      
+
       // Verificar que la contraseña esté presente si es necesario
       if (!usuarioEditando && !usuarioData.Password) {
         Swal.fire(configurarSwal({
@@ -1488,7 +1550,7 @@ const Usuarios = () => {
         setIsLoading(false);
         return;
       }
-      
+
       if (usuarioEditando) {
         await usuariosService.actualizarUsuario(usuarioData);
         Swal.fire(configurarSwal({
@@ -1518,14 +1580,14 @@ const Usuarios = () => {
     } catch (error) {
       // Detectar errores de timeout
       const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout') || error.message?.includes('Tiempo de espera');
-      
+
       // Si hay error de conexión o timeout con redirectToLogin=true, el interceptor ya redirige automáticamente
       // En ese caso, no mostrar popup ni logs detallados porque el usuario será redirigido al login
       if (error.redirectToLogin) {
         // El interceptor se encarga de la redirección, no hacer nada más aquí
         return;
       }
-      
+
       // Solo mostrar logs y popup si no hay redirección
 
 
@@ -1534,17 +1596,17 @@ const Usuarios = () => {
         let errorTitle = 'Error';
         let errorMessage = error.message || 'Error al guardar el usuario';
         let erroresArray = null;
-        
+
         // Si es un timeout, mostrar mensaje específico
         if (isTimeout) {
           errorTitle = 'Tiempo de espera agotado';
           errorMessage = 'El servidor está tardando demasiado en responder. Por favor, verifica tu conexión y que el backend esté funcionando correctamente.';
         }
-        
+
         // Verificar si el backend devolvió errores de validación en formato JSON
         if (error.response && error.response.data) {
           const responseData = error.response.data;
-          
+
           // Si hay un array de errores, mostrarlos todos
           if (responseData.errors && Array.isArray(responseData.errors) && responseData.errors.length > 0) {
             errorTitle = responseData.message || 'Errores de validación';
@@ -1562,14 +1624,14 @@ const Usuarios = () => {
             errorMessage = responseData;
           }
         }
-        
+
         if (erroresArray && Array.isArray(erroresArray) && erroresArray.length > 0) {
           // Crear texto plano con los errores para evitar que se muestren campos del formulario
           const errorText = erroresArray.map(err => {
             const fieldName = err.field ? err.field.replace('dto.', '').replace('Dto.', '').replace('Dto', '') : 'Campo desconocido';
             return `${fieldName}: ${err.message || 'Error de validación'}`;
           }).join('\n');
-          
+
           Swal.fire(configurarSwal({
             title: errorTitle,
             text: `Los siguientes errores fueron encontrados:\n\n${errorText}`,
@@ -1665,34 +1727,15 @@ const Usuarios = () => {
     }
   };
 
-  // Manejar cambio de página
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
-      setCurrentPage(newPage);
-      // El useEffect se encargará de recargar los datos automáticamente
-    }
-  };
-
   // Cambiar tab activa
   const cambiarTab = (tab) => {
     setTabActivo(tab);
   };
 
-  // Cuando cambia el filtro, filtroActivo o pageSize, resetear a página 1
+  // Cuando cambia el filtro o filtroActivo, resetear a página 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [filtro, filtroActivo, pageSize]);
-
-  // Si pageSize no está en las opciones disponibles (ej. totalItems bajó), usar 5 como base
-  useEffect(() => {
-    if (totalItems <= 0) return;
-    const opciones = OPCIONES_BASE.filter((n) => n <= totalItems);
-    const conTotal = opciones.includes(totalItems) ? opciones : [...opciones, totalItems].sort((a, b) => a - b);
-    const validas = conTotal.length > 0 ? conTotal : [totalItems];
-    if (!validas.includes(pageSize) || pageSize > totalItems) {
-      setPageSize(validas[0] ?? 5);
-    }
-  }, [totalItems, pageSize]);
+  }, [filtro, filtroActivo]);
 
   // Cuando cambia la página, el filtro o filtroActivo, recargar desde el servidor
   useEffect(() => {
@@ -1723,7 +1766,7 @@ const Usuarios = () => {
             </h3>
           </div>
         </div>
-        
+
         {/* Barra informativa para creación */}
         {vista === 'crear' && (
           <div className="usuarios-info-bar" style={{ backgroundColor: '#E0F7FA', borderLeft: '4px solid #0097A7', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
@@ -1739,18 +1782,18 @@ const Usuarios = () => {
             <span style={{ color: '#0097A7' }}>Editando usuario - Modifique los campos necesarios y guarde los cambios.</span>
           </div>
         )}
-        
-        <div className="usuarios-form-container" style={{ 
-          width: '100%', 
-          boxSizing: 'border-box', 
-          maxWidth: '95%', 
+
+        <div className="usuarios-form-container" style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          maxWidth: '95%',
           margin: '0 auto',
           paddingLeft: '2rem',
           paddingRight: '2rem'
         }}>
           <form style={{ width: '100%' }}>
             {/* Navegación de Tabs */}
-            <div style={{ 
+            <div style={{
               borderBottom: '2px solid #dee2e6',
               marginBottom: '1.5rem'
             }}>
@@ -1864,162 +1907,162 @@ const Usuarios = () => {
             {tabActivo === 'personal' && (
               <div className="form-section">
                 <div className="form-section-content">
-              {/* Primera línea: Nombre usuario, Nombre y Apellido */}
-              <div className="row">
-                <div className="col-md-3">
-                  <div className="form-group">
-                    <label htmlFor="username">
-                      Nombre usuario <span style={{ color: '#F34949' }}>*</span>
-                    </label>
-                    <input
-                      ref={usernameInputRef}
-                      type="text"
-                      className="form-control"
-                      id="username"
-                      name="username"
-                      value={formData.username || ''}
-                      onChange={handleInputChange}
-                      required
-                      disabled={!!usuarioEditando}
-                      style={usuarioEditando ? {
-                        backgroundColor: '#e9ecef',
-                        cursor: 'not-allowed',
-                        opacity: 0.7,
-                        borderRadius: '0'
-                      } : {
-                        borderRadius: '0'
-                      }}
-                    />
-                    {usuarioEditando && (
-                      <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                        El nombre de usuario no puede ser modificado
-                      </small>
-                    )}
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="nombre">
-                      Nombre <span style={{ color: '#F34949' }}>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="nombre"
-                      name="nombre"
-                      value={formData.nombre}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="col-md-5">
-                  <div className="form-group">
-                    <label htmlFor="apellido">
-                      Apellido <span style={{ color: '#F34949' }}>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="apellido"
-                      name="apellido"
-                      value={formData.apellido}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-              {/* Segunda línea: Foto del Usuario */}
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="form-group">
-                    <label htmlFor="foto">Foto del Usuario</label>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                      <div style={{ flex: '1' }}>
+                  {/* Primera línea: Nombre usuario, Nombre y Apellido */}
+                  <div className="row">
+                    <div className="col-md-3">
+                      <div className="form-group">
+                        <label htmlFor="username">
+                          Nombre usuario <span style={{ color: '#F34949' }}>*</span>
+                        </label>
                         <input
-                          type="file"
-                          className="form-control-file"
-                          id="foto"
-                          name="foto"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          style={{
-                            padding: '0.5rem',
-                            border: '1px solid #ced4da',
-                            borderRadius: '0.25rem',
-                            width: '100%',
-                            fontSize: '0.9rem'
+                          ref={usernameInputRef}
+                          type="text"
+                          className="form-control"
+                          id="username"
+                          name="username"
+                          value={formData.username || ''}
+                          onChange={handleInputChange}
+                          required
+                          disabled={!!usuarioEditando}
+                          style={usuarioEditando ? {
+                            backgroundColor: '#e9ecef',
+                            cursor: 'not-allowed',
+                            opacity: 0.7,
+                            borderRadius: '0'
+                          } : {
+                            borderRadius: '0'
                           }}
                         />
+                        {usuarioEditando && (
+                          <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                            El nombre de usuario no puede ser modificado
+                          </small>
+                        )}
                       </div>
-                      {(formData.fotoPreview || (usuarioEditando && (usuarioEditando.Foto || usuarioEditando.foto))) && (
-                        <div style={{ flexShrink: 0, marginTop: '0' }}>
-                          <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '0.5rem', marginTop: '0', paddingTop: '0' }}>
-                            {formData.foto && formData.foto instanceof File ? 'Vista previa:' : 'Foto actual:'}
-                          </p>
-                          <div style={{ position: 'relative', display: 'inline-block' }}>
-                            <img
-                              src={(() => {
-                                // Si hay preview en formData, usarlo
-                                if (formData.fotoPreview) {
-                                  return formData.fotoPreview;
-                                }
-                                // Si no, buscar en usuarioEditando
-                                const fotoOriginal = usuarioEditando?.Foto || usuarioEditando?.foto;
-                                if (fotoOriginal) {
-                                  // Si ya tiene el prefijo data:, usarlo directamente
-                                  if (fotoOriginal.startsWith('data:') || fotoOriginal.startsWith('http')) {
-                                    return fotoOriginal;
-                                  }
-                                  // Si es base64 puro, agregar el prefijo
-                                  return `data:image/jpeg;base64,${fotoOriginal}`;
-                                }
-                                return '';
-                              })()}
-                              alt={formData.foto && formData.foto instanceof File ? "Vista previa" : "Foto actual"}
-                              style={{
-                                maxWidth: '150px',
-                                maxHeight: '150px',
-                                borderRadius: '0.25rem',
-                                border: '1px solid #ced4da',
-                                padding: '0.25rem',
-                                objectFit: 'cover'
-                              }}
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                              }}
-                            />
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-danger"
-                              onClick={handleEliminarFoto}
-                              style={{
-                                position: 'absolute',
-                                top: '0.25rem',
-                                right: '0.25rem',
-                                padding: '0.25rem 0.5rem',
-                                borderRadius: '50%',
-                                width: '28px',
-                                height: '28px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '0.875rem',
-                                border: 'none',
-                                cursor: 'pointer'
-                              }}
-                              title="Eliminar foto"
-                            >
-                              <i className="fa fa-times"></i>
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="nombre">
+                          Nombre <span style={{ color: '#F34949' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="nombre"
+                          name="nombre"
+                          value={formData.nombre}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-5">
+                      <div className="form-group">
+                        <label htmlFor="apellido">
+                          Apellido <span style={{ color: '#F34949' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="apellido"
+                          name="apellido"
+                          value={formData.apellido}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                  {/* Segunda línea: Foto del Usuario */}
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <label htmlFor="foto">Foto del Usuario</label>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                          <div style={{ flex: '1' }}>
+                            <input
+                              type="file"
+                              className="form-control-file"
+                              id="foto"
+                              name="foto"
+                              accept="image/*"
+                              onChange={handleFileChange}
+                              style={{
+                                padding: '0.5rem',
+                                border: '1px solid #ced4da',
+                                borderRadius: '0.25rem',
+                                width: '100%',
+                                fontSize: '0.9rem'
+                              }}
+                            />
+                          </div>
+                          {(formData.fotoPreview || (usuarioEditando && (usuarioEditando.Foto || usuarioEditando.foto))) && (
+                            <div style={{ flexShrink: 0, marginTop: '0' }}>
+                              <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '0.5rem', marginTop: '0', paddingTop: '0' }}>
+                                {formData.foto && formData.foto instanceof File ? 'Vista previa:' : 'Foto actual:'}
+                              </p>
+                              <div style={{ position: 'relative', display: 'inline-block' }}>
+                                <img
+                                  src={(() => {
+                                    // Si hay preview en formData, usarlo
+                                    if (formData.fotoPreview) {
+                                      return formData.fotoPreview;
+                                    }
+                                    // Si no, buscar en usuarioEditando
+                                    const fotoOriginal = usuarioEditando?.Foto || usuarioEditando?.foto;
+                                    if (fotoOriginal) {
+                                      // Si ya tiene el prefijo data:, usarlo directamente
+                                      if (fotoOriginal.startsWith('data:') || fotoOriginal.startsWith('http')) {
+                                        return fotoOriginal;
+                                      }
+                                      // Si es base64 puro, agregar el prefijo
+                                      return `data:image/jpeg;base64,${fotoOriginal}`;
+                                    }
+                                    return '';
+                                  })()}
+                                  alt={formData.foto && formData.foto instanceof File ? "Vista previa" : "Foto actual"}
+                                  style={{
+                                    maxWidth: '150px',
+                                    maxHeight: '150px',
+                                    borderRadius: '0.25rem',
+                                    border: '1px solid #ced4da',
+                                    padding: '0.25rem',
+                                    objectFit: 'cover'
+                                  }}
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-danger"
+                                  onClick={handleEliminarFoto}
+                                  style={{
+                                    position: 'absolute',
+                                    top: '0.25rem',
+                                    right: '0.25rem',
+                                    padding: '0.25rem 0.5rem',
+                                    borderRadius: '50%',
+                                    width: '28px',
+                                    height: '28px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '0.875rem',
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                  }}
+                                  title="Eliminar foto"
+                                >
+                                  <i className="fa fa-times"></i>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -2028,84 +2071,84 @@ const Usuarios = () => {
             {tabActivo === 'identificacion' && (
               <div className="form-section">
                 <div className="form-section-content">
-              <div className="row">
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="legajo">
-                      Legajo <span style={{ color: '#F34949' }}>*</span>
-                    </label>
-                    <input
-                      ref={legajoInputRef}
-                      type="text"
-                      className="form-control"
-                      id="legajo"
-                      name="legajo"
-                      value={formData.legajo}
-                      onChange={(e) => {
-                        // Solo permitir números, eliminar letras y símbolos
-                        const soloNumeros = e.target.value.replace(/[^0-9]/g, '');
-                        setFormData((prev) => ({
-                          ...prev,
-                          legajo: soloNumeros,
-                        }));
-                      }}
-                      required
-                      placeholder="Ingrese solo números"
-                    />
+                  <div className="row">
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="legajo">
+                          Legajo <span style={{ color: '#F34949' }}>*</span>
+                        </label>
+                        <input
+                          ref={legajoInputRef}
+                          type="text"
+                          className="form-control"
+                          id="legajo"
+                          name="legajo"
+                          value={formData.legajo}
+                          onChange={(e) => {
+                            // Solo permitir números, eliminar letras y símbolos
+                            const soloNumeros = e.target.value.replace(/[^0-9]/g, '');
+                            setFormData((prev) => ({
+                              ...prev,
+                              legajo: soloNumeros,
+                            }));
+                          }}
+                          required
+                          placeholder="Ingrese solo números"
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="dni">
+                          DNI <span style={{ color: '#F34949' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="dni"
+                          name="dni"
+                          value={formData.dni}
+                          onChange={(e) => {
+                            // Solo permitir números, eliminar letras y símbolos
+                            const soloNumeros = e.target.value.replace(/[^0-9]/g, '');
+                            setFormData((prev) => ({
+                              ...prev,
+                              dni: soloNumeros,
+                            }));
+                          }}
+                          required
+                          placeholder="Ingrese solo números"
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="cuil">
+                          CUIL
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="cuil"
+                          name="cuil"
+                          value={formData.cuil}
+                          onChange={(e) => {
+                            // Solo permitir números, eliminar guiones y otros caracteres
+                            const soloNumeros = e.target.value.replace(/[^0-9]/g, '');
+                            setFormData((prev) => ({
+                              ...prev,
+                              cuil: soloNumeros,
+                            }));
+                          }}
+                          placeholder="Ingrese solo números sin guiones"
+                        />
+                        <small className="form-text text-muted" style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                          <i className="fa fa-info-circle" style={{ marginRight: '0.25rem' }}></i>
+                          Ingrese el CUIL solo con números, sin guiones ni espacios
+                        </small>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="dni">
-                      DNI <span style={{ color: '#F34949' }}>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="dni"
-                      name="dni"
-                      value={formData.dni}
-                      onChange={(e) => {
-                        // Solo permitir números, eliminar letras y símbolos
-                        const soloNumeros = e.target.value.replace(/[^0-9]/g, '');
-                        setFormData((prev) => ({
-                          ...prev,
-                          dni: soloNumeros,
-                        }));
-                      }}
-                      required
-                      placeholder="Ingrese solo números"
-                    />
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="cuil">
-                      CUIL
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="cuil"
-                      name="cuil"
-                      value={formData.cuil}
-                      onChange={(e) => {
-                        // Solo permitir números, eliminar guiones y otros caracteres
-                        const soloNumeros = e.target.value.replace(/[^0-9]/g, '');
-                        setFormData((prev) => ({
-                          ...prev,
-                          cuil: soloNumeros,
-                        }));
-                      }}
-                      placeholder="Ingrese solo números sin guiones"
-                    />
-                    <small className="form-text text-muted" style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                      <i className="fa fa-info-circle" style={{ marginRight: '0.25rem' }}></i>
-                      Ingrese el CUIL solo con números, sin guiones ni espacios
-                    </small>
-                  </div>
-                </div>
-              </div>
                 </div>
               </div>
             )}
@@ -2114,35 +2157,35 @@ const Usuarios = () => {
             {tabActivo === 'contacto' && (
               <div className="form-section">
                 <div className="form-section-content">
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="form-group">
-                    <label htmlFor="email">Email</label>
-                    <input
-                      ref={emailInputRef}
-                      type="email"
-                      className="form-control"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                    />
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <label htmlFor="email">Email</label>
+                        <input
+                          ref={emailInputRef}
+                          type="email"
+                          className="form-control"
+                          id="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <label htmlFor="telefono">Teléfono</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="telefono"
+                          name="telefono"
+                          value={formData.telefono}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="col-md-6">
-                  <div className="form-group">
-                    <label htmlFor="telefono">Teléfono</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="telefono"
-                      name="telefono"
-                      value={formData.telefono}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-              </div>
                 </div>
               </div>
             )}
@@ -2151,301 +2194,301 @@ const Usuarios = () => {
             {tabActivo === 'organizacion' && (
               <div className="form-section">
                 <div className="form-section-content">
-              {/* Primera línea: Jerarquía, Plan Nutricional, Planta */}
-              <div className="row">
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="jerarquia_id">
-                      Jerarquía <span style={{ color: '#F34949' }}>*</span>
-                    </label>
-                    <select
-                      ref={jerarquiaInputRef}
-                      className="form-control"
-                      id="jerarquia_id"
-                      name="jerarquia_id"
-                      value={formData.jerarquia_id || ''}
-                      onChange={handleInputChange}
-                      required
-                      disabled={formData.username === 'root'}
-                      style={formData.username === 'root' ? {
-                        backgroundColor: '#e9ecef',
-                        cursor: 'not-allowed',
-                        opacity: 0.7
-                      } : {}}
-                    >
-                      {jerarquias.length === 0 ? (
-                        <option value="">Sin opciones disponibles</option>
-                      ) : jerarquias.length === 1 ? (
-                        <option value={String(jerarquias[0].id)}>
-                          {jerarquias[0].nombre || jerarquias[0].descripcion}
-                        </option>
-                      ) : (
-                        <>
-                          {!usuarioEditando && <option value="">Seleccionar jerarquía</option>}
-                          {jerarquias.map((jer) => (
-                            <option key={jer.id} value={String(jer.id)}>
-                              {jer.nombre || jer.descripcion}
+                  {/* Primera línea: Jerarquía, Plan Nutricional, Planta */}
+                  <div className="row">
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="jerarquia_id">
+                          Jerarquía <span style={{ color: '#F34949' }}>*</span>
+                        </label>
+                        <select
+                          ref={jerarquiaInputRef}
+                          className="form-control"
+                          id="jerarquia_id"
+                          name="jerarquia_id"
+                          value={formData.jerarquia_id || ''}
+                          onChange={handleInputChange}
+                          required
+                          disabled={formData.username === 'root'}
+                          style={formData.username === 'root' ? {
+                            backgroundColor: '#e9ecef',
+                            cursor: 'not-allowed',
+                            opacity: 0.7
+                          } : {}}
+                        >
+                          {jerarquias.length === 0 ? (
+                            <option value="">Sin opciones disponibles</option>
+                          ) : jerarquias.length === 1 ? (
+                            <option value={String(jerarquias[0].id)}>
+                              {jerarquias[0].nombre || jerarquias[0].descripcion}
                             </option>
-                          ))}
-                        </>
-                      )}
-                    </select>
-                    {formData.username === 'root' && (
-                      <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                        La jerarquía del usuario root no puede ser modificada
-                      </small>
-                    )}
-                    {(() => {
-                      const jerSel = jerarquias.find(j => String(j.id) === String(formData.jerarquia_id));
-                      if (!jerSel) return null;
-                      const pct = parseFloat(jerSel.bonificacion ?? jerSel.Bonificacion ?? 0);
-                      return (
-                        <small className="form-text" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', color: pct > 0 ? '#28a745' : '#6c757d' }}>
-                          <i className="fa fa-percent mr-1"></i>
-                          Bonificación de la jerarquía: <strong style={{ marginLeft: '0.25rem' }}>{pct > 0 ? `${Number.isInteger(pct) ? pct : pct.toFixed(2)}%` : 'Sin bonificación'}</strong>
+                          ) : (
+                            <>
+                              {!usuarioEditando && <option value="">Seleccionar jerarquía</option>}
+                              {jerarquias.map((jer) => (
+                                <option key={jer.id} value={String(jer.id)}>
+                                  {jer.nombre || jer.descripcion}
+                                </option>
+                              ))}
+                            </>
+                          )}
+                        </select>
+                        {formData.username === 'root' && (
+                          <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                            La jerarquía del usuario root no puede ser modificada
+                          </small>
+                        )}
+                        {(() => {
+                          const jerSel = jerarquias.find(j => String(j.id) === String(formData.jerarquia_id));
+                          if (!jerSel) return null;
+                          const pct = parseFloat(jerSel.bonificacion ?? jerSel.Bonificacion ?? 0);
+                          return (
+                            <small className="form-text" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', color: pct > 0 ? '#28a745' : '#6c757d' }}>
+                              <i className="fa fa-percent mr-1"></i>
+                              Bonificación de la jerarquía: <strong style={{ marginLeft: '0.25rem' }}>{pct > 0 ? `${Number.isInteger(pct) ? pct : pct.toFixed(2)}%` : 'Sin bonificación'}</strong>
+                            </small>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="plannutricional_id">
+                          Plan Nutricional <span style={{ color: '#F34949' }}>*</span>
+                        </label>
+                        <select
+                          className="form-control"
+                          id="plannutricional_id"
+                          name="plannutricional_id"
+                          value={formData.plannutricional_id || (planesNutricionales.length === 1 ? String(planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID) : '')}
+                          onChange={handleInputChange}
+                          disabled={planesNutricionales.length <= 1}
+                          required
+                          style={planesNutricionales.length <= 1 ? {
+                            backgroundColor: '#e9ecef',
+                            cursor: 'not-allowed',
+                            opacity: 0.7
+                          } : {}}
+                        >
+                          {planesNutricionales.length === 0 ? (
+                            <option value="">Sin opciones disponibles</option>
+                          ) : planesNutricionales.length === 1 ? (
+                            <option value={String(planesNutricionales[0].id)}>
+                              {planesNutricionales[0].nombre || planesNutricionales[0].descripcion}
+                            </option>
+                          ) : (
+                            <>
+                              {!usuarioEditando && <option value="">Seleccionar plan nutricional</option>}
+                              {planesNutricionales.map((plan) => (
+                                <option key={plan.id} value={String(plan.id)}>
+                                  {plan.nombre || plan.descripcion}
+                                </option>
+                              ))}
+                            </>
+                          )}
+                        </select>
+                        {planesNutricionales.length <= 1 && planesNutricionales.length > 0 && (
+                          <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
+                            <i className="fa fa-info-circle mr-1"></i>
+                            Solo hay una opción disponible
+                          </small>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="planta_id">
+                          Comedor <span style={{ color: '#F34949' }}>*</span>
+                        </label>
+                        <select
+                          className="form-control"
+                          id="planta_id"
+                          name="planta_id"
+                          value={formData.planta_id || ''}
+                          onChange={handleInputChange}
+                          disabled={plantas.length <= 1}
+                          required
+                          style={plantas.length <= 1 ? {
+                            backgroundColor: '#e9ecef',
+                            cursor: 'not-allowed',
+                            opacity: 0.7
+                          } : {}}
+                        >
+                          {plantas.length === 0 ? (
+                            <option value="">Sin opciones disponibles</option>
+                          ) : plantas.length === 1 ? (
+                            <option value={String(plantas[0].id)}>
+                              {plantas[0].nombre || plantas[0].descripcion}
+                            </option>
+                          ) : (
+                            <>
+                              {!usuarioEditando && <option value="">Seleccionar comedor</option>}
+                              {plantas.map((planta) => (
+                                <option key={planta.id} value={String(planta.id)}>
+                                  {planta.nombre || planta.descripcion}
+                                </option>
+                              ))}
+                            </>
+                          )}
+                        </select>
+                        {plantas.length <= 1 && plantas.length > 0 && (
+                          <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
+                            <i className="fa fa-info-circle mr-1"></i>
+                            Solo hay una opción disponible
+                          </small>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Segunda línea: Centro de Costo, Proyecto, Fecha de Ingreso */}
+                  <div className="row">
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="centrodecosto_id">
+                          Centro de Costo <span style={{ color: '#F34949' }}>*</span>
+                        </label>
+                        <select
+                          className="form-control"
+                          id="centrodecosto_id"
+                          name="centrodecosto_id"
+                          value={formData.centrodecosto_id || (centrosDeCosto.length === 1 ? String(centrosDeCosto[0].id) : '')}
+                          onChange={handleInputChange}
+                          disabled={centrosDeCosto.length <= 1}
+                          required
+                          style={centrosDeCosto.length <= 1 ? {
+                            backgroundColor: '#e9ecef',
+                            cursor: 'not-allowed',
+                            opacity: 0.7
+                          } : {}}
+                        >
+                          {centrosDeCosto.length === 0 ? (
+                            <option value="">Sin opciones disponibles</option>
+                          ) : centrosDeCosto.length === 1 ? (
+                            <option value={String(centrosDeCosto[0].id)}>
+                              {centrosDeCosto[0].nombre || centrosDeCosto[0].descripcion}
+                            </option>
+                          ) : (
+                            <>
+                              {!usuarioEditando && <option value="">Seleccionar centro de costo</option>}
+                              {centrosDeCosto.map((cc) => (
+                                <option key={cc.id} value={String(cc.id)}>
+                                  {cc.nombre || cc.descripcion}
+                                </option>
+                              ))}
+                            </>
+                          )}
+                        </select>
+                        {centrosDeCosto.length <= 1 && centrosDeCosto.length > 0 && (
+                          <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
+                            <i className="fa fa-info-circle mr-1"></i>
+                            Solo hay una opción disponible
+                          </small>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="proyecto_id">
+                          Proyecto <span style={{ color: '#F34949' }}>*</span>
+                        </label>
+                        <select
+                          className="form-control"
+                          id="proyecto_id"
+                          name="proyecto_id"
+                          value={formData.proyecto_id || ''}
+                          onChange={handleInputChange}
+                          disabled={proyectos.length <= 1}
+                          required
+                          style={proyectos.length <= 1 ? {
+                            backgroundColor: '#e9ecef',
+                            cursor: 'not-allowed',
+                            opacity: 0.7
+                          } : {}}
+                        >
+                          {proyectos.length === 0 ? (
+                            <option value="">Sin opciones disponibles</option>
+                          ) : proyectos.length === 1 ? (
+                            <option value={String(proyectos[0].id)}>
+                              {proyectos[0].nombre || proyectos[0].descripcion}
+                            </option>
+                          ) : (
+                            <>
+                              {!usuarioEditando && <option value="">Seleccionar proyecto</option>}
+                              {proyectos.map((proj) => (
+                                <option key={proj.id} value={String(proj.id)}>
+                                  {proj.nombre || proj.descripcion}
+                                </option>
+                              ))}
+                            </>
+                          )}
+                        </select>
+                        {proyectos.length <= 1 && proyectos.length > 0 && (
+                          <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
+                            <i className="fa fa-info-circle mr-1"></i>
+                            Solo hay una opción disponible
+                          </small>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="fecha_ingreso">Fecha de Ingreso</label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          id="fecha_ingreso"
+                          name="fecha_ingreso"
+                          value={formData.fecha_ingreso || ''}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {/* Tercera línea: Contrato, Bonificaciones, Bonificaciones Invitados */}
+                  <div className="row">
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="contrato">Contrato</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="contrato"
+                          name="contrato"
+                          value={formData.contrato || ''}
+                          onChange={handleInputChange}
+                          placeholder="Ej: Indefinido, Temporal, etc."
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="bonificaciones">Bonificaciones</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          id="bonificaciones"
+                          name="bonificaciones"
+                          value={formData.bonificaciones || '0'}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9]/g, '');
+                            setFormData((prev) => ({
+                              ...prev,
+                              bonificaciones: value || '0',
+                            }));
+                          }}
+                          min="0"
+                          placeholder="0"
+                        />
+                        <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
+                          <i className="fa fa-info-circle mr-1" style={{ color: '#6c757d' }}></i>
+                          La cantidad de bonificaciones que se den serán tomadas por día
                         </small>
-                      );
-                    })()}
+                      </div>
+                    </div>
+                    {/* Campo Bonificaciones Invitados oculto - se envía el valor al backend pero no se muestra */}
+                    <input type="hidden" name="bonificaciones_invitado" value={formData.bonificaciones_invitado || '0'} />
                   </div>
                 </div>
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="plannutricional_id">
-                      Plan Nutricional <span style={{ color: '#F34949' }}>*</span>
-                    </label>
-                    <select
-                      className="form-control"
-                      id="plannutricional_id"
-                      name="plannutricional_id"
-                      value={formData.plannutricional_id || (planesNutricionales.length === 1 ? String(planesNutricionales[0].id || planesNutricionales[0].Id || planesNutricionales[0].ID) : '')}
-                      onChange={handleInputChange}
-                      disabled={planesNutricionales.length <= 1}
-                      required
-                      style={planesNutricionales.length <= 1 ? {
-                        backgroundColor: '#e9ecef',
-                        cursor: 'not-allowed',
-                        opacity: 0.7
-                      } : {}}
-                    >
-                      {planesNutricionales.length === 0 ? (
-                        <option value="">Sin opciones disponibles</option>
-                      ) : planesNutricionales.length === 1 ? (
-                        <option value={String(planesNutricionales[0].id)}>
-                          {planesNutricionales[0].nombre || planesNutricionales[0].descripcion}
-                        </option>
-                      ) : (
-                        <>
-                          {!usuarioEditando && <option value="">Seleccionar plan nutricional</option>}
-                          {planesNutricionales.map((plan) => (
-                            <option key={plan.id} value={String(plan.id)}>
-                              {plan.nombre || plan.descripcion}
-                            </option>
-                          ))}
-                        </>
-                      )}
-                    </select>
-                    {planesNutricionales.length <= 1 && planesNutricionales.length > 0 && (
-                      <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
-                        <i className="fa fa-info-circle mr-1"></i>
-                        Solo hay una opción disponible
-                      </small>
-                    )}
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="planta_id">
-                      Planta <span style={{ color: '#F34949' }}>*</span>
-                    </label>
-                    <select
-                      className="form-control"
-                      id="planta_id"
-                      name="planta_id"
-                      value={formData.planta_id || ''}
-                      onChange={handleInputChange}
-                      disabled={plantas.length <= 1}
-                      required
-                      style={plantas.length <= 1 ? {
-                        backgroundColor: '#e9ecef',
-                        cursor: 'not-allowed',
-                        opacity: 0.7
-                      } : {}}
-                    >
-                      {plantas.length === 0 ? (
-                        <option value="">Sin opciones disponibles</option>
-                      ) : plantas.length === 1 ? (
-                        <option value={String(plantas[0].id)}>
-                          {plantas[0].nombre || plantas[0].descripcion}
-                        </option>
-                      ) : (
-                        <>
-                          {!usuarioEditando && <option value="">Seleccionar planta</option>}
-                          {plantas.map((planta) => (
-                            <option key={planta.id} value={String(planta.id)}>
-                              {planta.nombre || planta.descripcion}
-                            </option>
-                          ))}
-                        </>
-                      )}
-                    </select>
-                    {plantas.length <= 1 && plantas.length > 0 && (
-                      <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
-                        <i className="fa fa-info-circle mr-1"></i>
-                        Solo hay una opción disponible
-                      </small>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {/* Segunda línea: Centro de Costo, Proyecto, Fecha de Ingreso */}
-              <div className="row">
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="centrodecosto_id">
-                      Centro de Costo <span style={{ color: '#F34949' }}>*</span>
-                    </label>
-                    <select
-                      className="form-control"
-                      id="centrodecosto_id"
-                      name="centrodecosto_id"
-                      value={formData.centrodecosto_id || (centrosDeCosto.length === 1 ? String(centrosDeCosto[0].id) : '')}
-                      onChange={handleInputChange}
-                      disabled={centrosDeCosto.length <= 1}
-                      required
-                      style={centrosDeCosto.length <= 1 ? {
-                        backgroundColor: '#e9ecef',
-                        cursor: 'not-allowed',
-                        opacity: 0.7
-                      } : {}}
-                    >
-                      {centrosDeCosto.length === 0 ? (
-                        <option value="">Sin opciones disponibles</option>
-                      ) : centrosDeCosto.length === 1 ? (
-                        <option value={String(centrosDeCosto[0].id)}>
-                          {centrosDeCosto[0].nombre || centrosDeCosto[0].descripcion}
-                        </option>
-                      ) : (
-                        <>
-                          {!usuarioEditando && <option value="">Seleccionar centro de costo</option>}
-                          {centrosDeCosto.map((cc) => (
-                            <option key={cc.id} value={String(cc.id)}>
-                              {cc.nombre || cc.descripcion}
-                            </option>
-                          ))}
-                        </>
-                      )}
-                    </select>
-                    {centrosDeCosto.length <= 1 && centrosDeCosto.length > 0 && (
-                      <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
-                        <i className="fa fa-info-circle mr-1"></i>
-                        Solo hay una opción disponible
-                      </small>
-                    )}
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="proyecto_id">
-                      Proyecto <span style={{ color: '#F34949' }}>*</span>
-                    </label>
-                    <select
-                      className="form-control"
-                      id="proyecto_id"
-                      name="proyecto_id"
-                      value={formData.proyecto_id || ''}
-                      onChange={handleInputChange}
-                      disabled={proyectos.length <= 1}
-                      required
-                      style={proyectos.length <= 1 ? {
-                        backgroundColor: '#e9ecef',
-                        cursor: 'not-allowed',
-                        opacity: 0.7
-                      } : {}}
-                    >
-                      {proyectos.length === 0 ? (
-                        <option value="">Sin opciones disponibles</option>
-                      ) : proyectos.length === 1 ? (
-                        <option value={String(proyectos[0].id)}>
-                          {proyectos[0].nombre || proyectos[0].descripcion}
-                        </option>
-                      ) : (
-                        <>
-                          {!usuarioEditando && <option value="">Seleccionar proyecto</option>}
-                          {proyectos.map((proj) => (
-                            <option key={proj.id} value={String(proj.id)}>
-                              {proj.nombre || proj.descripcion}
-                            </option>
-                          ))}
-                        </>
-                      )}
-                    </select>
-                    {proyectos.length <= 1 && proyectos.length > 0 && (
-                      <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
-                        <i className="fa fa-info-circle mr-1"></i>
-                        Solo hay una opción disponible
-                      </small>
-                    )}
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="fecha_ingreso">Fecha de Ingreso</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      id="fecha_ingreso"
-                      name="fecha_ingreso"
-                      value={formData.fecha_ingreso || ''}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-              </div>
-              {/* Tercera línea: Contrato, Bonificaciones, Bonificaciones Invitados */}
-              <div className="row">
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="contrato">Contrato</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="contrato"
-                      name="contrato"
-                      value={formData.contrato || ''}
-                      onChange={handleInputChange}
-                      placeholder="Ej: Indefinido, Temporal, etc."
-                    />
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="form-group">
-                    <label htmlFor="bonificaciones">Bonificaciones</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      id="bonificaciones"
-                      name="bonificaciones"
-                      value={formData.bonificaciones || '0'}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, '');
-                        setFormData((prev) => ({
-                          ...prev,
-                          bonificaciones: value || '0',
-                        }));
-                      }}
-                      min="0"
-                      placeholder="0"
-                    />
-                    <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
-                      <i className="fa fa-info-circle mr-1" style={{ color: '#6c757d' }}></i>
-                      La cantidad de bonificaciones que se den serán tomadas por día
-                    </small>
-                  </div>
-                </div>
-                {/* Campo Bonificaciones Invitados oculto - se envía el valor al backend pero no se muestra */}
-                <input type="hidden" name="bonificaciones_invitado" value={formData.bonificaciones_invitado || '0'} />
-              </div>
-              </div>
               </div>
             )}
 
@@ -2453,100 +2496,110 @@ const Usuarios = () => {
             {tabActivo === 'seguridad' && (
               <div className="form-section">
                 <div className="form-section-content">
-                <div className="row">
-                  <div className="col-md-6">
-                    <div className="form-group cambiar-contrasena-field">
-                      <label htmlFor="contraseña">
-                        {usuarioEditando
-                          ? 'Nueva Contraseña (dejar vacío para no cambiar)'
-                          : <><span className="cambiar-contrasena-asterisco">*</span> Nueva contraseña</>}
-                      </label>
-                      <div className="cambiar-contrasena-input-wrap">
-                        <input
-                          ref={contraseñaInputRef}
-                          type={showPassword ? 'text' : 'password'}
-                          className="form-control"
-                          id="contraseña"
-                          name="contraseña"
-                          autoComplete="new-password"
-                          value={formData.contraseña || ''}
-                          onChange={handleInputChange}
-                          required={!usuarioEditando}
-                          minLength={usuarioEditando && !formData.contraseña ? 0 : MIN_PASSWORD_LENGTH}
-                          placeholder="Mínimo 8 caracteres"
-                        />
-                        <button type="button" className="cambiar-contrasena-eye" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ocultar' : 'Mostrar'}>
-                          <i className={`fa ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                        </button>
-                      </div>
-                      <div className="cambiar-contrasena-strength">
-                        <span>Fortaleza: </span>
-                        <span className={`cambiar-contrasena-strength-label strength-${passwordStrength}`}>{passwordStrengthLabel}</span>
-                        <div className="cambiar-contrasena-strength-bar">
-                          <div className={`cambiar-contrasena-strength-fill strength-${passwordStrength}`} style={{ width: passwordStrength === 0 ? '25%' : passwordStrength === 1 ? '25%' : passwordStrength === 2 ? '50%' : '100%' }} />
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="form-group cambiar-contrasena-field">
+                        <label htmlFor="contraseña">
+                          {usuarioEditando
+                            ? 'Nueva Contraseña (dejar vacío para no cambiar)'
+                            : <><span className="cambiar-contrasena-asterisco">*</span> Nueva contraseña</>}
+                        </label>
+                        <div className="cambiar-contrasena-input-wrap">
+                          <input
+                            ref={contraseñaInputRef}
+                            type={showPassword ? 'text' : 'password'}
+                            className="form-control"
+                            id="contraseña"
+                            name="contraseña"
+                            autoComplete="new-password"
+                            value={formData.contraseña || ''}
+                            onChange={handleInputChange}
+                            required={!usuarioEditando}
+                            minLength={usuarioEditando && !formData.contraseña ? 0 : MIN_PASSWORD_LENGTH}
+                            placeholder="Mínimo 8 caracteres"
+                          />
+                          <button type="button" className="cambiar-contrasena-eye" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ocultar' : 'Mostrar'}>
+                            <i className={`fa ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                          </button>
                         </div>
+                        <div className="cambiar-contrasena-strength">
+                          <span>Fortaleza: </span>
+                          <span className={`cambiar-contrasena-strength-label strength-${passwordStrength}`}>{passwordStrengthLabel}</span>
+                          <div className="cambiar-contrasena-strength-bar">
+                            <div className={`cambiar-contrasena-strength-fill strength-${passwordStrength}`} style={{ width: passwordStrength === 0 ? '25%' : passwordStrength === 1 ? '25%' : passwordStrength === 2 ? '50%' : '100%' }} />
+                          </div>
+                        </div>
+                        <ul className="cambiar-contrasena-reqs">
+                          <li className={reqMinLength ? 'ok' : ''}>
+                            <i className={`fa ${reqMinLength ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+                            Mínimo 8 caracteres
+                          </li>
+                          <li className={reqMayuscula ? 'ok' : ''}>
+                            <i className={`fa ${reqMayuscula ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+                            Una letra mayúscula
+                          </li>
+                          <li className={reqNumeroEspecial ? 'ok' : ''}>
+                            <i className={`fa ${reqNumeroEspecial ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+                            Un número o carácter especial
+                          </li>
+                        </ul>
                       </div>
-                      <ul className="cambiar-contrasena-reqs">
-                        <li className={reqMinLength ? 'ok' : ''}>
-                          <i className={`fa ${reqMinLength ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
-                          Mínimo 8 caracteres
-                        </li>
-                        <li className={reqMayuscula ? 'ok' : ''}>
-                          <i className={`fa ${reqMayuscula ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
-                          Una letra mayúscula
-                        </li>
-                        <li className={reqNumeroEspecial ? 'ok' : ''}>
-                          <i className={`fa ${reqNumeroEspecial ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
-                          Un número o carácter especial
-                        </li>
-                      </ul>
                     </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="form-group cambiar-contrasena-field">
-                      <label htmlFor="confirmarContraseña">
-                        {usuarioEditando ? 'Confirmar Nueva Contraseña' : <><span className="cambiar-contrasena-asterisco">*</span> Confirmar nueva contraseña</>}
-                      </label>
-                      <div className="cambiar-contrasena-input-wrap">
-                        <input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          className="form-control"
-                          id="confirmarContraseña"
-                          name="confirmarContraseña"
-                          autoComplete="new-password"
-                          value={formData.confirmarContraseña || ''}
-                          onChange={handleInputChange}
-                          required={!usuarioEditando || formData.contraseña}
-                          placeholder="Repita la nueva contraseña"
-                          minLength={usuarioEditando && !formData.contraseña ? 0 : MIN_PASSWORD_LENGTH}
-                        />
-                        <button type="button" className="cambiar-contrasena-eye" onClick={() => setShowConfirmPassword(!showConfirmPassword)} aria-label={showConfirmPassword ? 'Ocultar' : 'Mostrar'}>
-                          <i className={`fa ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                        </button>
+                    <div className="col-md-6">
+                      <div className="form-group cambiar-contrasena-field">
+                        <label htmlFor="confirmarContraseña">
+                          {usuarioEditando ? 'Confirmar Nueva Contraseña' : <><span className="cambiar-contrasena-asterisco">*</span> Confirmar nueva contraseña</>}
+                        </label>
+                        <div className="cambiar-contrasena-input-wrap">
+                          <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            className="form-control"
+                            id="confirmarContraseña"
+                            name="confirmarContraseña"
+                            autoComplete="new-password"
+                            value={formData.confirmarContraseña || ''}
+                            onChange={handleInputChange}
+                            required={!usuarioEditando || formData.contraseña}
+                            placeholder="Repita la nueva contraseña"
+                            minLength={usuarioEditando && !formData.contraseña ? 0 : MIN_PASSWORD_LENGTH}
+                          />
+                          <button type="button" className="cambiar-contrasena-eye" onClick={() => setShowConfirmPassword(!showConfirmPassword)} aria-label={showConfirmPassword ? 'Ocultar' : 'Mostrar'}>
+                            <i className={`fa ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                          </button>
+                        </div>
+                        {formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña && (
+                          <p className="cambiar-contrasena-error">
+                            <i className="fa fa-exclamation-circle"></i> Las contraseñas no coinciden
+                          </p>
+                        )}
+                        {formData.contraseña && formData.confirmarContraseña && formData.contraseña === formData.confirmarContraseña && allPasswordReqs && (
+                          <small style={{ color: '#28a745', display: 'flex', alignItems: 'center', marginTop: '0.25rem', textAlign: 'left' }}>
+                            <i className="fa fa-check-circle" style={{ marginRight: '0.5rem' }}></i>
+                            Las contraseñas coinciden
+                          </small>
+                        )}
+                        {!formData.contraseña && !formData.confirmarContraseña && (
+                          <small style={{ color: '#6c757d', display: 'flex', alignItems: 'center', marginTop: '0.25rem', fontStyle: 'italic', textAlign: 'left' }}>
+                            <i className="fa fa-info-circle" style={{ marginRight: '0.5rem' }}></i>
+                            Las contraseñas deben ser iguales
+                          </small>
+                        )}
                       </div>
-                      {formData.contraseña && formData.confirmarContraseña && formData.contraseña !== formData.confirmarContraseña && (
-                        <p className="cambiar-contrasena-error">
-                          <i className="fa fa-exclamation-circle"></i> Las contraseñas no coinciden
-                        </p>
-                      )}
-                      {formData.contraseña && formData.confirmarContraseña && formData.contraseña === formData.confirmarContraseña && allPasswordReqs && (
-                        <small style={{ color: '#28a745', display: 'flex', alignItems: 'center', marginTop: '0.25rem', textAlign: 'left' }}>
-                          <i className="fa fa-check-circle" style={{ marginRight: '0.5rem' }}></i>
-                          Las contraseñas coinciden
-                        </small>
-                      )}
-                      {!formData.contraseña && !formData.confirmarContraseña && (
-                        <small style={{ color: '#6c757d', display: 'flex', alignItems: 'center', marginTop: '0.25rem', fontStyle: 'italic', textAlign: 'left' }}>
-                          <i className="fa fa-info-circle" style={{ marginRight: '0.5rem' }}></i>
-                          Las contraseñas deben ser iguales
-                        </small>
-                      )}
                     </div>
                   </div>
                 </div>
               </div>
-              </div>
             )}
+
+            {/* Leyenda de campos requeridos */}
+            <div className="row mt-2">
+              <div className="col-12">
+                <small style={{ color: '#6c757d' }}>
+                  <i className="fa fa-exclamation-triangle mr-1" style={{ color: '#ffc107' }} aria-hidden="true"></i>
+                  Los campos con * son requeridos
+                </small>
+              </div>
+            </div>
 
             {/* Botones de acción */}
             <div className="row mt-3">
@@ -2596,12 +2649,13 @@ const Usuarios = () => {
   return (
     <div className="container-fluid" style={{ padding: 0 }}>
       {/* Barra negra con título Usuarios */}
-      <div className="page-title-bar">
-        <h3>
+      <div className="page-title-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h3 style={{ margin: 0 }}>
           <i className="fa fa-users mr-2" aria-hidden="true"></i>Usuarios
         </h3>
+        <BotonAyuda titulo="Manual — Usuarios" contenido={MANUAL_USUARIOS} nombreArchivo="manual_usuarios.pdf" />
       </div>
-      
+
       <div style={{ paddingTop: '1.5rem', paddingLeft: '3rem', paddingRight: '3rem', width: '100%', boxSizing: 'border-box' }}>
         {/* Botón Agregar */}
         <div style={{ marginBottom: '1rem' }}>
@@ -2611,13 +2665,13 @@ const Usuarios = () => {
         {/* Filtro de búsqueda con botones de exportación */}
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1', minWidth: '300px' }}>
-            <Buscador 
+            <Buscador
               filtro={filtro}
               setFiltro={setFiltro}
               placeholder="Filtrar por nombre, apellido, legajo..."
             />
           </div>
-          
+
           {/* Filtro Activo/Inactivo y Botones de exportación */}
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             {/* Selector de estado Activo/Inactivo */}
@@ -2643,7 +2697,7 @@ const Usuarios = () => {
                 <option value="inactivo">Inactivos</option>
               </select>
             </div>
-            
+
             <button
               type="button"
               className="btn"
@@ -2665,7 +2719,7 @@ const Usuarios = () => {
             >
               <i className="fa fa-file-pdf" aria-hidden="true"></i>
             </button>
-            
+
             <button
               type="button"
               className="btn"
@@ -2692,301 +2746,289 @@ const Usuarios = () => {
 
         {/* Tabla de usuarios */}
         <div className="usuarios-lista">
-        <DataTable
-          columns={[
-            { key: 'username', field: 'username', label: 'Username' },
-            { key: 'nombre', field: 'nombre', label: 'Nombre' },
-            { key: 'apellido', field: 'apellido', label: 'Apellido' },
-            { key: 'legajo', field: 'legajo', label: 'Legajo' },
-            { key: 'dni', field: 'dni', label: 'DNI' },
-            { 
-              key: 'jerarquia', 
-              field: 'jerarquia_nombre', 
-              label: 'Jerarquía',
-              render: (value, row) => obtenerNombreJerarquia(row)
-            },
-            { 
-              key: 'plannutricional', 
-              field: 'plannutricional_nombre', 
-              label: 'Plan Nutricional',
-              render: (value, row) => row.plannutricional_nombre || row.plannutricional || '-'
-            },
-          ]}
-          data={usuarios}
-          isLoading={isLoading}
-          emptyMessage={
-            filtro 
-              ? 'No se encontraron usuarios que coincidan con la búsqueda' 
-              : filtroActivo === 'activo' 
-                ? 'No hay usuarios registrados Activos' 
-                : filtroActivo === 'inactivo' 
-                  ? 'No hay usuarios registrados Inactivos' 
-                  : 'No hay usuarios registrados'
-          }
-          onEdit={handleEditarUsuario}
-          canEdit={(usuario) => {
-            // El administrador solo puede verse en el listado, no editarse ni eliminarse
-            if (esUsuarioAdministrador(usuario)) {
-              return false;
+          <DataTable
+            columns={[
+              { key: 'username', field: 'username', label: 'Username' },
+              { key: 'nombre', field: 'nombre', label: 'Nombre' },
+              { key: 'apellido', field: 'apellido', label: 'Apellido' },
+              { key: 'legajo', field: 'legajo', label: 'Legajo' },
+              { key: 'dni', field: 'dni', label: 'DNI' },
+              {
+                key: 'jerarquia',
+                field: 'jerarquia_nombre',
+                label: 'Jerarquía',
+                render: (value, row) => obtenerNombreJerarquia(row)
+              },
+              {
+                key: 'plannutricional',
+                field: 'plannutricional_nombre',
+                label: 'Plan Nutricional',
+                render: (value, row) => row.plannutricional_nombre || row.plannutricional || '-'
+              },
+            ]}
+            data={usuarios}
+            isLoading={isLoading}
+            emptyMessage={
+              filtro
+                ? 'No se encontraron usuarios que coincidan con la búsqueda'
+                : filtroActivo === 'activo'
+                  ? 'No hay usuarios registrados Activos'
+                  : filtroActivo === 'inactivo'
+                    ? 'No hay usuarios registrados Inactivos'
+                    : 'No hay usuarios registrados'
             }
-            // Si estamos en el filtro de "Inactivos", no mostrar el botón de editar
-            if (filtroActivo === 'inactivo') {
-              return false;
-            }
-            // Si estamos en el filtro de "Activos", todos los usuarios mostrados están activos
-            if (filtroActivo === 'activo') {
-              return true;
-            }
-            // Por defecto, usar el campo normalizado 'activo'
-            const isActivo = usuario.activo === true || usuario.activo === 1 || usuario.activo === 'true' || usuario.activo === '1';
-            return isActivo; // Solo se puede editar si está activo
-          }}
-          onDelete={(usuario) => {
-            // El administrador no puede ser eliminado; solo puede verse en el listado
-            if (esUsuarioAdministrador(usuario)) {
+            onEdit={handleEditarUsuario}
+            canEdit={(usuario) => {
+              // El administrador solo puede verse en el listado, no editarse ni eliminarse
+              if (esUsuarioAdministrador(usuario)) {
+                return false;
+              }
+              // Si estamos en el filtro de "Inactivos", no mostrar el botón de editar
+              if (filtroActivo === 'inactivo') {
+                return false;
+              }
+              // Si estamos en el filtro de "Activos", todos los usuarios mostrados están activos
+              if (filtroActivo === 'activo') {
+                return true;
+              }
+              // Por defecto, usar el campo normalizado 'activo'
+              const isActivo = usuario.activo === true || usuario.activo === 1 || usuario.activo === 'true' || usuario.activo === '1';
+              return isActivo; // Solo se puede editar si está activo
+            }}
+            onDelete={(usuario) => {
+              // El administrador no puede ser eliminado; solo puede verse en el listado
+              if (esUsuarioAdministrador(usuario)) {
+                Swal.fire(configurarSwal({
+                  title: 'No permitido',
+                  text: 'El administrador no puede ser modificado ni eliminado. Solo puede verse en el listado.',
+                  icon: 'warning',
+                  confirmButtonText: 'Aceptar',
+                  confirmButtonColor: '#F34949',
+                }));
+                return;
+              }
               Swal.fire(configurarSwal({
-                title: 'No permitido',
-                text: 'El administrador no puede ser modificado ni eliminado. Solo puede verse en el listado.',
+                title: '¿Está seguro?',
+                text: `¿Desea dar de baja al usuario ${usuario.nombre} ${usuario.apellido}?`,
                 icon: 'warning',
-                confirmButtonText: 'Aceptar',
+                showCancelButton: true,
                 confirmButtonColor: '#F34949',
-              }));
-              return;
-            }
-            Swal.fire(configurarSwal({
-              title: '¿Está seguro?',
-              text: `¿Desea dar de baja al usuario ${usuario.nombre} ${usuario.apellido}?`,
-              icon: 'warning',
-              showCancelButton: true,
-              confirmButtonColor: '#F34949',
-              cancelButtonColor: '#6c757d',
-              confirmButtonText: 'Sí, dar de baja',
-              cancelButtonText: 'Cancelar',
-            })).then(async (result) => {
-              if (result.isConfirmed) {
-                try {
-                  await usuariosService.eliminarUsuario(usuario.id);
-                  Swal.fire(configurarSwal({
-                    title: 'Dado de baja',
-                    text: 'Usuario dado de baja correctamente',
-                    icon: 'success',
-                    timer: 3000,
-                    timerProgressBar: true,
-                    showConfirmButton: false,
-                    allowOutsideClick: true,
-                  }));
-                  cargarUsuarios(currentPage, filtro, filtroActivo === 'activo');
-                } catch (error) {
-                  // Si hay error de conexión, el interceptor ya redirige automáticamente
-                  if (!error.redirectToLogin) {
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, dar de baja',
+                cancelButtonText: 'Cancelar',
+              })).then(async (result) => {
+                if (result.isConfirmed) {
+                  try {
+                    await usuariosService.eliminarUsuario(usuario.id);
                     Swal.fire(configurarSwal({
-                      title: 'Error',
-                      text: error.message || 'Error al dar de baja el usuario',
-                      icon: 'error',
-                      confirmButtonText: 'Aceptar',
-                      confirmButtonColor: '#F34949',
+                      title: 'Dado de baja',
+                      text: 'Usuario dado de baja correctamente',
+                      icon: 'success',
+                      timer: 3000,
+                      timerProgressBar: true,
+                      showConfirmButton: false,
+                      allowOutsideClick: true,
                     }));
+                    cargarUsuarios(currentPage, filtro, filtroActivo === 'activo');
+                  } catch (error) {
+                    // Si hay error de conexión, el interceptor ya redirige automáticamente
+                    if (!error.redirectToLogin) {
+                      Swal.fire(configurarSwal({
+                        title: 'Error',
+                        text: error.message || 'Error al dar de baja el usuario',
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#F34949',
+                      }));
+                    }
                   }
                 }
+              });
+            }}
+            canDelete={(row) => {
+              // El administrador no puede ser eliminado; solo puede verse en el listado
+              if (esUsuarioAdministrador(row)) {
+                return false;
               }
-            });
-          }}
-          canDelete={(row) => {
-            // El administrador no puede ser eliminado; solo puede verse en el listado
-            if (esUsuarioAdministrador(row)) {
-              return false;
-            }
-            
-            // No permitir eliminar si el usuario está inactivo
-            // Función helper para determinar si un usuario está inactivo
-            const rawActivo = row.activo !== undefined ? row.activo :
-                             row.isActive !== undefined ? row.isActive :
-                             row.Activo !== undefined ? row.Activo :
-                             row.deletemark !== undefined ? !row.deletemark :
-                             row.Deletemark !== undefined ? !row.Deletemark :
-                             row.deleteMark !== undefined ? !row.deleteMark :
-                             undefined;
-            
-            // Convertir a boolean si viene como string o número
-            let isInactivo = false;
-            if (rawActivo !== undefined) {
-              isInactivo = rawActivo === false ||
-                          rawActivo === 0 ||
-                          rawActivo === '0' ||
-                          rawActivo === 'false' ||
-                          (typeof rawActivo === 'string' && rawActivo.toLowerCase() === 'false');
-            } else {
-              // Si no hay campo activo y estamos viendo inactivos, asumir que está inactivo
-              isInactivo = filtroActivo === 'inactivo';
-            }
-            
-            // Si está inactivo, no mostrar botón de eliminar
-            return !isInactivo;
-          }}
-          renderActions={(usuario) => {
-            // Función helper para determinar si un usuario está inactivo
-            // Buscar el campo en varias variantes posibles
-            const rawActivo = usuario.activo !== undefined ? usuario.activo :
-                             usuario.isActive !== undefined ? usuario.isActive :
-                             usuario.Activo !== undefined ? usuario.Activo :
-                             usuario.deletemark !== undefined ? !usuario.deletemark :
-                             usuario.Deletemark !== undefined ? !usuario.Deletemark :
-                             usuario.deleteMark !== undefined ? !usuario.deleteMark :
-                             undefined;
-            
-            // Convertir a boolean si viene como string o número
-            let isInactivo = false;
-            if (rawActivo !== undefined) {
-              isInactivo = rawActivo === false ||
-                          rawActivo === 0 ||
-                          rawActivo === '0' ||
-                          rawActivo === 'false' ||
-                          (typeof rawActivo === 'string' && rawActivo.toLowerCase() === 'false');
-            } else {
-              // Si no hay campo activo y estamos viendo inactivos, asumir que está inactivo
-              isInactivo = filtroActivo === 'inactivo';
-            }
-            
-            // Si el usuario está inactivo, mostrar botón de activar
-            if (isInactivo) {
-              return (
-                <button
-                  onClick={async () => {
-                    Swal.fire(configurarSwal({
-                      title: '¿Está seguro?',
-                      text: `¿Desea activar al usuario ${usuario.nombre || ''} ${usuario.apellido || ''}?`,
-                      icon: 'question',
-                      showCancelButton: true,
-                      confirmButtonColor: '#28a745',
-                      cancelButtonColor: '#6c757d',
-                      confirmButtonText: 'Sí, activar',
-                      cancelButtonText: 'Cancelar',
-                    })).then(async (result) => {
-                      if (result.isConfirmed) {
-                        try {
-                          await usuariosService.activarUsuario(usuario.id);
-                          Swal.fire(configurarSwal({
-                            title: 'Activado',
-                            text: 'Usuario activado correctamente',
-                            icon: 'success',
-                            timer: 3000,
-                            timerProgressBar: true,
-                            showConfirmButton: false,
-                            allowOutsideClick: true,
-                          }));
-                          cargarUsuarios(currentPage, filtro, filtroActivo === 'activo');
-                        } catch (error) {
-                          // Si hay error de conexión, el interceptor ya redirige automáticamente
-                          if (!error.redirectToLogin) {
+
+              // No permitir eliminar si el usuario está inactivo
+              // Función helper para determinar si un usuario está inactivo
+              const rawActivo = row.activo !== undefined ? row.activo :
+                row.isActive !== undefined ? row.isActive :
+                  row.Activo !== undefined ? row.Activo :
+                    row.deletemark !== undefined ? !row.deletemark :
+                      row.Deletemark !== undefined ? !row.Deletemark :
+                        row.deleteMark !== undefined ? !row.deleteMark :
+                          undefined;
+
+              // Convertir a boolean si viene como string o número
+              let isInactivo = false;
+              if (rawActivo !== undefined) {
+                isInactivo = rawActivo === false ||
+                  rawActivo === 0 ||
+                  rawActivo === '0' ||
+                  rawActivo === 'false' ||
+                  (typeof rawActivo === 'string' && rawActivo.toLowerCase() === 'false');
+              } else {
+                // Si no hay campo activo y estamos viendo inactivos, asumir que está inactivo
+                isInactivo = filtroActivo === 'inactivo';
+              }
+
+              // Si está inactivo, no mostrar botón de eliminar
+              return !isInactivo;
+            }}
+            renderActions={(usuario) => {
+              // Función helper para determinar si un usuario está inactivo
+              // Buscar el campo en varias variantes posibles
+              const rawActivo = usuario.activo !== undefined ? usuario.activo :
+                usuario.isActive !== undefined ? usuario.isActive :
+                  usuario.Activo !== undefined ? usuario.Activo :
+                    usuario.deletemark !== undefined ? !usuario.deletemark :
+                      usuario.Deletemark !== undefined ? !usuario.Deletemark :
+                        usuario.deleteMark !== undefined ? !usuario.deleteMark :
+                          undefined;
+
+              // Convertir a boolean si viene como string o número
+              let isInactivo = false;
+              if (rawActivo !== undefined) {
+                isInactivo = rawActivo === false ||
+                  rawActivo === 0 ||
+                  rawActivo === '0' ||
+                  rawActivo === 'false' ||
+                  (typeof rawActivo === 'string' && rawActivo.toLowerCase() === 'false');
+              } else {
+                // Si no hay campo activo y estamos viendo inactivos, asumir que está inactivo
+                isInactivo = filtroActivo === 'inactivo';
+              }
+
+              // Si el usuario está inactivo, mostrar botón de activar
+              if (isInactivo) {
+                return (
+                  <button
+                    onClick={async () => {
+                      Swal.fire(configurarSwal({
+                        title: '¿Está seguro?',
+                        text: `¿Desea activar al usuario ${usuario.nombre || ''} ${usuario.apellido || ''}?`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#28a745',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Sí, activar',
+                        cancelButtonText: 'Cancelar',
+                      })).then(async (result) => {
+                        if (result.isConfirmed) {
+                          try {
+                            await usuariosService.activarUsuario(usuario.id);
                             Swal.fire(configurarSwal({
-                              title: 'Error',
-                              text: error.message || 'Error al activar el usuario',
-                              icon: 'error',
-                              confirmButtonText: 'Aceptar',
-                              confirmButtonColor: '#F34949',
+                              title: 'Activado',
+                              text: 'Usuario activado correctamente',
+                              icon: 'success',
+                              timer: 3000,
+                              timerProgressBar: true,
+                              showConfirmButton: false,
+                              allowOutsideClick: true,
                             }));
+                            cargarUsuarios(currentPage, filtro, filtroActivo === 'activo');
+                          } catch (error) {
+                            // Si hay error de conexión, el interceptor ya redirige automáticamente
+                            if (!error.redirectToLogin) {
+                              Swal.fire(configurarSwal({
+                                title: 'Error',
+                                text: error.message || 'Error al activar el usuario',
+                                icon: 'error',
+                                confirmButtonText: 'Aceptar',
+                                confirmButtonColor: '#F34949',
+                              }));
+                            }
                           }
                         }
-                      }
-                    });
-                  }}
-                  title="Activar usuario"
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    backgroundColor: '#28a745',
-                    border: 'none',
-                    borderRadius: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    padding: 0,
-                    marginRight: '0.5rem'
-                  }}
-                >
-                  <i className="fa fa-check" style={{ color: 'white', fontSize: '16px' }}></i>
-                </button>
-              );
-            }
-            return null;
-          }}
-          enablePagination={false}
-          pageSize={pageSize}
-        />
-        
-        {/* Controles de paginación y combo de registros a mostrar */}
-        {totalItems > 0 && (
-          <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem' }}>
-            <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
-              <label className="d-flex align-items-center gap-2 mb-0" style={{ whiteSpace: 'nowrap' }}>
-                <span className="text-muted small">Registros a mostrar:</span>
-                <select
-                  className="form-control form-control-sm"
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
-                  style={{ width: 'auto', minWidth: '70px' }}
-                >
-                  {opcionesPageSize.map((n) => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
-              </label>
-              <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>
-                Mostrando página {currentPage} de {totalPages} ({totalItems} usuarios)
-              </span>
+                      });
+                    }}
+                    title="Activar usuario"
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: '#28a745',
+                      border: 'none',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      padding: 0,
+                      marginRight: '0.5rem'
+                    }}
+                  >
+                    <i className="fa fa-check" style={{ color: 'white', fontSize: '16px' }}></i>
+                  </button>
+                );
+              }
+              return null;
+            }}
+            enablePagination={false}
+            pageSize={pageSize}
+          />
+
+          {/* Controles de paginación y combo de registros a mostrar */}
+          {totalItems > 0 && (
+            <div className="d-flex justify-content-between align-items-center mt-3 mb-4 flex-nowrap" style={{ gap: '1.5rem' }}>
+              <div className="d-flex align-items-center flex-nowrap" style={{ gap: '1.25rem' }}>
+                <SelectorRegistros pageSize={pageSize} opciones={opcionesPageSize} onChange={setPageSize} className="d-flex align-items-center" />
+                <span className="text-muted" style={{ whiteSpace: 'nowrap', fontSize: '0.9rem' }}>
+                  Mostrando página {currentPage} de {totalPages} ({totalItems} usuarios)
+                </span>
+              </div>
+              <nav>
+                <ul className="pagination mb-0">
+                  <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      Anterior
+                    </button>
+                  </li>
+                  {[...Array(totalPages)].map((_, index) => {
+                    const page = index + 1;
+                    // Mostrar solo algunas páginas alrededor de la actual
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                          <button
+                            className="page-link"
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </button>
+                        </li>
+                      );
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return (
+                        <li key={page} className="page-item disabled">
+                          <span className="page-link">...</span>
+                        </li>
+                      );
+                    }
+                    return null;
+                  })}
+                  <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Siguiente
+                    </button>
+                  </li>
+                </ul>
+              </nav>
             </div>
-            <nav>
-              <ul className="pagination mb-0">
-                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    Anterior
-                  </button>
-                </li>
-                {[...Array(totalPages)].map((_, index) => {
-                  const page = index + 1;
-                  // Mostrar solo algunas páginas alrededor de la actual
-                  if (
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  ) {
-                    return (
-                      <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
-                        <button
-                          className="page-link"
-                          onClick={() => handlePageChange(page)}
-                        >
-                          {page}
-                        </button>
-                      </li>
-                    );
-                  } else if (page === currentPage - 2 || page === currentPage + 2) {
-                    return (
-                      <li key={page} className="page-item disabled">
-                        <span className="page-link">...</span>
-                      </li>
-                    );
-                  }
-                  return null;
-                })}
-                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Siguiente
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        )}
+          )}
         </div>
 
       </div>
