@@ -2363,9 +2363,7 @@ const Plato = () => {
                       title="Costo real que factura el proveedor, distinto del importe que ve el comensal"
                       style={{ fontSize: '0.875rem', padding: '0.4rem 0.75rem', height: '38px', boxSizing: 'border-box' }}
                     />
-                    <small className="form-text text-muted" style={{ fontSize: '0.7rem', marginTop: '0.25rem', display: 'block', height: '18px', lineHeight: '18px' }}>
-                      Para conciliar con el proveedor
-                    </small>
+                    <div style={{ height: '18px', marginTop: '0.25rem' }}></div>
                   </div>
                 </div>
                 <div className="col-md-2">

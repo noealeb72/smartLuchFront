@@ -25,7 +25,9 @@ const PedidoVigente = memo(({ pedido, index, defaultImage, onCancelar, onRecibir
     const lista = Number(importeLista);
     const pagado = Number(montoPagado);
     if (!lista || isNaN(lista) || isNaN(pagado)) return null;
-    return Math.round((1 - pagado / lista) * 100);
+    const porcentaje = (1 - pagado / lista) * 100;
+    // Hasta 2 decimales (66.67% en vez de redondear a 67%), sin ceros de más (50% no "50,00%")
+    return porcentaje.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
   }, [pedido.PlatoImporte, pedido.platoImporte, pedido.Importe, pedido.importe, pedido.Monto, pedido.monto]);
 
   // Construir la URL de la foto desde el campo Foto del backend

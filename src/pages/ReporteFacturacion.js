@@ -154,6 +154,7 @@ const ReporteFacturacion = () => {
     const nombre = item.nombre || item.Nombre || '';
     const nombreCompleto = `${apellido} ${nombre}`.trim() || '-';
     const platoDescripcion = item.platoDescripcion || item.PlatoDescripcion || '-';
+    const plantaNombre = item.plantaNombre || item.PlantaNombre || '-';
     const montoEmpleado = parseFloat(item.montoEmpleado || item.MontoEmpleado || 0);
     const platoImporte = parseFloat(item.platoImporte || item.PlatoImporte || 0);
     const costoProveedor = parseFloat(item.costoProveedor || item.CostoProveedor || 0);
@@ -162,7 +163,7 @@ const ReporteFacturacion = () => {
     const descuento = Math.max(0, platoImporte - montoEmpleado);
     const descuentoPorcentaje = platoImporte > 0 ? Math.round((descuento / platoImporte) * 100) : 0;
 
-    return { fecha, legajo, nombreCompleto, platoDescripcion, montoEmpleado, platoImporte, costoProveedor, descuento, descuentoPorcentaje };
+    return { fecha, legajo, nombreCompleto, platoDescripcion, plantaNombre, montoEmpleado, platoImporte, costoProveedor, descuento, descuentoPorcentaje };
   };
 
   const handleBuscar = async () => {
@@ -213,6 +214,7 @@ const ReporteFacturacion = () => {
           c.legajo,
           c.nombreCompleto,
           c.platoDescripcion,
+          c.plantaNombre,
           formatearFechaCorta(c.fecha),
           formatearHora(c.fecha),
           formatearImporte(c.costoProveedor),
@@ -224,18 +226,18 @@ const ReporteFacturacion = () => {
 
       doc.autoTable({
         startY: startY + 6,
-        head: [['Nro. Legajo', 'Apellido y Nombre', 'Plato', 'Fecha', 'Hora', 'Costo Interno', 'Costo de Venta', 'Descuento', 'Empleado']],
+        head: [['Nro. Legajo', 'Apellido y Nombre', 'Plato', 'Comedor', 'Fecha', 'Hora', 'Costo Interno', 'Costo de Venta', 'Descuento', 'Empleado']],
         body: filas,
-        foot: [['', '', '', '', 'TOTALES', formatearImporte(totalCostoProveedor), '', '', formatearImporte(totalEmpleado)]],
+        foot: [['', '', '', '', '', 'TOTALES', formatearImporte(totalCostoProveedor), '', '', formatearImporte(totalEmpleado)]],
         styles: { fontSize: 7 },
         headStyles: { fillColor: [52, 58, 64], textColor: 255, fontStyle: 'bold' },
         footStyles: { fillColor: [233, 236, 239], textColor: [33, 37, 41], fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 245, 245] },
         columnStyles: {
-          5: { halign: 'right' },
           6: { halign: 'right' },
           7: { halign: 'right' },
           8: { halign: 'right' },
+          9: { halign: 'right' },
         },
       });
 
@@ -268,6 +270,7 @@ const ReporteFacturacion = () => {
           c.legajo,
           c.nombreCompleto,
           c.platoDescripcion,
+          c.plantaNombre,
           formatearFechaCorta(c.fecha),
           formatearHora(c.fecha),
           formatearImporte(c.costoProveedor),
@@ -281,10 +284,10 @@ const ReporteFacturacion = () => {
         [],
         [`Período: ${periodo}`],
         [],
-        ['Nro. Legajo', 'Apellido y Nombre', 'Plato', 'Fecha', 'Hora', 'Costo Interno', 'Costo de Venta', 'Descuento', 'Empleado'],
+        ['Nro. Legajo', 'Apellido y Nombre', 'Plato', 'Comedor', 'Fecha', 'Hora', 'Costo Interno', 'Costo de Venta', 'Descuento', 'Empleado'],
         ...filas,
         [],
-        ['', '', '', '', 'TOTALES', formatearImporte(totalCostoProveedor), '', '', formatearImporte(totalEmpleado)],
+        ['', '', '', '', '', 'TOTALES', formatearImporte(totalCostoProveedor), '', '', formatearImporte(totalEmpleado)],
       ];
 
       const fechaArchivo = new Date().toISOString().split('T')[0];
@@ -366,7 +369,7 @@ const ReporteFacturacion = () => {
                     </div>
                     <div className="col-md-3">
                       <div className="form-group">
-                        <label htmlFor="plantaId">Planta</label>
+                        <label htmlFor="plantaId">Comedor</label>
                         <select className="form-control" id="plantaId" name="plantaId" value={formData.plantaId || ''} onChange={handleInputChange} disabled={isLoading}>
                           <option value="">-- Todas --</option>
                           {plantas.map(p => {
@@ -414,12 +417,8 @@ const ReporteFacturacion = () => {
                     <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Total Costo de Venta</div>
                   </div>
                   <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#fd7e14', marginBottom: '0.5rem' }}>{formatearImporte(resumen.totalDescuento)}</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#fd7e14', marginBottom: '0.5rem' }}>{formatearImporte(resumen.totalPlatoImporte - resumen.totalCostoProveedor)}</div>
                     <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Total Descuentos</div>
-                  </div>
-                  <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc3545', marginBottom: '0.5rem' }}>{formatearImporte(resumen.totalEmpleado)}</div>
-                    <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>Total Empleado</div>
                   </div>
                 </div>
               </div>
@@ -452,14 +451,15 @@ const ReporteFacturacion = () => {
                     <table className="table table-striped table-hover" style={{ margin: 0 }}>
                       <thead style={{ backgroundColor: '#f8f9fa' }}>
                         <tr>
-                          <th style={{ whiteSpace: 'nowrap' }}>Nro. Legajo</th>
-                          <th style={{ whiteSpace: 'nowrap' }}>Apellido y Nombre</th>
-                          <th style={{ whiteSpace: 'nowrap' }}>Plato</th>
-                          <th style={{ whiteSpace: 'nowrap' }}>Fecha y Hora</th>
-                          <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Costo Interno</th>
-                          <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Costo de Venta</th>
-                          <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Descuento</th>
-                          <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Empleado</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Nro<br />Legajo</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Apellido y Nombre</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Plato</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Comedor</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Fecha</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Costo<br />Interno</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Costo de<br />Venta</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Descuento</th>
+                          <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Pago Empleado</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -470,6 +470,7 @@ const ReporteFacturacion = () => {
                               <td>{c.legajo}</td>
                               <td>{c.nombreCompleto}</td>
                               <td>{c.platoDescripcion}</td>
+                              <td>{c.plantaNombre}</td>
                               <td style={{ whiteSpace: 'nowrap', lineHeight: 1.3 }}>
                                 <div>{formatearFechaCorta(c.fecha)}</div>
                                 <div className="text-muted" style={{ fontSize: '0.85rem' }}>{formatearHora(c.fecha)}</div>
