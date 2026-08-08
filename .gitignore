@@ -28,6 +28,9 @@ yarn-error.log*
 *.swo
 .cursor/
 
+# Archivos temporales de bloqueo de Word/Office (se crean al tener un .docx abierto)
+~$*
+
 # OS
 Thumbs.db
 
