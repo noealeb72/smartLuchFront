@@ -4,6 +4,7 @@ import { menuService } from '../services/menuService';
 import { catalogosService } from '../services/catalogosService';
 import { turnosService } from '../services/turnosService';
 import { platosService } from '../services/platosService';
+import { usuariosService } from '../services/usuariosService';
 import { useAuth } from '../contexts/AuthContext';
 import Swal from 'sweetalert2';
 import AgregarButton from '../components/AgregarButton';
@@ -63,7 +64,7 @@ const MANUAL_MENU_DEL_DIA = [
 ];
 
 const MenuDelDia = () => {
-  useAuth();
+  const { user } = useAuth();
 
   // Campos que se pueden ocultar por configuración (public/config.json -> camposVisibles)
   const camposVisibles = getCamposVisibles();
@@ -81,10 +82,11 @@ const MenuDelDia = () => {
   };
 
   const [menus, setMenus] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Arranca en true para no mostrar "sin resultados" mientras se resuelve el comedor del usuario
   const [filtro, setFiltro] = useState('');
   const [filtroActivo, setFiltroActivo] = useState('activo');
-  const [filtroPlantaId, setFiltroPlantaId] = useState(''); // Filtro por comedor (Planta)
+  const [filtroPlantaId, setFiltroPlantaId] = useState(''); // Filtro por comedor (Planta): se fija solo al comedor del usuario logueado
+  const [plantaUsuarioResuelta, setPlantaUsuarioResuelta] = useState(false); // Evita cargar el listado sin filtro antes de saber el comedor del usuario
   const [vista, setVista] = useState('lista'); // 'lista' | 'editar' | 'crear'
   const [fechaSeleccionada, setFechaSeleccionada] = useState(obtenerFechaLocal()); // Fecha de hoy por defecto
 
@@ -298,11 +300,25 @@ const MenuDelDia = () => {
     cargarCatalogos();
   }, [cargarCatalogos]);
 
-  // Cargar menús al iniciar y cuando cambian los filtros
+  // El listado se filtra siempre por el comedor del usuario logueado, sin selector manual
   useEffect(() => {
-    // Cargar menús inmediatamente con la fecha de hoy, sin esperar a que los platos estén cargados
+    if (!user?.id) return;
+    usuariosService
+      .getUsuarioPorId(user.id)
+      .then((usuario) => {
+        const plantaId = usuario?.PlantaId || usuario?.plantaId;
+        if (plantaId) setFiltroPlantaId(String(plantaId));
+      })
+      .catch(() => {})
+      .finally(() => setPlantaUsuarioResuelta(true));
+  }, [user?.id]);
+
+  // Cargar menús al iniciar y cuando cambian los filtros (esperando a saber el comedor del usuario,
+  // para no mostrar por un instante los menús de todos los comedores)
+  useEffect(() => {
+    if (!plantaUsuarioResuelta) return;
     cargarMenus(currentPage, filtro, fechaSeleccionada);
-  }, [currentPage, filtro, filtroActivo, cargarMenus, fechaSeleccionada, filtroPlantaId]);
+  }, [currentPage, filtro, filtroActivo, cargarMenus, fechaSeleccionada, filtroPlantaId, plantaUsuarioResuelta]);
 
   // Auto-seleccionar valores cuando hay un solo elemento disponible en los catálogos
   // SOLO en modo editar, NO en modo crear (en crear siempre debe estar "-- Seleccionar --")
@@ -1929,16 +1945,19 @@ const MenuDelDia = () => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              flexWrap: 'wrap',
+              flexWrap: 'nowrap',
               gap: '0.75rem',
               marginBottom: '1rem',
+              overflowX: 'auto',
+              paddingBottom: '0.25rem',
             }}
           >
-            <div style={{ flex: '1 1 0%', minWidth: '200px', maxWidth: '65%' }}>
+            <div style={{ flex: '1 1 0%', minWidth: '140px', maxWidth: '65%' }}>
               <Buscador
                 filtro={filtro}
                 setFiltro={handleFiltroChange}
                 placeholder="Filtrar por plato, turno..."
+                sinMargen
               />
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
@@ -1997,49 +2016,7 @@ const MenuDelDia = () => {
                   <option value="inactivo">Inactivos</option>
                 </select>
               </div>
-              {/* Comedor (Planta) */}
-              {mostrarPlanta && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <label style={{ margin: 0, fontSize: '0.875rem', color: '#495057', whiteSpace: 'nowrap', fontWeight: 'normal' }}>
-                    Comedor:
-                  </label>
-                  <select
-                    className="form-control"
-                    value={filtroPlantaId}
-                    onChange={(e) => {
-                      setFiltroPlantaId(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    style={{
-                      height: '38px',
-                      minHeight: '38px',
-                      maxHeight: '38px',
-                      boxSizing: 'border-box',
-                      padding: '0.25rem 0.5rem 0.25rem 0.75rem',
-                      fontSize: '0.9rem',
-                      lineHeight: '1.25',
-                      border: '1px solid #ced4da',
-                      borderRadius: '0.25rem',
-                      backgroundColor: 'white',
-                      color: '#495057',
-                      cursor: 'pointer',
-                      width: 'auto',
-                      minWidth: 'fit-content',
-                    }}
-                  >
-                    <option value="">Todos</option>
-                    {plantas.map((planta) => {
-                      const plantaId = planta.id || planta.Id || planta.ID;
-                      const plantaNombre = planta.nombre || planta.Nombre || planta.descripcion || planta.Descripcion || '';
-                      return (
-                        <option key={plantaId} value={String(plantaId)}>
-                          {plantaNombre}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-              )}
+              {/* Comedor: ya no se elige a mano, el listado se filtra por el comedor del usuario logueado */}
               {/* Botón impresión */}
               <button
                 type="button"
@@ -3273,7 +3250,7 @@ const MenuDelDia = () => {
               </div>
 
               <div className="row" style={{ marginTop: '1.5rem' }}>
-                <div className="col-md-2">
+                <div className="col-md-3">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="jerarquiaId" style={{ marginBottom: '0.25rem' }}>
                       Jerarquía {jerarquias.length > 1 && <span style={{ color: '#F34949' }}>*</span>}

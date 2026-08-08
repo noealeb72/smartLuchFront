@@ -90,7 +90,7 @@ const BotonAyuda = ({ titulo, contenido, nombreArchivo, icono = 'fa-circle-quest
         type="button"
         className="btn"
         onClick={() => setMostrar(true)}
-        style={{ backgroundColor: 'transparent', border: '1px solid white', color: 'white', padding: '0.35rem 0.9rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+        style={{ backgroundColor: 'transparent', border: '1px solid white', color: 'white', padding: '0.35rem 0.9rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', marginRight: '1.5rem' }}
       >
         <i className={`fa ${icono}`} aria-hidden="true"></i>
         Ayuda

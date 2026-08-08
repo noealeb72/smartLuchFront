@@ -1,8 +1,8 @@
 import React from 'react';
 
-const Buscador = ({ filtro, setFiltro, placeholder = 'Filtrar por nombre, apellido, legajo...', onBlur }) => {
+const Buscador = ({ filtro, setFiltro, placeholder = 'Filtrar por nombre, apellido, legajo...', onBlur, sinMargen = false }) => {
   return (
-    <div className="mb-3" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', flexWrap: 'nowrap' }}>
+    <div className={sinMargen ? '' : 'mb-3'} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', flexWrap: 'nowrap' }}>
       <label htmlFor="buscar" className="mr-2 mb-0" style={{ fontWeight: 'normal', whiteSpace: 'nowrap' }}>Buscar</label>
       <div className="input-group" style={{ maxWidth: '650px', overflow: 'visible', display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'stretch' }}>
         <input

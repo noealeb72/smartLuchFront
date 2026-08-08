@@ -52,10 +52,9 @@ const MANUAL_USUARIOS = [
   {
     tipo: 'lista',
     items: [
-      'Jerarquía, Plan Nutricional, Planta y Centro de Costo: si solo hay una opción cargada en el catálogo correspondiente, se autoselecciona y queda deshabilitada.',
+      'Jerarquía, Plan Nutricional, Comedor y Centro de Costo: si solo hay una opción cargada en el catálogo correspondiente, se autoselecciona y queda deshabilitada.',
       'Proyecto: se elige entre los proyectos cargados.',
       'Fecha de Ingreso y Contrato: opcionales, informativos.',
-      'Bonificaciones: cantidad de bonificaciones que tiene disponibles el usuario por día. Es un valor informativo — el descuento real de cada pedido lo calcula el motor de Reglas de Bonificación (Configuración → Reglas de Bonificación), no este número.',
     ],
   },
   { tipo: 'subtitulo', texto: 'Seguridad' },
@@ -538,7 +537,7 @@ const Usuarios = () => {
           // PascalCase específicos
           campoNombre === 'jerarquia' ? 'JerarquiaId' :
             campoNombre === 'plannutricional' ? 'PlanNutricionalId' :
-              campoNombre === 'Comedor' ? 'PlantaId' :
+              campoNombre === 'planta' ? 'PlantaId' :
                 campoNombre === 'centrodecosto' ? 'CentroCostoId' :
                   campoNombre === 'proyecto' ? 'ProyectoId' : null
         ].filter(v => v !== null);
@@ -1074,7 +1073,7 @@ const Usuarios = () => {
         'El CUIL es requerido': 'CUIL',
         'La jerarquía es requerida': 'Jerarquía',
         'El plan nutricional es requerido': 'Plan Nutricional',
-        'La planta es requerida': 'Planta',
+        'La planta es requerida': 'Comedor',
         'El centro de costo es requerido': 'Centro de Costo',
         'El proyecto es requerido': 'Proyecto',
         'La contraseña es requerida': 'Contraseña',
@@ -1317,7 +1316,7 @@ const Usuarios = () => {
       if (plantas.length > 1 && (!plantaId || isNaN(plantaId) || plantaId <= 0)) {
         Swal.fire(configurarSwal({
           title: 'Error de validación',
-          text: 'La planta es requerida. Por favor, seleccione una planta.',
+          text: 'El comedor es requerido. Por favor, seleccione un comedor.',
           icon: 'error',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#F34949',
@@ -1751,7 +1750,7 @@ const Usuarios = () => {
     return (
       <div className="container-fluid" style={{ padding: 0, backgroundColor: 'white' }}>
         {/* Barra negra con título */}
-        <div className="page-title-bar">
+        <div className="page-title-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '1.5rem' }}>
             <button
               type="button"
@@ -1765,6 +1764,7 @@ const Usuarios = () => {
               {vista === 'editar' ? 'Editar Usuario' : 'Nuevo Usuario'}
             </h3>
           </div>
+          <BotonAyuda titulo="Manual — Usuarios" contenido={MANUAL_USUARIOS} nombreArchivo="manual_usuarios.pdf" />
         </div>
 
         {/* Barra informativa para creación */}
@@ -2444,7 +2444,7 @@ const Usuarios = () => {
                       </div>
                     </div>
                   </div>
-                  {/* Tercera línea: Contrato, Bonificaciones, Bonificaciones Invitados */}
+                  {/* Tercera línea: Contrato (Bonificaciones y Bonificaciones Invitados quedan ocultos, ver más abajo) */}
                   <div className="row">
                     <div className="col-md-4">
                       <div className="form-group">
@@ -2460,32 +2460,8 @@ const Usuarios = () => {
                         />
                       </div>
                     </div>
-                    <div className="col-md-4">
-                      <div className="form-group">
-                        <label htmlFor="bonificaciones">Bonificaciones</label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          id="bonificaciones"
-                          name="bonificaciones"
-                          value={formData.bonificaciones || '0'}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/[^0-9]/g, '');
-                            setFormData((prev) => ({
-                              ...prev,
-                              bonificaciones: value || '0',
-                            }));
-                          }}
-                          min="0"
-                          placeholder="0"
-                        />
-                        <small className="form-text text-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center' }}>
-                          <i className="fa fa-info-circle mr-1" style={{ color: '#6c757d' }}></i>
-                          La cantidad de bonificaciones que se den serán tomadas por día
-                        </small>
-                      </div>
-                    </div>
-                    {/* Campo Bonificaciones Invitados oculto - se envía el valor al backend pero no se muestra */}
+                    {/* Campos Bonificaciones y Bonificaciones Invitados ocultos - se envía el valor al backend pero no se muestran */}
+                    <input type="hidden" name="bonificaciones" value={formData.bonificaciones || '0'} />
                     <input type="hidden" name="bonificaciones_invitado" value={formData.bonificaciones_invitado || '0'} />
                   </div>
                 </div>
@@ -2749,10 +2725,19 @@ const Usuarios = () => {
           <DataTable
             columns={[
               { key: 'username', field: 'username', label: 'Username' },
-              { key: 'nombre', field: 'nombre', label: 'Nombre' },
-              { key: 'apellido', field: 'apellido', label: 'Apellido' },
+              {
+                key: 'nombreCompleto',
+                field: 'nombre',
+                label: 'Nombre y Apellido',
+                render: (value, row) => `${row.nombre || ''} ${row.apellido || ''}`.trim() || '-'
+              },
               { key: 'legajo', field: 'legajo', label: 'Legajo' },
-              { key: 'dni', field: 'dni', label: 'DNI' },
+              {
+                key: 'planta',
+                field: 'planta_nombre',
+                label: 'Comedor',
+                render: (value, row) => row.planta_nombre || '-'
+              },
               {
                 key: 'jerarquia',
                 field: 'jerarquia_nombre',

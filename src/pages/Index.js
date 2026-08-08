@@ -60,7 +60,6 @@ const Index = () => {
   const [previewBonificacion, setPreviewBonificacion] = useState({});
   const [turnoDisponible, setTurnoDisponible] = useState(true);
   const [bonificacionesAplicadasPending, setBonificacionesAplicadasPending] = useState(0);
-  const [plantasDisponibles, setPlantasDisponibles] = useState([]);
   const [filtroComedorId, setFiltroComedorId] = useState('');
   const defaultImage = '/Views/img/logo-preview.png';
   const mostrarFiltroComedor = getCamposVisibles().planta !== false;
@@ -72,38 +71,14 @@ const Index = () => {
     ? menuItems.filter((item) => String(item.plantaId ?? '') === String(filtroComedorId))
     : menuItems;
 
-  // Comedores con menú real cargado para el turno actual (no el catálogo completo de plantas):
-  // se recarga cada vez que cambia el turno, y elige un comedor por defecto (el propio del
-  // usuario si tiene menú ahí, si no el primero) en vez de arrancar en "Todos".
+  // El menú siempre se mira desde el comedor propio del usuario logueado — nunca se cae a
+  // mostrar el de otro comedor, aunque el propio no tenga menú cargado para ese turno (en ese
+  // caso corresponde ver "No hay platos disponibles", no platos de un comedor ajeno).
   useEffect(() => {
-    if (!mostrarFiltroComedor || !turnoIdActual) {
-      setPlantasDisponibles([]);
-      return;
-    }
-    let activo = true;
-    menuService
-      .getComedoresPorTurno(turnoIdActual)
-      .then((data) => {
-        if (!activo) return;
-        const lista = Array.isArray(data) ? data : (data?.items || data?.data || []);
-        setPlantasDisponibles(lista);
-
-        const idDe = (c) => String(c.plantaId ?? c.PlantaId ?? '');
-        setFiltroComedorId((actual) => {
-          if (actual && lista.some((c) => idDe(c) === String(actual))) return actual;
-          const propioId = usuarioData?.plantaId || user?.plantaId;
-          const propio = propioId != null ? lista.find((c) => idDe(c) === String(propioId)) : null;
-          const elegido = propio || lista[0];
-          return elegido ? idDe(elegido) : '';
-        });
-      })
-      .catch(() => {
-        if (activo) setPlantasDisponibles([]);
-      });
-    return () => {
-      activo = false;
-    };
-  }, [mostrarFiltroComedor, turnoIdActual, usuarioData?.plantaId, user?.plantaId]);
+    if (!mostrarFiltroComedor) return;
+    const propioId = usuarioData?.plantaId || user?.plantaId;
+    if (propioId != null) setFiltroComedorId(String(propioId));
+  }, [mostrarFiltroComedor, usuarioData?.plantaId, user?.plantaId]);
 
   // Ref para evitar múltiples llamadas simultáneas
   const requestInProgressRef = useRef(false);
@@ -2039,30 +2014,6 @@ const Index = () => {
                     <>
                       <div className="mt-5 d-flex justify-content-between align-items-center flex-wrap" style={{ rowGap: '0.5rem' }}>
                         <h4 className="mb-0" style={{ color: '#343a40' }}>Menú del día</h4>
-                        {mostrarFiltroComedor && plantasDisponibles.length > 0 && (
-                          <div className="d-flex align-items-center" style={{ gap: '0.5rem' }}>
-                            <label className="mb-0" htmlFor="filtroComedor" style={{ whiteSpace: 'nowrap' }}>
-                              Comedor:
-                            </label>
-                            <select
-                              id="filtroComedor"
-                              className="form-control"
-                              value={filtroComedorId}
-                              onChange={(e) => setFiltroComedorId(e.target.value)}
-                              style={{ width: 'auto', minWidth: '180px' }}
-                            >
-                              {plantasDisponibles.map((comedor, idx) => {
-                                const plantaId = comedor.plantaId ?? comedor.PlantaId;
-                                const plantaNombre = comedor.plantaNombre || comedor.PlantaNombre || '';
-                                return (
-                                  <option key={plantaId ?? `comedor-${idx}`} value={String(plantaId)}>
-                                    {plantaNombre}
-                                  </option>
-                                );
-                              })}
-                            </select>
-                          </div>
-                        )}
                       </div>
                       {!isLoading && menuItemsFiltrados.length === 0 && (
                         <div 
