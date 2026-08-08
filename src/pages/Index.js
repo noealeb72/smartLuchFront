@@ -2012,9 +2012,7 @@ const Index = () => {
 
                   {turnoDisponible && (
                     <>
-                      <div className="mt-5 d-flex justify-content-between align-items-center flex-wrap" style={{ rowGap: '0.5rem' }}>
-                        <h4 className="mb-0" style={{ color: '#343a40' }}>Menú del día</h4>
-                      </div>
+                      <h4 className="mt-5 mb-0" style={{ color: '#343a40' }}>Menú del día</h4>
                       {!isLoading && menuItemsFiltrados.length === 0 && (
                         <div 
                           className="alert mt-3" 

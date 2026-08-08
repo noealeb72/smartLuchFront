@@ -3250,7 +3250,7 @@ const MenuDelDia = () => {
               </div>
 
               <div className="row" style={{ marginTop: '1.5rem' }}>
-                <div className="col-md-3">
+                <div className="col-md-2">
                   <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                     <label htmlFor="jerarquiaId" style={{ marginBottom: '0.25rem' }}>
                       Jerarquía {jerarquias.length > 1 && <span style={{ color: '#F34949' }}>*</span>}
@@ -3271,12 +3271,12 @@ const MenuDelDia = () => {
                             minHeight: '38px',
                           }}
                         >
-                          <span style={{ color: (formData.jerarquiaIds?.length || 0) > 0 ? '#212529' : '#6c757d' }}>
+                          <span style={{ color: (formData.jerarquiaIds?.length || 0) > 0 ? '#212529' : '#6c757d', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {(formData.jerarquiaIds?.length || 0) > 0
                               ? `${formData.jerarquiaIds.length} jerarquía(s) seleccionada(s)`
                               : 'Seleccionar jerarquías...'}
                           </span>
-                          <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem' }} />
+                          <i className="fa fa-chevron-down" style={{ color: '#6c757d', fontSize: '0.75rem', flexShrink: 0, marginLeft: '0.25rem' }} />
                         </div>
                         {(formData.jerarquiaIds?.length || 0) > 0 && (
                           <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
